@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+
+{% block title %}Delivery Records & POD | Logistics & Fleet{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;">
+
+    <!-- TOP HEADER -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+        <div>
+            <h2 style="font-family:var(--font-heading);font-size:1.35rem;font-weight:800;color:var(--brand-navy-900);letter-spacing:-0.02em;">
+                <i class="fa-solid fa-clipboard-check" style="color:#059669;"></i> Delivery Records & Proof of Delivery (POD)
+            </h2>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin-top:0.2rem;">
+                Official Proof of Delivery (POD) archive, consignee receiving endorsements, and digital delivery confirmations.
+            </p>
+        </div>
+        <button type="button" onclick="openRecordPodModal()" class="btn-header-action btn-primary" style="background:#059669;border-color:#059669;font-weight:700;">
+            <i class="fa-solid fa-upload"></i> Record Delivery / Upload POD
+        </button>
+    </div>
+
+    <!-- 3 KPI STATS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+        <div class="card-panel" style="padding:1.15rem;border-left:4px solid #10B981;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Delivered Jobs</div>
+            <div style="font-size:1.65rem;font-weight:800;color:#059669;margin-top:0.25rem;">{{ delivered_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Completed handovers</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.15rem;border-left:4px solid #3B82F6;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Pending Deliveries</div>
+            <div style="font-size:1.65rem;font-weight:800;color:#1D4ED8;margin-top:0.25rem;">{{ pending_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Currently en route</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.15rem;border-left:4px solid #F59E0B;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Awaiting Signed POD</div>
+            <div style="font-size:1.65rem;font-weight:800;color:#B45309;margin-top:0.25rem;">{{ missing_pod_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Needs customer signed note</div>
+        </div>
+    </div>
+
+    <!-- FILTER TABS & SEARCH -->
+    <div class="card-panel" style="padding:1rem;margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <!-- TABS -->
+            <div style="display:flex;gap:0.4rem;overflow-x:auto;">
+                <a href="?tab=all" class="badge-pill {% if tab == 'all' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    All Deliveries ({{ deliveries.count }})
+                </a>
+                <a href="?tab=delivered" class="badge-pill {% if tab == 'delivered' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-circle-check"></i> Delivered ({{ delivered_count }})
+                </a>
+                <a href="?tab=pending" class="badge-pill {% if tab == 'pending' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-truck"></i> In Transit ({{ pending_count }})
+                </a>
+                <a href="?tab=missing_pod" class="badge-pill {% if tab == 'missing_pod' %}badge-delayed{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Missing POD ({{ missing_pod_count }})
+                </a>
+            </div>
+
+            <!-- SEARCH -->
+            <form method="GET" action="{% url 'logistics_deliveries' %}" style="display:flex;gap:0.4rem;flex:1;max-width:320px;min-width:220px;">
+                <input type="hidden" name="tab" value="{{ tab }}">
+                <input type="text" name="q" class="form-control" placeholder="Search Job, Client, Truck, POD..." value="{{ search_q }}" style="font-size:0.85rem;padding:0.4rem 0.75rem;">
+                <button type="submit" class="btn-header-action btn-outline" style="padding:0.4rem 0.8rem;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DELIVERIES TABLE -->
+    <div class="card-panel" style="padding:1.5rem;">
+        <div class="table-responsive">
+            <table class="data-table" style="font-size:0.85rem;">
+                <thead>
+                    <tr>
+                        <th>Job Number</th>
+                        <th>Client / Consignee</th>
+                        <th>Container</th>
+                        <th>Destination</th>
+                        <th>Truck & Driver</th>
+                        <th>Delivery Date</th>
+                        <th>Received By</th>
+                        <th>Proof of Delivery</th>
+                        <th style="text-align:right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in deliveries %}
+                    <tr>
+                        <td>
+                            <strong style="color:var(--brand-navy-900);font-size:0.95rem;">{{ job.job_number }}</strong>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">BL: {{ job.bl_number }}</div>
+                        </td>
+                        <td>
+                            <strong>{{ job.customer.company_name }}</strong>
+                        </td>
+                        <td>
+                            <span style="font-weight:700;color:#0F766E;">{{ job.container_numbers }}</span>
+                        </td>
+                        <td>
+                            <i class="fa-solid fa-location-dot" style="color:#EF4444;"></i> {{ job.final_destination }}
+                        </td>
+                        <td>
+                            <div><strong>{{ job.truck_number|default:"-" }}</strong></div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);">{{ job.driver.get_full_name|default:"-" }}</div>
+                        </td>
+                        <td>
+                            {% if job.delivered_date %}
+                            <strong>{{ job.delivered_date|date:"d M Y" }}</strong>
+                            <div style="font-size:0.72rem;color:var(--text-muted);">{{ job.delivered_date|date:"H:i" }} hrs</div>
+                            {% else %}
+                            <span style="color:#B45309;font-weight:600;"><i class="fa-solid fa-clock"></i> In Transit</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if job.received_by_name %}
+                            <strong>{{ job.received_by_name }}</strong>
+                            {% else %}
+                            <span style="color:var(--text-muted);font-style:italic;">Pending Delivery</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if job.proof_of_delivery_image %}
+                            <a href="{{ job.proof_of_delivery_image.url }}" target="_blank" class="badge-pill badge-active" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.35rem;font-size:0.75rem;">
+                                <i class="fa-solid fa-file-image"></i> View POD
+                            </a>
+                            {% else %}
+                            <span class="badge-pill" style="background:#FEE2E2;color:#991B1B;font-size:0.75rem;">
+                                <i class="fa-solid fa-triangle-exclamation"></i> No POD
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right;">
+                            <div style="display:inline-flex;gap:0.4rem;align-items:center;">
+                                {% if not is_ceo and is_dispatch or not is_ceo and is_ops %}
+                                <button type="button" 
+                                    onclick="openJobPodModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.received_by_name|escapejs }}')" 
+                                    class="btn-header-action btn-outline" style="padding:0.3rem 0.65rem;font-size:0.78rem;">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> {% if job.proof_of_delivery_image %}Re-upload{% else %}Record POD{% endif %}
+                                </button>
+                                {% endif %}
+                                <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.3rem 0.5rem;font-size:0.78rem;" title="View Job Details">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" style="text-align:center;padding:3rem 1.5rem;color:var(--text-muted);">
+                            <div style="font-size:1.1rem;font-weight:700;color:var(--brand-navy-900);margin-bottom:0.25rem;">No delivery records found</div>
+                            No delivery records match the selected filter.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- RECORD DELIVERY & UPLOAD POD MODAL -->
+<div id="recordPodModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:var(--radius-lg);max-width:500px;width:100%;padding:1.75rem;box-shadow:var(--shadow-xl);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;border-bottom:1px solid #E2E8F0;padding-bottom:0.75rem;">
+            <div>
+                <h4 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
+                    <i class="fa-solid fa-clipboard-check" style="color:#059669;"></i> Record Delivery & POD
+                </h4>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;" id="modalPodTitle">
+                    Upload customer signed Delivery Note
+                </div>
+            </div>
+            <button type="button" onclick="closeRecordPodModal()" style="background:none;border:none;color:var(--text-muted);font-size:1.25rem;cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="recordPodForm" method="POST" action="" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group" style="margin-bottom:1rem;" id="jobSelectWrapper">
+                <label>Select Shipment / Job *</label>
+                <select name="job_id_picker" id="jobPicker" class="form-control" onchange="changeJobAction(this)">
+                    <option value="">-- Choose Shipment --</option>
+                    {% for pj in pending_delivery_jobs %}
+                    <option value="{{ pj.id }}">{{ pj.job_number }} &bull; {{ pj.container_numbers }} &bull; {{ pj.customer.company_name|truncatechars:20 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                <div class="form-group">
+                    <label>Recipient Full Name *</label>
+                    <input type="text" name="received_by_name" id="receiverNameInput" class="form-control" placeholder="Full name of receiving officer" required>
+                </div>
+                <div class="form-group">
+                    <label>Recipient Phone #</label>
+                    <input type="text" name="receiver_phone" class="form-control" placeholder="+255 7...">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label><i class="fa-solid fa-camera"></i> Signed Delivery Note / POD Photo *</label>
+                <input type="file" name="pod_file" class="form-control" accept="image/*,.pdf" capture="environment" required>
+                <small style="color:var(--text-muted);font-size:0.75rem;">Upload photo or scan of Delivery Note signed and stamped by client.</small>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.5rem;">
+                <label>Delivery Handover Notes</label>
+                <textarea name="remarks" class="form-control" rows="2" placeholder="Cargo offloaded safely at consignee warehouse, client stamp verified..."></textarea>
+            </div>
+
+            <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                <button type="button" onclick="closeRecordPodModal()" class="btn-header-action btn-outline">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#059669;border-color:#059669;font-weight:700;">
+                    <i class="fa-solid fa-check-circle"></i> Confirm Delivery & Save POD
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openRecordPodModal() {
+    document.getElementById('jobSelectWrapper').style.display = 'block';
+    document.getElementById('modalPodTitle').innerText = 'Upload customer signed Delivery Note';
+    document.getElementById('receiverNameInput').value = '';
+    var picker = document.getElementById('jobPicker');
+    if (picker.options.length > 1) {
+        picker.selectedIndex = 1;
+        changeJobAction(picker);
+    }
+    document.getElementById('recordPodModal').style.display = 'flex';
+}
+
+function openJobPodModal(jobId, jobNo, receiverName) {
+    document.getElementById('jobSelectWrapper').style.display = 'none';
+    var form = document.getElementById('recordPodForm');
+    form.action = '/logistics/deliveries/' + jobId + '/record-pod/';
+    document.getElementById('modalPodTitle').innerHTML = 'Job: <strong>' + jobNo + '</strong>';
+    document.getElementById('receiverNameInput').value = receiverName || '';
+    document.getElementById('recordPodModal').style.display = 'flex';
+}
+
+function changeJobAction(selectEl) {
+    var jobId = selectEl.value;
+    if (jobId) {
+        document.getElementById('recordPodForm').action = '/logistics/deliveries/' + jobId + '/record-pod/';
+    }
+}
+
+function closeRecordPodModal() {
+    document.getElementById('recordPodModal').style.display = 'none';
+}
+</script>
+{% endblock %}

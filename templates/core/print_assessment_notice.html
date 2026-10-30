@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TRA Assessment Notice &amp; GePG Control Number - {{ job.job_number }} | Malkia C&F</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #F1F5F9;
+            color: #0F172A;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .toolbar {
+            max-width: 820px;
+            margin: 0 auto 1.25rem auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0F172A;
+            color: #fff;
+            padding: 0.85rem 1.25rem;
+            border-radius: 10px;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-back { background: #334155; color: #fff; }
+        .btn-print { background: #10B981; color: #fff; }
+        .btn-whatsapp { background: #25D366; color: #fff; }
+        .page {
+            max-width: 820px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            padding: 2.5rem 2.75rem;
+            border: 1px solid #CBD5E1;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+            border-radius: 8px;
+        }
+        .header-box {
+            text-align: center;
+            border-bottom: 2px solid #0F172A;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        .form-code {
+            position: absolute;
+            top: 0;
+            right: 0;
+            border: 2px solid #0F172A;
+            padding: 0.35rem 0.75rem;
+            font-weight: 900;
+            font-size: 0.95rem;
+        }
+        .section-title {
+            background: #F1F5F9;
+            border-left: 4px solid #0F172A;
+            padding: 0.45rem 0.75rem;
+            font-weight: 800;
+            font-size: 0.88rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin: 1.35rem 0 0.75rem 0;
+        }
+        table.info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        table.info-table th, table.info-table td {
+            border: 1px solid #94A3B8;
+            padding: 0.55rem 0.75rem;
+            text-align: left;
+        }
+        table.info-table th {
+            background: #F8FAFC;
+            width: 34%;
+            font-weight: 700;
+            color: #334155;
+        }
+        .control-box {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border: 2px dashed #2563EB;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+        .control-digits {
+            font-family: monospace;
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            color: #1E3A8A;
+            background: #FFFFFF;
+            display: inline-block;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            border: 1px solid #93C5FD;
+            margin: 0.5rem 0;
+        }
+        .channels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .channel-card {
+            background: #F8FAFC;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.82rem;
+            text-align: center;
+        }
+        @media print {
+            body { background: #fff; padding: 0; }
+            .toolbar { display: none !important; }
+            .page { border: none; box-shadow: none; padding: 1rem; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div>
+            <strong><i class="fa-solid fa-file-invoice-dollar"></i> TRA Customs Assessment &amp; GePG Control Number Notice</strong>
+            <span style="margin-left:0.75rem;font-size:0.82rem;color:#94A3B8;">File: {{ job.job_number }} | BL: {{ job.bl_number|default:"—" }}</span>
+        </div>
+        <div style="display:flex;gap:0.6rem;">
+            <a href="{% url 'customs_pending_declarations' %}" class="btn btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Back to Declarations
+            </a>
+            {% if job.duty_control_number %}
+            <a href="https://wa.me/{{ job.customer.phone|cut:'+'|cut:' ' }}?text=Dear%20{{ job.customer.company_name|urlencode }},%20your%20Customs%20Duty%20Assessment%20for%20BL%20{{ job.bl_number|urlencode }}%20(Chassis:%20{{ job.chassis_number|urlencode }})%20is%20ready.%20TRA%20Control%20Number:%20{{ job.duty_control_number|urlencode }}.%20Total%20Assessed%20Duty:%20TZS%20{{ job.assessed_duty_amount|floatformat:2|urlencode }}." target="_blank" class="btn btn-whatsapp">
+                <i class="fa-brands fa-whatsapp"></i> Share on WhatsApp
+            </a>
+            {% endif %}
+            <button onclick="window.print()" class="btn btn-print">
+                <i class="fa-solid fa-print"></i> Print / Save PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="header-box">
+            <div class="form-code">TRA &bull; TANESW</div>
+            <div style="font-size:0.82rem;font-weight:700;letter-spacing:0.08em;color:#475569;">UNITED REPUBLIC OF TANZANIA</div>
+            <h2 style="margin:0.25rem 0;font-size:1.35rem;font-weight:900;">TANZANIA REVENUE AUTHORITY (TRA)</h2>
+            <div style="font-size:0.95rem;font-weight:800;color:#1E293B;">CUSTOMS ASSESSMENT &amp; GePG PAYMENT NOTICE</div>
+            <div style="font-size:0.85rem;color:#64748B;margin-top:0.35rem;">
+                Processed &amp; Declared by: <strong>MALKIA FREIGHT &amp; LOGISTICS LTD</strong> (Licensed C&amp;F Agent)
+            </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:0.86rem;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+            <div><strong>TANSAD / Entry No:</strong> <code>{{ job.declaration_number|default:"Under Process in TANESW" }}</code></div>
+            <div><strong>File Cover (BL No):</strong> <code>{{ job.bl_number|default:"—" }}</code></div>
+            <div><strong>Job Ref:</strong> <code>{{ job.job_number }}</code></div>
+            <div><strong>Issue Date:</strong> {{ job.tra_accepted_at|default:today|date:"d M Y H:i" }}</div>
+        </div>
+
+        <!-- GePG CONTROL NUMBER BANNER -->
+        <div class="control-box">
+            <div style="font-size:0.85rem;font-weight:800;text-transform:uppercase;color:#1E40AF;letter-spacing:0.05em;">
+                <i class="fa-solid fa-building-columns"></i> Official GePG Electronic Payment Control Number
+            </div>
+            
+            {% if job.duty_control_number %}
+            <div class="control-digits">{{ job.duty_control_number }}</div>
+            <div style="font-size:1.2rem;font-weight:900;color:#0F172A;margin-top:0.35rem;">
+                Assessed Duty / Tax: <span style="color:#2563EB;">TZS {{ job.assessed_duty_amount|floatformat:2 }}</span>
+            </div>
+            {% else %}
+            <div class="control-digits" style="font-size:1.3rem;color:#92400E;background:#FEF3C7;border-color:#F59E0B;">
+                Awaiting Control Number Generation (Within 76h)
+            </div>
+            {% endif %}
+
+            <div style="font-size:0.78rem;color:#475569;margin-top:0.35rem;">
+                Clearance Mode: <strong>{{ job.get_clearance_mode_display }}</strong> &bull;
+                TRA Status: <strong>{{ job.get_tra_status_display }}</strong>
+            </div>
+        </div>
+
+        <div class="section-title">1. Importer / Consignee Particulars</div>
+        <table class="info-table">
+            <tr>
+                <th>Client / Consignee Name</th>
+                <td><strong>{{ job.customer.company_name }}</strong></td>
+            </tr>
+            <tr>
+                <th>TIN Number &amp; ID</th>
+                <td>TIN: <strong style="font-family:monospace;">{{ job.customer.tin_number|default:"—" }}</strong> &bull; ID: <strong style="font-family:monospace;">{{ job.customer.id_number|default:"—" }}</strong></td>
+            </tr>
+            <tr>
+                <th>Phone &amp; Email</th>
+                <td>{{ job.customer.phone }} &bull; {{ job.customer.email|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>Clearance Mode</th>
+                <td>
+                    <strong>{{ job.get_clearance_mode_display }}</strong>
+                    {% if job.clearance_mode == 'BOND' %}
+                    (In-Bond Warehousing &bull; Vehicle held in bond until duty settlement)
+                    {% else %}
+                    (Direct Duty Payment &bull; Pay via Control Number for direct release)
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title">2. Consignment &amp; Motor Vehicle Details</div>
+        <table class="info-table">
+            <tr>
+                <th>Bill of Lading (BL) Number</th>
+                <td><strong style="font-family:monospace;font-size:0.95rem;">{{ job.bl_number|default:"—" }}</strong></td>
+            </tr>
+            <tr>
+                <th>Chassis Number</th>
+                <td><strong style="font-family:monospace;font-size:0.95rem;">{{ job.chassis_number|default:"—" }}</strong></td>
+            </tr>
+            <tr>
+                <th>Vehicle Description</th>
+                <td><strong>{{ job.cargo_description }}</strong></td>
+            </tr>
+            <tr>
+                <th>Vessel Name &amp; Manifest / Rotation</th>
+                <td>{{ job.vessel_name|default:"TBA" }} &bull; Manifest: {{ job.customs_manifest_number|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>TANSAD / TANESW Lodgement</th>
+                <td>
+                    <strong>{{ job.declaration_number|default:"Pending" }}</strong>
+                    {% if job.tanesw_lodged_at %}
+                    &bull; Lodged: {{ job.tanesw_lodged_at|date:"d M Y H:i" }} ({{ job.tanesw_hours_elapsed }}h elapsed)
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>TBS Standards Status</th>
+                <td>
+                    <strong>{{ job.get_tbs_status_display }}</strong>
+                    {% if job.tbs_reference_no %}
+                    (Ref: <code>{{ job.tbs_reference_no }}</code>)
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title">3. Approved GePG Payment Channels</div>
+        <p style="font-size:0.84rem;color:#475569;margin:0.25rem 0 0.5rem 0;">
+            Please make the payment using the Control Number <strong>{{ job.duty_control_number|default:"(Pending)" }}</strong> through any of the following authorized channels:
+        </p>
+
+        <div class="channels-grid">
+            <div class="channel-card">
+                <div style="font-weight:800;color:#0F172A;"><i class="fa-solid fa-mobile-screen" style="color:#16A34A;"></i> Mobile Money</div>
+                <div style="font-size:0.75rem;color:#64748B;margin-top:0.2rem;">M-Pesa, TigoPesa, Airtel Money &bull; Select <em>Pay by GePG / Government</em></div>
+            </div>
+            <div class="channel-card">
+                <div style="font-weight:800;color:#0F172A;"><i class="fa-solid fa-building-columns" style="color:#0284C7;"></i> CRDB Bank</div>
+                <div style="font-size:0.75rem;color:#64748B;margin-top:0.2rem;">SimBanking, Internet Banking or any CRDB Branch / Wakala</div>
+            </div>
+            <div class="channel-card">
+                <div style="font-weight:800;color:#0F172A;"><i class="fa-solid fa-building-columns" style="color:#D97706;"></i> NMB Bank</div>
+                <div style="font-size:0.75rem;color:#64748B;margin-top:0.2rem;">NMB KLiK, Internet Banking or any NMB Branch / Wakala</div>
+            </div>
+            <div class="channel-card">
+                <div style="font-weight:800;color:#0F172A;"><i class="fa-solid fa-receipt" style="color:#7C3AED;"></i> Post Payment</div>
+                <div style="font-size:0.75rem;color:#64748B;margin-top:0.2rem;">Forward TRA E-Receipt to office once payment is made</div>
+            </div>
+        </div>
+
+        <div style="margin-top:2rem;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #CBD5E1;padding-top:1.25rem;font-size:0.84rem;">
+            <div>
+                <strong>Declared by:</strong><br>
+                {% if job.clearing_officer %}{{ job.clearing_officer.get_full_name|default:job.clearing_officer.username }}{% else %}Clearing Officer{% endif %}<br>
+                Customs Declaration Division &bull; Malkia Freight &amp; Logistics
+            </div>
+            <div style="text-align:right;">
+                <strong>Official Verification Stamp</strong><br>
+                <div style="height:40px;"></div>
+                <span style="font-size:0.75rem;color:#64748B;">Date: {{ today|date:"d M Y" }}</span>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+

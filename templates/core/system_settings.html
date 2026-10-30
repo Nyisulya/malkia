@@ -1,0 +1,555 @@
+{% extends 'base.html' %}
+
+{% block title %}System & Governance Settings | Director & Executive Console{% endblock %}
+
+{% block content %}
+<div style="max-width:1200px;margin:0 auto;">
+
+    <!-- HEADER LIVE BANNER -->
+    <div style="background:linear-gradient(135deg, #1E293B 0%, #334155 50%, #475569 100%);color:#fff;border-radius:var(--radius-xl);padding:1.5rem;margin-bottom:1.5rem;box-shadow:var(--shadow-md);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;background:rgba(255,255,255,0.2);padding:0.25rem 0.75rem;border-radius:999px;font-weight:700;">
+                    <i class="fa-solid fa-sliders"></i> System Administration
+                </span>
+                <span style="background:rgba(251,191,36,0.25);color:#FDE68A;font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:999px;font-weight:600;">
+                    <i class="fa-solid fa-shield-halved" style="font-size:0.5rem;vertical-align:middle;"></i> Director Governance
+                </span>
+            </div>
+            <div style="font-size:0.8rem;color:#E2E8F0;">
+                <a href="{% url 'audit_trail' %}" style="color:#93C5FD;text-decoration:none;font-weight:700;">
+                    <i class="fa-solid fa-file-shield"></i> View Audit Trail Log
+                </a>
+            </div>
+        </div>
+
+        <div>
+            <h2 style="font-family:var(--font-heading);font-size:1.45rem;font-weight:800;letter-spacing:-0.02em;margin:0;">
+                System Configuration & Security Controls
+            </h2>
+            <p style="font-size:0.85rem;color:#E2E8F0;margin-top:0.25rem;">
+                Manage user access, role permissions (RBAC), office IP whitelist and Geofence coordinates, approved port terminals, and workflow stage SLAs.
+            </p>
+        </div>
+    </div>
+
+    <!-- SETTINGS NAVIGATION TABS -->
+    <div class="card-panel" style="padding:0.75rem 1rem;margin-bottom:1.5rem;">
+        <div style="display:flex;gap:0.5rem;overflow-x:auto;">
+            <a href="?tab=users" class="badge-pill {% if tab == 'users' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.5rem 1rem;font-size:0.82rem;font-weight:700;">
+                <i class="fa-solid fa-users-gear"></i> Users & Accounts
+            </a>
+            <a href="?tab=permissions" class="badge-pill {% if tab == 'permissions' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.5rem 1rem;font-size:0.82rem;font-weight:700;">
+                <i class="fa-solid fa-user-shield"></i> Roles & Permissions Matrix
+            </a>
+            <a href="?tab=network" class="badge-pill {% if tab == 'network' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.5rem 1rem;font-size:0.82rem;font-weight:700;">
+                <i class="fa-solid fa-network-wired"></i> Office IP & Geofencing
+            </a>
+            <a href="?tab=terminals" class="badge-pill {% if tab == 'terminals' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.5rem 1rem;font-size:0.82rem;font-weight:700;">
+                <i class="fa-solid fa-anchor"></i> Port & ICD Locations
+            </a>
+            <a href="?tab=sla" class="badge-pill {% if tab == 'sla' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.5rem 1rem;font-size:0.82rem;font-weight:700;">
+                <i class="fa-solid fa-stopwatch-20"></i> Workflow Stage SLAs
+            </a>
+            <a href="?tab=company" class="badge-pill {% if tab == 'company' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.5rem 1rem;font-size:0.82rem;font-weight:700;">
+                <i class="fa-solid fa-building"></i> Company Profile
+            </a>
+            <a href="?tab=r2_storage" class="badge-pill {% if tab == 'r2_storage' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.5rem 1rem;font-size:0.82rem;font-weight:800;background:{% if tab == 'r2_storage' %}#F97316{% else %}#FFF7ED{% endif %};color:{% if tab == 'r2_storage' %}#FFFFFF{% else %}#C2410C{% endif %};border:1px solid #FDBA74;">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Cloudflare R2 Storage
+            </a>
+            <a href="?tab=email" class="badge-pill {% if tab == 'email' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.5rem 1rem;font-size:0.82rem;font-weight:700;background:{% if tab == 'email' %}#2563EB{% else %}#F1F5F9{% endif %};color:{% if tab == 'email' %}#FFFFFF{% else %}#1E293B{% endif %};">
+                <i class="fa-solid fa-envelope"></i> Resend Email Setup
+            </a>
+        </div>
+    </div>
+
+    {% if tab == 'users' %}
+    <!-- 1. USERS TAB -->
+    <div class="card-panel" style="padding:1.5rem;">
+        <h4 style="font-family:var(--font-heading);font-size:1rem;font-weight:700;color:var(--text-main);margin:0 0 1rem 0;">
+            User Accounts & Role Assignments
+        </h4>
+        <div style="overflow-x:auto;">
+            <table class="data-table" style="width:100%;font-size:0.85rem;">
+                <thead>
+                    <tr>
+                        <th>User Account</th>
+                        <th>Current Role</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Action / Modify Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>
+                            <strong style="color:var(--text-main);">{{ u.get_full_name|default:u.username }}</strong>
+                            <div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">@{{ u.username }} &bull; {{ u.email|default:'No email' }}</div>
+                        </td>
+                        <td>
+                            <span class="badge-pill badge-active" style="font-size:0.75rem;">
+                                {{ u.profile.get_role_display|default:'Admin' }}
+                            </span>
+                        </td>
+                        <td>{{ u.profile.phone_number|default:'-' }}</td>
+                        <td>
+                            {% if u.is_active %}
+                            <span style="color:#059669;font-weight:700;"><i class="fa-solid fa-circle" style="font-size:0.5rem;vertical-align:middle;"></i> Active</span>
+                            {% else %}
+                            <span style="color:#DC2626;"><i class="fa-solid fa-circle" style="font-size:0.5rem;vertical-align:middle;"></i> Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not is_ceo %}
+                            <form method="POST" action="{% url 'admin_update_user_role' u.id %}" style="display:flex;gap:0.4rem;align-items:center;">
+                                {% csrf_token %}
+                                <select name="role" class="form-input" style="font-size:0.75rem;padding:0.25rem 0.5rem;">
+                                    {% for r_code, r_label in roles %}
+                                    <option value="{{ r_code }}" {% if u.profile.role == r_code %}selected{% endif %}>{{ r_label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn-primary" style="padding:0.25rem 0.6rem;font-size:0.75rem;">Save</button>
+                            </form>
+                            {% else %}
+                            <span class="badge-pill badge-draft" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-lock"></i> IT Admin Managed
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% elif tab == 'permissions' %}
+    <!-- 2. ROLES & PERMISSIONS MATRIX TAB -->
+    <div class="card-panel" style="padding:1.5rem;">
+        <h4 style="font-family:var(--font-heading);font-size:1rem;font-weight:700;color:var(--text-main);margin:0 0 1rem 0;">
+            Role-Based Access Control (RBAC Matrix)
+        </h4>
+        <div style="overflow-x:auto;">
+            <table class="data-table" style="width:100%;font-size:0.82rem;">
+                <thead>
+                    <tr>
+                        <th>Role Persona</th>
+                        <th>Navigation Links</th>
+                        <th>Authorized Modules</th>
+                        <th>Security & Governance Restrictions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Documentation Officer</strong><div style="font-size:0.72rem;color:var(--text-muted);">Amani Bakari</div></td>
+                        <td><span class="badge-pill badge-active">4 Modules</span></td>
+                        <td>Dashboard, Register Job, Document Intake, Clients</td>
+                        <td>Restricted from financial ledgers, vouchers, and TANCIS customs declarations</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Operations Manager</strong><div style="font-size:0.72rem;color:var(--text-muted);">Grace Mushi</div></td>
+                        <td><span class="badge-pill badge-active">5 Modules</span></td>
+                        <td>Dashboard, Active Jobs, Customs, Archive</td>
+                        <td>Full operational oversight across all shipments and files (documentation is handed over directly to Customs Declarers)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Customs Declarer</strong><div style="font-size:0.72rem;color:var(--text-muted);">Rashid Nassor</div></td>
+                        <td><span class="badge-pill badge-active">4 Modules</span></td>
+                        <td>Dashboard, Pending Declarations, Assessments, Archive</td>
+                        <td>Restricted from finance records, payroll, and fleet dispatch modules</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Finance Officer</strong><div style="font-size:0.72rem;color:var(--text-muted);">Subira Kilonzo</div></td>
+                        <td><span class="badge-pill badge-active">4 Modules</span></td>
+                        <td>Finance Dashboard, Pending Payments, Transactions, Billing</td>
+                        <td>Full authority over disbursements, invoices, vouchers, and billing</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Port Officer (Field)</strong><div style="font-size:0.72rem;color:var(--text-muted);">Juma Kavishe</div></td>
+                        <td><span class="badge-pill badge-active">3 Modules</span></td>
+                        <td>Today's Jobs, Updates, Issues</td>
+                        <td>Restricted from finance, direct TANCIS duty assessments, and customer databases</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Logistics / Dispatch</strong><div style="font-size:0.72rem;color:var(--text-muted);">Baraka Makonda</div></td>
+                        <td><span class="badge-pill badge-active">4 Modules</span></td>
+                        <td>Dispatch Dashboard, Dispatch Jobs, Vehicles & Drivers, Deliveries</td>
+                        <td>Restricted from customs duty accounts and preliminary documentation intake</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Driver</strong><div style="font-size:0.72rem;color:var(--text-muted);">Mohamed Said</div></td>
+                        <td><span class="badge-pill badge-active">3 Modules</span></td>
+                        <td>My Delivery, Delivery Update, Proof of Delivery</td>
+                        <td>Restricted to assigned vehicle deliveries, checkpoints, and electronic POD capture</td>
+                    </tr>
+                    <tr style="background:#F0FDF4;">
+                        <td><strong>Super Admin / Director</strong><div style="font-size:0.72rem;color:var(--text-muted);">Hashim Mkwawa</div></td>
+                        <td><span class="badge-pill badge-active" style="background:#059669;color:#fff;">7 Modules</span></td>
+                        <td>Dashboard, Jobs, Operations, Finance, Documents, Staff, Settings</td>
+                        <td>Complete enterprise oversight, governance, audit logs, and strategic executive analytics</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% elif tab == 'network' %}
+    <!-- 3. NETWORK & GEOFENCING TAB -->
+    <form method="POST" action="{% url 'system_settings_update' %}" class="card-panel" style="padding:1.5rem;max-width:800px;">
+        {% csrf_token %}
+        <input type="hidden" name="category" value="NETWORK">
+        <input type="hidden" name="redirect_tab" value="network">
+
+        <h4 style="font-family:var(--font-heading);font-size:1rem;font-weight:700;color:var(--text-main);margin:0 0 1rem 0;">
+            Network IP Whitelist & GPS Geofencing Settings
+        </h4>
+
+        <div style="margin-bottom:1.25rem;">
+            <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                Office IP Address Whitelist
+            </label>
+            <input type="text" name="office_ip_whitelist" value="{{ config.office_ip_whitelist|default:'192.168.1.1/24, 10.0.0.1/24, 127.0.0.1' }}" class="form-input">
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Office HQ staff must be connected through these IP ranges to clock in.</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+            <div>
+                <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                    Malkia HQ Coordinates (Posta)
+                </label>
+                <input type="text" name="geofence_office_coords" value="{{ config.geofence_office_coords|default:'-6.816050, 39.289120' }}" class="form-input">
+            </div>
+            <div>
+                <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                    Dar Port Coordinates (TPA Gate 3)
+                </label>
+                <input type="text" name="geofence_port_coords" value="{{ config.geofence_port_coords|default:'-6.827100, 39.297400' }}" class="form-input">
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+            <div>
+                <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                    Geofence Radius (Meters)
+                </label>
+                <input type="number" name="geofence_radius_meters" value="{{ config.geofence_radius_meters|default:'750' }}" class="form-input">
+            </div>
+            <div>
+                <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                    Work Shift Start Time
+                </label>
+                <input type="text" name="work_start_time" value="{{ config.work_start_time|default:'08:00' }}" class="form-input">
+            </div>
+            <div>
+                <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                    Late Arrival Grace Period (Minutes)
+                </label>
+                <input type="number" name="late_threshold_minutes" value="{{ config.late_threshold_minutes|default:'15' }}" class="form-input">
+            </div>
+        </div>
+
+        {% if not is_ceo %}
+        <button type="submit" class="btn-primary" style="padding:0.75rem 1.5rem;font-weight:700;">
+            <i class="fa-solid fa-save"></i> Save Network & Geofence Settings
+        </button>
+        {% else %}
+        <span class="badge-pill badge-draft" style="font-size:0.8rem;padding:0.5rem 1rem;">
+            <i class="fa-solid fa-lock"></i> Network settings are managed by IT System Administrators
+        </span>
+        {% endif %}
+    </form>
+
+    {% elif tab == 'terminals' %}
+    <!-- 4. PORT & ICD TERMINALS TAB -->
+    <div class="card-panel" style="padding:1.5rem;">
+        <h4 style="font-family:var(--font-heading);font-size:1rem;font-weight:700;color:var(--text-main);margin:0 0 1rem 0;">
+            Approved Customs Terminals, Ports & ICD Facilities
+        </h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;">
+            <div style="background:#F8FAFC;border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;font-weight:700;color:#0F172A;">
+                    <i class="fa-solid fa-anchor" style="color:#0D9488;"></i> Dar es Salaam Port (TPA)
+                </div>
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.3rem;">Berths 1–11, Quay Crane Operations, Gate 3 & Gate 5</div>
+                <span class="badge-pill badge-active" style="margin-top:0.5rem;font-size:0.7rem;">Primary Maritime Hub</span>
+            </div>
+
+            <div style="background:#F8FAFC;border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;font-weight:700;color:#0F172A;">
+                    <i class="fa-solid fa-boxes-stacked" style="color:#2563EB;"></i> TICTS Terminal
+                </div>
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.3rem;">Container Handling Facility, Dar Port Gate 4</div>
+                <span class="badge-pill badge-active" style="margin-top:0.5rem;font-size:0.7rem;">Active Terminal</span>
+            </div>
+
+            <div style="background:#F8FAFC;border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;font-weight:700;color:#0F172A;">
+                    <i class="fa-solid fa-warehouse" style="color:#F59E0B;"></i> DICD Ubungo
+                </div>
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.3rem;">Dar Inland Container Depot - Ubungo Industrial Area</div>
+                <span class="badge-pill badge-active" style="margin-top:0.5rem;font-size:0.7rem;">Approved ICD</span>
+            </div>
+
+            <div style="background:#F8FAFC;border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;font-weight:700;color:#0F172A;">
+                    <i class="fa-solid fa-truck-ramp-box" style="color:#8B5CF6;"></i> AMI ICD Kurasini
+                </div>
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.3rem;">Inland Clearance Depot & Bonded Warehouse</div>
+                <span class="badge-pill badge-active" style="margin-top:0.5rem;font-size:0.7rem;">Bonded Facility</span>
+            </div>
+        </div>
+    </div>
+
+    {% elif tab == 'sla' %}
+    <!-- 5. WORKFLOW SLA SETTINGS TAB -->
+    <div class="card-panel" style="padding:1.5rem;">
+        <h4 style="font-family:var(--font-heading);font-size:1rem;font-weight:700;color:var(--text-main);margin:0 0 1rem 0;">
+            Workflow Stages &amp; Turnaround SLAs
+        </h4>
+        <div style="overflow-x:auto;">
+            <table class="data-table" style="width:100%;font-size:0.85rem;">
+                <thead>
+                    <tr>
+                        <th>Stage #</th>
+                        <th>Stage Name</th>
+                        <th>Responsible Role</th>
+                        <th>Target SLA (Days)</th>
+                        <th>Controlled Approval Gate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in stage_definitions %}
+                    <tr>
+                        <td><strong>{{ s.stage_number }}</strong></td>
+                        <td>
+                            <strong style="color:var(--text-main);">{{ s.name_en }}</strong>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">{{ s.description }}</div>
+                        </td>
+                        <td><span class="badge-pill badge-draft" style="font-size:0.72rem;">{{ s.get_required_role_display }}</span></td>
+                        <td><strong style="color:#2563EB;">{{ s.target_days }} days</strong></td>
+                        <td>
+                            {% if s.is_controlled_gate %}
+                            <span style="color:#059669;font-weight:700;"><i class="fa-solid fa-lock"></i> Gate Controlled</span>
+                            {% else %}
+                            <span style="color:var(--text-muted);">Standard</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align:center;padding:2rem;">No workflow stages configured yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% elif tab == 'company' %}
+    <!-- 6. COMPANY PROFILE TAB -->
+    <form method="POST" action="{% url 'system_settings_update' %}" class="card-panel" style="padding:1.5rem;max-width:800px;">
+        {% csrf_token %}
+        <input type="hidden" name="category" value="COMPANY">
+        <input type="hidden" name="redirect_tab" value="company">
+
+        <h4 style="font-family:var(--font-heading);font-size:1rem;font-weight:700;color:var(--text-main);margin:0 0 1rem 0;">
+            Company Profile & Regulatory Registration
+        </h4>
+
+        <div style="margin-bottom:1.25rem;">
+            <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                Registered Corporate Legal Name
+            </label>
+            <input type="text" name="company_name" value="{{ config.company_name|default:'Malkia Clearing & Forwarding Ltd' }}" class="form-input">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+            <div>
+                <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                    TRA TIN Number
+                </label>
+                <input type="text" name="tin_number" value="{{ config.tin_number|default:'104-589-221' }}" class="form-input">
+            </div>
+            <div>
+                <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                    VRN Number (VAT)
+                </label>
+                <input type="text" name="vrn_number" value="{{ config.vrn_number|default:'40-029411-K' }}" class="form-input">
+            </div>
+        </div>
+
+        {% if not is_ceo %}
+        <button type="submit" class="btn-primary" style="padding:0.75rem 1.5rem;font-weight:700;">
+            <i class="fa-solid fa-save"></i> Save Corporate Profile
+        </button>
+        {% else %}
+        <span class="badge-pill badge-draft" style="font-size:0.8rem;padding:0.5rem 1rem;">
+            <i class="fa-solid fa-lock"></i> Company profile managed by IT System Administrator
+        </span>
+        {% endif %}
+    </form>
+    {% endif %}
+
+    {% if tab == 'r2_storage' %}
+    <!-- 7. CLOUDFLARE R2 CLOUD OBJECT STORAGE TAB -->
+    <div class="card-panel" style="padding:1.75rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;border-bottom:1px solid #E2E8F0;padding-bottom:1rem;">
+            <div>
+                <h4 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:800;color:var(--text-main);margin:0 0 0.35rem 0;display:flex;align-items:center;gap:0.5rem;">
+                    <i class="fa-solid fa-cloud-arrow-up" style="color:#F97316;"></i> Cloudflare R2 Cloud Object Storage (S3-Compatible)
+                </h4>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin:0;">
+                    All scanned client documents are automatically organized by Year, File Number, and BL Number (<code>malkia_files/2026/MF-2026-0001_BL-.../</code>) so every staff member can open them in 1 click.
+                </p>
+            </div>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+                {% if r2_status.is_configured %}
+                <span class="badge-pill" style="padding:0.45rem 0.9rem;font-size:0.8rem;background:#ECFDF5;color:#065F46;border:1.5px solid #10B981;font-weight:800;">
+                    <i class="fa-solid fa-circle-check"></i> Cloudflare R2 Active (Bucket: {{ r2_status.bucket_name }})
+                </span>
+                {% else %}
+                <span class="badge-pill" style="padding:0.45rem 0.9rem;font-size:0.8rem;background:#FFF7ED;color:#C2410C;border:1.5px solid #FDBA74;font-weight:800;">
+                    <i class="fa-solid fa-hard-drive"></i> Local Fallback Active (Enter R2 Keys Below to Enable Cloud)
+                </span>
+                {% endif %}
+                <span class="badge-pill badge-active" style="font-size:0.78rem;">{{ total_stored_docs }} Total Stored Files</span>
+            </div>
+        </div>
+
+        <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:1.1rem 1.25rem;margin-bottom:1.5rem;font-size:0.84rem;color:#9A3412;line-height:1.55;">
+            <strong><i class="fa-solid fa-bolt"></i> Why Cloudflare R2 is Ideal for Malkia C&amp;F:</strong>
+            <ul style="margin:0.4rem 0 0 0;padding-left:1.25rem;">
+                <li><strong>10 GB Free Every Month + Zero Egress Fees:</strong> Staff (Documentation, Declaration, Port, Boss) can open and download scanned PDF packs unlimited times at $0 bandwidth cost.</li>
+                <li><strong>Automatic Folder Structure:</strong> Every file is stored under <code>malkia_files/&lt;Year&gt;/&lt;MF-YYYY-XXXX&gt;_BL-&lt;BL_NO&gt;/</code> automatically.</li>
+                <li><strong>Zero-Downtime Fallback:</strong> Even before R2 keys are entered, the system saves files locally in the exact same folder structure so nothing ever breaks.</li>
+            </ul>
+        </div>
+
+        <form action="{% url 'save_cloudflare_r2' %}" method="POST">
+            {% csrf_token %}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        Cloudflare Account ID *
+                    </label>
+                    <input type="text" name="r2_account_id" value="{{ r2_status.account_id }}" class="form-input" placeholder="e.g. 8f92a1b4c5d6e7f890123456789abcdef" style="font-family:monospace;">
+                    <small style="color:var(--text-muted);font-size:0.75rem;">Found in your Cloudflare Dashboard &rarr; R2 Object Storage overview.</small>
+                </div>
+
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        R2 Bucket Name *
+                    </label>
+                    <input type="text" name="r2_bucket_name" value="{{ r2_status.bucket_name|default:'malkia-files' }}" class="form-input" placeholder="malkia-files" style="font-family:monospace;">
+                    <small style="color:var(--text-muted);font-size:0.75rem;">Name of the R2 bucket created in your Cloudflare account.</small>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        R2 S3 Access Key ID *
+                    </label>
+                    <input type="text" name="r2_access_key_id" value="{{ r2_status.access_key }}" class="form-input" placeholder="e.g. a1b2c3d4e5f60718293a4b5c6d7e8f90" style="font-family:monospace;">
+                    <small style="color:var(--text-muted);font-size:0.75rem;">Generated under R2 &rarr; Manage R2 API Tokens (Object Read &amp; Write).</small>
+                </div>
+
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        R2 S3 Secret Access Key *
+                    </label>
+                    <input type="password" name="r2_secret_access_key" value="{{ r2_status.secret_key }}" class="form-input" placeholder="Enter R2 Secret Access Key..." style="font-family:monospace;">
+                    <small style="color:var(--text-muted);font-size:0.75rem;">Encrypted S3 Secret Key for your Cloudflare R2 token.</small>
+                </div>
+            </div>
+
+            <div style="margin-bottom:1.5rem;">
+                <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                    Custom Public Domain / r2.dev Subdomain (Optional)
+                </label>
+                <input type="text" name="r2_public_domain" value="{{ r2_status.public_domain }}" class="form-input" placeholder="Leave blank to use secure 24-hour signed R2 URLs automatically, or enter e.g. files.malkia.co.tz" style="font-family:monospace;">
+                <small style="color:var(--text-muted);font-size:0.75rem;">If left blank, the system automatically generates secure S3v4 signed URLs so only logged-in staff can view files.</small>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:0.85rem;flex-wrap:wrap;border-top:1px solid #E2E8F0;padding-top:1.25rem;">
+                <button type="submit" name="action_mode" value="save" class="btn-primary" style="padding:0.75rem 1.5rem;font-weight:700;">
+                    <i class="fa-solid fa-save"></i> Save R2 Configuration
+                </button>
+                <button type="submit" name="action_mode" value="test" class="btn-header-action" style="background:#F97316;color:#FFFFFF;border:none;padding:0.75rem 1.5rem;font-weight:800;">
+                    <i class="fa-solid fa-plug-circle-check"></i> Save &amp; Test Cloudflare R2 Connection
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if tab == 'email' %}
+    <!-- 8. RESEND EMAIL INTEGRATION TAB -->
+    <div class="card-panel" style="padding:1.75rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;border-bottom:1px solid #E2E8F0;padding-bottom:1rem;">
+            <div>
+                <h4 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:800;color:var(--text-main);margin:0 0 0.35rem 0;display:flex;align-items:center;gap:0.5rem;">
+                    <i class="fa-solid fa-paper-plane" style="color:#2563EB;"></i> Client Email Notification Engine (Resend Integration)
+                </h4>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin:0;">
+                    Configure your Resend API credentials to send automated client updates (Document Receive, TRA Control Number, Vessel Arrival, Initial Clearance, and Vehicle Release).
+                </p>
+            </div>
+            <div>
+                <span class="badge-pill badge-active" style="padding:0.4rem 0.85rem;font-size:0.8rem;background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;">
+                    <i class="fa-solid fa-shield-check"></i> Multi-Tenant Safe
+                </span>
+            </div>
+        </div>
+
+        <form action="{% url 'test_resend_email' %}" method="POST">
+            {% csrf_token %}
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        Resend API Key *
+                    </label>
+                    <input type="password" name="resend_api_key" value="{{ config.RESEND_API_KEY|default:'' }}" class="form-input" placeholder="re_1234567890abcdef..." style="font-family:monospace;">
+                    <small style="color:var(--text-muted);font-size:0.75rem;">API Key from your Resend Dashboard (e.g. `re_...`).</small>
+                </div>
+
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        Sender Display Name *
+                    </label>
+                    <input type="text" name="sender_name" value="{{ config.RESEND_SENDER_NAME|default:'Malkia Freight & Logistics' }}" class="form-input" placeholder="Malkia Freight & Logistics">
+                    <small style="color:var(--text-muted);font-size:0.75rem;">Displayed as the sender name in the client's inbox.</small>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        From Email Address *
+                    </label>
+                    <input type="text" name="from_email" value="{{ config.RESEND_FROM_EMAIL|default:'notifications@bongocode.com' }}" class="form-input" placeholder="e.g. info@malkia.co.tz or onboarding@resend.dev">
+                    <small style="color:var(--text-muted);font-size:0.75rem;">Verified domain email address in Resend.</small>
+                </div>
+
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:#0F172A;margin-bottom:0.35rem;">
+                        Recipient Test Email *
+                    </label>
+                    <input type="email" name="to_email" class="form-input" placeholder="Enter your email to receive a test message" required style="border-color:#2563EB;">
+                    <small style="color:#2563EB;font-size:0.75rem;font-weight:600;">Sends an immediate test email to verify your setup.</small>
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;border-top:1px solid #E2E8F0;padding-top:1.25rem;">
+                <button type="submit" class="btn-primary" style="padding:0.75rem 1.75rem;font-weight:700;display:inline-flex;align-items:center;gap:0.5rem;">
+                    <i class="fa-solid fa-paper-plane"></i> Save &amp; Send Test Email
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

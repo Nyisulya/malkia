@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Customs & Declarations | Malkia C&F{% endblock %}
+
+{% block content %}
+<div class="page-header-box">
+    <div>
+        <h2 class="page-title"><i class="fa-solid fa-stamp" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Customs & TANCIS Declarations Hub</h2>
+        <p class="page-subtitle">Real-time status of TANCIS lodgements, assessment duty notices, payment verification, and customs release orders.</p>
+    </div>
+    <div>
+        <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline">
+            <i class="fa-solid fa-boxes-stacked"></i> All Shipments
+        </a>
+    </div>
+</div>
+
+<!-- KPI SUMMARY PILLS -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));margin-bottom:1.5rem;">
+    <div class="kpi-card kpi-blue">
+        <div class="kpi-header">
+            <span class="kpi-title">Active Customs Pipeline</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp"></i></div>
+        </div>
+        <div class="kpi-value">{{ jobs|length }}</div>
+        <div class="kpi-meta">
+            <span>Shipments currently in clearing pipeline</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-amber">
+        <div class="kpi-header">
+            <span class="kpi-title">Awaiting Declaration (Stage 3)</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-file-contract"></i></div>
+        </div>
+        <div class="kpi-value">{{ awaiting_declaration }}</div>
+        <div class="kpi-meta">
+            <span>TANCIS entry lodgement in progress</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-rose">
+        <div class="kpi-header">
+            <span class="kpi-title">Duty Payment Stage (Stage 4)</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-credit-card"></i></div>
+        </div>
+        <div class="kpi-value">{{ duty_payment_stage }}</div>
+        <div class="kpi-meta">
+            <span>Assessed & waiting TRA settlement</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-emerald">
+        <div class="kpi-header">
+            <span class="kpi-title">Customs Released (Stage 7+)</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+        <div class="kpi-value">{{ customs_released }}</div>
+        <div class="kpi-meta">
+            <span>Release Order finalized by TRA</span>
+        </div>
+    </div>
+</div>
+
+<!-- SEARCH BAR -->
+<div class="card-panel" style="padding:1.25rem;margin-bottom:1.5rem;background:#FFFFFF;">
+    <form method="GET" action="{% url 'customs_declarations' %}" style="display:flex;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <div style="flex:1;min-width:260px;">
+            <input type="text" name="q" class="form-control" placeholder="Search by Job #, B/L #, Declaration #, or Client..." value="{{ search_query }}">
+        </div>
+        <div>
+            <button type="submit" class="btn-header-action btn-primary" style="padding:0.65rem 1.25rem;">
+                <i class="fa-solid fa-magnifying-glass"></i> Filter
+            </button>
+            {% if search_query %}
+            <a href="{% url 'customs_declarations' %}" class="btn-header-action btn-outline" style="padding:0.65rem 1rem;">
+                Reset
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- CUSTOMS TABLE -->
+<div class="card-panel">
+    <div class="card-panel-header">
+        <div>
+            <h3 class="panel-title"><i class="fa-solid fa-shield-halved"></i> Customs & TANCIS Compliance Status</h3>
+            <p class="panel-description">End-to-end customs declarations, TRA assessments, and clearance gates</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>B/L &amp; Chassis No</th>
+                    <th>Client / Consignee</th>
+                    <th>TANCIS Declaration #</th>
+                    <th>Assessed Duty (TRA)</th>
+                    <th>Duty Payment Status</th>
+                    <th>Clearing Broker</th>
+                    <th>Workflow Stage</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+                <tr>
+                    <td>
+                        {% if is_ceo %}
+                        <div style="font-size:0.76rem;font-weight:800;color:#0F766E;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:#0F766E;text-decoration:none;">{{ job.job_number }}</a>
+                        </div>
+                        <div style="font-size:0.95rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;margin-top:0.1rem;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                        </div>
+                        {% else %}
+                        <div style="font-size:0.98rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                        </div>
+                        {% endif %}
+                        {% if job.chassis_number %}
+                        <div style="font-family:monospace;font-size:0.75rem;color:#1E40AF;margin-top:0.2rem;white-space:nowrap;">
+                            Chassis: <span style="background:#EFF6FF;padding:0.08rem 0.38rem;border-radius:4px;font-weight:700;border:1px solid #DBEAFE;">{{ job.chassis_number }}</span>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="color:var(--text-main);font-size:0.88rem;">{{ job.customer.company_name }}</strong>
+                    </td>
+                    <td>
+                        {% if job.declaration_number %}
+                        <span style="font-family:monospace;font-weight:700;color:var(--brand-navy-900);background:#F1F5F9;padding:0.2rem 0.5rem;border-radius:4px;">
+                            {{ job.declaration_number }}
+                        </span>
+                        {% else %}
+                        <span style="color:#D97706;font-size:0.8rem;font-weight:600;">
+                            <i class="fa-solid fa-clock"></i> Awaiting Lodgement
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if job.assessed_duty_amount > 0 %}
+                        <strong style="font-size:0.9rem;color:var(--brand-navy-900);">
+                            TSh {{ job.assessed_duty_amount|floatformat:0 }}
+                        </strong>
+                        {% else %}
+                        <span style="font-size:0.8rem;color:var(--text-muted);">Pending Assessment</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if job.duty_paid %}
+                        <span class="badge-pill badge-completed">
+                            <i class="fa-solid fa-circle-check"></i> Paid ({{ job.duty_payment_reference|default:"Confirmed" }})
+                        </span>
+                        {% elif job.current_stage_number >= 4 %}
+                        <span class="badge-pill badge-delayed">
+                            <i class="fa-solid fa-circle-exclamation"></i> Payment Pending
+                        </span>
+                        {% else %}
+                        <span class="badge-pill badge-closed">Not Yet Assessed</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="font-size:0.8rem;color:var(--text-main);">
+                            <i class="fa-solid fa-user-check"></i> {% if job.clearing_officer %}{{ job.clearing_officer.get_full_name|default:job.clearing_officer.username }}{% else %}<span style="color:var(--text-muted);">Unassigned</span>{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:0.4rem;">
+                            <span class="badge-pill {% if job.status == 'DELAYED' %}badge-delayed{% elif job.status == 'COMPLETED' %}badge-completed{% else %}badge-active{% endif %}">
+                                Step {{ job.current_stage_number }}/11
+                            </span>
+                            <span style="font-size:0.8rem;font-weight:600;">{{ job.current_stage_obj.name_en }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.75rem;font-size:0.8rem;">
+                            View Details <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align:center;padding:3rem;color:var(--text-muted);">
+                        No active customs declarations found matching criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,1226 @@
+{% extends 'base.html' %}
+
+{% block title %}Messages | Malkia C&F{% endblock %}
+
+{% block content %}
+<div class="whatsapp-chat-app" id="chatMessengerApp" data-initial-user-id="{{ active_user_id|default:0 }}" data-can-broadcast="{{ can_broadcast|yesno:'true,false' }}">
+
+    <!-- =========================================================================
+         LEFT COLUMN: CONTACTS LIST
+         ========================================================================= -->
+    <aside class="chat-contacts-column" id="chatContactsSidebar">
+        <!-- Search Header -->
+        <div class="contacts-search-header">
+            <div class="search-input-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="contactSearchInput" oninput="filterContacts(this.value)" placeholder="Search contacts..." value="{{ search_q }}" autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Contacts Scroll Area -->
+        <div class="contacts-list-scroll" id="chatContactsList">
+            <!-- Company Announcements (Broadcast) -->
+            <div class="contact-card broadcast-card {% if active_user_id == 0 %}active{% endif %}" 
+                 id="contactRow_0"
+                 onclick="selectContact(0, 'Company Announcements', 'All Staff', 'Broadcast', '')">
+                <div class="avatar-circle broadcast-avatar">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <div class="contact-text-wrap">
+                    <div class="contact-title-row">
+                        <span class="contact-name">Company Announcements</span>
+                    </div>
+                    <span class="contact-last-msg">Official broadcast channel</span>
+                </div>
+            </div>
+
+            <!-- Staff Contacts -->
+            {% for c in contacts %}
+            <div class="contact-card {% if active_user_id == c.id %}active{% endif %}" 
+                 id="contactRow_{{ c.id }}"
+                 data-name="{{ c.name|lower }}"
+                 data-role="{{ c.role_code }}"
+                 data-phone="{{ c.phone }}"
+                 onclick="selectContact('{{ c.id }}', '{{ c.name|escapejs }}', '{{ c.role_display|escapejs }}', '{{ c.department|escapejs }}', '{{ c.phone|escapejs }}')">
+                
+                <div class="avatar-circle avatar-color-{{ forloop.counter|divisibleby:4|yesno:'1,2,3,4' }}">
+                    {% if c.avatar_url %}
+                    <img src="{{ c.avatar_url }}" alt="{{ c.name }}">
+                    {% else %}
+                    <span>{{ c.initials }}</span>
+                    {% endif %}
+                    <span class="online-dot"></span>
+                </div>
+
+                <div class="contact-text-wrap">
+                    <div class="contact-title-row">
+                        <span class="contact-name">{{ c.name }}</span>
+                        {% if c.last_message_time %}
+                        <span class="msg-time" id="contactTime_{{ c.id }}">{{ c.last_message_time|date:"H:i" }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="contact-sub-row">
+                        <span class="contact-last-msg" id="contactSnippet_{{ c.id }}">
+                            {% if c.is_last_from_me %}<span style="color:#2563EB;">You: </span>{% endif %}{{ c.last_message|default:"Start conversation..." }}
+                        </span>
+                        <span class="unread-count-badge" id="contactUnread_{{ c.id }}" {% if c.unread_count == 0 %}style="display:none;"{% endif %}>
+                            {{ c.unread_count }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-list-notice">
+                <p>No contacts found.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <!-- =========================================================================
+         RIGHT COLUMN: ACTIVE CHAT CONVERSATION
+         ========================================================================= -->
+    <main class="chat-thread-column" id="chatThreadPanel">
+        <!-- Thread Header -->
+        <header class="thread-top-bar">
+            <div class="thread-user-info">
+                <button type="button" class="back-to-contacts-btn" onclick="showMobileContactsList()" aria-label="Back to contacts">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Contacts</span>
+                </button>
+
+                <div class="avatar-circle header-avatar-circle" id="activeHeaderAvatar">
+                    <span id="activeHeaderInitials">{{ active_contact.initials|default:"TC" }}</span>
+                    <span class="online-dot"></span>
+                </div>
+
+                <div>
+                    <h3 class="active-user-name" id="activeHeaderName">
+                        {% if active_user_id == 0 %}
+                        Company Announcements
+                        {% else %}
+                        {{ active_contact.name|default:"Select a colleague" }}
+                        {% endif %}
+                    </h3>
+                    <div class="active-user-status" id="activeHeaderSub">
+                        {% if active_user_id == 0 %}
+                        All Malkia C&F personnel
+                        {% else %}
+                        {{ active_contact.role_display|default:"Online" }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Messages Flow Area -->
+        <div class="thread-messages-scroll" id="chatMessagesStream">
+            <div class="thread-messages-inner" id="chatMessagesContainer">
+                <div class="loading-state-wrap" id="chatLoadingState">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- WhatsApp-style Active Quoted Reply Banner -->
+        <div id="replyingBanner" class="reply-banner-bar" style="display:none;">
+            <div class="reply-banner-left">
+                <i class="fa-solid fa-reply"></i>
+                <div class="reply-banner-text">
+                    <strong id="replySenderName">Sender</strong>
+                    <span id="replySnippetText">Quoted message...</span>
+                </div>
+            </div>
+            <button type="button" onclick="cancelReply()" class="btn-cancel-reply" title="Cancel Reply">&times;</button>
+        </div>
+
+        <!-- Attachment Preview Bar -->
+        <div id="attachmentPreviewPill" class="attachment-bar" style="display:none;">
+            <div class="attachment-info">
+                <i class="fa-solid fa-paperclip"></i>
+                <span id="attachmentFileName">file.pdf</span>
+            </div>
+            <button type="button" onclick="clearAttachment()" class="btn-cancel-attachment">&times;</button>
+        </div>
+
+        <!-- Bottom Input Bar / Read-Only Notice -->
+        <div class="thread-bottom-input-bar">
+            <form id="chatSendForm" onsubmit="handleSendSubmit(event)" class="message-send-form">
+                {% csrf_token %}
+                <input type="hidden" id="recipientIdInput" name="recipient_id" value="{{ active_user_id|default:0 }}">
+                <input type="hidden" id="isBroadcastInput" name="is_broadcast" value="{% if active_user_id == 0 %}true{% else %}false{% endif %}">
+                <input type="hidden" id="replyToIdInput" name="reply_to_id" value="">
+                
+                <input type="file" id="chatAttachmentInput" name="attachment" style="display:none;" onchange="handleFileSelected(this)">
+                
+                <button type="button" class="action-icon-btn" onclick="document.getElementById('chatAttachmentInput').click()" title="Attach document/photo">
+                    <i class="fa-solid fa-paperclip"></i>
+                </button>
+
+                <input type="text" id="chatTextInput" name="message" class="message-input-box" placeholder="Type a message..." autocomplete="off">
+
+                <button type="submit" id="btnChatSubmit" class="action-send-btn" title="Send message">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </form>
+
+            <div id="readOnlyNotice" class="read-only-notice-bar" style="display:none;">
+                <i class="fa-solid fa-lock" style="color:#64748B;"></i>
+                <span>Only Management can post announcements in Company Announcements.</span>
+            </div>
+        </div>
+    </main>
+
+</div>
+
+<style>
+/* Base Container */
+.whatsapp-chat-app {
+    display: flex;
+    height: calc(100vh - 120px);
+    min-height: 480px;
+    background: #FFFFFF;
+    border-radius: 14px;
+    border: 1px solid #E2E8F0;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+
+/* Left Contacts Sidebar */
+.chat-contacts-column {
+    width: 320px;
+    min-width: 320px;
+    max-width: 320px;
+    background: #FFFFFF;
+    border-right: 1px solid #F1F5F9;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    z-index: 2;
+}
+
+.contacts-search-header {
+    padding: 0.85rem;
+    border-bottom: 1px solid #F8FAFC;
+    flex-shrink: 0;
+}
+
+.search-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.search-input-wrap i {
+    position: absolute;
+    left: 12px;
+    color: #94A3B8;
+    font-size: 0.85rem;
+}
+.search-input-wrap input {
+    width: 100%;
+    padding: 0.55rem 0.85rem 0.55rem 2.2rem;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+    background: #F8FAFC;
+    font-size: 0.85rem;
+    outline: none;
+    transition: all 0.15s ease;
+}
+.search-input-wrap input:focus {
+    background: #FFFFFF;
+    border-color: #2563EB;
+}
+
+.contacts-list-scroll {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0.35rem;
+}
+
+.contact-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    margin-bottom: 2px;
+}
+.contact-card:hover {
+    background: #F8FAFC;
+}
+.contact-card.active {
+    background: #EFF6FF;
+}
+
+.avatar-circle {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #FFFFFF;
+    flex-shrink: 0;
+}
+.avatar-circle img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatar-color-1 { background: #2563EB; }
+.avatar-color-2 { background: #059669; }
+.avatar-color-3 { background: #7C3AED; }
+.avatar-color-4 { background: #D97706; }
+
+.broadcast-avatar {
+    background: #DBEAFE;
+    color: #1D4ED8;
+}
+
+.online-dot {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #10B981;
+    border: 2px solid #FFFFFF;
+}
+
+.contact-text-wrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.contact-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2px;
+}
+.contact-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #0F172A;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.msg-time {
+    font-size: 0.7rem;
+    color: #94A3B8;
+}
+
+.contact-sub-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.contact-last-msg {
+    font-size: 0.78rem;
+    color: #64748B;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.unread-count-badge {
+    background: #2563EB;
+    color: #FFFFFF;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 999px;
+    margin-left: 4px;
+}
+
+.empty-list-notice {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #94A3B8;
+    font-size: 0.85rem;
+}
+
+/* Right Chat Thread */
+.chat-thread-column {
+    flex: 1 1 0%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #FFFFFF;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.thread-top-bar {
+    flex-shrink: 0;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.25rem;
+    border-bottom: 1px solid #F1F5F9;
+    background: #FFFFFF;
+}
+
+.thread-user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.back-to-contacts-btn {
+    display: none;
+    background: #F1F5F9;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    padding: 0.4rem 0.65rem;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+}
+.back-to-contacts-btn:hover {
+    background: #E2E8F0;
+}
+
+.header-avatar-circle {
+    width: 36px;
+    height: 36px;
+    font-size: 0.82rem;
+    background: #2563EB;
+}
+
+.active-user-name {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #0F172A;
+}
+.active-user-status {
+    font-size: 0.73rem;
+    color: #64748B;
+}
+
+/* Messages Scroll */
+.thread-messages-scroll {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1.25rem;
+    background: #FFFFFF;
+}
+
+.thread-messages-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.loading-state-wrap {
+    text-align: center;
+    padding: 3rem;
+    color: #CBD5E1;
+    font-size: 1.25rem;
+}
+
+.chat-date-tag {
+    text-align: center;
+    margin: 0.75rem 0;
+}
+.chat-date-tag span {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #94A3B8;
+    background: #F8FAFC;
+    padding: 0.2rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid #E2E8F0;
+}
+
+/* WhatsApp Message Row */
+.msg-bubble-row {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    max-width: 72%;
+    margin-bottom: 0.25rem;
+}
+.msg-bubble-row.me {
+    align-self: flex-end;
+    align-items: flex-end;
+}
+.msg-bubble-row.other {
+    align-self: flex-start;
+    align-items: flex-start;
+}
+
+.msg-sender-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #64748B;
+    margin-bottom: 2px;
+    padding-left: 4px;
+}
+
+.msg-box-wrap {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+}
+
+.msg-bubble-card {
+    padding: 0.6rem 0.85rem;
+    border-radius: 14px;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    word-break: break-word;
+    position: relative;
+}
+.msg-bubble-row.me .msg-bubble-card {
+    background: #2563EB;
+    color: #FFFFFF;
+    border-bottom-right-radius: 3px;
+}
+.msg-bubble-row.other .msg-bubble-card {
+    background: #F1F5F9;
+    color: #0F172A;
+    border-bottom-left-radius: 3px;
+}
+.msg-bubble-card.is-deleted {
+    font-style: italic;
+    opacity: 0.75;
+}
+
+/* Quoted Reply inside bubble */
+.quote-snippet-box {
+    background: rgba(0,0,0,0.06);
+    border-left: 3px solid #60A5FA;
+    padding: 0.35rem 0.55rem;
+    border-radius: 4px;
+    margin-bottom: 0.35rem;
+    font-size: 0.78rem;
+}
+.msg-bubble-row.me .quote-snippet-box {
+    background: rgba(255,255,255,0.18);
+    border-left-color: #FFFFFF;
+    color: #FFFFFF;
+}
+.quote-snippet-box strong {
+    display: block;
+    font-size: 0.72rem;
+    margin-bottom: 1px;
+}
+
+/* Message Actions (Reply & Delete Buttons) */
+.msg-action-triggers {
+    display: none;
+    position: absolute;
+    top: -12px;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-radius: 999px;
+    padding: 2px 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    gap: 6px;
+    z-index: 5;
+}
+.msg-bubble-row.me .msg-action-triggers {
+    right: 6px;
+}
+.msg-bubble-row.other .msg-action-triggers {
+    left: 6px;
+}
+.msg-box-wrap:hover .msg-action-triggers {
+    display: flex;
+}
+.btn-msg-action {
+    background: none;
+    border: none;
+    color: #64748B;
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    transition: color 0.15s ease;
+}
+.btn-msg-action:hover {
+    color: #2563EB;
+}
+.btn-msg-action.delete-action:hover {
+    color: #EF4444;
+}
+
+.msg-footer-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+    margin-top: 3px;
+    justify-content: flex-end;
+}
+.msg-bubble-row.me .msg-footer-meta {
+    color: rgba(255,255,255,0.75);
+}
+.msg-bubble-row.other .msg-footer-meta {
+    color: #94A3B8;
+}
+
+.attachment-download-box {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    margin-top: 0.35rem;
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+.msg-bubble-row.me .attachment-download-box {
+    background: rgba(255,255,255,0.18);
+    color: #FFFFFF;
+}
+.msg-bubble-row.other .attachment-download-box {
+    background: #E2E8F0;
+    color: #0F172A;
+}
+
+/* Replying Banner */
+.reply-banner-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: #EFF6FF;
+    border-top: 1px solid #BFDBFE;
+    border-left: 4px solid #2563EB;
+    font-size: 0.8rem;
+    color: #1E40AF;
+    flex-shrink: 0;
+}
+.reply-banner-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    overflow: hidden;
+}
+.reply-banner-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.reply-banner-text strong {
+    display: block;
+    font-size: 0.75rem;
+}
+.reply-banner-text span {
+    color: #3B82F6;
+    font-size: 0.78rem;
+}
+.btn-cancel-reply {
+    background: none;
+    border: none;
+    font-size: 1.15rem;
+    color: #1E40AF;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+/* Attachment preview */
+.attachment-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 1rem;
+    background: #F8FAFC;
+    border-top: 1px solid #E2E8F0;
+    font-size: 0.78rem;
+    color: #475569;
+    flex-shrink: 0;
+}
+.btn-cancel-attachment {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    color: #94A3B8;
+    cursor: pointer;
+}
+
+/* Bottom Input Bar & Read Only Notice */
+.thread-bottom-input-bar {
+    flex-shrink: 0;
+    background: #FFFFFF;
+    border-top: 1px solid #E2E8F0;
+    padding: 0.75rem 1rem;
+    position: relative;
+    z-index: 10;
+}
+
+.message-send-form {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+}
+
+.read-only-notice-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    background: #F8FAFC;
+    border: 1px dashed #CBD5E1;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    color: #64748B;
+    font-weight: 500;
+}
+
+.action-icon-btn {
+    background: #F1F5F9;
+    border: 1px solid #E2E8F0;
+    color: #64748B;
+    font-size: 1rem;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+.action-icon-btn:hover {
+    background: #E2E8F0;
+    color: #0F172A;
+}
+
+.message-input-box {
+    flex: 1;
+    min-width: 0;
+    padding: 0.65rem 1rem;
+    border: 1px solid #CBD5E1;
+    border-radius: 20px;
+    outline: none;
+    font-size: 0.88rem;
+    background: #F8FAFC;
+    transition: all 0.15s ease;
+    color: #0F172A;
+}
+.message-input-box:focus {
+    background: #FFFFFF;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+}
+
+.action-send-btn {
+    background: #2563EB;
+    border: none;
+    color: #FFFFFF;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: transform 0.15s ease, background 0.15s ease;
+    flex-shrink: 0;
+}
+.action-send-btn:hover {
+    background: #1D4ED8;
+    transform: scale(1.05);
+}
+.action-send-btn:disabled {
+    background: #CBD5E1;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Mobile & Tablet Responsiveness */
+@media (max-width: 900px) {
+    .whatsapp-chat-app {
+        height: calc(100vh - 90px);
+        border-radius: 0;
+        border: none;
+    }
+    .chat-contacts-column {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+    }
+    .chat-thread-column {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+        display: none;
+    }
+    /* When a conversation is active on mobile */
+    .whatsapp-chat-app.in-conversation .chat-contacts-column {
+        display: none !important;
+    }
+    .whatsapp-chat-app.in-conversation .chat-thread-column {
+        display: flex !important;
+    }
+    .back-to-contacts-btn {
+        display: inline-flex;
+    }
+    .msg-bubble-row {
+        max-width: 85%;
+    }
+    /* Always show action triggers on touch screens */
+    .msg-action-triggers {
+        display: flex;
+        opacity: 0.85;
+    }
+}
+</style>
+
+<!-- JavaScript Engine -->
+<script>
+const chatAppContainer = document.getElementById('chatMessengerApp');
+let currentActiveUserId = chatAppContainer ? (parseInt(chatAppContainer.getAttribute('data-initial-user-id'), 10) || 0) : 0;
+let lastLoadedMessageId = 0;
+let isPollingActive = true;
+let pollingIntervalTimer = null;
+let isSending = false;
+let currentReplyToMessage = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial setup
+    toggleInputPermission(currentActiveUserId);
+    loadConversation(currentActiveUserId, true);
+    startPolling();
+});
+
+function startPolling() {
+    if (pollingIntervalTimer) clearInterval(pollingIntervalTimer);
+    pollingIntervalTimer = setInterval(function() {
+        if (isPollingActive && !isSending) {
+            fetchNewMessagesDelta();
+        }
+    }, 1800);
+}
+
+function loadConversation(userId, isFirstLoad) {
+    userId = parseInt(userId, 10);
+    currentActiveUserId = userId;
+    window.ACTIVE_CHAT_CONTACT_ID = userId;
+    lastLoadedMessageId = 0;
+
+    // Immediately clear previous messages so old messages don't linger!
+    const container = document.getElementById('chatMessagesContainer');
+    if (container) {
+        container.innerHTML = `
+            <div class="loading-state-wrap" id="chatLoadingState">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+            </div>
+        `;
+    }
+
+    // Set mobile view mode
+    chatAppContainer.classList.add('in-conversation');
+
+    fetch(`/chat/api/messages/${userId}/`)
+        .then(res => res.json())
+        .then(data => {
+            // Guard: ensure user hasn't switched to another contact while request was in-flight
+            if (parseInt(currentActiveUserId, 10) !== userId) return;
+
+            if (data.status === 'success') {
+                renderFullMessageHistory(data.messages);
+                if (data.contact) {
+                    updateActiveHeader(data.contact);
+                }
+                const unreadPill = document.getElementById(`contactUnread_${userId}`);
+                if (unreadPill) unreadPill.style.display = 'none';
+            }
+        })
+        .catch(err => {
+            console.error("Chat load error:", err);
+            if (container) container.innerHTML = `<div style="text-align:center;padding:3rem;color:#94A3B8;">Error loading messages.</div>`;
+        });
+}
+
+function fetchNewMessagesDelta() {
+    if (currentActiveUserId === null || currentActiveUserId === undefined) return;
+    const pollingForUserId = currentActiveUserId;
+
+    fetch(`/chat/api/messages/${pollingForUserId}/?last_id=${lastLoadedMessageId}`)
+        .then(res => res.json())
+        .then(data => {
+            // Guard: ensure user hasn't switched contacts during poll fetch
+            if (parseInt(currentActiveUserId, 10) !== parseInt(pollingForUserId, 10)) return;
+
+            if (data.status === 'success' && data.messages.length > 0) {
+                appendMessagesToStream(data.messages);
+                const lastMsg = data.messages[data.messages.length - 1];
+                updateContactSnippet(pollingForUserId, lastMsg.message, lastMsg.time, false);
+            }
+        })
+        .catch(err => console.debug("Delta poll error:", err));
+}
+
+function renderFullMessageHistory(messages) {
+    const container = document.getElementById('chatMessagesContainer');
+    container.innerHTML = '';
+
+    if (!messages || messages.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center;padding:4rem 1rem;color:#94A3B8;">
+                <div style="font-size:0.9rem;font-weight:600;color:#64748B;">No messages yet</div>
+                <div style="font-size:0.8rem;margin-top:0.25rem;">Type a message below to start chatting.</div>
+            </div>
+        `;
+        return;
+    }
+
+    let currentDateGroup = '';
+    messages.forEach(m => {
+        if (m.date !== currentDateGroup) {
+            currentDateGroup = m.date;
+            container.appendChild(createDateDivider(currentDateGroup));
+        }
+        container.appendChild(createMessageBubble(m));
+        if (m.id > lastLoadedMessageId) {
+            lastLoadedMessageId = m.id;
+        }
+    });
+
+    scrollStreamToBottom();
+}
+
+function appendMessagesToStream(newMessages) {
+    const container = document.getElementById('chatMessagesContainer');
+    if (container.querySelector('.loading-state-wrap') || container.innerText.includes('No messages yet')) {
+        container.innerHTML = '';
+    }
+
+    newMessages.forEach(m => {
+        if (m.id > lastLoadedMessageId) {
+            container.appendChild(createMessageBubble(m));
+            lastLoadedMessageId = m.id;
+        }
+    });
+
+    scrollStreamToBottom();
+}
+
+function createDateDivider(text) {
+    const div = document.createElement('div');
+    div.className = 'chat-date-tag';
+    div.innerHTML = `<span>${text}</span>`;
+    return div;
+}
+
+function createMessageBubble(m) {
+    const row = document.createElement('div');
+    row.className = `msg-bubble-row ${m.is_me ? 'me' : 'other'}`;
+    row.id = `msg_${m.id}`;
+
+    // Quoted reply snippet
+    let quoteHtml = '';
+    if (m.reply_to) {
+        quoteHtml = `
+            <div class="quote-snippet-box">
+                <strong>${escapeHtml(m.reply_to.sender_name)}</strong>
+                <span>${escapeHtml(m.reply_to.message)}</span>
+            </div>
+        `;
+    }
+
+    // Attachment
+    let attachmentHtml = '';
+    if (m.has_attachment && m.attachment_url) {
+        if (m.is_image) {
+            attachmentHtml = `
+                <div style="margin-top:0.35rem;">
+                    <a href="${m.attachment_url}" target="_blank">
+                        <img src="${m.attachment_url}" style="max-width:200px;max-height:160px;border-radius:8px;object-fit:cover;display:block;">
+                    </a>
+                </div>
+            `;
+        } else {
+            attachmentHtml = `
+                <a href="${m.attachment_url}" target="_blank" class="attachment-download-box">
+                    <i class="fa-solid fa-file-arrow-down"></i>
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">${m.attachment_name}</span>
+                </a>
+            `;
+        }
+    }
+
+    // Checkmarks for outgoing
+    const checkmarks = m.is_me 
+        ? `<i class="fa-solid fa-check-double" style="font-size:0.7rem;color:${m.is_read ? '#93C5FD' : 'rgba(255,255,255,0.7)'};"></i>`
+        : '';
+
+    // Action buttons (Reply & Delete Buttons - disabled on broadcast)
+    let actionButtons = '';
+    if (!m.is_broadcast) {
+        actionButtons = `
+            <div class="msg-action-triggers">
+                <button type="button" class="btn-msg-action" onclick="initiateReply(${m.id}, '${escapeJsString(m.sender_name)}', '${escapeJsString(m.message)}')" title="Reply">
+                    <i class="fa-solid fa-reply"></i>
+                </button>
+                ${m.can_delete ? `
+                <button type="button" class="btn-msg-action delete-action" onclick="deleteMessage(${m.id})" title="Delete message">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    row.innerHTML = `
+        ${!m.is_me && m.is_broadcast ? `<span class="msg-sender-title">${m.sender_name}</span>` : ''}
+        <div class="msg-box-wrap">
+            ${!m.is_deleted ? actionButtons : ''}
+            <div class="msg-bubble-card ${m.is_deleted ? 'is-deleted' : ''}" id="bubble_card_${m.id}">
+                ${quoteHtml}
+                <div class="msg-text-content">${escapeHtml(m.message).replace(/\n/g, '<br>')}</div>
+                ${attachmentHtml}
+                <div class="msg-footer-meta">
+                    <span>${m.time}</span>
+                    ${checkmarks}
+                </div>
+            </div>
+        </div>
+    `;
+
+    return row;
+}
+
+// WhatsApp-style Reply
+function initiateReply(msgId, senderName, text) {
+    currentReplyToMessage = { id: msgId, sender_name: senderName, text: text };
+    document.getElementById('replyToIdInput').value = msgId;
+    document.getElementById('replySenderName').innerText = senderName;
+    document.getElementById('replySnippetText').innerText = text.length > 50 ? text.substring(0, 50) + '...' : text;
+    document.getElementById('replyingBanner').style.display = 'flex';
+    document.getElementById('chatTextInput').focus();
+}
+
+function cancelReply() {
+    currentReplyToMessage = null;
+    document.getElementById('replyToIdInput').value = '';
+    document.getElementById('replyingBanner').style.display = 'none';
+}
+
+// WhatsApp-style Delete
+function deleteMessage(msgId) {
+    if (!confirm("Are you sure you want to delete this message?")) return;
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    fetch(`/chat/api/delete/${msgId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const bubble = document.getElementById(`bubble_card_${msgId}`);
+            if (bubble) {
+                bubble.classList.add('is-deleted');
+                const textElem = bubble.querySelector('.msg-text-content');
+                if (textElem) textElem.innerText = "🚫 This message was deleted";
+                const attachElem = bubble.querySelector('.attachment-download-box');
+                if (attachElem) attachElem.remove();
+                const triggerElem = bubble.parentElement.querySelector('.msg-action-triggers');
+                if (triggerElem) triggerElem.remove();
+            }
+        } else {
+            alert(data.message || "Could not delete message");
+        }
+    })
+    .catch(err => console.error("Delete error:", err));
+}
+
+// Send Message
+function handleSendSubmit(e) {
+    e.preventDefault();
+    const textInput = document.getElementById('chatTextInput');
+    const fileInput = document.getElementById('chatAttachmentInput');
+    const recipientId = document.getElementById('recipientIdInput').value;
+    const isBroadcast = document.getElementById('isBroadcastInput').value;
+    const replyToId = document.getElementById('replyToIdInput').value;
+
+    const messageText = textInput.value.trim();
+    const hasFile = fileInput.files && fileInput.files.length > 0;
+
+    if (!messageText && !hasFile) return;
+
+    isSending = true;
+    const submitBtn = document.getElementById('btnChatSubmit');
+    submitBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('recipient_id', recipientId);
+    formData.append('message', messageText);
+    formData.append('is_broadcast', isBroadcast);
+    if (replyToId) {
+        formData.append('reply_to_id', replyToId);
+    }
+    if (hasFile) {
+        formData.append('attachment', fileInput.files[0]);
+    }
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    formData.append('csrfmiddlewaretoken', csrfToken);
+
+    textInput.value = '';
+    clearAttachment();
+    cancelReply();
+
+    fetch('/chat/api/send/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        isSending = false;
+        submitBtn.disabled = false;
+        if (data.status === 'success') {
+            appendMessagesToStream([data.message]);
+            updateContactSnippet(currentActiveUserId, data.message.message, data.message.time, true);
+        } else {
+            alert(data.message || 'Error sending message');
+        }
+        textInput.focus();
+    })
+    .catch(err => {
+        isSending = false;
+        submitBtn.disabled = false;
+        console.error("Chat send error:", err);
+    });
+}
+
+// Select a Contact from left list
+function selectContact(userId, name, role, dept, phone) {
+    userId = parseInt(userId, 10);
+    
+    // Update active row CSS
+    document.querySelectorAll('.contact-card').forEach(r => r.classList.remove('active'));
+    const row = document.getElementById(`contactRow_${userId}`);
+    if (row) row.classList.add('active');
+
+    document.getElementById('recipientIdInput').value = userId;
+    document.getElementById('isBroadcastInput').value = (userId === 0) ? 'true' : 'false';
+
+    document.getElementById('activeHeaderName').innerText = name;
+    document.getElementById('activeHeaderSub').innerText = (userId === 0) ? 'All Malkia C&F personnel' : role;
+    
+    const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    document.getElementById('activeHeaderInitials').innerText = initials || 'TC';
+
+    // Toggle broadcast read-only vs typing input
+    toggleInputPermission(userId);
+
+    cancelReply();
+    loadConversation(userId, true);
+}
+
+// Toggle permission for Company Announcements (Read-only for normal staff, editable for Management)
+function toggleInputPermission(userId) {
+    const canBroadcast = (chatAppContainer.getAttribute('data-can-broadcast') === 'true');
+    const sendForm = document.getElementById('chatSendForm');
+    const readOnlyNotice = document.getElementById('readOnlyNotice');
+
+    if (parseInt(userId, 10) === 0 && !canBroadcast) {
+        if (sendForm) sendForm.style.display = 'none';
+        if (readOnlyNotice) readOnlyNotice.style.display = 'flex';
+    } else {
+        if (sendForm) sendForm.style.display = 'flex';
+        if (readOnlyNotice) readOnlyNotice.style.display = 'none';
+    }
+}
+
+// Mobile navigation helper
+function showMobileContactsList() {
+    chatAppContainer.classList.remove('in-conversation');
+}
+
+function filterContacts(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll('.contact-card').forEach(row => {
+        if (row.classList.contains('broadcast-card')) return;
+        const name = row.getAttribute('data-name') || '';
+        const phone = row.getAttribute('data-phone') || '';
+        const role = row.getAttribute('data-role') || '';
+        if (name.includes(q) || phone.includes(q) || role.toLowerCase().includes(q)) {
+            row.style.display = 'flex';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function updateContactSnippet(userId, text, time, fromMe) {
+    const snip = document.getElementById(`contactSnippet_${userId}`);
+    if (snip) {
+        snip.innerHTML = `${fromMe ? '<span style="color:#2563EB;">You: </span>' : ''}${escapeHtml(text || 'Attachment')}`;
+    }
+    const t = document.getElementById(`contactTime_${userId}`);
+    if (t && time) t.innerText = time;
+}
+
+function handleFileSelected(input) {
+    if (input.files && input.files[0]) {
+        document.getElementById('attachmentFileName').innerText = input.files[0].name;
+        document.getElementById('attachmentPreviewPill').style.display = 'flex';
+    }
+}
+
+function clearAttachment() {
+    document.getElementById('chatAttachmentInput').value = '';
+    document.getElementById('attachmentPreviewPill').style.display = 'none';
+}
+
+function scrollStreamToBottom() {
+    const stream = document.getElementById('chatMessagesStream');
+    if (stream) {
+        stream.scrollTop = stream.scrollHeight;
+    }
+}
+
+function updateActiveHeader(contact) {
+    if (contact && currentActiveUserId !== 0) {
+        document.getElementById('activeHeaderName').innerText = contact.name;
+        document.getElementById('activeHeaderSub').innerText = contact.role || 'Online';
+        document.getElementById('activeHeaderInitials').innerText = contact.initials;
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.innerText = text || '';
+    return div.innerHTML;
+}
+
+function escapeJsString(str) {
+    return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, ' ');
+}
+</script>
+{% endblock %}

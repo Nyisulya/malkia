@@ -1,0 +1,1526 @@
+{% extends 'base.html' %}
+
+{% block title %}File {% if is_ceo or is_admin %}{{ job.boss_file_name }}{% else %}{{ job.staff_file_name }}{% endif %} | Malkia C&F{% endblock %}
+
+{% block content %}
+<!-- HEADER BREADCRUMB & ACTIONS -->
+<div class="page-header-box" style="margin-bottom:1.5rem;">
+    <div>
+        <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">
+            <a href="{% url 'jobs_list' %}" style="color:var(--text-muted);text-decoration:none;"><i class="fa-solid fa-arrow-left"></i> All Files</a> &bull; 
+            <span>{{ job.customer.company_name }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+            {% if is_ceo or is_admin %}
+            <h2 class="page-title">{{ job.job_number }} <span style="font-size:1.1rem;color:var(--brand-primary);font-family:monospace;">(BL: {{ job.bl_number|default:"—" }})</span></h2>
+            {% else %}
+            <h2 class="page-title" style="font-family:monospace;">BL: {{ job.staff_file_name }}</h2>
+            {% endif %}
+            {% if job.clearance_mode == 'BOND' %}
+            <span class="badge-pill" style="background:#FEF3C7;color:#92400E;border:1.5px solid #F59E0B;font-weight:800;font-size:0.82rem;">
+                <i class="fa-solid fa-warehouse"></i> TRA MODE: IN-BOND (HOLD IN BOND)
+            </span>
+            {% elif job.clearance_mode == 'EX_BOND' %}
+            <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;border:1.5px solid #60A5FA;font-weight:800;font-size:0.82rem;">
+                <i class="fa-solid fa-unlock-keyhole"></i> TRA MODE: EX-BOND (DUTY PAID)
+            </span>
+            {% else %}
+            <span class="badge-pill" style="background:#ECFDF5;color:#065F46;border:1.5px solid #10B981;font-weight:800;font-size:0.82rem;">
+                <i class="fa-solid fa-money-bill-transfer"></i> TRA MODE: DIRECT DUTY PAYMENT
+            </span>
+            {% endif %}
+            <span class="badge-pill {% if job.status == 'DELAYED' %}badge-delayed{% elif job.status == 'COMPLETED' %}badge-completed{% else %}badge-active{% endif %}">
+                <span class="badge-dot"></span> {{ job.get_status_display }}
+            </span>
+            {% if job.box_number %}
+            <span class="badge-pill badge-completed">
+                <i class="fa-solid fa-box-archive"></i> Box No: {{ job.box_number }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    <div style="display:flex;gap:0.65rem;align-items:center;flex-wrap:wrap;">
+        <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.45rem;font-weight:800;box-shadow:0 2px 4px rgba(22,163,74,0.3);">
+            <i class="fa-solid fa-route"></i> Track Clearance (9 Steps)
+        </a>
+        <a href="{% url 'print_combined_pack' job.id %}" target="_blank" class="btn-header-action" style="background:#0F172A;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.45rem;font-weight:800;">
+            <i class="fa-solid fa-layer-group" style="color:#38BDF8;"></i> Open Unified File Pack (C41 + TBS + Scans)
+        </a>
+        <a href="{% url 'send_job_stage_email' job.id %}" class="btn-header-action" style="background:#2563EB;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;" title="Send notification to client">
+            <i class="fa-solid fa-paper-plane"></i> Notify Client
+        </a>
+    </div>
+</div>
+
+<!-- CLIENT & VEHICLE SUMMARY CARD -->
+<div class="card-panel" style="padding:1.5rem;margin-bottom:1.5rem;background:#FFFFFF;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(185px, 1fr));gap:1.25rem;">
+        <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Client Name</div>
+            <div style="font-size:1.05rem;font-weight:800;color:var(--brand-navy-900);">{{ job.customer.company_name }}</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.15rem;"><i class="fa-solid fa-phone" style="color:#059669;"></i> {{ job.customer.phone }}</div>
+        </div>
+        <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Client TIN &amp; ID</div>
+            <div style="font-size:0.92rem;font-weight:700;color:var(--brand-navy-900);">TIN: <span style="font-family:monospace;">{{ job.customer.tin_number|default:"—" }}</span></div>
+            <div style="font-size:0.8rem;color:var(--text-muted);">ID: <span style="font-family:monospace;">{{ job.customer.id_number|default:"—" }}</span></div>
+        </div>
+        <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;">File Cover (BL No) &amp; Chassis</div>
+            <div style="font-size:0.92rem;font-weight:800;color:var(--brand-primary);font-family:monospace;">BL: {{ job.bl_number|default:"—" }}</div>
+            <div style="font-size:0.82rem;font-weight:700;color:#0F172A;font-family:monospace;">Chassis: {{ job.chassis_number|default:"—" }}</div>
+        </div>
+        <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;">TRA Declaration Instruction</div>
+            {% if job.clearance_mode == 'BOND' %}
+            <div style="font-size:0.92rem;font-weight:800;color:#B45309;"><i class="fa-solid fa-warehouse"></i> In-Bond (Bond Clearance)</div>
+            <div style="font-size:0.76rem;color:#92400E;">Lodge as Bond in TRA; hold vehicle until paid</div>
+            {% elif job.clearance_mode == 'EX_BOND' %}
+            <div style="font-size:0.92rem;font-weight:800;color:#1D4ED8;"><i class="fa-solid fa-unlock-keyhole"></i> Ex-Bond (Duty Paid)</div>
+            <div style="font-size:0.76rem;color:#1E40AF;">Converted from Bond after duty payment</div>
+            {% else %}
+            <div style="font-size:0.92rem;font-weight:800;color:#059669;"><i class="fa-solid fa-money-bill-transfer"></i> Direct Duty Payment</div>
+            <div style="font-size:0.76rem;color:#047857;">Lodge in TRA for direct Control Number</div>
+            {% endif %}
+        </div>
+        <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Vehicle &amp; Box No</div>
+            <div style="font-size:0.9rem;font-weight:700;color:var(--brand-navy-900);">{{ job.cargo_description|default:"1 Motor Vehicle" }}</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);">Box No: <strong>{{ job.box_number|default:"Recorded upon completion" }}</strong></div>
+        </div>
+    </div>
+</div>
+
+<!-- STEP 1 & 2: FILE DOSSIER (SCANNED CLIENT DOCS + AUTO-GENERATED C41 & TBS LETTER) -->
+<div class="card-panel" style="margin-bottom:1.5rem;">
+    <div class="card-panel-header">
+        <div>
+            <h3 class="panel-title">
+                <i class="fa-solid fa-folder-open" style="color:var(--brand-primary);"></i>
+                FILE DOSSIER &amp; UNIFIED DOCUMENT PACK ({% if is_ceo or is_admin %}{{ job.boss_file_name }}{% else %}BL: {{ job.staff_file_name }}{% endif %})
+            </h3>
+            <p class="panel-description">
+                TRA Mode: <strong>{{ job.get_clearance_mode_display }}</strong> &bull;
+                Scanned Client Documents automatically bundled with <strong>Form C41 (TRA)</strong> &amp; <strong>TBS Letter</strong>
+            </p>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <a href="{% url 'print_combined_pack' job.id %}" target="_blank" class="btn-header-action btn-primary" style="background:#0F172A;border-color:#0F172A;font-size:0.8rem;">
+                <i class="fa-solid fa-print"></i> Print Unified File Pack
+            </a>
+            {% if not is_ceo %}
+            <button type="button" onclick="var el=document.getElementById('editFileDrawer'); el.style.display=(el.style.display==='none'?'block':'none');" class="btn-header-action btn-outline" style="font-size:0.8rem;">
+                <i class="fa-solid fa-pen-to-square"></i> Edit File / Add Scans
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="padding:1.5rem;">
+        <!-- UNIFIED FILE PACK: AUTO-GENERATED OFFICE DOCS (C41 + TBS) + SCANNED CLIENT DOCS -->
+        <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:12px;padding:1.25rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.85rem;">
+                <div style="font-size:0.86rem;font-weight:800;color:#14532D;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;gap:0.5rem;">
+                    <i class="fa-solid fa-layer-group" style="color:#16A34A;"></i>
+                    Unified File Pack (2 Auto-Generated Office Documents + {{ documents|length }} Scanned Client Document{{ documents|length|pluralize }})
+                </div>
+                <a href="{% url 'print_combined_pack' job.id %}" target="_blank" style="font-size:0.8rem;font-weight:800;color:#15803D;text-decoration:underline;">
+                    <i class="fa-solid fa-up-right-from-square"></i> View All Combined in One Pack
+                </a>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(265px, 1fr));gap:0.85rem;">
+                <!-- 1. AUTO-GENERATED C41 (TRA) -->
+                <div style="background:#FFFFFF;border:1.5px solid #BBF7D0;border-radius:10px;padding:0.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+                    <div>
+                        <span class="badge-pill" style="background:#DCFCE7;color:#166534;font-size:0.66rem;font-weight:800;margin-bottom:0.2rem;">AUTO-GENERATED BY OFFICE</span>
+                        <div style="font-weight:800;font-size:0.92rem;color:#0F172A;">
+                            <i class="fa-solid fa-stamp" style="color:#059669;margin-right:0.3rem;"></i> 1. Form C41 (TRA)
+                        </div>
+                        <div style="font-size:0.75rem;color:#475569;">Ref: <code>{{ job.c41_reference_no|default:job.job_number }}</code></div>
+                    </div>
+                    <a href="{% url 'print_c41_document' job.id %}" target="_blank" class="btn-header-action btn-primary" style="background:#059669;border-color:#059669;font-size:0.78rem;padding:0.4rem 0.75rem;white-space:nowrap;">
+                        <i class="fa-solid fa-print"></i> C41
+                    </a>
+                </div>
+
+                <!-- 2. AUTO-GENERATED TBS LETTER -->
+                <div style="background:#FFFFFF;border:1.5px solid #BFDBFE;border-radius:10px;padding:0.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+                    <div>
+                        <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;font-size:0.66rem;font-weight:800;margin-bottom:0.2rem;">AUTO-GENERATED BY OFFICE</span>
+                        <div style="font-weight:800;font-size:0.92rem;color:#0F172A;">
+                            <i class="fa-solid fa-file-lines" style="color:#2563EB;margin-right:0.3rem;"></i> 2. TBS Letter
+                        </div>
+                        <div style="font-size:0.75rem;color:#475569;">Ref: <code>{{ job.tbs_letter_reference_no|default:job.job_number }}</code></div>
+                    </div>
+                    <a href="{% url 'print_tbs_letter' job.id %}" target="_blank" class="btn-header-action btn-primary" style="background:#2563EB;border-color:#2563EB;font-size:0.78rem;padding:0.4rem 0.75rem;white-space:nowrap;">
+                        <i class="fa-solid fa-print"></i> TBS Letter
+                    </a>
+                </div>
+
+                <!-- 3+. SCANNED CLIENT DOCUMENTS BUNDLED IN THIS FILE -->
+                {% for doc in documents %}
+                <div style="background:#FFFFFF;border:1.5px solid #BAE6FD;border-radius:10px;padding:0.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+                    <div style="overflow:hidden;">
+                        <span class="badge-pill" style="background:#E0F2FE;color:#0369A1;font-size:0.66rem;font-weight:800;margin-bottom:0.2rem;">SCANNED CLIENT DOC</span>
+                        <div style="font-weight:800;font-size:0.88rem;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
+                            <i class="fa-solid fa-file-pdf" style="color:#0284C7;margin-right:0.3rem;"></i> {{ doc.title }}
+                        </div>
+                        <div style="font-size:0.73rem;color:#64748B;">Added {{ doc.uploaded_at|date:"d M Y H:i" }}</div>
+                    </div>
+                    <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="font-size:0.76rem;padding:0.35rem 0.7rem;white-space:nowrap;">
+                        <i class="fa-solid fa-eye"></i> Open
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- HIDDEN EDIT / ADD SCANS DRAWER (ONLY SHOWN WHEN USER CLICKS 'EDIT FILE / ADD SCANS') -->
+        <div id="editFileDrawer" style="display:none;margin-top:1.25rem;padding-top:1.25rem;border-top:1px dashed #CBD5E1;">
+            <form action="{% url 'update_doc_checklist' job.id %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div style="border:2px dashed #0284C7;background:#F0F9FF;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+                    <div>
+                        <div style="font-weight:800;font-size:0.9rem;color:#0F172A;">
+                            <i class="fa-solid fa-file-arrow-up" style="color:#0284C7;margin-right:0.35rem;"></i> Add More Scanned Documents to This File
+                        </div>
+                        <div style="font-size:0.78rem;color:#475569;">Select additional scanned PDFs/images to merge into the File Pack.</div>
+                    </div>
+                    <input type="file" name="scanned_documents" multiple accept=".pdf,image/*" class="form-control" style="max-width:310px;background:#FFFFFF;font-size:0.8rem;">
+                </div>
+
+                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;padding:0.75rem 1rem;background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0;font-size:0.83rem;font-weight:700;">
+                    <span style="color:var(--text-muted);text-transform:uppercase;font-size:0.76rem;font-weight:800;">5 Client Docs:</span>
+                    <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_bl_received" value="1" {% if job.doc_bl_received %}checked{% endif %} style="accent-color:#059669;"> 1. BL Document</label>
+                    <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_invoice_received" value="1" {% if job.doc_invoice_received %}checked{% endif %} style="accent-color:#059669;"> 2. Invoice</label>
+                    <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_packing_list_received" value="1" {% if job.doc_packing_list_received %}checked{% endif %} style="accent-color:#059669;"> 3. Packing Listing</label>
+                    <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_tbs_cert_received" value="1" {% if job.doc_tbs_cert_received %}checked{% endif %} style="accent-color:#059669;"> 4. TBS Certificate</label>
+                    <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_export_cert_received" value="1" {% if job.doc_export_cert_received %}checked{% endif %} style="accent-color:#059669;"> 5. Export Certificate</label>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.85rem;">
+                    <div style="display:flex;align-items:center;gap:0.65rem;flex-wrap:wrap;">
+                        <label style="font-size:0.82rem;font-weight:800;color:#0F172A;">TRA Mode:</label>
+                        <select name="clearance_mode" class="form-control" style="width:auto;height:38px;font-size:0.83rem;font-weight:800;">
+                            <option value="DIRECT" {% if job.clearance_mode == 'DIRECT' %}selected{% endif %}>Direct Duty Payment</option>
+                            <option value="BOND" {% if job.clearance_mode == 'BOND' %}selected{% endif %}>In-Bond</option>
+                            <option value="EX_BOND" {% if job.clearance_mode == 'EX_BOND' %}selected{% endif %}>Ex-Bond</option>
+                        </select>
+
+                        <label style="font-size:0.82rem;font-weight:700;">BL No:</label>
+                        <input type="text" name="bl_number" value="{{ job.bl_number }}" class="form-control" style="width:135px;height:38px;font-size:0.83rem;font-family:monospace;">
+
+                        <label style="font-size:0.82rem;font-weight:700;">Chassis:</label>
+                        <input type="text" name="chassis_number" value="{{ job.chassis_number }}" class="form-control" style="width:140px;height:38px;font-size:0.83rem;font-family:monospace;">
+
+                        <label style="font-size:0.82rem;font-weight:700;">Box No:</label>
+                        <input type="text" name="box_number" value="{{ job.box_number }}" placeholder="BOX-2026-04" class="form-control" style="width:120px;height:38px;font-size:0.83rem;font-family:monospace;">
+                    </div>
+
+                    <button type="submit" class="btn-header-action btn-primary">
+                        <i class="fa-solid fa-check"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- =========================================================================
+     CUSTOMS DECLARATIONS (TRA TANESW & TBS) & PORT DISPATCH PANEL
+     ========================================================================= -->
+<div class="card-panel" style="margin-bottom:1.5rem;padding:0;overflow:hidden;border:1.5px solid #CBD5E1;">
+    <div style="background:linear-gradient(135deg, #0F172A 0%, #1E293B 100%);color:#FFFFFF;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+        <div>
+            <div style="display:flex;align-items:center;gap:0.6rem;">
+                <span style="background:var(--brand-primary);color:#FFFFFF;font-weight:800;font-size:0.75rem;padding:0.2rem 0.55rem;border-radius:6px;letter-spacing:0.04em;">STEP 2 &amp; 3</span>
+                <h3 style="margin:0;font-size:1.1rem;font-weight:800;color:#FFFFFF;letter-spacing:0.02em;">
+                    <i class="fa-solid fa-stamp" style="color:var(--brand-primary);margin-right:0.35rem;"></i> Customs Lodgement (TRA TANESW &amp; TBS) &amp; Port Dispatch
+                </h3>
+            </div>
+            <p style="margin:0.25rem 0 0 0;font-size:0.8rem;color:#94A3B8;">
+                Parallel operational tracking: Physical original documents dispatched for Shipping Line D/O while digital dossier is processed in TRA TANESW &amp; TBS.
+            </p>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            {% if job.tra_status == 'ACCEPTED' and job.duty_control_number %}
+            <a href="{% url 'print_assessment_notice' job.id %}" target="_blank" class="btn-header-action" style="background:#10B981;border-color:#10B981;color:#FFFFFF;font-size:0.8rem;">
+                <i class="fa-solid fa-print"></i> Print Assessment Notice
+            </a>
+            {% endif %}
+            <a href="{% url 'customs_pending_declarations' %}" class="btn-header-action btn-outline" style="background:transparent;color:#FFFFFF;border-color:#475569;font-size:0.8rem;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Customs Declarations Hub
+            </a>
+        </div>
+    </div>
+
+    <div style="padding:1.5rem;background:#FFFFFF;display:grid;grid-template-columns:repeat(auto-fit, minmax(310px, 1fr));gap:1.25rem;">
+        
+        <!-- CARD 1: PHYSICAL ORIGINAL DOCUMENTS (SHIPPING LINE D/O) -->
+        <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:10px;padding:1.15rem;display:flex;flex-direction:column;justify-content:space-between;">
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                    <span style="font-size:0.75rem;font-weight:800;color:var(--brand-navy-900);text-transform:uppercase;letter-spacing:0.04em;">
+                        <i class="fa-solid fa-hand-holding-hand" style="color:var(--brand-primary);margin-right:0.3rem;"></i> 1. Physical Original Docs
+                    </span>
+                    {% if job.original_docs_dispatched_to_field %}
+                    <span class="badge-pill badge-green" style="font-size:0.7rem;font-weight:800;">
+                        <i class="fa-solid fa-circle-check"></i> Dispatched to Field
+                    </span>
+                    {% else %}
+                    <span class="badge-pill badge-amber" style="font-size:0.7rem;font-weight:800;">
+                        <i class="fa-solid fa-clock"></i> In Office
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div style="font-size:0.85rem;color:#334155;line-height:1.45;">
+                    {% if job.original_docs_dispatched_to_field %}
+                    <div style="margin-bottom:0.4rem;">
+                        Recipient: <strong style="color:#0F172A;">{{ job.original_docs_recipient }}</strong>
+                    </div>
+                    <div style="font-size:0.75rem;color:#64748B;margin-bottom:0.4rem;">
+                        Dispatched: <strong>{{ job.original_docs_dispatched_at|date:"d M Y H:i" }}</strong>
+                    </div>
+                    {% if job.original_docs_dispatch_notes %}
+                    <div style="font-size:0.75rem;background:#F1F5F9;padding:0.4rem 0.6rem;border-radius:6px;border:1px solid #CBD5E1;color:#1E293B;">
+                        {{ job.original_docs_dispatch_notes }}
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <p style="margin:0;font-size:0.8rem;color:#64748B;">
+                        Original B/L &amp; Commercial Invoices are currently held in office. Dispatch them to the Port Agent to concurrently process the Shipping Line Delivery Order (D/O).
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="margin-top:1rem;border-top:1px solid #E2E8F0;padding-top:0.75rem;">
+                {% if not is_ceo %}
+                <button type="button" class="btn-header-action btn-outline" onclick="openHandoverDocsModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}')" style="width:100%;font-size:0.8rem;padding:0.5rem;justify-content:center;">
+                    <i class="fa-solid fa-hand-holding-hand"></i> {% if job.original_docs_dispatched_to_field %}Update Handover Record{% else %}Handover Physical Originals to Field{% endif %}
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- CARD 2: TRA TANESW LODGEMENT & 76-HOUR SLA -->
+        <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:10px;padding:1.15rem;display:flex;flex-direction:column;justify-content:space-between;">
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                    <span style="font-size:0.75rem;font-weight:800;color:var(--brand-navy-900);text-transform:uppercase;letter-spacing:0.04em;">
+                        <i class="fa-solid fa-stamp" style="color:var(--brand-primary);margin-right:0.3rem;"></i> 2. TRA TANESW Declaration
+                    </span>
+                    {% if job.tra_status == 'ACCEPTED' %}
+                    <span class="badge-pill badge-green" style="font-size:0.7rem;font-weight:800;">
+                        <i class="fa-solid fa-circle-check"></i> Accepted &amp; Assessed
+                    </span>
+                    {% elif job.tra_status == 'OBJECTION' %}
+                    <span class="badge-pill badge-red" style="font-size:0.7rem;font-weight:800;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> TRA Objection
+                    </span>
+                    {% elif job.tra_status == 'LODGED_76H' %}
+                    <span class="badge-pill badge-amber" style="font-size:0.7rem;font-weight:800;">
+                        <i class="fa-solid fa-stopwatch"></i> 76h SLA Running
+                    </span>
+                    {% else %}
+                    <span class="badge-pill badge-gray" style="font-size:0.7rem;font-weight:800;">
+                        Pending Lodgement
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div style="font-size:0.85rem;color:#334155;line-height:1.45;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
+                        <span style="font-size:0.75rem;color:#64748B;">TANSAD Entry #:</span>
+                        <strong style="font-family:monospace;font-size:0.9rem;color:#0F172A;">{{ job.declaration_number|default:"Not Yet Lodged" }}</strong>
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
+                        <span style="font-size:0.75rem;color:#64748B;">Clearance Mode:</span>
+                        <strong style="font-size:0.8rem;color:var(--brand-primary);">{{ job.get_clearance_mode_display }}</strong>
+                    </div>
+
+                    <!-- 76h SLA Review or Outcome details -->
+                    {% if job.tra_status == 'LODGED_76H' %}
+                    <div style="background:{% if job.is_tanesw_overdue %}#FEE2E2{% else %}#FEF3C7{% endif %};border:1px solid {% if job.is_tanesw_overdue %}#FCA5A5{% else %}#FCD34D{% endif %};padding:0.5rem 0.75rem;border-radius:6px;margin-top:0.4rem;">
+                        <div style="font-weight:800;font-size:0.82rem;color:{% if job.is_tanesw_overdue %}#DC2626{% else %}#B45309{% endif %};">
+                            <i class="fa-solid fa-stopwatch"></i> {% if job.is_tanesw_overdue %}OVERDUE by {{ job.tanesw_hours_elapsed|add:"-76" }}h{% else %}{{ job.tanesw_hours_remaining }}h remaining of 76h SLA{% endif %}
+                        </div>
+                        <div style="font-size:0.72rem;color:{% if job.is_tanesw_overdue %}#991B1B{% else %}#92400E{% endif %};margin-top:0.15rem;">
+                            Lodged at: {{ job.tanesw_lodged_at|date:"d M Y H:i" }}
+                        </div>
+                    </div>
+                    {% elif job.tra_status == 'ACCEPTED' %}
+                    <div style="background:#F0FDF4;border:1px solid #BBF7D0;padding:0.5rem 0.75rem;border-radius:6px;margin-top:0.4rem;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:0.75rem;color:#166534;">GePG Control No:</span>
+                            <strong style="font-family:monospace;font-size:0.95rem;color:#0F172A;">{{ job.duty_control_number }}</strong>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.25rem;">
+                            <span style="font-size:0.75rem;color:#166534;">Assessed Duty:</span>
+                            <strong style="font-size:0.95rem;color:#16A34A;">TSh {{ job.assessed_duty_amount|floatformat:2 }}</strong>
+                        </div>
+                    </div>
+                    {% elif job.tra_status == 'OBJECTION' %}
+                    <div style="background:#FEF2F2;border:1px solid #FECACA;padding:0.5rem 0.75rem;border-radius:6px;margin-top:0.4rem;">
+                        <div style="font-weight:800;font-size:0.8rem;color:#DC2626;">
+                            <i class="fa-solid fa-triangle-exclamation"></i> TRA Objection:
+                        </div>
+                        <div style="font-size:0.75rem;color:#991B1B;margin-top:0.15rem;">
+                            {{ job.tra_objection_notes }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="margin-top:1rem;border-top:1px solid #E2E8F0;padding-top:0.75rem;display:flex;gap:0.5rem;">
+                {% if not is_ceo %}
+                    {% if job.tra_status == 'LODGED_76H' %}
+                    {% if job.clearance_mode == 'BOND' %}
+                    <button type="button" class="btn-header-action btn-primary" onclick="openRecordOutcomeModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.declaration_number }}')" style="width:100%;font-size:0.8rem;padding:0.5rem;justify-content:center;background:#D97706;border-color:#D97706;">
+                        <i class="fa-solid fa-stamp"></i> Record Bond Release
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn-header-action btn-primary" onclick="openRecordOutcomeModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.declaration_number }}')" style="width:100%;font-size:0.8rem;padding:0.5rem;justify-content:center;background:#1E3A8A;border-color:#1E3A8A;">
+                        <i class="fa-solid fa-clipboard-check"></i> Record TRA Outcome
+                    </button>
+                    {% endif %}
+                    {% elif job.tra_status == 'OBJECTION' %}
+                    <button type="button" class="btn-header-action btn-primary" onclick="openLodgeTaneswModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.customer.company_name|escapejs }}', '{{ job.declaration_number }}')" style="width:100%;font-size:0.8rem;padding:0.5rem;justify-content:center;background:#DC2626;border-color:#DC2626;">
+                        <i class="fa-solid fa-rotate"></i> Amend &amp; Re-lodge TANESW
+                    </button>
+                    {% elif job.tra_status == 'ACCEPTED' %}
+                    <a href="{% url 'print_assessment_notice' job.id %}" target="_blank" class="btn-header-action btn-outline" style="flex:1;font-size:0.8rem;padding:0.5rem;justify-content:center;">
+                        <i class="fa-solid fa-print"></i> Assessment Notice
+                    </a>
+                    {% else %}
+                    <button type="button" class="btn-header-action btn-primary" onclick="openLodgeTaneswModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.customer.company_name|escapejs }}', '{{ job.declaration_number|default:'' }}')" style="width:100%;font-size:0.8rem;padding:0.5rem;justify-content:center;">
+                        <i class="fa-solid fa-stamp"></i> Lodge TANESW Entry
+                    </button>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- CARD 3: TBS (TANZANIA BUREAU OF STANDARDS) CLEARANCE -->
+        <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:10px;padding:1.15rem;display:flex;flex-direction:column;justify-content:space-between;">
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                    <span style="font-size:0.75rem;font-weight:800;color:var(--brand-navy-900);text-transform:uppercase;letter-spacing:0.04em;">
+                        <i class="fa-solid fa-vial-circle-check" style="color:var(--brand-primary);margin-right:0.3rem;"></i> 3. TBS Standards Clearance
+                    </span>
+                    {% if job.tbs_status == 'APPROVED' %}
+                    <span class="badge-pill badge-green" style="font-size:0.7rem;font-weight:800;">
+                        <i class="fa-solid fa-circle-check"></i> Released
+                    </span>
+                    {% elif job.tbs_status == 'QUERY' %}
+                    <span class="badge-pill badge-red" style="font-size:0.7rem;font-weight:800;">
+                        <i class="fa-solid fa-circle-question"></i> Query Raised
+                    </span>
+                    {% elif job.tbs_status == 'PENDING_APPROVAL' %}
+                    <span class="badge-pill badge-amber" style="font-size:0.7rem;font-weight:800;">
+                        <i class="fa-solid fa-clock"></i> Pending Approval
+                    </span>
+                    {% else %}
+                    <span class="badge-pill badge-gray" style="font-size:0.7rem;font-weight:800;">
+                        Not Lodged
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div style="font-size:0.85rem;color:#334155;line-height:1.45;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
+                        <span style="font-size:0.75rem;color:#64748B;">TBS Reference No:</span>
+                        <strong style="font-family:monospace;font-size:0.88rem;color:#0F172A;">{{ job.tbs_reference_no|default:"Pending" }}</strong>
+                    </div>
+
+                    {% if job.tbs_approved_at %}
+                    <div style="font-size:0.75rem;color:#059669;margin-bottom:0.35rem;">
+                        <i class="fa-solid fa-check"></i> Approved at: <strong>{{ job.tbs_approved_at|date:"d M Y H:i" }}</strong>
+                    </div>
+                    {% elif job.tbs_submitted_at %}
+                    <div style="font-size:0.75rem;color:#D97706;margin-bottom:0.35rem;">
+                        <i class="fa-solid fa-clock"></i> Submitted: <strong>{{ job.tbs_submitted_at|date:"d M Y H:i" }}</strong>
+                    </div>
+                    {% endif %}
+
+                    {% if job.tbs_notes %}
+                    <div style="font-size:0.75rem;background:#F1F5F9;padding:0.4rem 0.6rem;border-radius:6px;border:1px solid #CBD5E1;color:#1E293B;margin-top:0.3rem;">
+                        {{ job.tbs_notes }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="margin-top:1rem;border-top:1px solid #E2E8F0;padding-top:0.75rem;display:flex;gap:0.5rem;">
+                <a href="{% url 'print_tbs_letter' job.id %}" target="_blank" class="btn-header-action btn-outline" style="flex:1;font-size:0.8rem;padding:0.5rem;justify-content:center;">
+                    <i class="fa-solid fa-print"></i> TBS Letter
+                </a>
+                {% if not is_ceo %}
+                <button type="button" class="btn-header-action btn-primary" onclick="openUpdateTbsModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.tbs_status }}', '{{ job.tbs_reference_no|default:''|escapejs }}', '{{ job.tbs_notes|default:''|escapejs }}')" style="flex:1;font-size:0.8rem;padding:0.5rem;justify-content:center;">
+                    <i class="fa-solid fa-pen-to-square"></i> Update TBS
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- TABBED DETAILS CONTAINER -->
+<div class="card-panel">
+    <!-- Tabs Header -->
+    <div style="display:flex;border-bottom:1px solid var(--border-subtle);background:#F8FAFC;padding:0 1rem;gap:0.5rem;overflow-x:auto;">
+        {% if can_view_audit %}
+        <button class="btn-header-action tab-nav-btn active" data-target="tab-audit" onclick="switchTab('tab-audit')" style="border-radius:0;border-bottom:2px solid var(--brand-primary);background:none;color:var(--brand-primary);">
+            <i class="fa-solid fa-timeline"></i> File History (Audit Trail)
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- TAB 2: FINANCIALS & PROFITABILITY -->
+    {% if can_view_financials %}
+    <div id="tab-financials" class="tab-content-panel" style="padding:1.5rem;display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+            <!-- Profitability Card -->
+            <div style="background:#F8FAFC;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1.25rem;">
+                <h4 style="font-family:var(--font-heading);color:var(--brand-navy-900);margin-bottom:1rem;">Shipment Gross Margin Calculator</h4>
+                <div style="display:flex;flex-direction:column;gap:0.6rem;font-size:0.9rem;">
+                    <div style="display:flex;justify-content:space-between;">
+                        <span>Total Client Billing (Revenue):</span>
+                        <strong style="color:var(--brand-primary);">TSh {{ job.client_billed_revenue|floatformat:2 }}</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;border-bottom:1px solid #CBD5E1;padding-bottom:0.5rem;">
+                        <span>Approved Operational Expenses (Costs):</span>
+                        <strong style="color:#DC2626;">- TSh {{ job.total_expenses|floatformat:2 }}</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding-top:0.25rem;font-size:1.05rem;">
+                        <strong>Net Gross Margin:</strong>
+                        <strong class="{% if job.gross_margin > 0 %}text-profit-positive{% else %}text-profit-negative{% endif %}">
+                            TSh {{ job.gross_margin|floatformat:2 }} ({{ job.gross_margin_percentage }}%)
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client Payment Status -->
+            <div style="background:#F8FAFC;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1.25rem;">
+                <h4 style="font-family:var(--font-heading);color:var(--brand-navy-900);margin-bottom:1rem;">Client Billing & Collection Status</h4>
+                <div style="display:flex;flex-direction:column;gap:0.6rem;font-size:0.9rem;">
+                    <div style="display:flex;justify-content:space-between;">
+                        <span>Total Invoiced:</span>
+                        <strong>TSh {{ job.client_billed_revenue|floatformat:2 }}</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span>Amount Paid by Client:</span>
+                        <strong style="color:#059669;">TSh {{ job.total_client_paid|floatformat:2 }}</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;border-top:1px solid #CBD5E1;padding-top:0.5rem;font-size:1.05rem;">
+                        <strong>Outstanding Balance:</strong>
+                        <strong style="color:#D97706;">TSh {{ job.client_outstanding_balance|floatformat:2 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expenses List -->
+        <div style="margin-top:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+                <h4 style="font-family:var(--font-heading);font-size:1rem;color:var(--brand-navy-900);">Job Expense Disbursements</h4>
+                {% if not is_ceo %}
+                <button type="button" class="btn-header-action btn-primary" onclick="openModal('requestExpenseModal')" style="font-size:0.8rem;padding:0.35rem 0.75rem;">
+                    <i class="fa-solid fa-plus"></i> Add Expense
+                </button>
+                {% endif %}
+            </div>
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Voucher #</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Approver</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exp in expenses %}
+                        <tr>
+                            <td><strong>{{ exp.voucher_number }}</strong></td>
+                            <td>{{ exp.get_category_display }}</td>
+                            <td><strong>TSh {{ exp.amount|floatformat:2 }}</strong></td>
+                            <td>{{ exp.description }}</td>
+                            <td>
+                                <span class="badge-pill {% if exp.approval_status == 'APPROVED' %}badge-completed{% elif exp.approval_status == 'REQUESTED' %}badge-delayed{% else %}badge-closed{% endif %}">
+                                    {{ exp.get_approval_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ exp.approver.get_full_name|default:"Pending Approval" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align:center;color:var(--text-muted);padding:1.5rem;">No expenses currently logged for this shipment.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if can_track_containers %}
+    <!-- TAB 2: CONTAINERS & INDIVIDUAL LOGISTICS -->
+    <div id="tab-containers" class="tab-content-panel" style="padding:1.5rem;display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem;">
+            <div>
+                <h4 style="font-family:var(--font-heading);font-size:1.1rem;color:var(--brand-navy-900);font-weight:700;">
+                    <i class="fa-solid fa-boxes-stacked" style="color:var(--brand-primary);margin-right:0.4rem;"></i>
+                    Individual Container Fleet & Detention Tracking
+                </h4>
+                <p style="font-size:0.8rem;color:var(--text-muted);">Manage truck & driver allocation per container, gate out clearance, and empty return demurrage control.</p>
+            </div>
+            {% if not is_ceo %}
+            <button type="button" class="btn-header-action btn-primary" onclick="openModal('addContainerModal')" style="font-size:0.8rem;">
+                <i class="fa-solid fa-plus"></i> Add Container to Job
+            </button>
+            {% endif %}
+        </div>
+
+        <div class="table-responsive">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Container No & Type</th>
+                        <th>Seal Number</th>
+                        <th>Assigned Truck & Driver</th>
+                        <th>Gate Pass & Out Date</th>
+                        <th>Current Status</th>
+                        <th>Demurrage / Free Time</th>
+                        <th>Empty Return & EIR</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in containers %}
+                    <tr>
+                        <td>
+                            <strong style="font-family:monospace;font-size:0.95rem;color:var(--brand-navy-900);">
+                                {{ c.container_number }}
+                            </strong>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">
+                                {{ c.get_size_type_display }}
+                                {% if c.gross_weight_kg %} &bull; VGM: {{ c.gross_weight_kg|floatformat:0 }}kg{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span style="font-family:monospace;font-size:0.85rem;color:#334155;background:#F1F5F9;padding:0.2rem 0.5rem;border-radius:var(--radius-sm);">
+                                {{ c.seal_number|default:"Not sealed yet" }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if c.assigned_truck %}
+                            <div style="font-weight:700;font-size:0.88rem;color:var(--brand-navy-900);">
+                                <i class="fa-solid fa-truck" style="color:var(--brand-primary);"></i> {{ c.assigned_truck }}
+                                {% if c.assigned_trailer %}<span style="font-weight:normal;color:var(--text-muted);font-size:0.75rem;">/ {{ c.assigned_trailer }}</span>{% endif %}
+                            </div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">
+                                <i class="fa-solid fa-user"></i> {% if c.assigned_driver %}{{ c.assigned_driver.get_full_name|default:c.assigned_driver.username }}{% else %}Unassigned driver{% endif %}
+                            </div>
+                            {% else %}
+                            <span style="color:#DC2626;font-size:0.8rem;font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> No Truck Allocated</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-size:0.85rem;color:var(--text-main);">
+                                Pass: <strong>{{ c.gate_pass_number|default:"Pending" }}</strong>
+                            </div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">
+                                Out: {{ c.gate_out_at|date:"d M Y H:i"|default:"At Yard" }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge-pill {% if c.status == 'EMPTY_RETURNED' %}badge-completed{% elif c.status == 'DELIVERED' %}badge-completed{% elif c.status == 'IN_TRANSIT' %}badge-active{% elif c.status == 'LOADED' %}badge-delayed{% else %}badge-active{% endif %}" style="font-size:0.75rem;">
+                                {{ c.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if c.status == 'EMPTY_RETURNED' %}
+                            <span style="color:#059669;font-weight:700;font-size:0.78rem;">
+                                <i class="fa-solid fa-circle-check"></i> Returned (Safe)
+                            </span>
+                            {% elif c.gate_out_at %}
+                                {% if c.is_detention_overdue %}
+                                <div style="background:#FEE2E2;color:#991B1B;padding:0.25rem 0.5rem;border-radius:var(--radius-sm);font-weight:700;font-size:0.75rem;">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> OVERDUE ({{ c.days_since_gate_out }}d > {{ c.empty_free_days }}d)
+                                </div>
+                                {% else %}
+                                <div style="background:#FEF3C7;color:#92400E;padding:0.25rem 0.5rem;border-radius:var(--radius-sm);font-weight:600;font-size:0.75rem;">
+                                    <i class="fa-regular fa-clock"></i> {{ c.free_days_remaining }} days free left
+                                </div>
+                                {% endif %}
+                            {% else %}
+                            <span style="font-size:0.75rem;color:var(--text-muted);">Awaiting Gate Out</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if c.empty_returned_date %}
+                            <div style="font-size:0.85rem;font-weight:600;color:#059669;">{{ c.empty_returned_date|date:"d M Y" }}</div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);">EIR: {{ c.eir_number|default:"-" }} &bull; {{ c.empty_return_depot }}</div>
+                            {% else %}
+                            <span style="font-size:0.75rem;color:var(--text-muted);">Depot return pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not is_ceo %}
+                            <button type="button" class="btn-header-action btn-outline" style="padding:0.3rem 0.6rem;font-size:0.75rem;" onclick="openUpdateContainerModal('{{ c.id }}', '{{ c.container_number }}', '{{ c.seal_number }}', '{{ c.assigned_truck }}', '{{ c.assigned_trailer }}', '{{ c.assigned_driver_id|default:"" }}', '{{ c.status }}', '{{ c.gate_pass_number }}', '{{ c.empty_return_depot }}', '{{ c.eir_number }}', '{{ c.empty_returned_date|date:"Y-m-d"|default:"" }}', '{% if c.is_deposit_refunded %}1{% else %}0{% endif %}')">
+                                <i class="fa-solid fa-pen-to-square"></i> Update
+                            </button>
+                            {% else %}
+                            <span class="badge-pill" style="background:#F1F5F9;color:#64748B;font-size:0.72rem;">Tracked</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">
+                            No containers recorded yet. Click '+ Add Container to Job' to add the first container.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- TAB 3: DOCUMENTS VAULT -->
+    <div id="tab-documents" class="tab-content-panel" style="padding:1.5rem;display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <div>
+                <h4 style="font-family:var(--font-heading);font-size:1.05rem;color:var(--brand-navy-900);">Digital Document File</h4>
+                <p style="font-size:0.8rem;color:var(--text-muted);">Secure digital storage for BL, Invoices, Declaration, DO, Gate Pass, and POD photos</p>
+            </div>
+            {% if not is_ceo %}
+            <button type="button" class="btn-header-action btn-primary" onclick="openModal('uploadDocModal')" style="font-size:0.8rem;">
+                <i class="fa-solid fa-upload"></i> Upload Attachment
+            </button>
+            {% endif %}
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:1rem;">
+            {% for doc in documents %}
+            <div style="border:1px solid {% if doc.document_type == 'DUTY_PAYMENT_RECEIPT' %}#3B82F6;background:#EFF6FF;box-shadow:0 2px 8px rgba(37,99,235,0.1);{% else %}var(--border-subtle);background:#F8FAFC;{% endif %}border-radius:var(--radius-md);padding:1rem;display:flex;flex-direction:column;">
+                <div style="display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.5rem;">
+                    <div style="width:36px;height:36px;border-radius:var(--radius-sm);background:{% if doc.document_type == 'DUTY_PAYMENT_RECEIPT' %}#2563EB;color:#FFFFFF;{% else %}#EFF6FF;color:#2563EB;{% endif %}display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">
+                        <i class="fa-solid {% if doc.document_type == 'DUTY_PAYMENT_RECEIPT' %}fa-file-invoice-dollar{% else %}fa-file-lines{% endif %}"></i>
+                    </div>
+                    <div style="overflow:hidden;">
+                        <strong style="font-size:0.85rem;color:var(--text-main);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ doc.title }}</strong>
+                        {% if doc.document_type == 'DUTY_PAYMENT_RECEIPT' %}
+                        <span class="badge-pill" style="background:#2563EB;font-size:0.68rem;color:#FFFFFF;font-weight:700;">Client Uploaded TRA Receipt</span>
+                        {% else %}
+                        <span class="badge-pill" style="background:#E2E8F0;font-size:0.68rem;color:#334155;">{{ doc.get_document_type_display }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:auto;padding-top:0.5rem;display:flex;justify-content:space-between;align-items:center;">
+                    <span><i class="fa-regular fa-clock"></i> {{ doc.uploaded_at|date:"d M Y H:i" }}</span>
+                    <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action {% if doc.document_type == 'DUTY_PAYMENT_RECEIPT' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.25rem 0.6rem;font-size:0.75rem;">
+                        View File <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--text-muted);">
+                No documents uploaded yet. Use 'Upload Document' to add BL, commercial invoices or packing lists.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- TAB 4: AUDIT TRAIL LOG -->
+    {% if can_view_audit %}
+    <div id="tab-audit" class="tab-content-panel" style="padding:1.5rem;">
+        <h4 style="font-family:var(--font-heading);font-size:1.05rem;color:var(--brand-navy-900);margin-bottom:1rem;">Complete Audit Trail (WHO - WHAT - WHEN)</h4>
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+            {% for log in audit_logs %}
+            <div style="display:flex;align-items:flex-start;gap:1rem;padding:0.75rem;border-radius:var(--radius-sm);background:#F8FAFC;border-left:3px solid var(--brand-primary);">
+                <div style="font-size:0.85rem;color:var(--brand-primary);font-weight:700;width:130px;flex-shrink:0;">
+                    {{ log.timestamp|date:"d M Y H:i" }}
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:0.85rem;font-weight:600;color:var(--brand-navy-900);">
+                        {{ log.user.get_full_name|default:"System" }} &bull; <span style="color:var(--text-muted);font-weight:normal;">{{ log.action }}</span>
+                    </div>
+                    <div style="font-size:0.8rem;color:var(--text-main);margin-top:0.15rem;">{{ log.details }}</div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align:center;color:var(--text-muted);padding:1.5rem;">No audit records logged yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ==========================================================================
+     MODALS
+     ========================================================================== -->
+
+<!-- 1. ADVANCE STAGE MODAL (WITH CONTROL GATE FOR DUTY PAYMENT) -->
+<div id="advanceStageModal" class="modal-overlay">
+    <div class="modal-card">
+        <form action="{% url 'advance_stage' job.id %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Advance Stage: {{ job.current_stage_number }}. {{ job.current_stage_obj.name_en }}</h3>
+                    <p style="font-size:0.78rem;color:var(--text-muted);">{{ job.current_stage_obj.name_sw }} &bull; Target: {{ job.current_stage_obj.target_days }} Day(s)</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('advanceStageModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- STAGE 2: CUSTOMS DECLARATION (TANSAD) -->
+                {% if job.current_stage_number == 2 %}
+                <div class="form-group">
+                    <label>TRA TANSAD Declaration Number</label>
+                    <input type="text" name="customs_doc_number" class="form-control" placeholder="e.g. 26DARIM4001928" value="{{ job.declaration_number }}" required>
+                </div>
+                {% endif %}
+
+                <!-- STAGE 3: TRA DUTY / IN-BOND CLEARANCE -->
+                {% if job.current_stage_number == 3 %}
+                {% if job.clearance_mode == 'BOND' %}
+                <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;">
+                    <div style="color:#B45309;font-weight:700;margin-bottom:0.35rem;">
+                        <i class="fa-solid fa-warehouse"></i> IN-BOND CARGO: Customs Duty Suspended
+                    </div>
+                    <p style="font-size:0.8rem;color:#92400E;margin-bottom:0.5rem;">
+                        Gari hili lipo chini ya mfumo wa bondi. Thibitisha TRA Removal Order (R/O) ili kuendelea.
+                    </p>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>TRA Removal Order (R/O) Number *</label>
+                        <input type="text" name="payment_reference" class="form-control" placeholder="e.g. RO-2026-BOND-009" value="{{ job.duty_payment_reference|default:'RO-2026-BOND-APPROVED' }}" required>
+                    </div>
+                </div>
+                {% else %}
+                <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;">
+                    <div style="color:#B45309;font-weight:700;margin-bottom:0.35rem;">
+                        <i class="fa-solid fa-lock"></i> CRITICAL GATE: Uthibitisho wa Malipo ya Kodi ya Mteja (TRA GePG)
+                    </div>
+                    <p style="font-size:0.8rem;color:#92400E;margin-bottom:0.5rem;">
+                        Mteja <strong>{{ job.customer.company_name }}</strong> analipa kodi ya forodha ya TSh <strong>{{ job.assessed_duty_amount|floatformat:2 }}</strong> moja kwa moja TRA.
+                    </p>
+                    <div class="form-group" style="margin-top:0.75rem;">
+                        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-weight:700;color:#065F46;">
+                            <input type="checkbox" name="duty_paid_confirm" value="1" {% if job.duty_paid %}checked{% endif %} required>
+                            <span>Nathibitisha mteja amelipa kodi yote ya TRA ya TSh {{ job.assessed_duty_amount|floatformat:2 }}</span>
+                        </label>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0.5rem;">
+                        <label>TRA E-Receipt / Bank Slip Reference # *</label>
+                        <input type="text" name="payment_reference" class="form-control" placeholder="e.g. TRA-ER-7788192" value="{{ job.duty_payment_reference }}" required>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+
+                <!-- STAGE 4: DELIVERY ORDER (D/O) -->
+                {% if job.current_stage_number == 4 %}
+                <div class="form-group">
+                    <label>Shipping Line Delivery Order (DO) Number</label>
+                    <input type="text" name="customs_doc_number" class="form-control" placeholder="e.g. DO-MSC-89102" value="{{ job.delivery_order_number }}" required>
+                </div>
+                {% endif %}
+
+                <!-- STAGE 5: PHYSICAL VERIFICATION -->
+                {% if job.current_stage_number == 5 %}
+                <div style="background:#F0FDFA;border:1px solid #99F6E4;border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;">
+                    <div style="color:#0F766E;font-weight:700;margin-bottom:0.35rem;">
+                        <i class="fa-solid fa-clipboard-check"></i> Ukaguzi wa Forodha Bandarini / ICD (Verification)
+                    </div>
+                    <p style="font-size:0.8rem;color:#115E59;margin-bottom:0.5rem;">
+                        Thibitisha ukaguzi wa forodha na TBS umekamilika bila pingamizi.
+                    </p>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Verification Report / Inspector Findings Ref</label>
+                        <input type="text" name="customs_doc_number" class="form-control" placeholder="e.g. TRA-VERIFIED-PASSED" value="TRA-VERIFIED-PASSED" required>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- STAGE 6: PORT & ICD CHARGES -->
+                {% if job.current_stage_number == 6 %}
+                <div class="form-group">
+                    <label>TPA / TICTS / ICD Port Invoice Number</label>
+                    <input type="text" name="customs_doc_number" class="form-control" placeholder="e.g. TPA-INV-887192" value="{{ job.port_invoice_number }}" required>
+                </div>
+                {% endif %}
+
+                <!-- STAGE 7: GATE EXIT & VEHICLE INSPECTION -->
+                {% if job.current_stage_number == 7 %}
+                <div class="form-group">
+                    <label>Port Gate Pass Number</label>
+                    <input type="text" name="customs_doc_number" class="form-control" placeholder="e.g. TPA-GP-2026-9041" value="{{ job.gate_pass_number }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Driver Jina (Gari Kupelekwa Yard ya Malkia)</label>
+                    <input type="text" name="truck_number" class="form-control" placeholder="e.g. Mohamed Said (Driver)" value="{{ job.vehicle_driver_name|default:'Mohamed Said (Driver)' }}">
+                </div>
+                {% endif %}
+
+                <!-- STAGE 8: MALKIA YARD ARRIVAL -->
+                {% if job.current_stage_number == 8 %}
+                <div class="form-group">
+                    <label>Yard Parking Bay / Box Location</label>
+                    <input type="text" name="customs_doc_number" class="form-control" placeholder="e.g. Bay A-04" value="{{ job.box_number|default:'Bay A-04' }}" required>
+                </div>
+                {% endif %}
+
+                <!-- STAGE 9: CUSTOMER HANDOVER & POD -->
+                {% if job.current_stage_number == 9 %}
+                <div class="form-group">
+                    <label>Customer / Consignee Receiver Name</label>
+                    <input type="text" name="received_by_name" class="form-control" placeholder="e.g. Mr. Rashid Juma" value="{{ job.received_by_name|default:job.customer.company_name }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Upload Signed Proof of Delivery (POD) / Receipt</label>
+                    <input type="file" name="pod_file" class="form-control" accept="image/*,.pdf">
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label>Stage Completion Notes / Remarks</label>
+                    <textarea name="remarks" class="form-control" placeholder="Add operational notes or confirmation details..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Attach Supporting Document (Optional)</label>
+                    <input type="file" name="stage_document" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('advanceStageModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-check"></i> Complete & Advance to Next Stage
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 2. REQUEST EXPENSE DISBURSEMENT MODAL -->
+<div id="requestExpenseModal" class="modal-overlay">
+    <div class="modal-card">
+        <form action="{% url 'expense_create' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="job_id" value="{{ job.id }}">
+            <input type="hidden" name="next" value="job_detail">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Request Operational Expense Voucher</h3>
+                    <p style="font-size:0.78rem;color:var(--text-muted);">Linked directly to Job {{ job.job_number }} (Approval Matrix enforced)</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('requestExpenseModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Expense Category</label>
+                    <select name="category" class="form-control" required>
+                        {% for cat_val, cat_label in expense_categories %}
+                        <option value="{{ cat_val }}">{{ cat_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Disbursement Amount (TSh)</label>
+                    <input type="number" step="0.01" name="amount" class="form-control" placeholder="e.g. 1500000" required>
+                    <small style="color:var(--text-muted);font-size:0.75rem;">
+                        &le; 500k: Operations Mgr &bull; 500k-2M: Finance Mgr &bull; &gt; 2M: CEO Approval
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label>Payment Channel / Njia ya Malipo</label>
+                    <select name="payment_method" class="form-control">
+                        <option value="BANK">Bank Transfer / Cheque</option>
+                        <option value="CASH">Cashier Cash / Petty Cash</option>
+                        <option value="MOBILE_MONEY">Mobile Money (M-Pesa / TigoPesa)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Detailed Purpose / Description</label>
+                    <textarea name="description" class="form-control" placeholder="Specify why this expense is needed for this consignment..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Supporting Receipt / Proforma Invoice (Optional)</label>
+                    <input type="file" name="receipt_file" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('requestExpenseModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-paper-plane"></i> Submit Expense Request
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 3. UPLOAD DOCUMENT MODAL -->
+<div id="uploadDocModal" class="modal-overlay">
+    <div class="modal-card">
+        <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Upload Digital Document</h3>
+                    <p style="font-size:0.78rem;color:var(--text-muted);">Shipment Job {{ job.job_number }}</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('uploadDocModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Document Classification</label>
+                    <select name="document_type" class="form-control" required>
+                        {% for type_val, type_label in doc_types %}
+                        <option value="{{ type_val }}">{{ type_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Document Title</label>
+                    <input type="text" name="title" class="form-control" placeholder="e.g. Original Bill of Lading BL-987" required>
+                </div>
+                <div class="form-group">
+                    <label>Select File (PDF, Image, Scanned Document)</label>
+                    <input type="file" name="file" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Notes / File Description</label>
+                    <textarea name="notes" class="form-control" placeholder="Optional notes..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('uploadDocModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-upload"></i> Upload to File
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 4. ADD CONTAINER MODAL -->
+<div id="addContainerModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:560px;">
+        <form action="{% url 'job_container_add' job.id %}" method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Add Container to Job</h3>
+                    <p style="font-size:0.78rem;color:var(--text-muted);">Shipment Job {{ job.job_number }} ({{ job.customer.company_name }})</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('addContainerModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Container Number *</label>
+                        <input type="text" name="container_number" class="form-control" placeholder="e.g. MSCU9482112" style="font-family:monospace;text-transform:uppercase;" required>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Container Size / Type *</label>
+                        <select name="size_type" class="form-control">
+                            {% for c_code, c_name in container_types %}
+                            <option value="{{ c_code }}" {% if c_code == job.container_size_type %}selected{% endif %}>{{ c_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Seal Number</label>
+                    <input type="text" name="seal_number" class="form-control" placeholder="e.g. SL-MSC-449102">
+                </div>
+
+                <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:var(--radius-md);padding:0.9rem;margin-bottom:1rem;">
+                    <div style="font-size:0.8rem;font-weight:700;color:var(--brand-navy-900);margin-bottom:0.5rem;">
+                        <i class="fa-solid fa-truck" style="color:var(--brand-primary);"></i> Dedicated Transport Allocation
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1;">
+                            <label>Truck Plate / Fleet ID</label>
+                            <input type="text" name="assigned_truck" class="form-control" placeholder="e.g. MCW 101 or T 412 DXE" list="truckSuggestions">
+                            <datalist id="truckSuggestions">
+                                {% for v in available_vehicles %}
+                                <option value="{{ v.plate_number }}">{{ v.plate_number }} ({{ v.get_vehicle_type_display }})</option>
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Trailer Number</label>
+                            <input type="text" name="assigned_trailer" class="form-control" placeholder="e.g. T 881 AYM">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Assigned Driver</label>
+                        <select name="driver_id" class="form-control">
+                            <option value="">-- Assign Driver Later --</option>
+                            {% for d in drivers %}
+                            <option value="{{ d.id }}">{{ d.get_full_name|default:d.username }} ({{ d.username }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Tare Weight (kg)</label>
+                        <input type="number" step="0.01" name="tare_weight_kg" class="form-control" placeholder="e.g. 3800">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Gross Weight / VGM (kg)</label>
+                        <input type="number" step="0.01" name="gross_weight_kg" class="form-control" placeholder="e.g. 28500">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('addContainerModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-plus"></i> Save & Allocate Container
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 5. UPDATE CONTAINER MODAL -->
+<div id="updateContainerModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:580px;">
+        <form id="updateContainerForm" action="" method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Update Container Details & Logistics</h3>
+                    <p id="updateContainerTitleLabel" style="font-size:0.8rem;color:var(--text-muted);"></p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('updateContainerModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Container Status *</label>
+                        <select id="modalContStatus" name="status" class="form-control" required>
+                            {% for s_code, s_name in container_statuses %}
+                            <option value="{{ s_code }}">{{ s_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Seal Number</label>
+                        <input type="text" id="modalContSeal" name="seal_number" class="form-control" placeholder="e.g. SL-COS-883910">
+                    </div>
+                </div>
+
+                <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:var(--radius-md);padding:0.9rem;margin-bottom:1rem;">
+                    <div style="font-size:0.8rem;font-weight:700;color:var(--brand-navy-900);margin-bottom:0.5rem;">
+                        <i class="fa-solid fa-truck" style="color:var(--brand-primary);"></i> Transport & Gate Pass
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1;">
+                            <label>Assigned Truck</label>
+                            <input type="text" id="modalContTruck" name="assigned_truck" class="form-control" placeholder="e.g. MCW 101 or T 412 DXE" list="truckSuggestions2">
+                            <datalist id="truckSuggestions2">
+                                {% for v in available_vehicles %}
+                                <option value="{{ v.plate_number }}">{{ v.plate_number }} ({{ v.get_vehicle_type_display }})</option>
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Trailer Number</label>
+                            <input type="text" id="modalContTrailer" name="assigned_trailer" class="form-control" placeholder="e.g. T 881 AYM">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1;">
+                            <label>Assigned Driver</label>
+                            <select id="modalContDriver" name="driver_id" class="form-control">
+                                <option value="">-- No Driver Assigned --</option>
+                                {% for d in drivers %}
+                                <option value="{{ d.id }}">{{ d.get_full_name|default:d.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Gate Pass Number</label>
+                            <input type="text" id="modalContGatePass" name="gate_pass_number" class="form-control" placeholder="e.g. TPA-GP-2026-9041">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:var(--radius-md);padding:0.9rem;">
+                    <div style="font-size:0.8rem;font-weight:700;color:#166534;margin-bottom:0.5rem;">
+                        <i class="fa-solid fa-rotate-left"></i> Empty Container Return & Demurrage Control
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1;">
+                            <label>Empty Returned Date</label>
+                            <input type="date" id="modalContReturnDate" name="empty_returned_date" class="form-control">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Return Depot (Shipping Line Yard)</label>
+                            <input type="text" id="modalContDepot" name="empty_return_depot" class="form-control" placeholder="e.g. AMI Kurasini, Bravo Yard">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1;">
+                            <label>EIR Receipt Number</label>
+                            <input type="text" id="modalContEir" name="eir_number" class="form-control" placeholder="e.g. EIR-2026-09214">
+                        </div>
+                        <div class="form-group" style="flex:1;display:flex;align-items:flex-end;">
+                            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;color:#166534;font-weight:700;padding-bottom:0.6rem;">
+                                <input type="checkbox" id="modalContDepositRefunded" name="is_deposit_refunded" value="1">
+                                <span>Container Deposit Refunded</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('updateContainerModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-check"></i> Save Container Updates
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openUpdateContainerModal(containerId, cNumber, sealNo, truckNo, trailerNo, driverId, status, gatePass, returnDepot, eirNo, returnDate, depositRefunded) {
+    document.getElementById('updateContainerForm').action = "/containers/" + containerId + "/update/";
+    document.getElementById('updateContainerTitleLabel').textContent = "Container: " + cNumber;
+    document.getElementById('modalContSeal').value = sealNo || '';
+    document.getElementById('modalContTruck').value = truckNo || '';
+    document.getElementById('modalContTrailer').value = trailerNo || '';
+    document.getElementById('modalContDriver').value = driverId || '';
+    document.getElementById('modalContStatus').value = status || 'AT_PORT';
+    document.getElementById('modalContGatePass').value = gatePass || '';
+    document.getElementById('modalContDepot').value = returnDepot || '';
+    document.getElementById('modalContEir').value = eirNo || '';
+    document.getElementById('modalContReturnDate').value = returnDate || '';
+    document.getElementById('modalContDepositRefunded').checked = (depositRefunded === '1');
+    openModal('updateContainerModal');
+}
+
+function openLodgeTaneswModal(jobId, jobNumber, blNumber, consignee, currentTansad) {
+    openModal('lodgeTaneswModal');
+}
+
+function openRecordOutcomeModal(jobId, jobNumber, blNumber, currentTansad) {
+    document.getElementById('radioAccepted').checked = true;
+    toggleJobOutcomeFields();
+    openModal('recordOutcomeModal');
+}
+
+function toggleJobOutcomeFields() {
+    const isAccepted = document.getElementById('radioAccepted').checked;
+    const acceptedBox = document.getElementById('jobAcceptedFields');
+    const objectionBox = document.getElementById('jobObjectionFields');
+    const controlInput = document.getElementById('jobOutcomeControlNo');
+    const dutyInput = document.getElementById('jobOutcomeDutyAmount');
+    const objectionInput = document.getElementById('jobOutcomeObjectionNotes');
+    const submitBtn = document.getElementById('btnJobSubmitOutcome');
+
+    const isBond = {% if job.clearance_mode == 'BOND' %}true{% else %}false{% endif %};
+    if (isAccepted) {
+        acceptedBox.style.display = 'flex';
+        objectionBox.style.display = 'none';
+        if (isBond) {
+            if (controlInput) controlInput.required = false;
+            if (dutyInput) dutyInput.required = false;
+            submitBtn.style.background = '#D97706';
+            submitBtn.style.borderColor = '#D97706';
+            submitBtn.innerHTML = '<i class="fa-solid fa-truck-fast"></i> Approve In-Bond Release to Port (Skip Duty)';
+        } else {
+            if (controlInput) controlInput.required = true;
+            if (dutyInput) dutyInput.required = true;
+            submitBtn.style.background = '#16A34A';
+            submitBtn.style.borderColor = '#16A34A';
+            submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Record Acceptance & Issue Control No';
+        }
+        objectionInput.required = false;
+    } else {
+        acceptedBox.style.display = 'none';
+        objectionBox.style.display = 'block';
+        controlInput.required = false;
+        dutyInput.required = false;
+        objectionInput.required = true;
+        submitBtn.style.background = '#DC2626';
+        submitBtn.style.borderColor = '#DC2626';
+        submitBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Record TRA Objection';
+    }
+}
+
+function openUpdateTbsModal(jobId, jobNumber, currentStatus, currentRef, currentNotes) {
+    openModal('updateTbsModal');
+}
+
+function openHandoverDocsModal(jobId, jobNumber, blNumber) {
+    openModal('handoverDocsModal');
+}
+
+</script>
+
+<!-- =========================================================================
+     STEP 2 & 3 ACTION MODALS (100% ENGLISH)
+     ========================================================================= -->
+
+<!-- MODAL: LODGE INTO TRA TANESW -->
+<div id="lodgeTaneswModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:620px;">
+        <form id="lodgeTaneswForm" action="/customs/declarations/{{ job.id }}/lodge-tanesw/" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="/jobs/{{ job.id }}/">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title"><i class="fa-solid fa-stamp" style="color:var(--brand-primary);margin-right:0.35rem;"></i> Lodge Entry into TRA TANESW</h3>
+                    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Record TANSAD entry number and start 76-hour SLA review countdown</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('lodgeTaneswModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:1.25rem;">
+                <div style="background:#F8FAFC;border:1px solid #E2E8F0;padding:1.15rem;border-radius:8px;">
+                    <div class="form-group" style="margin-bottom:0.85rem;">
+                        <label style="font-weight:700;font-size:0.82rem;">TANSAD Entry Number *</label>
+                        <input type="text" id="lodgeTansadNo" name="declaration_number" value="{{ job.declaration_number|default:'' }}" class="form-control" placeholder="e.g. 24DARIM4001928" required style="font-family:monospace;font-weight:700;letter-spacing:0.04em;">
+                        <small style="color:var(--text-muted);font-size:0.72rem;">Official Single Goods Declaration (SGD) reference.</small>
+                    </div>
+
+                    <div style="border-top:1px dashed #CBD5E1;padding-top:0.85rem;margin-top:0.5rem;">
+                        <label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;font-weight:700;font-size:0.84rem;color:#1E3A8A;margin-bottom:0.5rem;">
+                            <input type="checkbox" name="lodge_tbs" value="1" checked style="accent-color:#2563EB;">
+                            <span>Also Lodge Consignment into TBS (Tanzania Bureau of Standards)</span>
+                        </label>
+                        <div>
+                            <input type="text" name="tbs_reference_no" value="{{ job.tbs_reference_no|default:'' }}" class="form-control" placeholder="TBS Application / Reference No (Optional)">
+                            <small style="color:var(--text-muted);font-size:0.72rem;">Tracking starts under 'Pending Approval' until TBS inspector releases cargo.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:600;font-size:0.82rem;">Lodgement Notes / Remarks</label>
+                    <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Lodged in TANESW. Source documents verified."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('lodgeTaneswModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.65rem 1.5rem;">
+                    <i class="fa-solid fa-stamp"></i> Lodge &amp; Start 76h SLA Countdown
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: RECORD TRA OUTCOME -->
+<div id="recordOutcomeModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:640px;">
+        <form id="recordOutcomeForm" action="/customs/declarations/{{ job.id }}/tra-outcome/" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="/jobs/{{ job.id }}/">
+            <div class="modal-header" style="background:linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%);color:#FFFFFF;">
+                <div>
+                    <h3 class="modal-title" style="color:#FFFFFF;"><i class="fa-solid fa-clipboard-check" style="margin-right:0.35rem;"></i> Record TRA Review Outcome</h3>
+                    <p style="font-size:0.8rem;color:#93C5FD;margin-top:0.2rem;">Record whether TRA Accepted the declaration or raised Objections</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('recordOutcomeModal')" style="color:#FFFFFF;">&times;</button>
+            </div>
+
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:1.25rem;">
+                <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:1rem;">
+                    <label style="font-weight:800;font-size:0.84rem;color:#0F172A;display:block;margin-bottom:0.6rem;">TRA DECISION OUTCOME *</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <label style="display:flex;align-items:center;gap:0.5rem;padding:0.85rem;border:2px solid #86EFAC;background:#F0FDF4;border-radius:8px;cursor:pointer;">
+                            <input type="radio" name="outcome" value="ACCEPTED" id="radioAccepted" checked onchange="toggleJobOutcomeFields()" style="accent-color:#16A34A;">
+                            <div>
+                                <strong style="color:#166534;font-size:0.9rem;display:block;">1. ACCEPTED</strong>
+                                <span style="font-size:0.72rem;color:#15803D;">Control No &amp; Taxes Issued</span>
+                            </div>
+                        </label>
+
+                        <label style="display:flex;align-items:center;gap:0.5rem;padding:0.85rem;border:2px solid #FECACA;background:#FEF2F2;border-radius:8px;cursor:pointer;">
+                            <input type="radio" name="outcome" value="OBJECTION" id="radioObjection" onchange="toggleJobOutcomeFields()" style="accent-color:#DC2626;">
+                            <div>
+                                <strong style="color:#991B1B;font-size:0.9rem;display:block;">2. OBJECTION</strong>
+                                <span style="font-size:0.72rem;color:#B91C1C;">Queries / Rejection Reason</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- CONTAINER FOR ACCEPTED FIELDS -->
+                <div id="jobAcceptedFields" style="display:flex;flex-direction:column;gap:1rem;background:#F0FDF4;border:1px solid #BBF7D0;padding:1.15rem;border-radius:8px;">
+                    {% if job.clearance_mode == 'BOND' %}
+                    <div style="background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:8px;padding:0.85rem 1rem;">
+                        <div style="font-weight:800;color:#92400E;display:flex;align-items:center;gap:0.4rem;font-size:0.88rem;">
+                            <i class="fa-solid fa-shield-halved" style="color:#D97706;"></i> IN-BOND CARGO • CUSTOMS BOND C.41
+                        </div>
+                        <div style="font-size:0.8rem;color:#78350F;margin-top:0.3rem;line-height:1.45;">
+                            Mzigo huu hauna kodi ya kulipa sasa hivi bandarini. Ushuru wa TRA umelindwa chini ya <strong>Dhamana ya Forodha (Customs Bond)</strong>.
+                            Kukubali kibali hiki kutahamisha mzigo moja kwa moja hadi <strong>Stage 5 (Port Verification &amp; Release)</strong> bila kudai malipo ya kodi bandarini.
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-weight:700;font-size:0.82rem;color:#92400E;">TRA Removal Order / Bond Release Ref (Optional)</label>
+                        <input type="text" name="removal_order_no" class="form-control" value="{{ job.c41_reference_no|default:'' }}" placeholder="e.g. RO-2026-0041 au Namba ya C.41" style="font-family:monospace;font-weight:700;color:#0F172A;">
+                        <small style="color:#92400E;font-size:0.72rem;">Kibali cha forodha cha kutoa mzigo bandarini kuelekea yadi chini ya bond.</small>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-weight:700;font-size:0.82rem;color:#166534;">Attach Removal Order / Release Note (PDF)</label>
+                        <input type="file" name="assessment_file" class="form-control" accept=".pdf,image/*">
+                        <small style="color:#15803D;font-size:0.72rem;">Uploaded PDF is automatically archived into the client's file dossier.</small>
+                    </div>
+                    {% else %}
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-weight:700;font-size:0.82rem;color:#166534;">TRA GePG Control Number *</label>
+                            <input type="text" name="control_number" id="jobOutcomeControlNo" class="form-control" placeholder="e.g. 991200482910" style="font-family:monospace;font-weight:800;letter-spacing:0.05em;color:#0F172A;">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-weight:700;font-size:0.82rem;color:#166534;">Total Assessed Duty (TZS) *</label>
+                            <input type="number" step="0.01" name="assessed_duty_amount" id="jobOutcomeDutyAmount" class="form-control" placeholder="e.g. 28500000" style="font-weight:800;font-size:0.95rem;color:#0F172A;">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-weight:700;font-size:0.82rem;color:#166534;">Attach Assessment Notice / SGD (PDF)</label>
+                        <input type="file" name="assessment_file" class="form-control" accept=".pdf,image/*">
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- CONTAINER FOR OBJECTION FIELDS -->
+                <div id="jobObjectionFields" style="display:none;background:#FEF2F2;border:1px solid #FECACA;padding:1.15rem;border-radius:8px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-weight:700;font-size:0.82rem;color:#991B1B;">TRA Objection / Query Details *</label>
+                        <textarea name="tra_objection_notes" id="jobOutcomeObjectionNotes" class="form-control" rows="3" placeholder="Specify the exact query from the TRA customs officer"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('recordOutcomeModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" id="btnJobSubmitOutcome" style="padding:0.65rem 1.5rem;background:#16A34A;border-color:#16A34A;">
+                    <i class="fa-solid fa-check"></i> Save Outcome
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: UPDATE TBS -->
+<div id="updateTbsModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:540px;">
+        <form id="updateTbsForm" action="/customs/declarations/{{ job.id }}/tbs-update/" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="/jobs/{{ job.id }}/">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title"><i class="fa-solid fa-vial-circle-check" style="color:var(--brand-primary);margin-right:0.35rem;"></i> Update TBS Clearance Status</h3>
+                    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Track Tanzania Bureau of Standards inspection &amp; release</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('updateTbsModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:1.15rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;">TBS Clearance Status *</label>
+                    <select name="tbs_status" id="tbsModalStatusSelect" class="form-control" required style="font-weight:700;">
+                        <option value="PENDING_APPROVAL" {% if job.tbs_status == 'PENDING_APPROVAL' %}selected{% endif %}>🟡 Pending Approval / Under Review</option>
+                        <option value="APPROVED" {% if job.tbs_status == 'APPROVED' %}selected{% endif %}>🟢 Approved / Released</option>
+                        <option value="QUERY" {% if job.tbs_status == 'QUERY' %}selected{% endif %}>🔴 Query Raised</option>
+                        <option value="NOT_LODGED" {% if job.tbs_status == 'NOT_LODGED' %}selected{% endif %}>⚪ Not Lodged</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;">TBS Reference / Certificate Number</label>
+                    <input type="text" name="tbs_reference_no" id="tbsModalRefInput" value="{{ job.tbs_reference_no|default:'' }}" class="form-control" placeholder="e.g. TBS/2026/DAR/08492">
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:600;font-size:0.82rem;">Remarks / Notes</label>
+                    <textarea name="tbs_notes" id="tbsModalNotesInput" class="form-control" rows="2" placeholder="e.g. Verified by TBS inspector.">{{ job.tbs_notes|default:'' }}</textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('updateTbsModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.65rem 1.5rem;">
+                    <i class="fa-solid fa-check"></i> Update TBS Status
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: HANDOVER PHYSICAL ORIGINAL DOCS -->
+<div id="handoverDocsModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:540px;">
+        <form id="handoverDocsForm" action="/jobs/{{ job.id }}/handover-original-docs/" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="/jobs/{{ job.id }}/">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title"><i class="fa-solid fa-hand-holding-hand" style="color:var(--brand-primary);margin-right:0.35rem;"></i> Handover Physical Original Docs</h3>
+                    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Dispatch original Bill of Lading &amp; Invoice to Port/Field Agent for Shipping Line D/O</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('handoverDocsModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:1.15rem;">
+                <div style="background:#EFF6FF;border:1px solid #BFDBFE;padding:0.85rem 1rem;border-radius:8px;font-size:0.82rem;color:#1E40AF;line-height:1.4;">
+                    <i class="fa-solid fa-circle-info" style="margin-right:0.3rem;"></i>
+                    <strong>Parallel Workflow:</strong> The Port Agent can process the Shipping Line Delivery Order (D/O) with physical documents while the Declaration Officer lodges digital copies into TRA TANESW.
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;">Recipient Field Officer / Agent *</label>
+                    <input type="text" name="original_docs_recipient" value="{{ job.original_docs_recipient|default:'' }}" class="form-control" placeholder="e.g. Juma Ally (Port Operations)" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:600;font-size:0.82rem;">Dispatch Notes / Documents Handed Over</label>
+                    <textarea name="original_docs_dispatch_notes" class="form-control" rows="2" placeholder="e.g. Original Bill of Lading (3/3), Commercial Invoice, and Packing List dispatched for Shipping Line Delivery Order endorsement.">{{ job.original_docs_dispatch_notes|default:'' }}</textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('handoverDocsModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.65rem 1.5rem;">
+                    <i class="fa-solid fa-paper-plane"></i> Confirm Handover
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+
+{% block title %}Vehicles & Drivers | Logistics & Fleet{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;">
+
+    <!-- TOP HEADER -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+        <div>
+            <h2 style="font-family:var(--font-heading);font-size:1.35rem;font-weight:800;color:var(--brand-navy-900);letter-spacing:-0.02em;">
+                <i class="fa-solid fa-truck-moving" style="color:#0D9488;"></i> Fleet Vehicles & Drivers Management
+            </h2>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin-top:0.2rem;">
+                Commercial haulage fleet register, skeletal container chassis, and certified long-distance prime mover drivers.
+            </p>
+        </div>
+        {% if not is_ceo and is_dispatch %}
+        <button type="button" onclick="openAddVehicleModal()" class="btn-header-action btn-primary" style="background:#0D9488;border-color:#0D9488;font-weight:700;">
+            <i class="fa-solid fa-plus-circle"></i> Add New Vehicle
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- 3 SUMMARY STATS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+        <div class="card-panel" style="padding:1.15rem;border-left:4px solid #10B981;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Available / Standby</div>
+            <div style="font-size:1.65rem;font-weight:800;color:#059669;margin-top:0.25rem;">{{ available_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Ready for container loading</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.15rem;border-left:4px solid #3B82F6;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">In Transit / Rolling</div>
+            <div style="font-size:1.65rem;font-weight:800;color:#1D4ED8;margin-top:0.25rem;">{{ transit_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Currently delivering to client</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.15rem;border-left:4px solid #EF4444;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">In Maintenance / Workshop</div>
+            <div style="font-size:1.65rem;font-weight:800;color:#DC2626;margin-top:0.25rem;">{{ maintenance_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Service, tyres or repairs</div>
+        </div>
+    </div>
+
+    <!-- SECTION 1: FLEET VEHICLES REGISTER -->
+    <div class="card-panel" style="padding:1.5rem;margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.75rem;">
+            <div>
+                <h3 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
+                    <i class="fa-solid fa-truck"></i> Registered Commercial Fleet
+                </h3>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Heavy commercial prime movers and 20ft & 40ft container chassis</div>
+            </div>
+
+            <!-- STATUS FILTER -->
+            <div style="display:flex;gap:0.4rem;overflow-x:auto;">
+                <a href="?status=ALL" class="badge-pill {% if status_filter == 'ALL' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;font-size:0.8rem;padding:0.35rem 0.75rem;">
+                    All ({{ vehicles.count }})
+                </a>
+                <a href="?status=AVAILABLE" class="badge-pill {% if status_filter == 'AVAILABLE' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;font-size:0.8rem;padding:0.35rem 0.75rem;">
+                    Available
+                </a>
+                <a href="?status=IN_TRANSIT" class="badge-pill {% if status_filter == 'IN_TRANSIT' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;font-size:0.8rem;padding:0.35rem 0.75rem;">
+                    In Transit
+                </a>
+                <a href="?status=MAINTENANCE" class="badge-pill {% if status_filter == 'MAINTENANCE' %}badge-delayed{% else %}badge-draft{% endif %}" style="text-decoration:none;font-size:0.8rem;padding:0.35rem 0.75rem;">
+                    Maintenance
+                </a>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table" style="font-size:0.85rem;">
+                <thead>
+                    <tr>
+                        <th>Truck Plate</th>
+                        <th>Trailer / Chassis</th>
+                        <th>Type & Model</th>
+                        <th>Capacity</th>
+                        <th>Current Location</th>
+                        <th>Assigned Driver</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in vehicles %}
+                    <tr>
+                        <td>
+                            <strong style="font-size:0.95rem;color:var(--brand-navy-900);">{{ v.plate_number }}</strong>
+                        </td>
+                        <td>
+                            <span style="font-weight:600;color:#0F766E;">{{ v.trailer_plate|default:"Chassis Standby" }}</span>
+                        </td>
+                        <td>
+                            <div><strong>{{ v.get_vehicle_type_display }}</strong></div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">{{ v.make_model }}</div>
+                        </td>
+                        <td>
+                            <strong>{{ v.carrying_capacity_tons }} Tons</strong>
+                        </td>
+                        <td>
+                            <i class="fa-solid fa-location-dot" style="color:#0D9488;"></i> {{ v.current_location }}
+                        </td>
+                        <td>
+                            {% if v.assigned_driver %}
+                            <strong>{{ v.assigned_driver.get_full_name }}</strong>
+                            <div style="font-size:0.72rem;color:var(--text-muted);">{{ v.assigned_driver.profile.phone_number }}</div>
+                            {% else %}
+                            <span style="color:var(--text-muted);font-style:italic;">No Driver</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if v.current_status == 'AVAILABLE' %}
+                            <span class="badge-pill badge-active" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-check"></i> Available
+                            </span>
+                            {% elif v.current_status == 'IN_TRANSIT' %}
+                            <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;font-size:0.75rem;">
+                                <i class="fa-solid fa-road"></i> In Transit
+                            </span>
+                            {% elif v.current_status == 'MAINTENANCE' %}
+                            <span class="badge-pill badge-delayed" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-wrench"></i> Workshop
+                            </span>
+                            {% else %}
+                            <span class="badge-pill badge-draft" style="font-size:0.75rem;">
+                                {{ v.current_status }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right;">
+                            {% if not is_ceo and is_dispatch %}
+                            <button type="button" 
+                                onclick="openUpdateStatusModal('{{ v.id }}', '{{ v.plate_number }}', '{{ v.current_status }}', '{{ v.current_location|escapejs }}')" 
+                                class="btn-header-action btn-outline" style="padding:0.3rem 0.65rem;font-size:0.78rem;">
+                                <i class="fa-solid fa-pen"></i> Update
+                            </button>
+                            {% else %}
+                            <span class="badge-pill badge-draft" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-eye"></i> Oversight
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align:center;padding:2.5rem;color:var(--text-muted);">
+                            No fleet vehicles found matching the selected filter.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SECTION 2: DRIVERS REGISTER -->
+    <div class="card-panel" style="padding:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.75rem;">
+            <div>
+                <h3 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
+                    <i class="fa-solid fa-id-card"></i> Dedicated Logistics Drivers
+                </h3>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Certified commercial heavy transport drivers and active assignment records</div>
+            </div>
+            <span class="badge-pill badge-active">
+                {{ drivers.count }} Registered Drivers
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table" style="font-size:0.85rem;">
+                <thead>
+                    <tr>
+                        <th>Driver Full Name</th>
+                        <th>Username / ID</th>
+                        <th>Contact Mobile</th>
+                        <th>Assigned Truck</th>
+                        <th>License Class</th>
+                        <th>Current Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in drivers %}
+                    <tr>
+                        <td>
+                            <strong style="color:var(--brand-navy-900);font-size:0.95rem;">
+                                <i class="fa-solid fa-user-tie"></i> {{ d.get_full_name|default:d.username }}
+                            </strong>
+                        </td>
+                        <td>
+                            <code>{{ d.username }}</code>
+                        </td>
+                        <td>
+                            <a href="tel:{{ d.profile.phone_number }}" style="color:var(--brand-primary);text-decoration:none;font-weight:600;">
+                                <i class="fa-solid fa-phone"></i> {{ d.profile.phone_number|default:"+255 754 123 456" }}
+                            </a>
+                        </td>
+                        <td>
+                            {% with at=d.assigned_vehicles.first %}
+                                {% if at %}
+                                <span style="font-weight:700;color:#0F766E;"><i class="fa-solid fa-truck"></i> {{ at.plate_number }}</span>
+                                {% else %}
+                                <span style="color:var(--text-muted);">Unassigned</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>
+                            <span style="font-weight:700;color:var(--brand-navy-900);">Class E (Heavy Commercial / Articulated)</span>
+                        </td>
+                        <td>
+                            <span class="badge-pill badge-active" style="font-size:0.75rem;">
+                                Active On-Duty
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">
+                            No commercial drivers registered yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+{% if not is_ceo and is_dispatch %}
+<!-- ADD VEHICLE MODAL -->
+<div id="addVehicleModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:var(--radius-lg);max-width:500px;width:100%;padding:1.5rem;box-shadow:var(--shadow-xl);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;border-bottom:1px solid #E2E8F0;padding-bottom:0.75rem;">
+            <h4 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
+                <i class="fa-solid fa-truck-moving" style="color:#0D9488;"></i> Add Commercial Vehicle
+            </h4>
+            <button type="button" onclick="closeAddVehicleModal()" style="background:none;border:none;color:var(--text-muted);font-size:1.25rem;cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form method="POST" action="{% url 'logistics_vehicle_create' %}">
+            {% csrf_token %}
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                <div class="form-group">
+                    <label>Truck Plate Registration # *</label>
+                    <input type="text" name="plate_number" class="form-control" placeholder="e.g. T 412 DXE" required>
+                </div>
+                <div class="form-group">
+                    <label>Trailer / Chassis Plate #</label>
+                    <input type="text" name="trailer_plate" class="form-control" placeholder="e.g. T 789 DXX">
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                <div class="form-group">
+                    <label>Vehicle Configuration *</label>
+                    <select name="vehicle_type" class="form-control">
+                        <option value="PRIME_MOVER">Prime Mover (Heavy Tractor Head)</option>
+                        <option value="FLATBED_TRAILER">Flatbed Semi-Trailer (40ft)</option>
+                        <option value="SKELETAL_TRAILER">Skeletal Container Chassis</option>
+                        <option value="RIGID_TRUCK">Rigid Box Truck (15-Ton)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Capacity (Tons)</label>
+                    <input type="number" step="0.1" name="capacity" class="form-control" value="30.0">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Make & Model</label>
+                <input type="text" name="make_model" class="form-control" placeholder="e.g. Scania R440 / Mercedes Actros 3340">
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+                <div class="form-group">
+                    <label>Primary Station / Yard</label>
+                    <input type="text" name="location" class="form-control" value="Dar Central Staging Yard">
+                </div>
+                <div class="form-group">
+                    <label>Assign Default Driver</label>
+                    <select name="driver_id" class="form-control">
+                        <option value="">-- No Driver --</option>
+                        {% for d in drivers %}
+                        <option value="{{ d.id }}">{{ d.get_full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                <button type="button" onclick="closeAddVehicleModal()" class="btn-header-action btn-outline">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#0D9488;border-color:#0D9488;font-weight:700;">
+                    Save Vehicle
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- UPDATE VEHICLE STATUS MODAL -->
+<div id="updateStatusModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:var(--radius-lg);max-width:440px;width:100%;padding:1.5rem;box-shadow:var(--shadow-xl);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+            <h4 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:800;color:var(--brand-navy-900);margin:0;" id="statusModalPlate">
+                Update Vehicle
+            </h4>
+            <button type="button" onclick="closeUpdateStatusModal()" style="background:none;border:none;color:var(--text-muted);font-size:1.25rem;cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="updateStatusForm" method="POST" action="">
+            {% csrf_token %}
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Operational Status *</label>
+                <select name="status" id="vehicleStatusSelect" class="form-control" required>
+                    <option value="AVAILABLE">AVAILABLE - Ready for Dispatch</option>
+                    <option value="IN_TRANSIT">IN TRANSIT - On Trip</option>
+                    <option value="MAINTENANCE">MAINTENANCE - In Workshop / Repairs</option>
+                    <option value="OFF_DUTY">OFF DUTY - Out of Service</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.5rem;">
+                <label>Current Location</label>
+                <input type="text" name="location" id="vehicleLocationInput" class="form-control" placeholder="e.g. Mbagala Workshop, Dar Yard">
+            </div>
+
+            <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                <button type="button" onclick="closeUpdateStatusModal()" class="btn-header-action btn-outline">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#0D9488;border-color:#0D9488;font-weight:700;">
+                    Update Status
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAddVehicleModal() {
+    document.getElementById('addVehicleModal').style.display = 'flex';
+}
+function closeAddVehicleModal() {
+    document.getElementById('addVehicleModal').style.display = 'none';
+}
+
+function openUpdateStatusModal(vId, plate, status, location) {
+    var modal = document.getElementById('updateStatusModal');
+    var form = document.getElementById('updateStatusForm');
+    form.action = '/logistics/vehicle/' + vId + '/status/';
+    document.getElementById('statusModalPlate').innerText = 'Vehicle ' + plate;
+    document.getElementById('vehicleStatusSelect').value = status;
+    document.getElementById('vehicleLocationInput').value = location;
+    modal.style.display = 'flex';
+}
+function closeUpdateStatusModal() {
+    document.getElementById('updateStatusModal').style.display = 'none';
+}
+</script>
+{% endif %}
+{% endblock %}

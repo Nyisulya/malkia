@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+
+{% block title %}Customs Assessments | Malkia C&F{% endblock %}
+
+{% block content %}
+<div class="page-header-box">
+    <div>
+        <h2 class="page-title"><i class="fa-solid fa-stamp" style="color:var(--brand-primary);margin-right:0.4rem;"></i> TRA Customs Assessments Hub</h2>
+        <p class="page-subtitle">Track and record TRA tax assessment notices, import duty amounts, electronic control numbers, and upload official assessment documentation.</p>
+    </div>
+    <div>
+        <a href="{% url 'customs_pending_declarations' %}" class="btn-header-action btn-outline">
+            <i class="fa-solid fa-file-contract"></i> Pending Declarations
+        </a>
+    </div>
+</div>
+
+<!-- KPI SUMMARY PILLS -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));margin-bottom:1.5rem;">
+    <div class="kpi-card kpi-amber">
+        <div class="kpi-header">
+            <span class="kpi-title">Awaiting Assessment Notice</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-clock"></i></div>
+        </div>
+        <div class="kpi-value">{{ awaiting_count }}</div>
+        <div class="kpi-meta">
+            <span>Lodged in TANCIS, pending TRA appraisal</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-rose">
+        <div class="kpi-header">
+            <span class="kpi-title">Assessed (Awaiting Payment)</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-credit-card"></i></div>
+        </div>
+        <div class="kpi-value">{{ assessed_count }}</div>
+        <div class="kpi-meta">
+            <span>Notice received, pending Client TRA payment</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-emerald">
+        <div class="kpi-header">
+            <span class="kpi-title">Duty Paid & Settled</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+        <div class="kpi-value">{{ duty_settled_count }}</div>
+        <div class="kpi-meta">
+            <span>TRA duty cleared, ready for port inspection</span>
+        </div>
+    </div>
+</div>
+
+<!-- SEARCH & FILTER BAR -->
+<div class="card-panel" style="padding:1.25rem;margin-bottom:1.5rem;background:#FFFFFF;">
+    <form method="GET" action="{% url 'customs_assessments' %}" style="display:flex;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <div style="flex:1;min-width:260px;">
+            <input type="text" name="q" class="form-control" placeholder="Search by Job #, B/L #, Declaration #, Control #, or Client..." value="{{ search_query }}">
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <a href="{% url 'customs_assessments' %}" class="btn-header-action {% if not status_filter %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
+                All ({{ jobs|length }})
+            </a>
+            <a href="{% url 'customs_assessments' %}?filter=awaiting" class="btn-header-action {% if status_filter == 'awaiting' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
+                Awaiting Notice
+            </a>
+            <a href="{% url 'customs_assessments' %}?filter=assessed" class="btn-header-action {% if status_filter == 'assessed' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
+                Payment Pending
+            </a>
+            <a href="{% url 'customs_assessments' %}?filter=paid" class="btn-header-action {% if status_filter == 'paid' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
+                Duty Settled
+            </a>
+        </div>
+        <div>
+            <button type="submit" class="btn-header-action btn-primary" style="padding:0.6rem 1rem;">
+                <i class="fa-solid fa-magnifying-glass"></i> Search
+            </button>
+            {% if search_query or status_filter %}
+            <a href="{% url 'customs_assessments' %}" class="btn-header-action btn-outline" style="padding:0.6rem 0.9rem;">
+                Reset
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- ASSESSMENTS TABLE -->
+<div class="card-panel">
+    <div class="card-panel-header">
+        <div>
+            <h3 class="panel-title"><i class="fa-solid fa-stamp"></i> TRA Assessment Register</h3>
+            <p class="panel-description">Manage customs assessments, enter duty control numbers, and upload official TRA notice PDFs</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>B/L &amp; Chassis No</th>
+                    <th>Client / Consignee</th>
+                    <th>TANCIS Declaration #</th>
+                    <th>Assessed Duty (TSh)</th>
+                    <th>TRA Control Number</th>
+                    <th>Assessment PDF</th>
+                    <th>Payment Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+                <tr>
+                    <td>
+                        {% if is_ceo %}
+                        <div style="font-size:0.76rem;font-weight:800;color:#0F766E;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:#0F766E;text-decoration:none;">{{ job.job_number }}</a>
+                        </div>
+                        <div style="font-size:0.95rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;margin-top:0.1rem;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                        </div>
+                        {% else %}
+                        <div style="font-size:0.98rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                        </div>
+                        {% endif %}
+                        {% if job.chassis_number %}
+                        <div style="font-family:monospace;font-size:0.75rem;color:#1E40AF;margin-top:0.2rem;white-space:nowrap;">
+                            Chassis: <span style="background:#EFF6FF;padding:0.08rem 0.38rem;border-radius:4px;font-weight:700;border:1px solid #DBEAFE;">{{ job.chassis_number }}</span>
+                        </div>
+                        {% endif %}
+                        <div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.15rem;">Step {{ job.current_stage_number }}/11: {{ job.current_stage_obj.name_en }}</div>
+                    </td>
+                    <td>
+                        <strong style="color:var(--text-main);font-size:0.88rem;">{{ job.customer.company_name }}</strong>
+                        <div style="font-size:0.72rem;color:var(--text-muted);">TIN: {{ job.customer.tin_number|default:"-" }}</div>
+                    </td>
+                    <td>
+                        {% if job.declaration_number %}
+                        <span style="font-family:monospace;font-weight:700;color:var(--brand-navy-900);background:#F1F5F9;padding:0.2rem 0.5rem;border-radius:4px;display:inline-block;">
+                            {{ job.declaration_number }}
+                        </span>
+                        {% else %}
+                        <span style="color:#D97706;font-size:0.8rem;font-weight:600;">
+                            <i class="fa-solid fa-hourglass-start"></i> Pending Declaration
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if job.assessed_duty_amount > 0 %}
+                        <strong style="font-size:0.95rem;color:var(--brand-navy-900);display:block;">
+                            TSh {{ job.assessed_duty_amount|floatformat:0 }}
+                        </strong>
+                        <span style="font-size:0.7rem;color:var(--text-muted);">Total TRA Duty & Taxes</span>
+                        {% else %}
+                        <span style="color:#94A3B8;font-size:0.82rem;font-style:italic;">Not Yet Assessed</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if job.duty_payment_reference %}
+                        <span style="font-family:monospace;font-weight:700;color:#0F172A;background:#FEF3C7;color:#92400E;padding:0.2rem 0.5rem;border-radius:4px;display:inline-block;">
+                            {{ job.duty_payment_reference }}
+                        </span>
+                        {% else %}
+                        <span style="color:#94A3B8;font-size:0.8rem;">No Control Number</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% with job.documents.all as docs %}
+                            {% for d in docs %}
+                                {% if d.document_type == 'DECLARATION_ASSESSMENT' %}
+                                <a href="{{ d.file.url }}" target="_blank" class="btn-header-action btn-outline" style="padding:0.25rem 0.6rem;font-size:0.75rem;color:#DC2626;border-color:#FCA5A5;">
+                                    <i class="fa-solid fa-file-pdf"></i> View Notice
+                                </a>
+                                {% endif %}
+                            {% empty %}
+                                <span style="font-size:0.75rem;color:#94A3B8;">No PDF</span>
+                            {% endfor %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% if job.duty_paid %}
+                        <span class="badge-pill badge-completed">
+                            <i class="fa-solid fa-circle-check"></i> Duty Paid
+                        </span>
+                        {% elif job.assessed_duty_amount > 0 %}
+                        <span class="badge-pill badge-delayed" style="background:#FEF3C7;color:#B45309;">
+                            <i class="fa-solid fa-clock"></i> Payment Pending
+                        </span>
+                        {% else %}
+                        <span class="badge-pill badge-closed">Awaiting Assessment</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not is_ceo and is_clearing or not is_ceo and is_ops %}
+                        <button type="button" class="btn-header-action btn-primary" onclick="openAssessmentModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.declaration_number|default:'' }}', '{{ job.assessed_duty_amount|floatformat:0 }}', '{{ job.duty_payment_reference|default:'' }}')" style="padding:0.4rem 0.75rem;font-size:0.78rem;white-space:nowrap;">
+                            <i class="fa-solid fa-pen-to-square"></i> {% if job.assessed_duty_amount > 0 %}Edit Assessment{% else %}Record Assessment{% endif %}
+                        </button>
+                        {% else %}
+                        <span class="badge-pill badge-draft" style="font-size:0.75rem;">
+                            <i class="fa-solid fa-eye"></i> Oversight Only
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align:center;padding:3rem;color:var(--text-muted);">
+                        <i class="fa-solid fa-stamp" style="font-size:2.5rem;color:#CBD5E1;margin-bottom:0.75rem;display:block;"></i>
+                        No assessment records found matching your filter criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- RECORD ASSESSMENT MODAL -->
+<div id="assessmentModal" class="modal-overlay">
+    <div class="modal-card">
+        <form id="assessmentForm" action="" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Record / Submit TRA Assessment</h3>
+                    <p id="assessmentJobLabel" style="font-size:0.8rem;color:var(--text-muted);">Enter duty amount and electronic control number</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('assessmentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>TANCIS Assessment / Entry Number *</label>
+                        <input type="text" id="modalAssessmentNo" name="assessment_number" class="form-control" placeholder="e.g. TZ-DAR-2026-IM-0842" required>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Assessment Date *</label>
+                        <input type="date" id="modalAssessmentDate" name="assessment_date" class="form-control" value="{{ today|date:'Y-m-d' }}" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Assessed Duty Amount (TSh) *</label>
+                        <input type="number" step="1" id="modalDutyAmount" name="assessed_duty_amount" class="form-control" placeholder="e.g. 14500000" required>
+                        <small style="color:var(--text-muted);font-size:0.72rem;">Enter exact total tax amount on TRA assessment notice.</small>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>TRA e-Payment Control Number *</label>
+                        <input type="text" id="modalControlNo" name="control_number" class="form-control" placeholder="e.g. 991234567890" required>
+                        <small style="color:var(--text-muted);font-size:0.72rem;">Government e-Payment Gateway (GePG) control #.</small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Upload Assessment Notice PDF (Optional)</label>
+                    <input type="file" name="assessment_file" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
+                </div>
+                <div class="form-group">
+                    <label>Internal Customs Notes</label>
+                    <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Assessed under EAC CET tariff rate 25% + VAT 18%..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('assessmentModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-stamp"></i> Save & Hand Over to Finance
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openAssessmentModal(jobId, jobNum, decNo, dutyAmt, ctrlNo, assessDate) {
+    document.getElementById('assessmentForm').action = "/customs/assessments/" + jobId + "/record/";
+    document.getElementById('assessmentJobLabel').textContent = "Shipment: " + jobNum;
+    document.getElementById('modalAssessmentNo').value = decNo || '';
+    document.getElementById('modalAssessmentDate').value = assessDate || new Date().toISOString().split('T')[0];
+    document.getElementById('modalDutyAmount').value = dutyAmt ? dutyAmt.replace(/,/g, '') : '';
+    document.getElementById('modalControlNo').value = ctrlNo || '';
+    openModal('assessmentModal');
+}
+</script>
+{% endblock %}

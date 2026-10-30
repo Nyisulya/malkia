@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+
+{% block title %}Open New File (Document Officer) | Malkia C&F{% endblock %}
+
+{% block content %}
+<div style="max-width:920px;margin:0 auto;padding-bottom:3rem;">
+
+    <!-- TOP HEADER -->
+    <div class="page-header-box" style="margin-bottom:1.25rem;">
+        <div>
+            <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.35rem;">
+                <a href="{% url 'jobs_list' %}" style="color:var(--text-muted);text-decoration:none;"><i class="fa-solid fa-arrow-left"></i> Files</a> &bull; 
+                <span style="color:var(--brand-primary);font-weight:700;">Documentation Officer: Direct File Opening &amp; Scanner Intake</span>
+            </div>
+            <h2 class="page-title" style="font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;">
+                <i class="fa-solid fa-folder-plus" style="color:var(--brand-primary);margin-right:0.4rem;"></i> OPEN NEW FILE ({{ next_job_number }})
+            </h2>
+            <p class="page-subtitle" style="font-size:0.9rem;color:var(--text-muted);">
+                Enter only the essential file details, select <strong>Direct Duty Payment</strong> or <strong>In-Bond</strong> for the Declaration Officer, and drop the <strong>scanned client documents</strong> from the scanner machine to auto-bundle with <strong>Form C41 (TRA)</strong> &amp; <strong>TBS Letter</strong>.
+            </p>
+        </div>
+    </div>
+
+    <div class="card-panel" style="background:#FFFFFF;border-radius:var(--radius-xl);border:1px solid #E2E8F0;box-shadow:var(--shadow-md);padding:2rem;">
+        <form action="{% url 'job_create' %}" method="POST" enctype="multipart/form-data" id="docReceiveForm">
+            {% csrf_token %}
+
+            <!-- SECTION 1: CLIENT & ESSENTIAL FILE DETAILS (MINIMAL ENTRY) -->
+            <div style="margin-bottom:1.85rem;border-bottom:1px solid #E2E8F0;padding-bottom:1.65rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.15rem;flex-wrap:wrap;gap:0.5rem;">
+                    <div style="display:flex;align-items:center;gap:0.6rem;">
+                        <span style="width:28px;height:28px;border-radius:50%;background:var(--brand-primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;">1</span>
+                        <div>
+                            <h3 style="font-family:var(--font-heading);color:var(--brand-navy-900);font-size:1.12rem;font-weight:800;margin:0;">
+                                Client &amp; Essential File Details (Minimal Entry)
+                            </h3>
+                            <div style="font-size:0.78rem;color:var(--text-muted);">
+                                Internal staff see the <strong>BL Number</strong> as the File Cover; Boss tracks sequence <strong>{{ next_job_number }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button type="button" id="btnExistingClient" onclick="toggleClientMode('existing')" class="btn-header-action btn-primary" style="font-size:0.8rem;padding:0.35rem 0.85rem;">
+                            Select Existing Client
+                        </button>
+                        <button type="button" id="btnNewClient" onclick="toggleClientMode('new')" class="btn-header-action btn-outline" style="font-size:0.8rem;padding:0.35rem 0.85rem;">
+                            <i class="fa-solid fa-user-plus"></i> + New Client
+                        </button>
+                    </div>
+                </div>
+
+                <input type="hidden" name="client_mode" id="clientModeInput" value="existing">
+
+                <!-- EXISTING CLIENT SELECT -->
+                <div id="existingClientBox" style="margin-bottom:1.15rem;">
+                    <label style="font-weight:700;font-size:0.85rem;color:var(--brand-navy-900);display:block;margin-bottom:0.35rem;">
+                        Select Client *
+                    </label>
+                    <select name="customer" id="existingCustomerSelect" class="form-control" required style="height:44px;font-size:0.92rem;">
+                        <option value="">-- Select Client --</option>
+                        {% for c in customers %}
+                        <option value="{{ c.id }}">{{ c.company_name }} | Phone: {{ c.phone }} | TIN: {{ c.tin_number|default:"—" }} | ID: {{ c.id_number|default:"—" }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- NEW CLIENT INLINE FIELDS -->
+                <div id="newClientBox" style="display:none;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:var(--radius-lg);padding:1.15rem;margin-bottom:1.15rem;">
+                    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:0.9rem;">
+                        <div class="form-group" style="margin:0;grid-column:1/-1;">
+                            <label style="font-weight:700;font-size:0.84rem;">Client Name *</label>
+                            <input type="text" name="new_client_name" id="newClientName" class="form-control" placeholder="e.g. Juma Abdallah">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-weight:700;font-size:0.84rem;">Phone No *</label>
+                            <input type="text" name="new_client_phone" id="newClientPhone" class="form-control" placeholder="+255 754 000 000">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-weight:700;font-size:0.84rem;">Email *</label>
+                            <input type="email" name="new_client_email" id="newClientEmail" class="form-control" placeholder="client@example.com">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-weight:700;font-size:0.84rem;">TIN *</label>
+                            <input type="text" name="new_client_tin" id="newClientTin" class="form-control" placeholder="e.g. 100-245-891">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-weight:700;font-size:0.84rem;">ID (NIDA / Passport) *</label>
+                            <input type="text" name="new_client_id" id="newClientId" class="form-control" placeholder="e.g. 19900101-11101-00001-22">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CORE VEHICLE / FILE FIELDS & VESSEL -->
+                <div class="form-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:1rem;">
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-weight:700;font-size:0.85rem;">BL Number (File Cover Name) *</label>
+                        <input type="text" name="bl_number" required class="form-control" placeholder="e.g. MEDU-DAR-88201" style="font-family:monospace;text-transform:uppercase;font-weight:800;">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-weight:700;font-size:0.85rem;">Chassis Number *</label>
+                        <input type="text" name="chassis_number" required class="form-control" placeholder="e.g. ZSU60-019284" style="font-family:monospace;text-transform:uppercase;font-weight:800;">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-weight:700;font-size:0.85rem;">Vehicle Description *</label>
+                        <input type="text" name="cargo_description" class="form-control" required placeholder="e.g. Toyota Harrier 2020 (Black)">
+                    </div>
+                </div>
+
+                <!-- VESSEL & CARRIER INFO (ENTERED DIRECTLY FROM B/L) -->
+                <div class="form-grid" style="grid-template-columns:1.2fr 1.5fr 1fr;gap:1rem;margin-top:1rem;padding-top:1rem;border-top:1px dashed #E2E8F0;">
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-weight:700;font-size:0.85rem;"><i class="fa-solid fa-ship" style="color:var(--brand-primary);margin-right:0.25rem;"></i> Shipping Line / Carrier *</label>
+                        <select name="shipping_line" class="form-control" style="font-weight:700;">
+                            <option value="MSC">MSC (Mediterranean Shipping Co.)</option>
+                            <option value="MAERSK">Maersk Line</option>
+                            <option value="CMA_CGM">CMA CGM</option>
+                            <option value="HOEGH">Höegh Autoliners (RoRo)</option>
+                            <option value="GRIMALDI">Grimaldi Lines (RoRo)</option>
+                            <option value="EUKOR">EUKOR Car Carriers</option>
+                            <option value="NYK">NYK Line (RoRo)</option>
+                            <option value="MOL">MOL (Mitsui O.S.K.)</option>
+                            <option value="KLINE">"K" Line</option>
+                            <option value="WALLENIUS">Wallenius Wilhelmsen</option>
+                            <option value="PIL">PIL (Pacific International)</option>
+                            <option value="ONE">ONE (Ocean Network)</option>
+                            <option value="COSCO">COSCO Shipping</option>
+                            <option value="HAPAG">Hapag-Lloyd</option>
+                            <option value="OTHER" selected>Other / RoRo Carrier</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-weight:700;font-size:0.85rem;">Vessel Name &amp; Voyage Number *</label>
+                        <input type="text" name="vessel_name" class="form-control" placeholder="e.g. MSC LAURA V.2612E" style="font-weight:700;" required>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-weight:700;font-size:0.85rem;">Port of Origin</label>
+                        <input type="text" name="port_of_origin" class="form-control" value="Yokohama, Japan" placeholder="e.g. Yokohama, Japan">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: TRA DECLARATION MODE (DIRECT DUTY PAYMENT VS IN-BOND) -->
+            <div style="margin-bottom:1.85rem;border-bottom:1px solid #E2E8F0;padding-bottom:1.65rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem;flex-wrap:wrap;gap:0.5rem;">
+                    <div style="display:flex;align-items:center;gap:0.6rem;">
+                        <span style="width:28px;height:28px;border-radius:50%;background:#D97706;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;">2</span>
+                        <div>
+                            <h3 style="font-family:var(--font-heading);color:var(--brand-navy-900);font-size:1.12rem;font-weight:800;margin:0;">
+                                TRA Declaration Mode (Duty Payment vs In-Bond) *
+                            </h3>
+                            <div style="font-size:0.8rem;color:var(--text-muted);">
+                                Specify this clearly so the <strong>Declaration Officer</strong> knows whether to lodge as <strong>Direct Duty Payment</strong> or <strong>In-Bond</strong> in the TRA system.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;">
+                    <!-- OPTION 1: DIRECT DUTY PAYMENT -->
+                    <label id="cardModeDirect" style="display:flex;align-items:flex-start;gap:0.85rem;padding:1.1rem 1.2rem;border:2.5px solid #059669;background:#ECFDF5;border-radius:12px;cursor:pointer;transition:all 0.15s;">
+                        <input type="radio" name="clearance_mode" value="DIRECT" checked onchange="highlightClearanceMode(this.value)" style="margin-top:0.25rem;width:18px;height:18px;accent-color:#059669;">
+                        <div>
+                            <div style="font-weight:800;font-size:0.98rem;color:#065F46;display:flex;align-items:center;gap:0.4rem;">
+                                <i class="fa-solid fa-money-bill-transfer"></i> Direct Duty Payment (Pay TRA Tax Now)
+                            </div>
+                            <div style="font-size:0.79rem;color:#047857;margin-top:0.25rem;line-height:1.4;">
+                                Client will pay customs duty directly. Declaration Officer lodges in TRA for immediate <strong>Control Number</strong> &amp; direct release.
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- OPTION 2: IN-BOND -->
+                    <label id="cardModeBond" style="display:flex;align-items:flex-start;gap:0.85rem;padding:1.1rem 1.2rem;border:2px solid #CBD5E1;background:#FFFFFF;border-radius:12px;cursor:pointer;transition:all 0.15s;">
+                        <input type="radio" name="clearance_mode" value="BOND" onchange="highlightClearanceMode(this.value)" style="margin-top:0.25rem;width:18px;height:18px;accent-color:#D97706;">
+                        <div>
+                            <div style="font-weight:800;font-size:0.98rem;color:#92400E;display:flex;align-items:center;gap:0.4rem;">
+                                <i class="fa-solid fa-warehouse"></i> In-Bond (Duty Not Paid Yet — Hold in Bond)
+                            </div>
+                            <div style="font-size:0.79rem;color:#78350F;margin-top:0.25rem;line-height:1.4;">
+                                Duty is not paid yet. Declaration Officer lodges as <strong>Bond</strong> in TRA; vehicle stays at the office until paid (then becomes <strong>Ex-Bond</strong>).
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- SECTION 3: QUICK SCANNER INTAKE & AUTO-BUNDLING WITH C41 + TBS LETTER -->
+            <div style="margin-bottom:1.5rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem;flex-wrap:wrap;gap:0.5rem;">
+                    <div style="display:flex;align-items:center;gap:0.6rem;">
+                        <span style="width:28px;height:28px;border-radius:50%;background:#0284C7;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;">3</span>
+                        <div>
+                            <h3 style="font-family:var(--font-heading);color:var(--brand-navy-900);font-size:1.12rem;font-weight:800;margin:0;">
+                                Scanned Client Documents &amp; Auto-Bundling (C41 + TBS Letter)
+                            </h3>
+                            <div style="font-size:0.8rem;color:var(--text-muted);">
+                                Scan the client documents on the scanner machine, then drop them below — the system automatically merges them with <strong>Form C41</strong> and <strong>TBS Letter</strong>.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QUICK CHECKLIST PILLS (ALL CHECKED BY DEFAULT FOR 1-CLICK SPEED) -->
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.85rem;background:#F8FAFC;padding:0.75rem 1rem;border-radius:10px;border:1px solid #E2E8F0;">
+                    <div style="display:flex;align-items:center;gap:0.85rem;flex-wrap:wrap;font-size:0.82rem;font-weight:700;color:#0F172A;">
+                        <span style="color:var(--text-muted);font-weight:800;">5 Client Docs:</span>
+                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_bl_received" value="1" checked style="accent-color:#0284C7;"> 1. BL</label>
+                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_invoice_received" value="1" checked style="accent-color:#0284C7;"> 2. Invoice</label>
+                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_packing_list_received" value="1" checked style="accent-color:#0284C7;"> 3. Packing List</label>
+                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_tbs_cert_received" value="1" checked style="accent-color:#0284C7;"> 4. TBS Cert</label>
+                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_export_cert_received" value="1" checked style="accent-color:#0284C7;"> 5. Export Cert</label>
+                    </div>
+                    <select name="doc_receive_method" class="form-control" style="width:auto;height:34px;font-size:0.78rem;font-weight:700;padding:0 0.65rem;">
+                        <option value="PHYSICAL">Received: Physical (In-Office)</option>
+                        <option value="EMAIL">Received: Via Email</option>
+                        <option value="BOTH">Received: Physical &amp; Email</option>
+                    </select>
+                </div>
+
+                <!-- EASY DRAG & DROP SCANNER DROPZONE -->
+                <div id="scannerDropzone" onclick="document.getElementById('scannerFilesInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" style="border:2.5px dashed #0284C7;background:#F0F9FF;border-radius:14px;padding:1.65rem 1.25rem;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:1rem;">
+                    <input type="file" name="scanned_documents" id="scannerFilesInput" multiple accept=".pdf,image/*" style="display:none;" onchange="updateScannedFileList(this.files)">
+                    <div style="width:52px;height:52px;border-radius:50%;background:#E0F2FE;color:#0284C7;display:inline-flex;align-items:center;justify-content:center;font-size:1.45rem;margin-bottom:0.6rem;">
+                        <i class="fa-solid fa-file-arrow-up"></i>
+                    </div>
+                    <div style="font-weight:800;font-size:1rem;color:#0F172A;">
+                        Click Here or Drag &amp; Drop Scanned Documents from the Office Scanner
+                    </div>
+                    <div style="font-size:0.82rem;color:#475569;margin-top:0.25rem;">
+                        Select one combined PDF or multiple scanned pages (BL, Invoice, Packing List, TBS Cert, Export Cert) — they go straight into this file!
+                    </div>
+                    <div id="selectedScansPreview" style="margin-top:0.85rem;display:none;text-align:left;background:#FFFFFF;border:1px solid #BAE6FD;border-radius:10px;padding:0.75rem 1rem;"></div>
+                </div>
+
+                <!-- AUTO-BUNDLED OFFICE DOCUMENTS PREVIEW -->
+                <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                        <div style="width:40px;height:40px;border-radius:10px;background:#16A34A;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:800;font-size:0.9rem;color:#14532D;">
+                                Auto-Merged with Company Documents: 1. Form C41 (TRA) + 2. TBS Letter
+                            </div>
+                            <div style="font-size:0.78rem;color:#166534;">
+                                As soon as you click Submit, the system generates <code>TRA-C41/{{ next_job_number }}</code> and <code>MALKIA/TBS/{{ next_job_number }}</code> and combines them with your scanned client documents in one File Pack.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBMIT BUTTON -->
+            <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid #E2E8F0;padding-top:1.35rem;flex-wrap:wrap;gap:0.75rem;">
+                <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline">
+                    <i class="fa-solid fa-xmark"></i> Cancel
+                </a>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.85rem 2rem;font-size:0.95rem;font-weight:800;">
+                    <i class="fa-solid fa-folder-open"></i> Open File Now &amp; Bundle Scanned Docs + C41 + TBS
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleClientMode(mode) {
+    document.getElementById('clientModeInput').value = mode;
+    const existingBox = document.getElementById('existingClientBox');
+    const newBox = document.getElementById('newClientBox');
+    const btnEx = document.getElementById('btnExistingClient');
+    const btnNew = document.getElementById('btnNewClient');
+    const sel = document.getElementById('existingCustomerSelect');
+    const newName = document.getElementById('newClientName');
+    const newPhone = document.getElementById('newClientPhone');
+    const newEmail = document.getElementById('newClientEmail');
+    const newTin = document.getElementById('newClientTin');
+    const newId = document.getElementById('newClientId');
+
+    if (mode === 'new') {
+        existingBox.style.display = 'none';
+        newBox.style.display = 'block';
+        btnNew.className = 'btn-header-action btn-primary';
+        btnEx.className = 'btn-header-action btn-outline';
+        sel.removeAttribute('required');
+        newName.setAttribute('required', 'required');
+        newPhone.setAttribute('required', 'required');
+        newEmail.setAttribute('required', 'required');
+        newTin.setAttribute('required', 'required');
+        newId.setAttribute('required', 'required');
+    } else {
+        existingBox.style.display = 'block';
+        newBox.style.display = 'none';
+        btnEx.className = 'btn-header-action btn-primary';
+        btnNew.className = 'btn-header-action btn-outline';
+        sel.setAttribute('required', 'required');
+        newName.removeAttribute('required');
+        newPhone.removeAttribute('required');
+        newEmail.removeAttribute('required');
+        newTin.removeAttribute('required');
+        newId.removeAttribute('required');
+    }
+}
+
+function highlightClearanceMode(val) {
+    const directCard = document.getElementById('cardModeDirect');
+    const bondCard = document.getElementById('cardModeBond');
+    if (val === 'BOND') {
+        bondCard.style.border = '2.5px solid #D97706';
+        bondCard.style.background = '#FEF3C7';
+        directCard.style.border = '2px solid #CBD5E1';
+        directCard.style.background = '#FFFFFF';
+    } else {
+        directCard.style.border = '2.5px solid #059669';
+        directCard.style.background = '#ECFDF5';
+        bondCard.style.border = '2px solid #CBD5E1';
+        bondCard.style.background = '#FFFFFF';
+    }
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const dz = document.getElementById('scannerDropzone');
+    dz.style.background = '#E0F2FE';
+    dz.style.borderColor = '#0369A1';
+}
+
+function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const dz = document.getElementById('scannerDropzone');
+    dz.style.background = '#F0F9FF';
+    dz.style.borderColor = '#0284C7';
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    handleDragLeave(e);
+    const input = document.getElementById('scannerFilesInput');
+    if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+        input.files = e.dataTransfer.files;
+        updateScannedFileList(input.files);
+    }
+}
+
+function updateScannedFileList(files) {
+    const preview = document.getElementById('selectedScansPreview');
+    if (!files || files.length === 0) {
+        preview.style.display = 'none';
+        preview.innerHTML = '';
+        return;
+    }
+    let html = '<div style="font-weight:800;font-size:0.82rem;color:#0369A1;margin-bottom:0.4rem;"><i class="fa-solid fa-circle-check"></i> ' + files.length + ' Scanned File(s) Ready to Bundle into This File:</div><ul style="margin:0;padding-left:1.2rem;font-size:0.82rem;color:#0F172A;">';
+    for (let i = 0; i < files.length; i++) {
+        const kb = Math.round(files[i].size / 1024);
+        html += '<li><strong>' + files[i].name + '</strong> <span style="color:#64748B;">(' + kb + ' KB)</span></li>';
+    }
+    html += '</ul>';
+    preview.innerHTML = html;
+    preview.style.display = 'block';
+}
+</script>
+{% endblock %}

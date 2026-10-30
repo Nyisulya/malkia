@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+
+{% block title %}Billing & Client Invoices | Malkia C&F{% endblock %}
+
+{% block content %}
+<div class="page-header-box">
+    <div>
+        <h2 class="page-title"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Billing & Client Invoices Hub</h2>
+        <p class="page-subtitle">Generate client invoices, track clearing and forwarding fee billings, record customer payments, and monitor outstanding balances.</p>
+    </div>
+    <div style="display:flex;gap:0.75rem;">
+        <a href="{% url 'finance_transactions' %}" class="btn-header-action btn-outline">
+            <i class="fa-solid fa-receipt"></i> Transactions Ledger
+        </a>
+        {% if is_finance and not is_ceo %}
+        <button type="button" class="btn-header-action btn-primary" onclick="openModal('createInvoiceModal')">
+            <i class="fa-solid fa-plus"></i> Issue Client Invoice
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- KPI SUMMARY PILLS -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));margin-bottom:1.5rem;">
+    <div class="kpi-card kpi-blue">
+        <div class="kpi-header">
+            <span class="kpi-title">Total Revenue Billed</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+        </div>
+        <div class="kpi-value">TSh {{ total_billed|floatformat:0 }}</div>
+        <div class="kpi-meta">
+            <span>Cumulative client billings</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-emerald">
+        <div class="kpi-header">
+            <span class="kpi-title">Total Payments Collected</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+        <div class="kpi-value">TSh {{ total_collected|floatformat:0 }}</div>
+        <div class="kpi-meta">
+            <span class="trend-positive"><i class="fa-solid fa-arrow-down"></i> Received & reconciled</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-rose">
+        <div class="kpi-header">
+            <span class="kpi-title">Outstanding Client Balances</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+        </div>
+        <div class="kpi-value">TSh {{ total_outstanding|floatformat:0 }}</div>
+        <div class="kpi-meta">
+            <span style="color:#DC2626;font-weight:700;">Receivables due from clients</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-amber">
+        <div class="kpi-header">
+            <span class="kpi-title">Overdue Invoices</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        </div>
+        <div class="kpi-value">{{ overdue_count }}</div>
+        <div class="kpi-meta">
+            <span>Exceeded standard credit terms</span>
+        </div>
+    </div>
+</div>
+
+<!-- SEARCH & FILTER BAR -->
+<div class="card-panel" style="padding:1.25rem;margin-bottom:1.5rem;background:#FFFFFF;">
+    <form method="GET" action="{% url 'finance_billing' %}" style="display:flex;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <div style="flex:1;min-width:260px;">
+            <input type="text" name="q" class="form-control" placeholder="Search by Invoice #, Client Name, Job #, or B/L #..." value="{{ search_query }}">
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <a href="{% url 'finance_billing' %}" class="btn-header-action {% if not status_filter %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
+                All ({{ invoices|length }})
+            </a>
+            <a href="{% url 'finance_billing' %}?status=outstanding" class="btn-header-action {% if status_filter == 'outstanding' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
+                Outstanding Balances
+            </a>
+            <a href="{% url 'finance_billing' %}?status=PAID" class="btn-header-action {% if status_filter == 'PAID' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
+                Fully Paid
+            </a>
+            <a href="{% url 'finance_billing' %}?status=OVERDUE" class="btn-header-action {% if status_filter == 'OVERDUE' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
+                Overdue
+            </a>
+        </div>
+        <div>
+            <button type="submit" class="btn-header-action btn-primary" style="padding:0.6rem 1rem;">
+                <i class="fa-solid fa-magnifying-glass"></i> Filter
+            </button>
+            {% if search_query or status_filter %}
+            <a href="{% url 'finance_billing' %}" class="btn-header-action btn-outline" style="padding:0.6rem 0.9rem;">
+                Reset
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- INVOICES TABLE -->
+<div class="card-panel">
+    <div class="card-panel-header">
+        <div>
+            <h3 class="panel-title"><i class="fa-solid fa-file-invoice"></i> Client Invoices & Fee Ledger</h3>
+            <p class="panel-description">Detailed breakdown of clearance fees, duty disbursements, and collected balances</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>Invoice #</th>
+                    <th>Client / Consignee</th>
+                    <th>Shipment Job Ref</th>
+                    <th>Issue & Due Date</th>
+                    <th>Total Invoiced</th>
+                    <th>Amount Paid</th>
+                    <th>Balance Due</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inv in invoices %}
+                <tr>
+                    <td>
+                        <strong style="font-family:monospace;font-size:0.9rem;color:var(--brand-navy-900);">
+                            {{ inv.invoice_number }}
+                        </strong>
+                    </td>
+                    <td>
+                        <strong style="color:var(--text-main);font-size:0.9rem;">{{ inv.customer.company_name }}</strong>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">TIN: {{ inv.customer.tin_number|default:"-" }}</div>
+                    </td>
+                    <td>
+                        <strong style="font-size:0.88rem;">
+                            <a href="{% url 'job_detail' inv.job.id %}" style="color:var(--brand-primary);text-decoration:none;">
+                                {{ inv.job.job_number }}
+                            </a>
+                        </strong>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">B/L: {{ inv.job.bl_number }}</div>
+                    </td>
+                    <td>
+                        <div style="font-size:0.85rem;color:var(--text-main);">Issued: {{ inv.issue_date|date:"d M Y" }}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">Due: {{ inv.due_date|date:"d M Y" }}</div>
+                    </td>
+                    <td>
+                        <strong style="font-size:0.95rem;color:var(--brand-navy-900);">
+                            TSh {{ inv.total_amount|floatformat:0 }}
+                        </strong>
+                        <div style="font-size:0.7rem;color:var(--text-muted);">
+                            Agency: TSh {{ inv.amount_clearing_agency_fee|floatformat:0 }} &bull; Duty: TSh {{ inv.amount_duty_reimbursement|floatformat:0 }}
+                        </div>
+                    </td>
+                    <td>
+                        <strong style="color:#059669;font-size:0.9rem;">
+                            TSh {{ inv.amount_paid|floatformat:0 }}
+                        </strong>
+                    </td>
+                    <td>
+                        {% if inv.balance_due > 0 %}
+                        <strong style="color:#DC2626;font-size:0.9rem;">
+                            TSh {{ inv.balance_due|floatformat:0 }}
+                        </strong>
+                        {% else %}
+                        <span style="color:#059669;font-weight:700;font-size:0.85rem;"><i class="fa-solid fa-circle-check"></i> Cleared</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge-pill {% if inv.status == 'PAID' %}badge-completed{% elif inv.status == 'PARTIALLY_PAID' %}badge-delayed{% elif inv.status == 'OVERDUE' %}badge-delayed{% else %}badge-active{% endif %}">
+                            {{ inv.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if inv.balance_due > 0 %}
+                            {% if is_finance and not is_ceo %}
+                            <button type="button" class="btn-header-action btn-primary" onclick="openPaymentModal('{{ inv.id }}', '{{ inv.invoice_number }}', '{{ inv.customer.company_name }}', '{{ inv.balance_due|floatformat:0 }}')" style="padding:0.35rem 0.75rem;font-size:0.75rem;white-space:nowrap;">
+                                <i class="fa-solid fa-receipt"></i> Record Payment
+                            </button>
+                            {% else %}
+                            <span class="badge-pill" style="background:#FEF2F2;color:#DC2626;font-size:0.72rem;font-weight:700;">Pending Payment</span>
+                            {% endif %}
+                        {% else %}
+                        <span style="font-size:0.75rem;color:#059669;font-weight:600;"><i class="fa-solid fa-check-double"></i> Fully Settled</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" style="text-align:center;padding:3rem;color:var(--text-muted);">
+                        <i class="fa-solid fa-file-invoice" style="font-size:2.5rem;color:#CBD5E1;margin-bottom:0.75rem;display:block;"></i>
+                        No client invoices found matching your filter criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- RECORD PAYMENT MODAL -->
+<div id="recordPaymentModal" class="modal-overlay">
+    <div class="modal-card">
+        <form action="{% url 'payment_record' %}" method="POST">
+            {% csrf_token %}
+            <input type="hidden" id="modalPaymentInvId" name="invoice_id" value="">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Record Client Payment</h3>
+                    <p id="modalPaymentInvLabel" style="font-size:0.8rem;color:var(--text-muted);"></p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('recordPaymentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Outstanding Balance</label>
+                        <input type="text" id="modalPaymentDueDisplay" class="form-control" readonly style="background:#F8FAFC;font-weight:700;">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Amount Paid (TSh) *</label>
+                        <input type="number" step="0.01" id="modalPaymentAmount" name="amount" class="form-control" placeholder="e.g. 5000000" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Payment Method *</label>
+                        <select name="payment_method" class="form-control" required>
+                            {% for m_code, m_name in payment_methods %}
+                            <option value="{{ m_code }}">{{ m_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Payment Reference / Bank Slip # *</label>
+                        <input type="text" name="payment_reference" class="form-control" placeholder="e.g. CRDB-REF-90214, Cheque #01124" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Receipt Notes / Remarks</label>
+                    <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Part payment towards customs duty & clearance fees..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('recordPaymentModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-circle-check"></i> Confirm Payment Receipt
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CREATE INVOICE MODAL -->
+<div id="createInvoiceModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:680px;">
+        <form action="{% url 'invoice_create' %}" method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Generate Client Invoice</h3>
+                    <p style="font-size:0.8rem;color:var(--text-muted);">Issue official billing invoice for clearing & forwarding services</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('createInvoiceModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select Shipment Job *</label>
+                    <select name="job_id" class="form-control" required>
+                        <option value="">-- Choose Job Shipment --</option>
+                        {% for j in jobs %}
+                        <option value="{{ j.id }}">{{ j.job_number }} - {{ j.customer.company_name }} ({{ j.bl_number }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;">
+                    <h4 style="font-size:0.85rem;margin-bottom:0.75rem;color:var(--brand-navy-900);">Invoice Itemization (TSh)</h4>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1;">
+                            <label>Agency / Clearance Fee</label>
+                            <input type="number" step="0.01" name="agency_fee" class="form-control" placeholder="0" value="750000">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>TRA Duty Reimbursement</label>
+                            <input type="number" step="0.01" name="duty_reimb" class="form-control" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1;">
+                            <label>Port & Terminal Charges</label>
+                            <input type="number" step="0.01" name="port_charges" class="form-control" placeholder="0">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Shipping Line D/O</label>
+                            <input type="number" step="0.01" name="shipping_line" class="form-control" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1;">
+                            <label>Transport & Offloading</label>
+                            <input type="number" step="0.01" name="transport" class="form-control" placeholder="0">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Sundry & Documentation</label>
+                            <input type="number" step="0.01" name="sundry" class="form-control" placeholder="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Billing Notes / Bank Payment Terms</label>
+                    <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Payment due within 14 days to CRDB Account #0150..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('createInvoiceModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-file-invoice"></i> Issue Invoice
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openPaymentModal(invId, invNum, clientName, dueAmount) {
+    document.getElementById('modalPaymentInvId').value = invId;
+    document.getElementById('modalPaymentInvLabel').textContent = "Invoice: " + invNum + " - " + clientName;
+    document.getElementById('modalPaymentDueDisplay').value = "TSh " + Number(dueAmount).toLocaleString();
+    document.getElementById('modalPaymentAmount').value = dueAmount ? Number(dueAmount) : '';
+    openModal('recordPaymentModal');
+}
+</script>
+{% endblock %}

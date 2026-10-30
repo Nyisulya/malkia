@@ -1,0 +1,860 @@
+{% extends 'base.html' %}
+
+{% block title %}Yard Inventory &amp; Customer Handover | Malkia C&amp;F{% endblock %}
+
+{% block content %}
+<div style="max-width:1200px;margin:0 auto;padding-bottom:3rem;">
+
+    <!-- TOP HEADER -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
+        <div>
+            <h2 style="font-family:var(--font-heading);font-size:1.45rem;font-weight:800;color:var(--brand-navy-900);letter-spacing:-0.02em;margin:0;">
+                <i class="fa-solid fa-warehouse" style="color:#0D9488;"></i> Yard Inventory &amp; Customer Handover
+            </h2>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin:0.25rem 0 0 0;">
+                Automated port-cost compilation, in-bond vs direct release control, and customer vehicle handover.
+            </p>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <a href="{% url 'finance_billing' %}" class="btn-header-action btn-outline" style="font-size:0.85rem;padding:0.5rem 0.95rem;">
+                <i class="fa-solid fa-receipt"></i> Full Invoices Book
+            </a>
+            <a href="{% url 'jobs_archive' %}" class="btn-header-action btn-outline" style="font-size:0.85rem;padding:0.5rem 0.95rem;">
+                <i class="fa-solid fa-box-archive"></i> Handover Archive
+            </a>
+        </div>
+    </div>
+
+    <!-- 4 KPI SUMMARY CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:0.85rem;margin-bottom:1.5rem;">
+        
+        <!-- DIRECT READY -->
+        <a href="?tab=ready" style="text-decoration:none;">
+            <div class="card-panel" style="padding:1rem 1.15rem;border-left:4px solid #10B981;background:{% if tab == 'ready' or not tab %}#ECFDF5{% else %}#fff{% endif %};transition:all 0.2s;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:0.75rem;font-weight:800;color:#065F46;text-transform:uppercase;">Ready for Handover</span>
+                    <i class="fa-solid fa-key" style="color:#10B981;"></i>
+                </div>
+                <div style="font-size:1.75rem;font-weight:800;color:#047857;margin:0.35rem 0 0.15rem 0;">{{ ready_count }}</div>
+                <div style="font-size:0.72rem;color:#059669;font-weight:600;">Direct Clearance &bull; Ready for Customer</div>
+            </div>
+        </a>
+
+        <!-- IN-BOND STORAGE -->
+        <a href="?tab=bond" style="text-decoration:none;">
+            <div class="card-panel" style="padding:1rem 1.15rem;border-left:4px solid #F59E0B;background:{% if tab == 'bond' %}#FFFBEB{% else %}#fff{% endif %};transition:all 0.2s;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:0.75rem;font-weight:800;color:#92400E;text-transform:uppercase;">In-Bond Storage</span>
+                    <i class="fa-solid fa-lock" style="color:#F59E0B;"></i>
+                </div>
+                <div style="font-size:1.75rem;font-weight:800;color:#B45309;margin:0.35rem 0 0.15rem 0;">{{ bond_count }}</div>
+                <div style="font-size:0.72rem;color:#D97706;font-weight:600;">Customs Locked &bull; Duty Unpaid</div>
+            </div>
+        </a>
+
+        <!-- EN ROUTE FROM PORT -->
+        <a href="?tab=en_route" style="text-decoration:none;">
+            <div class="card-panel" style="padding:1rem 1.15rem;border-left:4px solid #3B82F6;background:{% if tab == 'en_route' %}#EFF6FF{% else %}#fff{% endif %};transition:all 0.2s;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:0.75rem;font-weight:800;color:#1E40AF;text-transform:uppercase;">En Route from Port</span>
+                    <i class="fa-solid fa-truck-moving" style="color:#3B82F6;"></i>
+                </div>
+                <div style="font-size:1.75rem;font-weight:800;color:#1D4ED8;margin:0.35rem 0 0.15rem 0;">{{ en_route_count }}</div>
+                <div style="font-size:0.72rem;color:#2563EB;font-weight:600;">Exited Port &bull; Driver Heading to Yard</div>
+            </div>
+        </a>
+
+        <!-- DELIVERED / COMPLETED -->
+        <a href="?tab=delivered" style="text-decoration:none;">
+            <div class="card-panel" style="padding:1rem 1.15rem;border-left:4px solid #8B5CF6;background:{% if tab == 'delivered' %}#F5F3FF{% else %}#fff{% endif %};transition:all 0.2s;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:0.75rem;font-weight:800;color:#5B21B6;text-transform:uppercase;">Delivered Vehicles</span>
+                    <i class="fa-solid fa-circle-check" style="color:#8B5CF6;"></i>
+                </div>
+                <div style="font-size:1.75rem;font-weight:800;color:#6D28D9;margin:0.35rem 0 0.15rem 0;">{{ delivered_count }}</div>
+                <div style="font-size:0.72rem;color:#7C3AED;font-weight:600;">Handed Over with Signed POD</div>
+            </div>
+        </a>
+
+    </div>
+
+    <!-- FILTER TABS & SEARCH BAR -->
+    <div class="card-panel" style="padding:0.85rem 1rem;margin-bottom:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+            
+            <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                <a href="?tab=ready" class="badge-pill {% if tab == 'ready' or not tab %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:700;">
+                    <i class="fa-solid fa-key"></i> Ready for Handover ({{ ready_count }})
+                </a>
+                <a href="?tab=bond" class="badge-pill {% if tab == 'bond' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:700;">
+                    <i class="fa-solid fa-lock"></i> In-Bond Storage ({{ bond_count }})
+                </a>
+                <a href="?tab=en_route" class="badge-pill {% if tab == 'en_route' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:700;">
+                    <i class="fa-solid fa-truck-moving"></i> En Route ({{ en_route_count }})
+                </a>
+                <a href="?tab=delivered" class="badge-pill {% if tab == 'delivered' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:700;">
+                    <i class="fa-solid fa-circle-check"></i> Delivered Archive ({{ delivered_count }})
+                </a>
+            </div>
+
+            <form method="GET" action="" style="display:flex;gap:0.4rem;align-items:center;flex-grow:1;max-width:340px;">
+                <input type="hidden" name="tab" value="{{ tab }}">
+                <input type="text" name="q" value="{{ search_q }}" class="form-control" placeholder="Search Chassis, B/L, Customer, Shelf..." style="padding:0.4rem 0.75rem;font-size:0.82rem;">
+                <button type="submit" class="btn-header-action btn-outline" style="padding:0.4rem 0.75rem;font-size:0.82rem;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- VEHICLES COMPACT TABLE (100% ENGLISH, CLEAN, SINGLE-LINE) -->
+    <div class="card-panel" style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
+        
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.82rem;text-align:left;">
+                <thead>
+                    <tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;color:#64748B;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">
+                        <th style="padding:0.65rem 0.85rem;font-weight:800;min-width:170px;">B/L &amp; Chassis No</th>
+                        <th style="padding:0.65rem 0.85rem;font-weight:800;min-width:180px;">Customer / Consignee</th>
+                        <th style="padding:0.65rem 0.85rem;font-weight:800;min-width:110px;">Status</th>
+                        <th style="padding:0.65rem 0.85rem;font-weight:800;min-width:160px;">Final Bill &amp; Balance</th>
+                        <th style="padding:0.65rem 0.85rem;font-weight:800;min-width:130px;">Storage / Shelf</th>
+                        <th style="padding:0.65rem 0.85rem;font-weight:800;text-align:right;min-width:130px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in vehicles %}
+                    {% with inv=v.invoices.first %}
+                    <tr onclick="openReportModal('{{ v.id }}')" style="border-bottom:1px solid #F1F5F9;transition:background 0.15s ease;cursor:pointer;white-space:nowrap;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#fff'">
+                        
+                        <!-- 1. B/L & CHASSIS (OR FILE NUMBER IF CEO) -->
+                        <td style="padding:0.65rem 0.85rem;vertical-align:middle;">
+                            {% if is_ceo %}
+                            <div style="font-weight:800;color:#0F766E;font-size:0.85rem;">
+                                {{ v.job_number }}
+                            </div>
+                            <div style="font-size:0.75rem;color:#475569;">
+                                B/L: <strong>{{ v.bl_number|default:"-" }}</strong>
+                            </div>
+                            {% if v.chassis_number %}
+                            <div style="font-family:monospace;font-size:0.72rem;color:#1E40AF;">
+                                Chassis: {{ v.chassis_number }}
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <div style="font-weight:800;color:#0F172A;font-size:0.88rem;letter-spacing:0.01em;">
+                                {{ v.bl_number|default:v.job_number }}
+                            </div>
+                            {% if v.chassis_number or v.container_numbers %}
+                            <div style="font-family:monospace;font-size:0.75rem;color:#64748B;margin-top:0.15rem;">
+                                Chassis: <span style="font-weight:700;color:#1E40AF;background:#EFF6FF;padding:0.05rem 0.35rem;border-radius:3px;">{{ v.chassis_number|default:v.container_numbers }}</span>
+                            </div>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+
+                        <!-- 2. CUSTOMER INFO -->
+                        <td style="padding:0.65rem 0.85rem;vertical-align:middle;">
+                            <span style="font-weight:700;color:#1E293B;max-width:220px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle;" title="{{ v.customer.company_name }}">
+                                {{ v.customer.company_name }}
+                            </span>
+                        </td>
+
+                        <!-- 3. STATUS BADGE -->
+                        <td style="padding:0.65rem 0.85rem;vertical-align:middle;">
+                            {% if v.status == 'COMPLETED' %}
+                            <span style="display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;font-weight:800;color:#5B21B6;background:#EDE9FE;padding:0.2rem 0.55rem;border-radius:4px;">
+                                <i class="fa-solid fa-circle-check"></i> Delivered
+                            </span>
+                            {% elif v.clearance_mode == 'BOND' %}
+                            <span style="display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;font-weight:800;color:#92400E;background:#FEF3C7;padding:0.2rem 0.55rem;border-radius:4px;">
+                                <i class="fa-solid fa-lock"></i> In-Bond
+                            </span>
+                            {% elif v.vehicle_arrived_at_office %}
+                            <span style="display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;font-weight:800;color:#047857;background:#D1FAE5;padding:0.2rem 0.55rem;border-radius:4px;">
+                                <i class="fa-solid fa-key"></i> Ready at Yard
+                            </span>
+                            {% else %}
+                            <span style="display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;font-weight:800;color:#1E40AF;background:#DBEAFE;padding:0.2rem 0.55rem;border-radius:4px;">
+                                <i class="fa-solid fa-truck-moving"></i> En Route
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- 4. FINAL BILL & BALANCE -->
+                        <td style="padding:0.65rem 0.85rem;vertical-align:middle;">
+                            <strong style="color:#0F172A;font-size:0.8rem;">TZS {{ inv.total_amount|default:0|floatformat:0 }}</strong>
+                            <span style="margin-left:0.35rem;">
+                                {% if v.client_outstanding_balance <= 0 and inv.total_amount > 0 %}
+                                <span style="font-size:0.72rem;font-weight:800;color:#059669;">
+                                    <i class="fa-solid fa-check"></i> Paid
+                                </span>
+                                {% else %}
+                                <span style="font-size:0.72rem;font-weight:800;color:#DC2626;">
+                                    (Due: {{ v.client_outstanding_balance|floatformat:0 }})
+                                </span>
+                                {% endif %}
+                            </span>
+                        </td>
+
+                        <!-- 5. STORAGE / SHELF -->
+                        <td style="padding:0.65rem 0.85rem;vertical-align:middle;">
+                            {% if v.box_number %}
+                            <span style="font-size:0.72rem;font-weight:800;color:#92400E;background:#FEF3C7;padding:0.18rem 0.5rem;border-radius:4px;border:1px solid #FDE68A;">
+                                <i class="fa-solid fa-folder-closed"></i> {{ v.box_number }}
+                            </span>
+                            {% else %}
+                            <span style="color:#94A3B8;font-size:0.75rem;">-</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- 6. ACTIONS -->
+                        <td style="padding:0.65rem 0.85rem;text-align:right;vertical-align:middle;">
+                            <div style="display:inline-flex;align-items:center;gap:0.35rem;" onclick="event.stopPropagation();">
+                                
+                                <!-- OPEN REPORT MODAL -->
+                                <button type="button" onclick="openReportModal('{{ v.id }}')" class="btn-header-action btn-primary" style="padding:0.3rem 0.65rem;font-size:0.72rem;font-weight:800;display:inline-flex;align-items:center;gap:0.3rem;background:#1E3A8A;border-color:#1E3A8A;" title="Open Vehicle &amp; Billing Report">
+                                    <i class="fa-solid fa-file-invoice"></i> Report
+                                </button>
+
+                                <!-- PRINT COMMERCIAL INVOICE -->
+                                <a href="{% url 'print_job_invoice' v.id %}" target="_blank" class="btn-header-action btn-outline" style="padding:0.3rem 0.5rem;font-size:0.72rem;" title="Print Commercial Invoice">
+                                    <i class="fa-solid fa-print"></i>
+                                </a>
+
+                                <!-- QUICK HANDOVER BUTTON (IF READY & NOT DELIVERED) -->
+                                {% if v.vehicle_arrived_at_office and v.clearance_mode != 'BOND' and v.status != 'COMPLETED' %}
+                                <button type="button" onclick="openHandoverModal('{{ v.id }}', '{{ v.bl_number|default:v.chassis_number }}', '{{ v.customer.contact_person|default:v.customer.company_name }}', '{{ v.customer.phone|default:"" }}', '{{ v.client_outstanding_balance|floatformat:0 }}')" class="btn-header-action btn-primary" style="background:#059669;border-color:#059669;padding:0.3rem 0.6rem;font-size:0.72rem;font-weight:800;" title="Handover Vehicle to Customer">
+                                    <i class="fa-solid fa-key"></i> Handover
+                                </button>
+                                {% endif %}
+
+                                <!-- QUICK RECEIVE PAYMENT (IF BALANCE DUE) -->
+                                {% if v.client_outstanding_balance > 0 and v.status != 'COMPLETED' %}
+                                <button type="button" onclick="openPaymentModal('{{ v.id }}', '{{ v.bl_number|default:v.chassis_number }}', '{{ v.customer.company_name }}', '{{ v.client_outstanding_balance|floatformat:0 }}')" class="btn-header-action btn-primary" style="background:#D97706;border-color:#D97706;padding:0.3rem 0.6rem;font-size:0.72rem;font-weight:800;" title="Receive Bill Payment">
+                                    <i class="fa-solid fa-money-bill-wave"></i> Pay
+                                </button>
+                                {% endif %}
+
+                            </div>
+                        </td>
+
+                    </tr>
+                    {% endwith %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="padding:2.5rem 1rem;text-align:center;color:#94A3B8;">
+                            <i class="fa-solid fa-car" style="font-size:2rem;color:#CBD5E1;margin-bottom:0.5rem;display:block;"></i>
+                            <strong style="color:#64748B;font-size:0.9rem;">No vehicles found in this section</strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ======================================================== -->
+<!-- MODAL: FULL VEHICLE & COST REPORT (FOR EACH VEHICLE)     -->
+<!-- ======================================================== -->
+{% for v in vehicles %}
+{% with inv=v.invoices.first %}
+<div id="reportModal_{{ v.id }}" onclick="if(event.target===this) closeReportModal('{{ v.id }}')" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:99900;align-items:center;justify-content:center;padding:1.5rem 1rem;overflow-y:auto;">
+    <div style="background:#fff;border-radius:var(--radius-lg);max-width:780px;width:100%;max-height:calc(100vh - 3rem);display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,0.4);overflow:hidden;animation:slideDown 0.2s ease-out;">
+        
+        <!-- MODAL HEADER -->
+        <div style="background:#0B152B;color:#fff;padding:1rem 1.35rem;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+            <div>
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+                    {% if is_ceo %}
+                    <span style="font-size:0.75rem;font-weight:800;background:#3B82F6;color:#fff;padding:0.18rem 0.55rem;border-radius:4px;">
+                        File: {{ v.job_number }}
+                    </span>
+                    <span style="font-size:0.75rem;font-weight:800;background:#0D9488;color:#fff;padding:0.18rem 0.55rem;border-radius:4px;">
+                        B/L: {{ v.bl_number|default:"-" }}
+                    </span>
+                    {% else %}
+                    <span style="font-size:0.75rem;font-weight:800;background:#0D9488;color:#fff;padding:0.18rem 0.55rem;border-radius:4px;">
+                        B/L: {{ v.bl_number|default:v.job_number }}
+                    </span>
+                    {% endif %}
+                    {% if v.chassis_number or v.container_numbers %}
+                    <span style="font-size:0.75rem;color:#94A3B8;">
+                        Chassis: <strong style="color:#fff;font-family:monospace;">{{ v.chassis_number|default:v.container_numbers }}</strong>
+                    </span>
+                    {% endif %}
+                </div>
+                <h3 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:800;margin:0;">
+                    {{ v.cargo_description|default:"Customer Vehicle" }}
+                </h3>
+            </div>
+            <button type="button" onclick="closeReportModal('{{ v.id }}')" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.85rem;padding:0.35rem 0.75rem;border-radius:4px;cursor:pointer;font-weight:700;">
+                <i class="fa-solid fa-xmark"></i> Close
+            </button>
+        </div>
+
+        <!-- MODAL SCROLLABLE BODY -->
+        <div style="overflow-y:auto;padding:1.25rem;flex:1;display:flex;flex-direction:column;gap:1.15rem;">
+            
+            <!-- 1. VEHICLE & CLIENT SUMMARY BAR -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:0.85rem 1rem;font-size:0.8rem;">
+                <div>
+                    <span style="color:#64748B;font-size:0.7rem;font-weight:800;text-transform:uppercase;display:block;">Customer / Consignee:</span>
+                    <strong style="font-size:0.92rem;color:#0F172A;">{{ v.customer.company_name }}</strong>
+                    <div style="color:#475569;margin-top:0.2rem;">Phone: <strong>{{ v.customer.phone|default:"-" }}</strong> &bull; B/L: <strong>{{ v.bl_number|default:"-" }}</strong></div>
+                </div>
+                <div>
+                    <span style="color:#64748B;font-size:0.7rem;font-weight:800;text-transform:uppercase;display:block;">Status &amp; Physical File Location:</span>
+                    <div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.15rem;flex-wrap:wrap;">
+                        <span style="font-weight:800;font-size:0.75rem;background:#FEF3C7;color:#92400E;padding:0.2rem 0.5rem;border-radius:4px;">
+                            <i class="fa-solid fa-folder-closed"></i> {{ v.box_number|default:"Not Assigned Yet" }}
+                        </span>
+                        <button type="button" onclick="openBoxModal('{{ v.id }}', '{{ v.chassis_number|default:v.job_number }}', '{{ v.box_number|default:"" }}')" style="background:#fff;border:1px solid #CBD5E1;color:#1E293B;border-radius:4px;cursor:pointer;font-size:0.72rem;font-weight:700;padding:0.15rem 0.45rem;">
+                            <i class="fa-solid fa-pen"></i> Edit Shelf
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. TWO-COLUMN GRID: LEFT (ICD CHECKLIST) | RIGHT (AUTOMATIC COMPILED FINAL BILL) -->
+            <div style="display:grid;grid-template-columns:1fr 1.15fr;gap:1rem;">
+                
+                <!-- LEFT: ICD INSPECTION CHECKLIST -->
+                <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:0.9rem;display:flex;flex-direction:column;gap:0.65rem;font-size:0.8rem;">
+                    <div>
+                        <span style="color:#64748B;display:block;font-size:0.7rem;font-weight:800;text-transform:uppercase;">Driver &amp; Yard Handover</span>
+                        {% if v.vehicle_arrived_at_office %}
+                        <strong style="color:#059669;"><i class="fa-solid fa-location-dot"></i> Arrived at Yard:</strong> {{ v.vehicle_arrived_at|date:"d M Y H:i" }}
+                        <div style="color:#475569;font-size:0.75rem;">Driver: <strong>{{ v.vehicle_driver_name|default:"Office Driver" }}</strong></div>
+                        {% elif v.vehicle_dispatched_to_office %}
+                        <strong style="color:#2563EB;"><i class="fa-solid fa-car-side"></i> In Transit:</strong> Exited port at {{ v.vehicle_dispatched_at|date:"d M H:i" }}
+                        <div style="color:#475569;font-size:0.75rem;">Driver: <strong>{{ v.vehicle_driver_name|default:"Office Driver" }}</strong></div>
+                        {% else %}
+                        <span style="color:#94A3B8;">Pending port release</span>
+                        {% endif %}
+                    </div>
+
+                    <div style="border-top:1px dashed #E2E8F0;padding-top:0.5rem;">
+                        <span style="color:#64748B;display:block;font-size:0.7rem;font-weight:800;text-transform:uppercase;margin-bottom:0.25rem;">ICD Condition Checklist</span>
+                        {% if v.vehicle_inspection_done %}
+                        <div style="font-weight:700;color:#334155;line-height:1.6;">
+                            Body: {% if v.vehicle_has_scratches %}<span style="color:#DC2626;">⚠️ Scratches Noted</span>{% else %}<span style="color:#059669;">✅ Clean</span>{% endif %}<br>
+                            Radio: {% if v.vehicle_radio_present %}<span style="color:#059669;">✅ Present</span>{% else %}<span style="color:#DC2626;">❌ Missing</span>{% endif %}<br>
+                            Spare Tyre: {% if v.vehicle_spare_wheel_present %}<span style="color:#059669;">✅ Present</span>{% else %}<span style="color:#DC2626;">❌ Missing</span>{% endif %}<br>
+                            Jack &amp; Tools: {% if v.vehicle_jack_tools_present %}<span style="color:#059669;">✅ Present</span>{% else %}<span style="color:#DC2626;">❌ Missing</span>{% endif %}
+                        </div>
+                        {% if v.vehicle_inspection_notes %}
+                        <div style="font-size:0.72rem;color:#64748B;font-style:italic;margin-top:0.35rem;">"{{ v.vehicle_inspection_notes }}"</div>
+                        {% endif %}
+                        {% else %}
+                        <span style="color:#94A3B8;">Checklist not recorded</span>
+                        {% endif %}
+                    </div>
+
+                    {% if v.clearance_mode == 'BOND' %}
+                    <div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:4px;padding:0.45rem 0.6rem;color:#92400E;font-size:0.75rem;font-weight:700;">
+                        <i class="fa-solid fa-lock"></i> HELD IN BOND: Cannot be released without TRA customs clearance.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- RIGHT: AUTOMATIC COMPILED FINAL BILL -->
+                <div style="background:#FFFDF5;border:1px solid #FDE68A;border-radius:6px;padding:0.9rem;display:flex;flex-direction:column;justify-content:space-between;">
+                    <div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                            <span style="font-size:0.72rem;font-weight:800;color:#92400E;text-transform:uppercase;">
+                                <i class="fa-solid fa-receipt"></i> Client Final Billing Breakdown
+                            </span>
+                            <span style="font-size:0.7rem;font-weight:800;color:#B45309;background:#FEF3C7;padding:0.15rem 0.45rem;border-radius:4px;">
+                                {{ inv.invoice_number|default:"AUTO-BILL" }}
+                            </span>
+                        </div>
+
+                        <!-- ITEM SUMMARY TABLE -->
+                        <div style="display:flex;flex-direction:column;gap:0.35rem;font-size:0.8rem;color:#334155;">
+                            
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span>1. Agency Clearing Fee:</span>
+                                <div style="display:flex;align-items:center;gap:0.35rem;">
+                                    <strong>TZS {{ inv.amount_clearing_agency_fee|default:350000|floatformat:0 }}</strong>
+                                    <button type="button" onclick="openAgencyFeeModal('{{ v.id }}', '{{ v.chassis_number|default:v.job_number }}', '{{ inv.amount_clearing_agency_fee|default:350000|floatformat:0 }}')" style="background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;border-radius:4px;cursor:pointer;font-size:0.7rem;font-weight:700;padding:0.1rem 0.35rem;" title="Edit Agency Fee">
+                                        <i class="fa-solid fa-pen"></i> Edit
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style="display:flex;justify-content:space-between;">
+                                <span>2. Shipping Line D/O Release:</span>
+                                <strong>TZS {{ inv.amount_shipping_line_do|default:0|floatformat:0 }}</strong>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;">
+                                <span>3. Port Wharfage &amp; Terminal (ICD):</span>
+                                <strong>TZS {{ inv.amount_port_charges|default:0|floatformat:0 }}</strong>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;">
+                                <span>4. Port-to-Yard Transfer &amp; Inspection:</span>
+                                <strong>TZS {{ inv.amount_transport|default:20000|floatformat:0 }}</strong>
+                            </div>
+
+                            <div style="border-top:1px dashed #D97706;margin:0.25rem 0;"></div>
+
+                            <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:800;color:#1E3A8A;">
+                                <span>TOTAL CHARGES:</span>
+                                <span>TZS {{ inv.total_amount|default:0|floatformat:0 }}</span>
+                            </div>
+
+                            <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:#059669;">
+                                <span>Amount Paid:</span>
+                                <span>- TZS {{ inv.amount_paid|default:0|floatformat:0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BALANCE DUE DISPLAY -->
+                    <div style="margin-top:0.6rem;background:#fff;padding:0.45rem 0.75rem;border-radius:6px;border:1.5px solid {% if v.client_outstanding_balance <= 0 and inv.total_amount > 0 %}#10B981{% else %}#EF4444{% endif %};display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:0.78rem;font-weight:800;color:#334155;">BALANCE DUE:</span>
+                        {% if v.client_outstanding_balance <= 0 and inv.total_amount > 0 %}
+                        <span style="font-size:0.9rem;font-weight:800;color:#059669;">
+                            <i class="fa-solid fa-circle-check"></i> FULLY PAID
+                        </span>
+                        {% else %}
+                        <span style="font-size:1rem;font-weight:800;color:#DC2626;">
+                            TZS {{ v.client_outstanding_balance|floatformat:0 }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- 3. HANDOVER / POD DETAILS (IF COMPLETED) -->
+            {% if v.status == 'COMPLETED' %}
+            <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:6px;padding:0.85rem 1rem;font-size:0.8rem;">
+                <strong style="color:#5B21B6;display:block;margin-bottom:0.25rem;">
+                    <i class="fa-solid fa-circle-check"></i> Handover Completed:
+                </strong>
+                <div style="color:#334155;">
+                    Handed over to <strong>{{ v.received_by_name }}</strong> on {{ v.delivered_date|date:"d M Y H:i" }}.
+                    {% if v.proof_of_delivery_image %}
+                    <a href="{{ v.proof_of_delivery_image.url }}" target="_blank" style="color:#2563EB;font-weight:700;margin-left:0.5rem;text-decoration:underline;">
+                        <i class="fa-solid fa-image"></i> View POD Document
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- MODAL FOOTER ACTIONS -->
+        <div style="padding:0.85rem 1.25rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;gap:0.5rem;justify-content:space-between;align-items:center;flex-shrink:0;flex-wrap:wrap;">
+            
+            <button type="button" onclick="closeReportModal('{{ v.id }}')" class="btn-header-action btn-outline" style="padding:0.5rem 0.95rem;font-weight:700;font-size:0.8rem;">
+                <i class="fa-solid fa-arrow-left"></i> Close
+            </button>
+
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                
+                <!-- PRINT INVOICE -->
+                <a href="{% url 'print_job_invoice' v.id %}" target="_blank" class="btn-header-action btn-outline" style="padding:0.5rem 0.85rem;font-size:0.8rem;font-weight:700;" title="Print Commercial Invoice">
+                    <i class="fa-solid fa-print"></i> Print Invoice
+                </a>
+
+                <!-- CONFIRM ARRIVAL IF EN ROUTE -->
+                {% if v.vehicle_dispatched_to_office and not v.vehicle_arrived_at_office %}
+                <form method="POST" action="{% url 'yard_handover_action' v.id %}" style="margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action_type" value="CONFIRM_ARRIVAL">
+                    <button type="submit" class="btn-header-action btn-primary" style="background:#2563EB;border-color:#2563EB;padding:0.5rem 0.95rem;font-size:0.8rem;font-weight:700;">
+                        <i class="fa-solid fa-location-pin"></i> Confirm Arrival at Yard
+                    </button>
+                </form>
+                {% endif %}
+
+                <!-- RECEIVE PAYMENT BUTTON IF UNPAID -->
+                {% if v.client_outstanding_balance > 0 and v.status != 'COMPLETED' %}
+                <button type="button" onclick="closeReportModal('{{ v.id }}'); openPaymentModal('{{ v.id }}', '{{ v.chassis_number|default:v.job_number }}', '{{ v.customer.company_name }}', '{{ v.client_outstanding_balance|floatformat:0 }}')" class="btn-header-action btn-primary" style="background:#D97706;border-color:#D97706;padding:0.5rem 0.95rem;font-size:0.8rem;font-weight:800;">
+                    <i class="fa-solid fa-money-bill-wave"></i> Receive Payment (TZS {{ v.client_outstanding_balance|floatformat:0 }})
+                </button>
+                {% endif %}
+
+                <!-- HANDOVER BUTTON -->
+                {% if v.vehicle_arrived_at_office and v.clearance_mode != 'BOND' and v.status != 'COMPLETED' %}
+                <button type="button" onclick="closeReportModal('{{ v.id }}'); openHandoverModal('{{ v.id }}', '{{ v.chassis_number|default:v.job_number }}', '{{ v.customer.contact_person|default:v.customer.company_name }}', '{{ v.customer.phone|default:"" }}', '{{ v.client_outstanding_balance|floatformat:0 }}')" class="btn-header-action btn-primary" style="background:#059669;border-color:#059669;padding:0.5rem 1.1rem;font-size:0.82rem;font-weight:800;">
+                    <i class="fa-solid fa-key"></i> Handover (POD)
+                </button>
+                {% endif %}
+
+                <!-- FULL JOB DETAILS -->
+                <a href="{% url 'job_detail' v.id %}" class="btn-header-action btn-outline" style="padding:0.5rem 0.85rem;font-size:0.8rem;">
+                    <i class="fa-solid fa-folder-open"></i> Full File
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+{% endwith %}
+{% endfor %}
+
+
+<!-- ======================================================== -->
+<!-- MODAL: EDIT AGENCY FEE                                   -->
+<!-- ======================================================== -->
+<div id="agencyFeeModal" onclick="if(event.target===this) closeAgencyFeeModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:99999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:var(--radius-lg);max-width:440px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.4);overflow:hidden;animation:slideDown 0.2s ease-out;">
+        <div style="background:#1E3A8A;color:#fff;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <h4 style="font-family:var(--font-heading);font-size:1.05rem;font-weight:800;margin:0;">
+                    <i class="fa-solid fa-pen-to-square"></i> Set / Edit Agency Fee
+                </h4>
+                <span style="font-size:0.72rem;opacity:0.9;">Agreed clearing agency fee with the client</span>
+            </div>
+            <button type="button" onclick="closeAgencyFeeModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:0.85rem;padding:0.25rem 0.6rem;border-radius:4px;cursor:pointer;font-weight:700;">
+                <i class="fa-solid fa-xmark"></i> Close
+            </button>
+        </div>
+        <form id="agencyFeeForm" method="POST" action="" style="padding:1.25rem;">
+            {% csrf_token %}
+            <div style="margin-bottom:0.75rem;background:#EFF6FF;padding:0.6rem 0.75rem;border-radius:6px;border:1px solid #BFDBFE;">
+                <span style="font-size:0.72rem;color:#1E40AF;font-weight:700;">VEHICLE / CHASSIS:</span>
+                <div id="feeModalVehicle" style="font-size:0.9rem;font-weight:800;color:#1E3A8A;"></div>
+            </div>
+            <div style="margin-bottom:1rem;">
+                <label style="display:block;font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                    Agency Clearing Fee (TZS) *
+                </label>
+                <input type="number" id="feeModalAmount" name="agency_fee" class="form-control" required style="font-size:1.15rem;font-weight:800;padding:0.6rem 0.85rem;color:#0F172A;">
+                <small style="font-size:0.72rem;color:#64748B;">This fee is automatically billed on the client's final invoice.</small>
+            </div>
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+                <button type="button" onclick="closeAgencyFeeModal()" class="btn-header-action btn-outline" style="padding:0.55rem 1rem;">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#1E3A8A;border-color:#1E3A8A;padding:0.55rem 1.25rem;font-weight:800;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Agency Fee
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ======================================================== -->
+<!-- MODAL: EDIT CABINET / SHELF / BOX LOCATION               -->
+<!-- ======================================================== -->
+<div id="boxModal" onclick="if(event.target===this) closeBoxModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:99999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:var(--radius-lg);max-width:440px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.4);overflow:hidden;animation:slideDown 0.2s ease-out;">
+        <div style="background:#0F766E;color:#fff;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <h4 style="font-family:var(--font-heading);font-size:1.05rem;font-weight:800;margin:0;">
+                    <i class="fa-solid fa-folder-closed"></i> Physical File Location
+                </h4>
+                <span style="font-size:0.72rem;opacity:0.9;">Cabinet or Shelf where this dossier is stored</span>
+            </div>
+            <button type="button" onclick="closeBoxModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:0.85rem;padding:0.25rem 0.6rem;border-radius:4px;cursor:pointer;font-weight:700;">
+                <i class="fa-solid fa-xmark"></i> Close
+            </button>
+        </div>
+        <form id="boxForm" method="POST" action="" style="padding:1.25rem;">
+            {% csrf_token %}
+            <div style="margin-bottom:0.75rem;background:#F0FDFA;padding:0.6rem 0.75rem;border-radius:6px;border:1px solid #99F6E4;">
+                <span style="font-size:0.72rem;color:#0F766E;font-weight:700;">SHIPMENT / CHASSIS:</span>
+                <div id="boxModalVehicle" style="font-size:0.9rem;font-weight:800;color:#115E59;"></div>
+            </div>
+            <div style="margin-bottom:1rem;">
+                <label style="display:block;font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                    Shelf / Cabinet / Box Reference *
+                </label>
+                <input type="text" id="boxModalInput" name="box_number" class="form-control" placeholder="e.g. Cabinet 1, Shelf 2" required style="font-size:1rem;font-weight:800;padding:0.6rem 0.85rem;color:#0F172A;">
+                <small style="font-size:0.72rem;color:#64748B;">Searching this location will immediately retrieve this file anytime.</small>
+            </div>
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+                <button type="button" onclick="closeBoxModal()" class="btn-header-action btn-outline" style="padding:0.55rem 1rem;">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#0F766E;border-color:#0F766E;padding:0.55rem 1.25rem;font-weight:800;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Location
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: RECEIVE PAYMENT FROM CUSTOMER                     -->
+<!-- ======================================================== -->
+<div id="paymentModal" onclick="if(event.target===this) closePaymentModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:99999;align-items:center;justify-content:center;padding:1.5rem 1rem;overflow-y:auto;">
+    <div style="background:#fff;border-radius:var(--radius-lg);max-width:480px;width:100%;max-height:calc(100vh - 3rem);display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,0.4);overflow:hidden;animation:slideDown 0.2s ease-out;">
+        
+        <div style="background:#D97706;color:#fff;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+            <div>
+                <h3 style="font-family:var(--font-heading);font-size:1.1rem;font-weight:800;margin:0;">
+                    <i class="fa-solid fa-money-bill-wave"></i> Receive Customer Payment
+                </h3>
+                <span style="font-size:0.72rem;opacity:0.9;">Record receipt of clearance and port fees before vehicle release</span>
+            </div>
+            <button type="button" onclick="closePaymentModal()" style="background:rgba(255,255,255,0.25);border:none;color:#fff;font-size:0.85rem;padding:0.35rem 0.75rem;border-radius:4px;cursor:pointer;font-weight:700;">
+                <i class="fa-solid fa-xmark"></i> Close
+            </button>
+        </div>
+
+        <form id="paymentForm" method="POST" action="" style="display:flex;flex-direction:column;overflow:hidden;margin:0;">
+            {% csrf_token %}
+
+            <div style="overflow-y:auto;padding:1.25rem;flex:1;">
+                <div style="margin-bottom:0.85rem;background:#FEF3C7;padding:0.75rem;border-radius:6px;border:1px solid #FCD34D;">
+                    <span style="font-size:0.72rem;color:#92400E;font-weight:700;">SHIPMENT / CUSTOMER:</span>
+                    <div id="payModalVehicle" style="font-size:0.92rem;font-weight:800;color:#78350F;"></div>
+                    <div id="payModalClient" style="font-size:0.78rem;color:#92400E;"></div>
+                </div>
+
+                <div style="margin-bottom:0.85rem;">
+                    <label style="display:block;font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                        Amount to Receive (TZS) *
+                    </label>
+                    <input type="number" id="payModalAmount" name="amount" class="form-control" required style="font-size:1.1rem;font-weight:800;padding:0.6rem 0.85rem;color:#0F172A;">
+                </div>
+
+                <div style="margin-bottom:0.85rem;">
+                    <label style="display:block;font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                        Payment Method *
+                    </label>
+                    <select name="payment_method" class="form-control" style="font-size:0.9rem;font-weight:700;padding:0.5rem 0.75rem;">
+                        <option value="CASH" selected>💵 Cash at Yard</option>
+                        <option value="MOBILE_MONEY">📱 Mobile Money (M-Pesa / TigoPesa / Airtel)</option>
+                        <option value="BANK_TRANSFER">🏦 Bank Transfer (CRDB / NMB)</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom:0.5rem;">
+                    <label style="display:block;font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                        Receipt / M-Pesa Code / Payer Reference:
+                    </label>
+                    <input type="text" name="payment_reference" class="form-control" placeholder="e.g. QJD892019 or Yard Cash" style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                </div>
+            </div>
+
+            <div style="padding:0.85rem 1.25rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;gap:0.6rem;justify-content:flex-end;flex-shrink:0;">
+                <button type="button" onclick="closePaymentModal()" class="btn-header-action btn-outline" style="padding:0.65rem 1.15rem;font-weight:700;">
+                    Cancel / Close
+                </button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#D97706;border-color:#D97706;padding:0.65rem 1.35rem;font-weight:800;font-size:0.92rem;">
+                    <i class="fa-solid fa-check"></i> Confirm Payment Receipt
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+
+<!-- ======================================================== -->
+<!-- MODAL: HANDOVER TO CUSTOMER                              -->
+<!-- ======================================================== -->
+<div id="handoverModal" onclick="if(event.target===this) closeHandoverModal()" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:99999;align-items:center;justify-content:center;padding:1.5rem 1rem;overflow-y:auto;">
+    <div style="background:#fff;border-radius:var(--radius-lg);max-width:540px;width:100%;max-height:calc(100vh - 3rem);display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,0.4);overflow:hidden;animation:slideDown 0.2s ease-out;">
+        
+        <div style="background:#059669;color:#fff;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+            <div>
+                <h3 style="font-family:var(--font-heading);font-size:1.1rem;font-weight:800;margin:0;">
+                    <i class="fa-solid fa-key"></i> Customer Vehicle Handover
+                </h3>
+                <span style="font-size:0.72rem;opacity:0.9;">Inspect vehicle, sign Proof of Delivery (POD), and close dossier</span>
+            </div>
+            <button type="button" onclick="closeHandoverModal()" style="background:rgba(255,255,255,0.25);border:none;color:#fff;font-size:0.85rem;padding:0.35rem 0.75rem;border-radius:4px;cursor:pointer;font-weight:700;">
+                <i class="fa-solid fa-xmark"></i> Close
+            </button>
+        </div>
+
+        <form id="handoverForm" method="POST" action="" enctype="multipart/form-data" style="display:flex;flex-direction:column;overflow:hidden;margin:0;">
+            {% csrf_token %}
+            <input type="hidden" name="action_type" value="HANDOVER">
+
+            <div style="overflow-y:auto;padding:1.25rem;flex:1;">
+                
+                <div style="margin-bottom:0.85rem;background:#ECFDF5;padding:0.75rem;border-radius:6px;border:1px solid #A7F3D0;">
+                    <span style="font-size:0.72rem;color:#047857;font-weight:700;">VEHICLE BEING RELEASED:</span>
+                    <div id="modalVehicleTitle" style="font-size:0.95rem;font-weight:800;color:#065F46;"></div>
+                </div>
+
+                <!-- ONE-CLICK SETTLEMENT CHECKBOX IF UNPAID -->
+                <div id="handoverPaymentBox" style="display:none;margin-bottom:0.85rem;background:#FFFBEB;padding:0.75rem;border-radius:6px;border:1.5px solid #F59E0B;">
+                    <label style="display:flex;align-items:flex-start;gap:0.5rem;cursor:pointer;">
+                        <input type="checkbox" name="settle_payment_now" value="YES" checked style="width:18px;height:18px;margin-top:0.15rem;accent-color:#D97706;">
+                        <div>
+                            <strong style="font-size:0.82rem;color:#92400E;">Client is settling remaining balance now at yard</strong>
+                            <div id="handoverBalanceText" style="font-size:0.75rem;color:#B45309;"></div>
+                        </div>
+                    </label>
+                    <div style="margin-top:0.45rem;">
+                        <select name="handover_payment_method" class="form-control" style="font-size:0.78rem;padding:0.35rem 0.6rem;">
+                            <option value="CASH">💵 Cash</option>
+                            <option value="MOBILE_MONEY">📱 M-Pesa / TigoPesa</option>
+                            <option value="BANK_TRANSFER">🏦 Bank Transfer</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:0.85rem;">
+                    <label style="display:block;font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                        Receiver's Full Name (Customer / Authorized Driver) *
+                    </label>
+                    <input type="text" id="modalReceiverName" name="received_by_name" class="form-control" placeholder="e.g. Hassan Mwinyi" required style="font-size:0.88rem;padding:0.55rem 0.75rem;">
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.85rem;">
+                    <div>
+                        <label style="display:block;font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                            ID Number (NIDA / Driver's License)
+                        </label>
+                        <input type="text" name="id_number" class="form-control" placeholder="e.g. 198204..." style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                            Phone Number
+                        </label>
+                        <input type="text" id="modalReceiverPhone" name="phone_number" class="form-control" placeholder="e.g. +255 7..." style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom:0.85rem;">
+                    <label style="display:block;font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                        <i class="fa-solid fa-camera"></i> Receiver Photo with Vehicle or Signed POD Document:
+                    </label>
+                    <input type="file" name="pod_file" class="form-control" accept="image/*" capture="environment" style="font-size:0.82rem;padding:0.45rem;">
+                    <small style="font-size:0.7rem;color:#64748B;">Upload photo of receiver with car keys or signed physical delivery note.</small>
+                </div>
+
+                <div style="margin-bottom:0.85rem;">
+                    <label style="display:block;font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                        <i class="fa-solid fa-folder-closed"></i> Physical Storage Reference (Cabinet / Shelf / Box) *
+                    </label>
+                    <input type="text" name="box_number" class="form-control" placeholder="e.g. Cabinet 1, Shelf 2 (or Box 12)" style="font-size:0.88rem;padding:0.55rem 0.75rem;font-weight:700;color:#0F172A;">
+                    <small style="font-size:0.7rem;color:#64748B;">Record the archive location so this file can be instantly retrieved in the future.</small>
+                </div>
+
+                <div style="margin-bottom:0.5rem;">
+                    <label style="display:block;font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                        Handover Notes:
+                    </label>
+                    <input type="text" name="notes" class="form-control" value="2 keys, radio, spare tyre, and jack inspected by customer. Vehicle released in good order." style="font-size:0.82rem;padding:0.5rem 0.75rem;">
+                </div>
+
+            </div>
+
+            <div style="padding:0.85rem 1.25rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;gap:0.6rem;justify-content:flex-end;flex-shrink:0;">
+                <button type="button" onclick="closeHandoverModal()" class="btn-header-action btn-outline" style="padding:0.65rem 1.15rem;font-weight:700;">
+                    <i class="fa-solid fa-xmark"></i> Cancel / Close
+                </button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#059669;border-color:#059669;padding:0.65rem 1.35rem;font-weight:800;font-size:0.92rem;">
+                    <i class="fa-solid fa-check"></i> Confirm Handover &amp; Close File
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+
+// Open / Close Full Report Modal
+function openReportModal(jobId) {
+    var modal = document.getElementById('reportModal_' + jobId);
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeReportModal(jobId) {
+    var modal = document.getElementById('reportModal_' + jobId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Box / Cabinet Modal
+function openBoxModal(jobId, vehicleTitle, currentBox) {
+    document.getElementById('boxForm').action = "/yard/box/" + jobId + "/";
+    document.getElementById('boxModalVehicle').innerText = vehicleTitle;
+    document.getElementById('boxModalInput').value = currentBox || '';
+    document.getElementById('boxModal').style.display = 'flex';
+}
+
+function closeBoxModal() {
+    document.getElementById('boxModal').style.display = 'none';
+}
+
+// Agency Fee Modal
+function openAgencyFeeModal(jobId, vehicleTitle, currentFee) {
+    document.getElementById('agencyFeeForm').action = "/yard/agency-fee/" + jobId + "/";
+    document.getElementById('feeModalVehicle').innerText = vehicleTitle;
+    document.getElementById('feeModalAmount').value = currentFee || '350000';
+    document.getElementById('agencyFeeModal').style.display = 'flex';
+}
+
+function closeAgencyFeeModal() {
+    document.getElementById('agencyFeeModal').style.display = 'none';
+}
+
+// Payment Modal
+function openPaymentModal(jobId, chassis, clientName, balance) {
+    document.getElementById('paymentForm').action = "/yard/payment/" + jobId + "/";
+    document.getElementById('payModalVehicle').innerText = "Shipment / Chassis: " + chassis;
+    document.getElementById('payModalClient').innerText = "Customer: " + clientName;
+    document.getElementById('payModalAmount').value = balance;
+    document.getElementById('paymentModal').style.display = 'flex';
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+}
+
+// Handover Modal
+function openHandoverModal(jobId, vehicleTitle, receiverName, phone, balance) {
+    document.getElementById('handoverForm').action = "/yard/handover/" + jobId + "/";
+    document.getElementById('modalVehicleTitle').innerText = vehicleTitle;
+    document.getElementById('modalReceiverName').value = receiverName || '';
+    document.getElementById('modalReceiverPhone').value = phone || '';
+    
+    var payBox = document.getElementById('handoverPaymentBox');
+    var balanceText = document.getElementById('handoverBalanceText');
+    if (balance && parseInt(balance) > 0) {
+        payBox.style.display = 'block';
+        balanceText.innerText = "Outstanding Balance: TZS " + parseInt(balance).toLocaleString();
+    } else {
+        payBox.style.display = 'none';
+    }
+
+    document.getElementById('handoverModal').style.display = 'flex';
+}
+
+function closeHandoverModal() {
+    document.getElementById('handoverModal').style.display = 'none';
+}
+
+// Close modals with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeHandoverModal();
+        closePaymentModal();
+        closeAgencyFeeModal();
+        closeBoxModal();
+        // Close any open report modals
+        var reportModals = document.querySelectorAll('[id^="reportModal_"]');
+        reportModals.forEach(function(m) {
+            m.style.display = 'none';
+        });
+    }
+});
+</script>
+
+{% endblock %}

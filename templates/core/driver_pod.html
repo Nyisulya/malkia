@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block title %}Proof of Delivery (POD) | Driver Console{% endblock %}
+
+{% block content %}
+<div style="max-width:760px;margin:0 auto;">
+
+    <!-- HEADER TITLE & RETURN LINK -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+        <div>
+            <a href="{% url 'driver_delivery' %}" style="font-size:0.85rem;color:#059669;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:0.35rem;margin-bottom:0.4rem;">
+                <i class="fa-solid fa-arrow-left"></i> Back to My Delivery
+            </a>
+            <h2 style="font-family:var(--font-heading);font-size:1.4rem;font-weight:800;color:var(--text-main);margin:0;">
+                <i class="fa-solid fa-signature" style="color:#059669;"></i> Proof of Delivery (POD)
+            </h2>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin-top:0.2rem;">
+                Submit a clear photo or copy of the signed and stamped Delivery Note / POD to conclude the haulage trip.
+            </p>
+        </div>
+    </div>
+
+    {% if active_delivery %}
+    <!-- CURRENT TRIP CONTEXT BAR -->
+    <div style="background:linear-gradient(135deg, #064E3B 0%, #047857 100%);color:#fff;border-radius:var(--radius-lg);padding:1.1rem 1.25rem;margin-bottom:1.5rem;box-shadow:var(--shadow-sm);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+            <div>
+                <span style="font-size:0.75rem;background:rgba(255,255,255,0.2);padding:0.2rem 0.5rem;border-radius:999px;font-weight:700;">
+                    {{ active_delivery.job_number }}
+                </span>
+                <strong style="margin-left:0.5rem;font-size:0.95rem;">{{ active_delivery.cargo_description|truncatewords:5 }}</strong>
+            </div>
+            <div style="font-size:0.8rem;color:#A7F3D0;">
+                <i class="fa-solid fa-location-dot"></i> {{ active_delivery.final_destination }}
+            </div>
+        </div>
+        <div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid rgba(255,255,255,0.2);font-size:0.78rem;color:#D1FAE5;display:flex;gap:1rem;flex-wrap:wrap;">
+            <span><i class="fa-solid fa-truck"></i> Truck: <strong>{{ active_delivery.truck_number|default:'T 412 DXE' }}</strong></span>
+            <span><i class="fa-solid fa-box"></i> Container: <strong>{{ active_delivery.container_numbers }}</strong></span>
+            <span><i class="fa-solid fa-building"></i> Client: <strong>{{ active_delivery.customer.company_name }}</strong></span>
+        </div>
+    </div>
+
+    <!-- POD SUBMISSION FORM -->
+    <form method="POST" action="{% url 'driver_pod_action' active_delivery.id %}" enctype="multipart/form-data" class="card-panel" style="padding:1.5rem;margin-bottom:1.5rem;border-top:4px solid #059669;">
+        {% csrf_token %}
+
+        <!-- RECIPIENT FULL NAME -->
+        <div style="margin-bottom:1.25rem;">
+            <label style="display:block;font-size:0.88rem;font-weight:700;color:var(--text-main);margin-bottom:0.45rem;">
+                1. Recipient Full Name (Jina Kamili la Mpokeaji) *
+            </label>
+            <div style="position:relative;width:100%;">
+                <span style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#059669;font-size:1.05rem;">
+                    <i class="fa-solid fa-user-check"></i>
+                </span>
+                <input type="text" name="received_by_name" required class="form-input" 
+                    style="width:100% !important;box-sizing:border-box;display:block;height:48px;padding-left:3rem;border:1.5px solid #CBD5E1;border-radius:10px;font-size:0.95rem;"
+                    placeholder="e.g., Hassan Juma (Warehouse Manager / Storekeeper)">
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.35rem;">
+                Authorized personnel officially receiving cargo at client warehouse/site.
+            </div>
+        </div>
+
+        <!-- RECIPIENT PHONE NUMBER -->
+        <div style="margin-bottom:1.25rem;">
+            <label style="display:block;font-size:0.88rem;font-weight:700;color:var(--text-main);margin-bottom:0.45rem;">
+                2. Recipient Phone Number (Namba ya Simu ya Mpokeaji)
+            </label>
+            <div style="position:relative;width:100%;">
+                <span style="position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#059669;font-size:1.05rem;">
+                    <i class="fa-solid fa-phone"></i>
+                </span>
+                <input type="text" name="recipient_phone" class="form-input" 
+                    style="width:100% !important;box-sizing:border-box;display:block;height:48px;padding-left:3rem;border:1.5px solid #CBD5E1;border-radius:10px;font-size:0.95rem;"
+                    placeholder="e.g., +255 754 000 111"
+                    value="{{ active_delivery.customer.phone|default:'' }}">
+            </div>
+        </div>
+
+        <!-- POD FILE / CAMERA CAPTURE -->
+        <div style="margin-bottom:1.5rem;">
+            <label style="display:block;font-size:0.88rem;font-weight:700;color:var(--text-main);margin-bottom:0.45rem;">
+                3. Upload Signed POD / Delivery Note (Picha au Hati ya POD) *
+            </label>
+            <div style="border:2px dashed #059669;border-radius:14px;padding:1.5rem;text-align:center;background:#F0FDF4;cursor:pointer;" onclick="document.getElementById('podFileInput').click();">
+                <div style="width:54px;height:54px;background:#DCFCE7;color:#059669;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:0.75rem;">
+                    <i class="fa-solid fa-file-invoice"></i>
+                </div>
+                <div style="font-weight:700;font-size:1rem;color:#065F46;margin-bottom:0.25rem;">
+                    Piga Picha au Chagua Faili ya POD (Select / Capture POD)
+                </div>
+                <div style="font-size:0.78rem;color:#15803D;margin-bottom:0.85rem;">
+                    Hakikisha picha inaonyesha saini ya mpokeaji, tarehe, na mhuri rasmi (official stamp).
+                </div>
+                <input type="file" id="podFileInput" name="pod_file" required accept="image/*,application/pdf" capture="environment" 
+                    style="display:block;margin:0 auto;font-size:0.85rem;color:#065F46;">
+            </div>
+        </div>
+
+        <!-- SEAL & CONDITION VERIFICATION CHECKBOX -->
+        <div style="margin-bottom:1.25rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:1rem;">
+            <label style="display:flex;align-items:flex-start;gap:0.75rem;cursor:pointer;">
+                <input type="checkbox" required style="margin-top:0.2rem;width:18px;height:18px;accent-color:#059669;">
+                <span style="font-size:0.84rem;color:var(--text-main);line-height:1.45;">
+                    <strong>Uthibitisho wa Usalama wa Mzigo:</strong> Ninathibitisha kuwa kontena <strong>{{ active_delivery.container_numbers }}</strong> lenye seal <strong>{{ active_delivery.seal_number|default:'Intact' }}</strong> limewasilishwa na kupokelewa salama bila hitilafu au upungufu wowote.
+                </span>
+            </label>
+        </div>
+
+        <!-- REMARKS / NOTES -->
+        <div style="margin-bottom:1.5rem;">
+            <label style="display:block;font-size:0.88rem;font-weight:700;color:var(--text-main);margin-bottom:0.45rem;">
+                4. Maelezo ya Mwisho / Delivery Remarks (Hiari)
+            </label>
+            <textarea name="remarks" rows="2" class="form-input"
+                style="width:100% !important;box-sizing:border-box;display:block;min-height:80px;border:1.5px solid #CBD5E1;border-radius:10px;padding:0.75rem 1rem;font-size:0.92rem;font-family:inherit;"
+                placeholder="e.g., Mzigo umeshushwa salama warehouse bay 3; hakuna uharibifu wa seal wala kontena."></textarea>
+        </div>
+
+        <!-- SUBMIT BUTTON -->
+        <button type="submit" style="width:100%;background:linear-gradient(135deg, #10B981 0%, #059669 100%);color:#fff;border:none;padding:1.1rem;border-radius:12px;font-size:1.02rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.6rem;box-shadow:0 4px 14px rgba(16, 185, 129, 0.35);">
+            <i class="fa-solid fa-circle-check"></i> Wasilisha Hati ya POD (Submit Proof of Delivery)
+        </button>
+    </form>
+
+    {% else %}
+    <div class="card-panel" style="padding:2.5rem;text-align:center;margin-bottom:1.5rem;">
+        <i class="fa-solid fa-clipboard-check" style="font-size:2.5rem;color:#059669;margin-bottom:0.75rem;"></i>
+        <h3 style="font-size:1.2rem;font-weight:700;margin:0 0 0.5rem 0;">No Deliveries Awaiting POD</h3>
+        <p style="font-size:0.85rem;color:var(--text-muted);margin:0 0 1rem 0;">
+            You have no active deliveries requiring POD submission. All allocated trips are completed.
+        </p>
+        <a href="{% url 'driver_delivery' %}" class="btn-primary" style="display:inline-block;padding:0.5rem 1rem;font-size:0.85rem;text-decoration:none;">
+            Back to My Delivery
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- PREVIOUS POD RECORDS -->
+    {% if recent_pods %}
+    <div class="card-panel" style="padding:1.25rem;">
+        <h4 style="font-family:var(--font-heading);font-size:0.95rem;font-weight:700;color:var(--text-main);margin:0 0 0.75rem 0;display:flex;align-items:center;gap:0.5rem;">
+            <i class="fa-solid fa-file-invoice" style="color:#059669;"></i> Recent POD Submissions & Delivery History
+        </h4>
+        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+            {% for job in recent_pods %}
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem;background:#F8FAFC;border-radius:var(--radius-md);border-left:3px solid #059669;flex-wrap:wrap;gap:0.5rem;">
+                <div>
+                    <strong style="color:#0F172A;font-size:0.85rem;">{{ job.job_number }}</strong>
+                    <span style="font-size:0.78rem;color:var(--text-muted);margin-left:0.5rem;">{{ job.customer.company_name }}</span>
+                    <div style="font-size:0.75rem;color:#059669;margin-top:0.15rem;">
+                        <i class="fa-solid fa-user-check"></i> Received by: <strong>{{ job.received_by_name|default:'Client Rep' }}</strong> &bull; Date: {{ job.delivered_date|date:"d M Y H:i"|default:job.updated_at|date:"d M Y" }}
+                    </div>
+                </div>
+                <div>
+                    {% if job.proof_of_delivery_image %}
+                    <a href="{{ job.proof_of_delivery_image.url }}" target="_blank" style="background:#ECFDF5;color:#059669;border:1px solid #A7F3D0;padding:0.35rem 0.75rem;border-radius:var(--radius-sm);font-size:0.75rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;">
+                        <i class="fa-solid fa-eye"></i> View POD
+                    </a>
+                    {% else %}
+                    <span class="badge-pill badge-active" style="background:#ECFDF5;color:#065F46;font-size:0.72rem;">Completed</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Operations Overview | Director & Executive Console{% endblock %}
+
+{% block content %}
+<div style="max-width:1200px;margin:0 auto;">
+
+    <!-- EXECUTIVE OPERATIONS HEADER BANNER -->
+    <div style="background:linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%);color:#fff;border-radius:var(--radius-xl);padding:1.5rem;margin-bottom:1.5rem;box-shadow:var(--shadow-md);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;background:rgba(255,255,255,0.15);padding:0.25rem 0.75rem;border-radius:999px;font-weight:700;">
+                    <i class="fa-solid fa-network-wired"></i> Central Operations Control
+                </span>
+                <span style="background:rgba(59,130,246,0.25);color:#93C5FD;font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:999px;font-weight:600;">
+                    <i class="fa-solid fa-circle" style="font-size:0.5rem;vertical-align:middle;"></i> Pipeline Active
+                </span>
+            </div>
+            <div style="font-size:0.8rem;color:#94A3B8;">
+                <i class="fa-regular fa-calendar-check"></i> {{ today|date:"l, d M Y" }} &bull; Central Operations
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <div>
+                <h2 style="font-family:var(--font-heading);font-size:1.45rem;font-weight:800;letter-spacing:-0.02em;margin:0;">
+                    End-to-End Cargo Operations
+                </h2>
+                <p style="font-size:0.85rem;color:#CBD5E1;margin-top:0.25rem;">
+                    Comprehensive operational tracking from document intake, TANCIS customs clearance, port terminal handling, to final haulage dispatch.
+                </p>
+            </div>
+            <div style="display:flex;gap:0.5rem;">
+                <a href="{% url 'jobs_list' %}" class="btn-header-action" style="background:rgba(255,255,255,0.15);color:#fff;font-weight:700;padding:0.55rem 1.1rem;border-radius:var(--radius-md);text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;border:1px solid rgba(255,255,255,0.25);">
+                    <i class="fa-solid fa-boxes-stacked"></i> All Jobs Directory
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5 OPERATIONS METRIC CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+        <div class="card-panel" style="padding:1.1rem;border-left:4px solid #3B82F6;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Active Pipeline</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#1D4ED8;margin-top:0.25rem;">{{ pipeline_total }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Shipments in progress</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.1rem;border-left:4px solid #F59E0B;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Pending Intakes</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#B45309;margin-top:0.25rem;">{{ intakes_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Stages 1 & 2 file opening</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.1rem;border-left:4px solid #0D9488;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Port & Terminal</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#0F766E;margin-top:0.25rem;">{{ port_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Stages 5–10 at port/ICD</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.1rem;border-left:4px solid #8B5CF6;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Fleet In Transit</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#6D28D9;margin-top:0.25rem;">{{ active_fleet_in_transit }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Trucks on delivery</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.1rem;border-left:4px solid #10B981;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Completed Ops</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#047857;margin-top:0.25rem;">{{ completed_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Delivered & closed</div>
+        </div>
+    </div>
+
+    <!-- TABS & FILTER BAR -->
+    <div class="card-panel" style="padding:1rem;margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <!-- 4 OPERATIONS TABS -->
+            <div style="display:flex;gap:0.4rem;overflow-x:auto;padding-bottom:0.25rem;">
+                <a href="?tab=active" class="badge-pill {% if tab == 'active' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-boxes-stacked"></i> Active Operations ({{ pipeline_total }})
+                </a>
+                <a href="?tab=intakes" class="badge-pill {% if tab == 'intakes' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-inbox"></i> Pending Intakes ({{ intakes_count }})
+                </a>
+                <a href="?tab=port" class="badge-pill {% if tab == 'port' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-anchor"></i> Port & Terminal ({{ port_count }})
+                </a>
+                <a href="?tab=completed" class="badge-pill {% if tab == 'completed' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-clipboard-check"></i> Completed ({{ completed_count }})
+                </a>
+            </div>
+
+            <!-- SEARCH FORM -->
+            <form method="GET" style="display:flex;gap:0.5rem;align-items:center;">
+                <input type="hidden" name="tab" value="{{ tab }}">
+                <input type="text" name="q" value="{{ search_q }}" placeholder="Search Job, B/L, Container, Client..." class="form-input" style="font-size:0.82rem;padding:0.4rem 0.75rem;min-width:220px;">
+                <button type="submit" class="btn-primary" style="padding:0.4rem 0.8rem;font-size:0.82rem;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+                {% if search_q %}
+                <a href="?tab={{ tab }}" class="btn-secondary" style="padding:0.4rem 0.8rem;font-size:0.82rem;text-decoration:none;">Reset</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- OPERATIONS TABLE -->
+    <div class="card-panel" style="padding:1.25rem;">
+        <div style="overflow-x:auto;">
+            <table class="data-table" style="width:100%;font-size:0.85rem;">
+                <thead>
+                    <tr>
+                        <th>Job Ref</th>
+                        <th>Client / B/L Number</th>
+                        <th>Cargo & Container</th>
+                        <th>Workflow Stage</th>
+                        <th>Assigned Personnel</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in jobs %}
+                    <tr>
+                        <td>
+                            <strong style="color:#2563EB;">{{ job.job_number }}</strong>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">{{ job.created_at|date:"d M Y" }}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight:700;color:var(--text-main);">{{ job.customer.company_name }}</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">BL: {{ job.bl_number }}</div>
+                        </td>
+                        <td>
+                            <div>{{ job.cargo_description|truncatewords:4 }}</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">
+                                {{ job.container_numbers|truncatechars:20 }} ({{ job.get_container_size_type_display }})
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:0.4rem;">
+                                <span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#EEF2FF;color:#4F46E5;font-size:0.75rem;font-weight:800;text-align:center;line-height:24px;">
+                                    {{ job.current_stage_number }}
+                                </span>
+                                <span style="font-weight:600;color:var(--text-main);font-size:0.82rem;">
+                                    Stage {{ job.current_stage_number }}: In Progress
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">
+                                <div><i class="fa-solid fa-stamp" style="width:14px;color:#7C3AED;"></i> {{ job.clearing_officer.get_full_name|default:'Unassigned' }}</div>
+                                <div><i class="fa-solid fa-anchor" style="width:14px;color:#0D9488;"></i> {{ job.port_officer.get_full_name|default:'Unassigned' }}</div>
+                                <div><i class="fa-solid fa-truck" style="width:14px;color:#F59E0B;"></i> {{ job.driver.get_full_name|default:'Unassigned' }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if job.status == 'COMPLETED' %}
+                            <span class="badge-pill badge-active" style="background:#ECFDF5;color:#065F46;font-size:0.75rem;">
+                                <i class="fa-solid fa-circle-check"></i> Delivered
+                            </span>
+                            {% elif job.status == 'DELAYED' %}
+                            <span class="badge-pill badge-rose" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Delayed
+                            </span>
+                            {% else %}
+                            <span class="badge-pill badge-active" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-circle-play"></i> Active
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'job_detail' job.id %}" class="btn-primary" style="padding:0.35rem 0.75rem;font-size:0.78rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;">
+                                <i class="fa-solid fa-eye"></i> Workflow
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">
+                            No active files found in this category.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

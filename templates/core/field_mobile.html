@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}Port & Driver Mobile Console | Malkia C&F{% endblock %}
+
+{% block content %}
+<div style="max-width:540px;margin:0 auto;">
+    <div style="background:linear-gradient(135deg, #0B152B 0%, #1D4ED8 100%);color:#fff;border-radius:var(--radius-xl);padding:1.5rem;margin-bottom:1.5rem;box-shadow:var(--shadow-lg);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+            <span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;background:rgba(255,255,255,0.2);padding:0.2rem 0.6rem;border-radius:999px;">
+                <i class="fa-solid fa-mobile-screen"></i> Field & Port Console
+            </span>
+            <span style="font-size:0.8rem;color:#93C5FD;">Live GPS / Offline Ready</span>
+        </div>
+        <h3 style="font-family:var(--font-heading);font-size:1.35rem;font-weight:700;">Mobile Cargo Field Station</h3>
+        <p style="font-size:0.82rem;color:#E0E7FF;margin-top:0.25rem;">Port of Dar es Salaam (TPA / TICTS / ICD) & Dispatch</p>
+    </div>
+
+    <!-- SHIPMENT SELECTOR FOR FIELD OFFICER -->
+    <div class="card-panel" style="padding:1.25rem;margin-bottom:1.25rem;">
+        <label style="display:block;font-size:0.8rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.4rem;">
+            Select Active Assigned Shipment
+        </label>
+        <form method="GET" action="{% url 'field_mobile' %}">
+            <select name="job_id" class="form-control" onchange="this.form.submit()" style="font-size:0.95rem;font-weight:600;padding:0.75rem;">
+                {% for j in jobs %}
+                <option value="{{ j.id }}" {% if active_job and active_job.id == j.id %}selected{% endif %}>
+                    {{ j.job_number }} &bull; {{ j.container_numbers|truncatechars:18 }} (Step {{ j.current_stage_number }}/11)
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    {% if active_job %}
+    <!-- ACTIVE SHIPMENT FIELD CARD -->
+    <div class="card-panel" style="padding:1.5rem;margin-bottom:1.25rem;border-top:4px solid var(--brand-primary);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+            <div>
+                <span style="font-size:0.72rem;color:var(--text-muted);font-weight:700;">JOB NUMBER</span>
+                <div style="font-family:var(--font-heading);font-size:1.3rem;font-weight:800;color:var(--brand-navy-900);">
+                    {{ active_job.job_number }}
+                </div>
+            </div>
+            <span class="badge-pill {% if active_job.status == 'DELAYED' %}badge-delayed{% else %}badge-active{% endif %}" style="font-size:0.8rem;padding:0.35rem 0.75rem;">
+                Stage {{ active_job.current_stage_number }}/11
+            </span>
+        </div>
+
+        <div style="background:#F8FAFC;border-radius:var(--radius-md);padding:1rem;margin-bottom:1.25rem;font-size:0.85rem;display:flex;flex-direction:column;gap:0.45rem;">
+            <div><strong>Consignee:</strong> {{ active_job.customer.company_name }}</div>
+            <div><strong>BL Number:</strong> {{ active_job.bl_number }}</div>
+            <div><strong>Containers:</strong> <span style="color:var(--brand-primary);font-weight:700;">{{ active_job.container_numbers }}</span></div>
+            <div><strong>Vessel:</strong> {{ active_job.vessel_name }} (Arrival: {{ active_job.eta_arrival_date|date:"d M Y" }})</div>
+            <div><strong>Destination:</strong> {{ active_job.final_destination }}</div>
+        </div>
+
+        <!-- CURRENT STAGE ACTION CARD -->
+        <div style="border:1px solid #BFDBFE;background:#EFF6FF;border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;color:#1E40AF;font-weight:700;font-size:0.95rem;margin-bottom:0.25rem;">
+                <i class="fa-solid fa-circle-dot"></i> Step {{ active_job.current_stage_number }}: {{ active_job.current_stage_obj.name_en }}
+            </div>
+            <div style="font-size:0.8rem;color:#3B82F6;margin-bottom:0.75rem;">
+                Target SLA: {{ active_job.current_stage_obj.target_days }} business days
+            </div>
+            
+            <p style="font-size:0.82rem;color:#1E3A8A;margin-bottom:1rem;">
+                {{ active_job.current_stage_obj.stage_definition.description }}
+            </p>
+
+            <form action="{% url 'advance_stage' active_job.id %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% if active_job.current_stage_number == 10 %}
+                <div class="form-group">
+                    <label style="color:#1E3A8A;">Port Gate Pass #</label>
+                    <input type="text" name="customs_doc_number" class="form-control" placeholder="TPA Gate Pass Number" value="{{ active_job.gate_pass_number }}" required>
+                </div>
+                <div class="form-group">
+                    <label style="color:#1E3A8A;">Assigned Truck Registration #</label>
+                    <input type="text" name="truck_number" class="form-control" placeholder="e.g. T 412 DXE" value="{{ active_job.truck_number }}" required>
+                </div>
+                <div class="form-group">
+                    <label style="color:#1E3A8A;">Container Seal Number #</label>
+                    <input type="text" name="seal_number" class="form-control" placeholder="e.g. SL-COS-883910" value="{{ active_job.seal_number }}" required>
+                </div>
+                {% endif %}
+
+                {% if active_job.current_stage_number == 11 %}
+                <div class="form-group">
+                    <label style="color:#1E3A8A;">Consignee Recipient Name</label>
+                    <input type="text" name="received_by_name" class="form-control" placeholder="Full name of receiver" required>
+                </div>
+                <div class="form-group">
+                    <label style="color:#1E3A8A;"><i class="fa-solid fa-camera"></i> Take Photo of Signed POD / Delivery Note</label>
+                    <input type="file" name="pod_file" class="form-control" accept="image/*" capture="environment" required>
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label style="color:#1E3A8A;"><i class="fa-solid fa-camera"></i> Port Photo / Document Attachment</label>
+                    <input type="file" name="stage_document" class="form-control" accept="image/*,.pdf" capture="environment">
+                </div>
+
+                <div class="form-group">
+                    <label style="color:#1E3A8A;">Field Inspector / Driver Notes</label>
+                    <textarea name="remarks" class="form-control" rows="2" placeholder="e.g. Verification completed at Geko yard, all seals intact..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-header-action btn-primary" style="width:100%;justify-content:center;padding:0.85rem;font-size:0.95rem;">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Submit Port Update & Advance
+                </button>
+            </form>
+        </div>
+
+        <div style="text-align:center;">
+            <a href="{% url 'job_detail' active_job.id %}" style="font-size:0.85rem;color:var(--brand-primary);text-decoration:none;font-weight:600;">
+                <i class="fa-solid fa-desktop"></i> Switch to Full Desktop View
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

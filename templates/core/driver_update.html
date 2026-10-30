@@ -1,0 +1,544 @@
+{% extends 'base.html' %}
+
+{% block title %}Delivery Update | Driver Console{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto; padding-bottom: 3rem;">
+
+    <!-- TOP NAVIGATION & HEADER -->
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+            <a href="{% url 'driver_delivery' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 700; color: #4F46E5; text-decoration: none; padding: 0.4rem 0.8rem; background: #EEF2FF; border-radius: 999px; margin-bottom: 0.6rem; transition: all 0.2s;">
+                <i class="fa-solid fa-arrow-left"></i> Rudi kwenye Safari Yangu / Back to My Delivery
+            </a>
+            <h1 style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 0.6rem;">
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #4F46E5, #3730A3); color: #fff; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">
+                    <i class="fa-solid fa-route"></i>
+                </span>
+                Ripoti Hatua na Eneo la Safari
+            </h1>
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.35rem; margin-bottom: 0;">
+                Sasisha eneo la gari na hatua ya sasa ya mzigo. Taarifa hizi zitaonekana mara moja kwenye mfumo wa Dispatch na kwa mteja.
+            </p>
+        </div>
+        {% if is_preview_mode %}
+        <div style="background: #FEF3C7; border: 1px solid #FCD34D; color: #92400E; padding: 0.5rem 0.85rem; border-radius: 10px; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-shield-halved"></i> Uko kwenye Mtazamo wa Usimamizi (Admin/Dispatch Preview)
+        </div>
+        {% endif %}
+    </div>
+
+    {% if active_delivery %}
+    <!-- CURRENT TRIP CONTEXT HERO CARD -->
+    <div style="background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 60%, #312E81 100%); color: #fff; border-radius: 18px; padding: 1.35rem 1.5rem; margin-bottom: 1.75rem; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3), 0 8px 10px -6px rgba(15, 23, 42, 0.2); position: relative; overflow: hidden;">
+        <div style="position: absolute; right: -20px; bottom: -20px; font-size: 8rem; color: rgba(255, 255, 255, 0.03); pointer-events: none;">
+            <i class="fa-solid fa-truck-moving"></i>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; position: relative; z-index: 1;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem;">
+                    <span style="font-family: monospace; font-size: 0.82rem; font-weight: 800; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); padding: 0.25rem 0.65rem; border-radius: 6px; letter-spacing: 0.05em;">
+                        {{ active_delivery.job_number }}
+                    </span>
+                    <span style="font-size: 0.75rem; background: #10B981; color: #fff; padding: 0.2rem 0.55rem; border-radius: 999px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">
+                        Safari Inaendelea
+                    </span>
+                </div>
+                <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: #F8FAFC;">
+                    {{ active_delivery.cargo_description|default:'Cargo Shipment in Transit' }}
+                </h3>
+            </div>
+            <div style="text-align: right; background: rgba(255,255,255,0.08); padding: 0.6rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);">
+                <div style="font-size: 0.72rem; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Lengo la Mwisho / Destination</div>
+                <div style="font-size: 1rem; font-weight: 800; color: #FDE047; display: flex; align-items: center; gap: 0.4rem; justify-content: flex-end; margin-top: 0.15rem;">
+                    <i class="fa-solid fa-location-dot" style="color: #EF4444;"></i>
+                    {{ active_delivery.final_destination|default:'Consignee Yard' }}
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid rgba(255, 255, 255, 0.12); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.85rem; font-size: 0.82rem; position: relative; z-index: 1;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: #818CF8;">
+                    <i class="fa-solid fa-truck"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.68rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;">Gari / Plate Number</div>
+                    <div style="font-weight: 700; color: #fff;">{{ active_delivery.truck_number|default:assigned_vehicle.plate_number|default:'T 412 DXE' }}</div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: #38BDF8;">
+                    <i class="fa-solid fa-box-archive"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.68rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;">Kontena / Container</div>
+                    <div style="font-weight: 700; color: #fff;">{{ active_delivery.container_numbers|default:'TCLU 902847-1' }}</div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: #34D399;">
+                    <i class="fa-solid fa-building"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.68rem; color: #94A3B8; text-transform: uppercase; font-weight: 600;">Mteja / Customer</div>
+                    <div style="font-weight: 700; color: #fff;">{{ active_delivery.customer.company_name|default:'Malkia Corporate Client' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UPDATE FORM CONTAINER -->
+    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 18px; padding: 2rem; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05); margin-bottom: 2rem;">
+        
+        <form method="POST" action="{% url 'driver_update_action' active_delivery.id %}" enctype="multipart/form-data" id="driverUpdateForm">
+            {% csrf_token %}
+
+            <!-- SECTION 1: MILESTONE CARDS -->
+            <div style="margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
+                    <label style="font-size: 0.92rem; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #4F46E5; color: #fff; border-radius: 50%; font-size: 0.75rem;">1</span>
+                        Chagua Hatua ya Sasa (Current Milestone) <span style="color: #EF4444;">*</span>
+                    </label>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">Bonyeza moja kulingana na safari yako</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.85rem;">
+                    
+                    <!-- STARTED -->
+                    <label style="cursor: pointer; position: relative;">
+                        <input type="radio" name="milestone" value="STARTED" class="milestone-radio" style="position: absolute; opacity: 0; pointer-events: none;">
+                        <div class="milestone-card" data-val="STARTED" style="border: 2px solid #E2E8F0; border-radius: 14px; padding: 1.15rem 0.75rem; text-align: center; background: #F8FAFC; transition: all 0.25s ease;">
+                            <div class="milestone-icon" style="width: 44px; height: 44px; margin: 0 auto 0.6rem; border-radius: 12px; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                <i class="fa-solid fa-play"></i>
+                            </div>
+                            <strong style="font-size: 0.9rem; display: block; color: #1E293B; margin-bottom: 0.2rem;">Imeanza</strong>
+                            <span style="font-size: 0.72rem; color: #64748B; display: block; line-height: 1.2;">Trip Initiated</span>
+                            <div class="milestone-badge" style="display: none; margin-top: 0.5rem; font-size: 0.68rem; font-weight: 700; color: #2563EB; background: #DBEAFE; border-radius: 999px; padding: 0.15rem 0.4rem;">
+                                <i class="fa-solid fa-check"></i> Imechaguliwa
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- AT PORT -->
+                    <label style="cursor: pointer; position: relative;">
+                        <input type="radio" name="milestone" value="AT_PORT" class="milestone-radio" style="position: absolute; opacity: 0; pointer-events: none;">
+                        <div class="milestone-card" data-val="AT_PORT" style="border: 2px solid #E2E8F0; border-radius: 14px; padding: 1.15rem 0.75rem; text-align: center; background: #F8FAFC; transition: all 0.25s ease;">
+                            <div class="milestone-icon" style="width: 44px; height: 44px; margin: 0 auto 0.6rem; border-radius: 12px; background: #F0FDFA; color: #0D9488; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                <i class="fa-solid fa-anchor"></i>
+                            </div>
+                            <strong style="font-size: 0.9rem; display: block; color: #1E293B; margin-bottom: 0.2rem;">Bandarini</strong>
+                            <span style="font-size: 0.72rem; color: #64748B; display: block; line-height: 1.2;">Port / ICD Bay</span>
+                            <div class="milestone-badge" style="display: none; margin-top: 0.5rem; font-size: 0.68rem; font-weight: 700; color: #0D9488; background: #CCFBF1; border-radius: 999px; padding: 0.15rem 0.4rem;">
+                                <i class="fa-solid fa-check"></i> Imechaguliwa
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- IN TRANSIT (Default active) -->
+                    <label style="cursor: pointer; position: relative;">
+                        <input type="radio" name="milestone" value="IN_TRANSIT" class="milestone-radio" style="position: absolute; opacity: 0; pointer-events: none;" checked>
+                        <div class="milestone-card active" data-val="IN_TRANSIT" style="border: 2px solid #4F46E5; border-radius: 14px; padding: 1.15rem 0.75rem; text-align: center; background: #EEF2FF; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.15); transition: all 0.25s ease;">
+                            <div class="milestone-icon" style="width: 44px; height: 44px; margin: 0 auto 0.6rem; border-radius: 12px; background: #4F46E5; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                <i class="fa-solid fa-truck-fast"></i>
+                            </div>
+                            <strong style="font-size: 0.9rem; display: block; color: #312E81; margin-bottom: 0.2rem;">Njiani Barabarani</strong>
+                            <span style="font-size: 0.72rem; color: #4338CA; display: block; line-height: 1.2;">On Highway / Transit</span>
+                            <div class="milestone-badge" style="display: inline-block; margin-top: 0.5rem; font-size: 0.68rem; font-weight: 700; color: #4338CA; background: #C7D2FE; border-radius: 999px; padding: 0.15rem 0.5rem;">
+                                <i class="fa-solid fa-check"></i> Imechaguliwa
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- ARRIVED -->
+                    <label style="cursor: pointer; position: relative;">
+                        <input type="radio" name="milestone" value="ARRIVED" class="milestone-radio" style="position: absolute; opacity: 0; pointer-events: none;">
+                        <div class="milestone-card" data-val="ARRIVED" style="border: 2px solid #E2E8F0; border-radius: 14px; padding: 1.15rem 0.75rem; text-align: center; background: #F8FAFC; transition: all 0.25s ease;">
+                            <div class="milestone-icon" style="width: 44px; height: 44px; margin: 0 auto 0.6rem; border-radius: 12px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                <i class="fa-solid fa-location-dot"></i>
+                            </div>
+                            <strong style="font-size: 0.9rem; display: block; color: #1E293B; margin-bottom: 0.2rem;">Imefika</strong>
+                            <span style="font-size: 0.72rem; color: #64748B; display: block; line-height: 1.2;">At Consignee Site</span>
+                            <div class="milestone-badge" style="display: none; margin-top: 0.5rem; font-size: 0.68rem; font-weight: 700; color: #D97706; background: #FDE68A; border-radius: 999px; padding: 0.15rem 0.4rem;">
+                                <i class="fa-solid fa-check"></i> Imechaguliwa
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- DELIVERED -->
+                    <label style="cursor: pointer; position: relative;">
+                        <input type="radio" name="milestone" value="DELIVERED" class="milestone-radio" style="position: absolute; opacity: 0; pointer-events: none;">
+                        <div class="milestone-card" data-val="DELIVERED" style="border: 2px solid #E2E8F0; border-radius: 14px; padding: 1.15rem 0.75rem; text-align: center; background: #F8FAFC; transition: all 0.25s ease;">
+                            <div class="milestone-icon" style="width: 44px; height: 44px; margin: 0 auto 0.6rem; border-radius: 12px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                <i class="fa-solid fa-box-open"></i>
+                            </div>
+                            <strong style="font-size: 0.9rem; display: block; color: #1E293B; margin-bottom: 0.2rem;">Imekabidhiwa</strong>
+                            <span style="font-size: 0.72rem; color: #64748B; display: block; line-height: 1.2;">Offloading Complete</span>
+                            <div class="milestone-badge" style="display: none; margin-top: 0.5rem; font-size: 0.68rem; font-weight: 700; color: #059669; background: #A7F3D0; border-radius: 999px; padding: 0.15rem 0.4rem;">
+                                <i class="fa-solid fa-check"></i> Imechaguliwa
+                            </div>
+                        </div>
+                    </label>
+
+                </div>
+            </div>
+
+            <!-- SECTION 2: CURRENT LOCATION INPUT (FULL WIDTH, TOUCH-FRIENDLY & QUICK CHIPS) -->
+            <div style="margin-bottom: 2rem;">
+                <label for="locationInput" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.92rem; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.6rem;">
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #4F46E5; color: #fff; border-radius: 50%; font-size: 0.75rem;">2</span>
+                    Eneo Ulilopo Sasa / Current Checkpoint Location <span style="color: #EF4444;">*</span>
+                </label>
+
+                <div style="position: relative; width: 100%;">
+                    <div style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; background: #EEF2FF; color: #4F46E5; pointer-events: none;">
+                        <i class="fa-solid fa-map-location-dot" style="font-size: 1.05rem;"></i>
+                    </div>
+                    <input type="text" 
+                        id="locationInput"
+                        name="location" 
+                        required 
+                        style="width: 100% !important; display: block; box-sizing: border-box; height: 54px; padding: 0.75rem 1rem 0.75rem 3.6rem; font-size: 1.05rem; font-weight: 600; color: #0F172A; background: #FFFFFF; border: 2px solid #CBD5E1; border-radius: 12px; outline: none; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"
+                        onfocus="this.style.borderColor='#4F46E5'; this.style.boxShadow='0 0 0 4px rgba(79,70,229,0.12)';"
+                        onblur="this.style.borderColor='#CBD5E1'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.02)';"
+                        placeholder="Andika au chagua eneo, mfano: Chalinze Weighbridge, Kibaha, Dodoma..."
+                        value="{{ assigned_vehicle.current_location|default:'' }}">
+                </div>
+
+                <!-- QUICK LOCATION CHIPS -->
+                <div style="margin-top: 0.75rem;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #64748B; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.35rem;">
+                        <i class="fa-solid fa-bolt" style="color: #F59E0B;"></i> Chagua haraka maeneo ya kawaida (Quick Select):
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
+                        <button type="button" class="quick-chip" onclick="setLocation('Dar Port - Bandari / ICD')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            🚢 Dar Port / ICD
+                        </button>
+                        <button type="button" class="quick-chip" onclick="setLocation('Kibaha Checkpoint')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            📍 Kibaha Checkpoint
+                        </button>
+                        <button type="button" class="quick-chip" onclick="setLocation('Chalinze Weighbridge')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            ⚖️ Chalinze Weighbridge
+                        </button>
+                        <button type="button" class="quick-chip" onclick="setLocation('Morogoro Highway')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            🛣️ Morogoro Highway
+                        </button>
+                        <button type="button" class="quick-chip" onclick="setLocation('Mikumi / Kilosa Junction')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            🌿 Mikumi Junction
+                        </button>
+                        <button type="button" class="quick-chip" onclick="setLocation('Iringa Mlima Kitonga')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            ⛰️ Iringa Kitonga
+                        </button>
+                        <button type="button" class="quick-chip" onclick="setLocation('Makambako Bypass')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            📍 Makambako
+                        </button>
+                        <button type="button" class="quick-chip" onclick="setLocation('Mbeya / Tunduma Border')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            🛂 Tunduma Border
+                        </button>
+                        <button type="button" class="quick-chip" onclick="setLocation('Dodoma / Singida Route')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            🏛️ Dodoma Route
+                        </button>
+                        <button type="button" class="quick-chip" onclick="setLocation('Kahama / Isaka Dry Port')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            📦 Isaka Dry Port
+                        </button>
+                        <button type="button" class="quick-chip" onclick="setLocation('Rusumo Border / Kigali Free Zone')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            🇷🇼 Kigali Free Zone
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: TRANSIT REMARKS & OBSERVATIONS -->
+            <div style="margin-bottom: 2rem;">
+                <label for="remarksInput" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.92rem; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.6rem;">
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #4F46E5; color: #fff; border-radius: 50%; font-size: 0.75rem;">3</span>
+                    Maelezo ya Safari / Highway Observations
+                </label>
+
+                <textarea 
+                    id="remarksInput"
+                    name="remarks" 
+                    rows="3" 
+                    style="width: 100% !important; display: block; box-sizing: border-box; min-height: 95px; padding: 0.85rem 1.15rem; font-family: var(--font-main, sans-serif); font-size: 0.95rem; line-height: 1.5; color: #0F172A; background: #FFFFFF; border: 2px solid #CBD5E1; border-radius: 12px; outline: none; resize: vertical; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"
+                    onfocus="this.style.borderColor='#4F46E5'; this.style.boxShadow='0 0 0 4px rgba(79,70,229,0.12)';"
+                    onblur="this.style.borderColor='#CBD5E1'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.02)';"
+                    placeholder="Weka maelezo ya hali ya barabara, mizani, au makadirio ya kuwasili (ETA)..."></textarea>
+
+                <!-- QUICK REMARK CHIPS -->
+                <div style="margin-top: 0.65rem;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #64748B; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.35rem;">
+                        <i class="fa-regular fa-comment-dots" style="color: #4F46E5;"></i> Maelezo ya haraka (Quick remarks):
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
+                        <button type="button" class="quick-chip" onclick="appendRemark('✅ Safari inaendelea salama, gari liko vizuri.')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            ✅ Safari Salama
+                        </button>
+                        <button type="button" class="quick-chip" onclick="appendRemark('⚖️ Mizani imepita bila shida (Weighbridge cleared).')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            ⚖️ Mizani Imepita
+                        </button>
+                        <button type="button" class="quick-chip" onclick="appendRemark('🚚 Foleni ya kawaida barabarani, mwendo unakwenda.')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            🚚 Foleni Kawaida
+                        </button>
+                        <button type="button" class="quick-chip" onclick="appendRemark('⚠️ Kuna foleni kubwa / Ukarabati wa barabara unaochelewesha.')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            ⚠️ Foleni Kubwa
+                        </button>
+                        <button type="button" class="quick-chip" onclick="appendRemark('⛽ Kusimama kwa mapumziko ya dereva na ukaguzi wa tairi.')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            ⛽ Mapumziko & Ukaguzi
+                        </button>
+                        <button type="button" class="quick-chip" onclick="appendRemark('🏁 Nimefika eneo la mteja, nasubiri hatua ya kushusha mzigo.')" style="background: #F1F5F9; border: 1px solid #CBD5E1; color: #334155; padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s;">
+                            🏁 Nimewasili Eneo la Mteja
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: PHOTO UPLOAD WITH LIVE PREVIEW -->
+            <div style="margin-bottom: 2.25rem;">
+                <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.92rem; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.6rem;">
+                    <span style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #64748B; color: #fff; border-radius: 50%; font-size: 0.75rem;">4</span>
+                        Picha ya Ushahidi / Checkpoint Photo
+                    </span>
+                    <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; background: #F1F5F9; padding: 0.2rem 0.6rem; border-radius: 6px;">Hiari / Optional</span>
+                </label>
+
+                <div id="dropzoneContainer" style="border: 2px dashed #94A3B8; border-radius: 14px; padding: 1.75rem 1.25rem; text-align: center; background: #F8FAFC; transition: all 0.2s ease; cursor: pointer;"
+                    onclick="document.getElementById('photoInput').click();">
+                    
+                    <input type="file" 
+                        id="photoInput" 
+                        name="update_photo" 
+                        accept="image/*" 
+                        capture="environment" 
+                        style="display: none;" 
+                        onchange="handlePhotoSelect(event);">
+
+                    <!-- UNSELECTED STATE -->
+                    <div id="photoPlaceholder">
+                        <div style="width: 56px; height: 56px; border-radius: 50%; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 0.75rem;">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #1E293B;">
+                            Bonyeza Hapa Kupiga Picha au Kuchagua Faili
+                        </div>
+                        <div style="font-size: 0.78rem; color: #64748B; margin-top: 0.35rem; max-width: 480px; margin-left: auto; margin-right: auto;">
+                            Picha ya seal ya kontena, slip ya mizani (weighbridge), au eneo ulilopo inasaidia uthibitisho wa safari.
+                        </div>
+                        <div style="margin-top: 0.85rem;">
+                            <span style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 1rem; background: #FFFFFF; border: 1.5px solid #CBD5E1; border-radius: 8px; font-size: 0.82rem; font-weight: 700; color: #334155; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                <i class="fa-solid fa-arrow-up-from-bracket"></i> Chagua Picha / Take Photo
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- PREVIEW STATE (HIDDEN INITIALLY) -->
+                    <div id="photoPreviewContainer" style="display: none; flex-direction: column; align-items: center; gap: 0.75rem;">
+                        <img id="photoPreviewImg" src="" alt="Photo Preview" style="max-height: 220px; max-width: 100%; border-radius: 12px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #E2E8F0;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                            <span id="photoFileName" style="font-size: 0.82rem; font-weight: 700; color: #0F172A; background: #EEF2FF; padding: 0.3rem 0.75rem; border-radius: 6px;"></span>
+                            <button type="button" onclick="event.stopPropagation(); removePhoto();" style="background: #FEE2E2; border: 1px solid #FCA5A5; color: #DC2626; padding: 0.3rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.3rem;">
+                                <i class="fa-solid fa-trash-can"></i> Ondoa Picha
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SUBMIT BUTTON -->
+            <button type="submit" id="submitBtn" style="width: 100%; background: linear-gradient(135deg, #4F46E5 0%, #3730A3 100%); color: #FFFFFF; border: none; padding: 1.1rem 1.5rem; border-radius: 14px; font-size: 1.05rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.65rem; box-shadow: 0 10px 20px -3px rgba(79, 70, 229, 0.35); transition: all 0.2s ease;">
+                <i class="fa-solid fa-paper-plane" style="font-size: 1.1rem;"></i> 
+                <span>Tuma Taarifa za Safari / Broadcast Transit Update</span>
+            </button>
+        </form>
+
+    </div>
+
+    <!-- RECENT UPDATES TIMELINE -->
+    {% if recent_updates %}
+    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 18px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+        <h3 style="font-family: var(--font-heading); font-size: 1rem; font-weight: 800; color: #0F172A; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-clock-rotate-left" style="color: #4F46E5;"></i>
+            Kumbukumbu za Hatua Zilizopita (Recent Updates)
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            {% for u in recent_updates %}
+            <div style="display: flex; align-items: flex-start; gap: 0.85rem; padding: 0.85rem 1rem; background: #F8FAFC; border-radius: 12px; border-left: 4px solid #4F46E5;">
+                <div style="min-width: 90px; font-size: 0.75rem; color: #64748B; font-weight: 700; padding-top: 0.1rem;">
+                    <i class="fa-regular fa-clock"></i> {{ u.timestamp|date:"d M H:i" }}
+                </div>
+                <div style="flex: 1; font-size: 0.88rem; color: #1E293B; line-height: 1.4;">
+                    {{ u.details }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- EMPTY STATE IF NO ACTIVE DELIVERY -->
+    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 18px; padding: 3rem 2rem; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.05);">
+        <div style="width: 70px; height: 70px; border-radius: 50%; background: #F1F5F9; color: #94A3B8; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 1.25rem;">
+            <i class="fa-solid fa-truck-ramp-box"></i>
+        </div>
+        <h2 style="font-family: var(--font-heading); font-size: 1.35rem; font-weight: 800; color: #0F172A; margin: 0 0 0.5rem 0;">
+            Hakuna Safari Iliyopangiwa kwa Sasa
+        </h2>
+        <p style="font-size: 0.9rem; color: #64748B; max-width: 480px; margin: 0 auto 1.5rem; line-height: 1.5;">
+            Huna safari inayotumika (active delivery) hivi sasa. Mara tu uongozi wa Dispatch utakapokupangia mzigo na gari, utaweza kusasisha hatua na eneo hapa.
+        </p>
+        <a href="{% url 'driver_delivery' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #4F46E5; color: #fff; text-decoration: none; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">
+            <i class="fa-solid fa-gauge-high"></i> Fungua Dashibodi ya Dereva
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+/* MILESTONE CARD HOVER & ACTIVE STYLES */
+.milestone-card:hover {
+    border-color: #818CF8 !important;
+    background: #F8FAFC !important;
+    transform: translateY(-2px);
+}
+.milestone-card.active {
+    border-color: #4F46E5 !important;
+    background: #EEF2FF !important;
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.15) !important;
+}
+
+/* QUICK SELECT CHIPS */
+.quick-chip:hover {
+    background: #E2E8F0 !important;
+    border-color: #94A3B8 !important;
+    color: #0F172A !important;
+    transform: translateY(-1px);
+}
+.quick-chip:active {
+    transform: scale(0.97);
+}
+
+/* SUBMIT BUTTON HOVER */
+#submitBtn:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px -4px rgba(79, 70, 229, 0.45) !important;
+}
+#submitBtn:active {
+    transform: translateY(1px);
+}
+</style>
+
+<script>
+// Milestone card toggle
+document.addEventListener('DOMContentLoaded', function() {
+    const radios = document.querySelectorAll('.milestone-radio');
+    radios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.milestone-card').forEach(card => {
+                card.classList.remove('active');
+                card.style.borderColor = '#E2E8F0';
+                card.style.background = '#F8FAFC';
+                card.style.boxShadow = 'none';
+                const badge = card.querySelector('.milestone-badge');
+                if (badge) badge.style.display = 'none';
+            });
+
+            if (this.checked) {
+                const activeCard = this.closest('label').querySelector('.milestone-card');
+                if (activeCard) {
+                    activeCard.classList.add('active');
+                    activeCard.style.borderColor = '#4F46E5';
+                    activeCard.style.background = '#EEF2FF';
+                    activeCard.style.boxShadow = '0 6px 18px rgba(79, 70, 229, 0.15)';
+                    const badge = activeCard.querySelector('.milestone-badge');
+                    if (badge) badge.style.display = 'inline-block';
+                }
+            }
+        });
+    });
+
+    // Form submission feedback
+    const form = document.getElementById('driverUpdateForm');
+    if (form) {
+        form.addEventListener('submit', function() {
+            const btn = document.getElementById('submitBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Inatuma taarifa... / Broadcasting...';
+                btn.style.opacity = '0.85';
+            }
+        });
+    }
+});
+
+// Quick set location
+function setLocation(loc) {
+    const input = document.getElementById('locationInput');
+    if (input) {
+        input.value = loc;
+        input.focus();
+        input.style.borderColor = '#4F46E5';
+        input.style.boxShadow = '0 0 0 4px rgba(79,70,229,0.18)';
+        setTimeout(() => {
+            input.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
+            input.style.borderColor = '#CBD5E1';
+        }, 1200);
+    }
+}
+
+// Quick append / set remarks
+function appendRemark(txt) {
+    const textarea = document.getElementById('remarksInput');
+    if (textarea) {
+        if (textarea.value.trim() === '') {
+            textarea.value = txt;
+        } else {
+            textarea.value = textarea.value.trim() + ' | ' + txt;
+        }
+        textarea.focus();
+        textarea.style.borderColor = '#4F46E5';
+        textarea.style.boxShadow = '0 0 0 4px rgba(79,70,229,0.18)';
+        setTimeout(() => {
+            textarea.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
+            textarea.style.borderColor = '#CBD5E1';
+        }, 1200);
+    }
+}
+
+// Handle Photo Preview
+function handlePhotoSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('photoPreviewImg').src = e.target.result;
+            document.getElementById('photoFileName').innerHTML = '<i class="fa-solid fa-image"></i> ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+            document.getElementById('photoPlaceholder').style.display = 'none';
+            document.getElementById('photoPreviewContainer').style.display = 'flex';
+            document.getElementById('dropzoneContainer').style.borderColor = '#4F46E5';
+            document.getElementById('dropzoneContainer').style.background = '#FFFFFF';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Remove Photo
+function removePhoto() {
+    const input = document.getElementById('photoInput');
+    if (input) input.value = '';
+    document.getElementById('photoPreviewImg').src = '';
+    document.getElementById('photoPlaceholder').style.display = 'block';
+    document.getElementById('photoPreviewContainer').style.display = 'none';
+    document.getElementById('dropzoneContainer').style.borderColor = '#94A3B8';
+    document.getElementById('dropzoneContainer').style.background = '#F8FAFC';
+}
+</script>
+{% endblock %}
+

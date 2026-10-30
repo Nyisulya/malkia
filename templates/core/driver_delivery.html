@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block title %}My Delivery | Driver Console{% endblock %}
+
+{% block content %}
+<div style="max-width:960px;margin:0 auto;">
+
+    <!-- DRIVER CONSOLE LIVE BANNER -->
+    <div style="background:linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%);color:#fff;border-radius:var(--radius-xl);padding:1.5rem;margin-bottom:1.5rem;box-shadow:var(--shadow-md);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;background:rgba(255,255,255,0.2);padding:0.25rem 0.75rem;border-radius:999px;font-weight:700;">
+                    <i class="fa-solid fa-truck-front"></i> Driver Haulage Console
+                </span>
+                <span style="background:rgba(52,211,153,0.25);color:#6EE7B7;font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:999px;font-weight:600;">
+                    <i class="fa-solid fa-circle" style="font-size:0.5rem;vertical-align:middle;"></i> Active Dispatch
+                </span>
+            </div>
+            <div style="font-size:0.8rem;color:#E0E7FF;">
+                <i class="fa-regular fa-clock"></i> {{ today|date:"l, d M Y" }} &bull; Driver: <strong>{{ user_driver.get_full_name|default:user_driver.username }}</strong>
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <div>
+                <h2 style="font-family:var(--font-heading);font-size:1.4rem;font-weight:800;letter-spacing:-0.02em;margin:0;">
+                    My Assigned Delivery & Trip Status
+                </h2>
+                <p style="font-size:0.85rem;color:#C7D2FE;margin-top:0.25rem;">
+                    Assigned shipment haulage, vehicle specifications, trip transit updates, and Proof of Delivery (POD) submission.
+                </p>
+            </div>
+            <div style="display:flex;gap:0.5rem;">
+                <a href="{% url 'driver_update' %}" class="btn-header-action" style="background:#fff;color:#3730A3;font-weight:700;padding:0.55rem 1.1rem;border-radius:var(--radius-md);text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;box-shadow:var(--shadow-sm);">
+                    <i class="fa-solid fa-route"></i> Update Trip
+                </a>
+                <a href="{% url 'driver_pod' %}" class="btn-header-action" style="background:linear-gradient(135deg, #10B981 0%, #059669 100%);color:#fff;font-weight:700;padding:0.55rem 1.1rem;border-radius:var(--radius-md);text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;box-shadow:var(--shadow-sm);">
+                    <i class="fa-solid fa-signature"></i> Upload POD
+                </a>
+            </div>
+        </div>
+
+        {% if is_preview_mode and all_drivers %}
+        <div style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;gap:0.75rem;">
+            <span style="font-size:0.75rem;color:#C7D2FE;font-weight:600;"><i class="fa-solid fa-eye"></i> Supervisor Preview Driver:</span>
+            <form method="GET" style="display:flex;gap:0.5rem;align-items:center;">
+                <select name="driver_id" onchange="this.form.submit()" style="background:#312E81;color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:var(--radius-sm);padding:0.25rem 0.5rem;font-size:0.8rem;">
+                    {% for d in all_drivers %}
+                    <option value="{{ d.id }}" {% if d.id == user_driver.id %}selected{% endif %}>{{ d.get_full_name|default:d.username }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if active_delivery %}
+    <!-- ACTIVE SHIPMENT HERO CARD -->
+    <div class="card-panel" style="padding:1.5rem;margin-bottom:1.5rem;border:2px solid #6366F1;box-shadow:var(--shadow-lg);">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
+            <div>
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+                    <span class="badge-pill badge-active" style="background:#4F46E5;color:#fff;font-weight:700;padding:0.3rem 0.75rem;font-size:0.85rem;">
+                        <i class="fa-solid fa-truck"></i> ON-GOING TRIP
+                    </span>
+                    <span style="font-size:0.85rem;color:var(--text-muted);font-weight:600;">
+                        Job Ref: <strong>{{ active_delivery.job_number }}</strong>
+                    </span>
+                </div>
+                <h3 style="font-family:var(--font-heading);font-size:1.35rem;font-weight:800;color:var(--text-main);margin:0.25rem 0 0 0;">
+                    {{ active_delivery.cargo_description }}
+                </h3>
+            </div>
+            <div style="text-align:right;">
+                <span class="badge-pill badge-active" style="background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;font-size:0.85rem;font-weight:700;padding:0.35rem 0.85rem;">
+                    Stage {{ active_delivery.current_stage_number }}: In Transit / Delivery
+                </span>
+            </div>
+        </div>
+
+        <!-- TRIP METRICS GRID -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+            <!-- DESTINATION CARD -->
+            <div style="background:#F8FAFC;border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.75rem;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:0.4rem;">
+                    <i class="fa-solid fa-location-dot" style="color:#EF4444;font-size:1rem;"></i> Final Delivery Destination
+                </div>
+                <div style="font-size:1.05rem;font-weight:800;color:#0F172A;">
+                    {{ active_delivery.final_destination }}
+                </div>
+                <div style="font-size:0.75rem;color:#64748B;margin-top:0.25rem;">
+                    ETA Delivery: <strong>{{ active_delivery.eta_arrival_date|date:"d M Y" }}</strong>
+                </div>
+            </div>
+
+            <!-- CONTAINER & SEAL -->
+            <div style="background:#F8FAFC;border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.75rem;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:0.4rem;">
+                    <i class="fa-solid fa-box" style="color:#3B82F6;font-size:1rem;"></i> Container & Seal
+                </div>
+                <div style="font-size:1.05rem;font-weight:800;color:#0F172A;font-family:monospace;">
+                    {% if assigned_container %}{{ assigned_container.container_number }}{% else %}{{ active_delivery.container_numbers }}{% endif %}
+                </div>
+                <div style="font-size:0.75rem;color:#64748B;margin-top:0.25rem;">
+                    Type: <strong>{% if assigned_container %}{{ assigned_container.get_size_type_display }}{% else %}{{ active_delivery.get_container_size_type_display }}{% endif %}</strong> &bull; 
+                    Seal: <strong style="color:#0284C7;">{% if assigned_container and assigned_container.seal_number %}{{ assigned_container.seal_number }}{% else %}{{ active_delivery.seal_number|default:'Sealed' }}{% endif %}</strong>
+                </div>
+                {% if assigned_container.gate_pass_number or assigned_container.gross_weight_kg %}
+                <div style="font-size:0.72rem;color:#0F766E;margin-top:0.2rem;font-weight:600;">
+                    {% if assigned_container.gate_pass_number %}GP: {{ assigned_container.gate_pass_number }}{% endif %}
+                    {% if assigned_container.gross_weight_kg %}&bull; VGM: {{ assigned_container.gross_weight_kg|floatformat:0 }} kg{% endif %}
+                </div>
+                {% endif %}
+                {% if assigned_container.empty_return_depot %}
+                <div style="font-size:0.7rem;color:#B45309;margin-top:0.2rem;font-weight:700;">
+                    <i class="fa-solid fa-warehouse"></i> Return Depot: {{ assigned_container.empty_return_depot }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- VEHICLE & TRAILER -->
+            <div style="background:#F8FAFC;border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.75rem;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:0.4rem;">
+                    <i class="fa-solid fa-truck-moving" style="color:#F59E0B;font-size:1rem;"></i> Truck & Trailer
+                </div>
+                <div style="font-size:1.05rem;font-weight:800;color:#0F172A;">
+                    {{ active_delivery.truck_number|default:assigned_vehicle.plate_number|default:'T 412 DXE' }}
+                </div>
+                <div style="font-size:0.75rem;color:#64748B;margin-top:0.25rem;">
+                    Trailer: <strong>{{ active_delivery.trailer_number|default:assigned_vehicle.trailer_plate|default:'Standard Flatbed' }}</strong>
+                    {% if assigned_vehicle %}
+                    &bull; {{ assigned_vehicle.make_model }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- CLIENT CONTACT BOX WITH CLICK-TO-CALL -->
+        <div style="background:linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);border:1px solid #BFDBFE;border-radius:var(--radius-lg);padding:1.1rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <div style="display:flex;align-items:center;gap:0.85rem;">
+                <div style="width:44px;height:44px;background:#2563EB;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;box-shadow:var(--shadow-sm);">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.75rem;font-weight:700;color:#1E40AF;text-transform:uppercase;">Consignee / Receiving Client</div>
+                    <div style="font-size:1rem;font-weight:800;color:#1E293B;">{{ active_delivery.customer.company_name }}</div>
+                    <div style="font-size:0.8rem;color:#475569;">
+                        Contact Person: <strong>{{ active_delivery.customer.contact_person }}</strong> &bull; {{ active_delivery.customer.phone }}
+                    </div>
+                </div>
+            </div>
+            {% if active_delivery.customer.phone %}
+            <a href="tel:{{ active_delivery.customer.phone }}" style="background:#16A34A;color:#fff;padding:0.6rem 1.25rem;border-radius:999px;font-weight:700;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.45rem;box-shadow:var(--shadow-sm);">
+                <i class="fa-solid fa-phone"></i> Call Client
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- QUICK ACTION TOUCH BUTTONS -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <a href="{% url 'driver_update' %}" style="background:#4F46E5;color:#fff;padding:0.85rem;border-radius:var(--radius-md);text-align:center;font-weight:700;font-size:0.95rem;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:0.5rem;box-shadow:var(--shadow-sm);">
+                <i class="fa-solid fa-route"></i> Report Milestone & Location
+            </a>
+            <a href="{% url 'driver_pod' %}" style="background:#059669;color:#fff;padding:0.85rem;border-radius:var(--radius-md);text-align:center;font-weight:700;font-size:0.95rem;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:0.5rem;box-shadow:var(--shadow-sm);">
+                <i class="fa-solid fa-signature"></i> Submit Proof of Delivery (POD)
+            </a>
+        </div>
+    </div>
+
+    <!-- RECENT TRIP LOGS TIMELINE -->
+    {% if recent_logs %}
+    <div class="card-panel" style="padding:1.25rem;margin-bottom:1.5rem;">
+        <h4 style="font-family:var(--font-heading);font-size:1rem;font-weight:700;color:var(--text-main);margin:0 0 1rem 0;display:flex;align-items:center;gap:0.5rem;">
+            <i class="fa-solid fa-clock-rotate-left" style="color:#6366F1;"></i> Trip Progress & Milestone History
+        </h4>
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+            {% for log in recent_logs %}
+            <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.6rem;background:#F8FAFC;border-radius:var(--radius-md);border-left:3px solid #6366F1;">
+                <div style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;">
+                    {{ log.timestamp|date:"d M H:i" }}
+                </div>
+                <div style="font-size:0.82rem;color:var(--text-main);flex:1;">
+                    <strong>{{ log.user.get_full_name|default:log.user.username }}:</strong> {{ log.details }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- NO ACTIVE DELIVERY EMPTY STATE -->
+    <div class="card-panel" style="padding:3rem 1.5rem;text-align:center;margin-bottom:1.5rem;">
+        <div style="width:70px;height:70px;border-radius:50%;background:#EEF2FF;color:#4F46E5;display:inline-flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:1rem;">
+            <i class="fa-solid fa-truck-ramp-box"></i>
+        </div>
+        <h3 style="font-family:var(--font-heading);font-size:1.3rem;font-weight:700;color:var(--text-main);margin:0 0 0.5rem 0;">
+            No Active Delivery In Progress
+        </h3>
+        <p style="font-size:0.9rem;color:var(--text-muted);max-width:500px;margin:0 auto 1.5rem auto;">
+            Once a container or haulage trip is assigned by Logistics & Dispatch, details and client contacts will appear here automatically.
+        </p>
+        {% if assigned_vehicle %}
+        <div style="display:inline-block;background:#F8FAFC;border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:0.75rem 1.5rem;text-align:left;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Assigned Standby Vehicle</div>
+            <div style="font-size:1rem;font-weight:800;color:#0F172A;margin-top:0.2rem;">
+                <i class="fa-solid fa-truck"></i> {{ assigned_vehicle.plate_number }} &bull; {{ assigned_vehicle.make_model }}
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">
+                Status: <span class="badge-pill badge-active" style="background:#ECFDF5;color:#065F46;">{{ assigned_vehicle.get_current_status_display }}</span> &bull; Location: {{ assigned_vehicle.current_location }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- COMPLETED DELIVERIES ARCHIVE -->
+    {% if completed_deliveries %}
+    <div class="card-panel" style="padding:1.25rem;">
+        <h4 style="font-family:var(--font-heading);font-size:1rem;font-weight:700;color:var(--text-main);margin:0 0 0.75rem 0;display:flex;align-items:center;gap:0.5rem;">
+            <i class="fa-solid fa-clipboard-check" style="color:#059669;"></i> Recently Completed Trips
+        </h4>
+        <div style="overflow-x:auto;">
+            <table class="data-table" style="width:100%;font-size:0.85rem;">
+                <thead>
+                    <tr>
+                        <th>Job Ref</th>
+                        <th>Cargo / Container</th>
+                        <th>Destination</th>
+                        <th>Recipient</th>
+                        <th>Delivered Date</th>
+                        <th>Proof of Delivery</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in completed_deliveries %}
+                    <tr>
+                        <td>
+                            <strong style="color:#4F46E5;">{{ job.job_number }}</strong>
+                        </td>
+                        <td>
+                            <div>{{ job.cargo_description|truncatewords:4 }}</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">{{ job.container_numbers }}</div>
+                        </td>
+                        <td>{{ job.final_destination }}</td>
+                        <td>
+                            {% if job.received_by_name %}
+                            <strong style="color:#059669;"><i class="fa-solid fa-user-check"></i> {{ job.received_by_name }}</strong>
+                            {% else %}
+                            <span style="color:var(--text-muted);">Client Recipient</span>
+                            {% endif %}
+                        </td>
+                        <td style="color:var(--text-muted);font-size:0.78rem;">
+                            {{ job.delivered_date|date:"d M Y H:i"|default:job.updated_at|date:"d M Y" }}
+                        </td>
+                        <td>
+                            {% if job.proof_of_delivery_image %}
+                            <a href="{{ job.proof_of_delivery_image.url }}" target="_blank" style="color:#059669;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;">
+                                <i class="fa-solid fa-file-image"></i> View POD
+                            </a>
+                            {% else %}
+                            <span class="badge-pill badge-draft" style="font-size:0.7rem;">Delivered</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Track Shipment: {{ job.bl_number|default:job.job_number }} | Malkia C&F{% endblock %}
+
+{% block content %}
+<div style="max-width:1160px;margin:0 auto;padding-bottom:3rem;">
+
+    <!-- TOP NAVIGATION & CONTEXT -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.75rem;">
+        <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.85rem;">
+            {% if request.user.is_authenticated and not is_client %}
+            <a href="{% url 'jobs_list' %}" style="color:var(--brand-primary);text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:0.35rem;">
+                <i class="fa-solid fa-arrow-left"></i> All Shipments
+            </a>
+            <span style="color:#CBD5E1;">/</span>
+            <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;font-weight:700;">
+                File Details
+            </a>
+            {% else %}
+            <a href="{% url 'client_portal' %}?customer_id={{ job.customer.id }}" style="color:var(--brand-primary);text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:0.35rem;">
+                <i class="fa-solid fa-arrow-left"></i> Back to Portal
+            </a>
+            {% endif %}
+            <span style="color:#CBD5E1;">/</span>
+            <span style="color:#0F172A;font-weight:800;font-family:monospace;">
+                B/L: {{ job.bl_number|default:job.job_number }}
+            </span>
+        </div>
+
+        <div>
+            <span style="font-size:0.82rem;font-weight:800;color:#0F172A;background:#F1F5F9;padding:0.35rem 0.75rem;border-radius:6px;border:1px solid #CBD5E1;">
+                <i class="fa-solid fa-user-check" style="color:var(--brand-primary);margin-right:0.3rem;"></i> {{ job.customer.company_name }}
+            </span>
+        </div>
+    </div>
+
+    <!-- VEHICLE HERO SUMMARY CARD -->
+    <div class="card-panel" style="background:#FFFFFF;border-top:4px solid var(--brand-primary);padding:1.5rem 1.75rem;margin-bottom:1.5rem;box-shadow:var(--shadow-sm);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1.25rem;">
+            <div>
+                <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                    <h2 style="font-size:1.45rem;font-weight:900;color:#0F172A;margin:0;letter-spacing:-0.01em;">
+                        {{ job.cargo_description|default:"Motor Vehicle" }}
+                    </h2>
+                    {% if job.clearance_mode == 'BOND' %}
+                    <span class="badge-pill badge-amber" style="font-weight:800;font-size:0.75rem;padding:0.25rem 0.65rem;">
+                        <i class="fa-solid fa-shield-halved"></i> IN-BOND CARGO
+                    </span>
+                    {% else %}
+                    <span class="badge-pill badge-blue" style="font-weight:800;font-size:0.75rem;padding:0.25rem 0.65rem;">
+                        <i class="fa-solid fa-receipt"></i> DIRECT CLEARANCE
+                    </span>
+                    {% endif %}
+                    
+                    {% if job.status == 'COMPLETED' %}
+                    <span class="badge-pill badge-green" style="font-weight:800;font-size:0.75rem;padding:0.25rem 0.65rem;">
+                        <i class="fa-solid fa-circle-check"></i> DELIVERED (COMPLETED)
+                    </span>
+                    {% else %}
+                    <span class="badge-pill badge-active" style="font-weight:800;font-size:0.75rem;padding:0.25rem 0.65rem;">
+                        <i class="fa-solid fa-clock"></i> ACTIVE IN TRANSIT
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div style="display:flex;align-items:center;gap:1.5rem;margin-top:0.75rem;flex-wrap:wrap;font-size:0.85rem;">
+                    <div>
+                        <span style="color:var(--text-muted);font-size:0.75rem;display:block;">Bill of Lading (B/L):</span>
+                        <strong style="font-family:monospace;font-size:0.95rem;color:#0F172A;">{{ job.bl_number|default:"—" }}</strong>
+                    </div>
+                    <div>
+                        <span style="color:var(--text-muted);font-size:0.75rem;display:block;">Chassis Number:</span>
+                        <strong style="font-family:monospace;font-size:0.95rem;color:#1E40AF;">{{ job.chassis_number|default:"—" }}</strong>
+                    </div>
+                    <div>
+                        <span style="color:var(--text-muted);font-size:0.75rem;display:block;">Vessel &amp; Origin:</span>
+                        <strong style="color:#0F172A;">{{ job.vessel_name|default:"Vessel at Sea" }} ({{ job.port_of_origin }})</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OVERALL PROGRESS METER -->
+            <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:0.85rem 1.25rem;min-width:240px;text-align:right;">
+                <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">
+                    Clearance Progress
+                </div>
+                <div style="font-size:1.35rem;font-weight:900;color:#0F172A;margin-top:0.15rem;">
+                    {{ completed_milestones_count }} <span style="font-size:0.9rem;color:var(--text-muted);font-weight:600;">of 9 Steps</span>
+                </div>
+                <div style="width:100%;height:8px;background:#E2E8F0;border-radius:999px;margin-top:0.45rem;overflow:hidden;">
+                    <div style="height:100%;width:{% widthratio completed_milestones_count 9 100 %}%;background:{% if completed_milestones_count == 9 %}#16A34A{% else %}#2563EB{% endif %};border-radius:999px;transition:width 0.4s ease;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INSTRUCTION NOTICE (MATCHING DIT DESIGN) -->
+    <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid var(--brand-primary);border-radius:8px;padding:1.1rem 1.4rem;margin-bottom:1.5rem;">
+        <h4 style="font-size:0.92rem;font-weight:900;color:var(--brand-navy-900);margin:0 0 0.5rem 0;text-transform:uppercase;letter-spacing:0.04em;">
+            <i class="fa-solid fa-bolt" style="color:var(--brand-primary);"></i> LIVE CLEARANCE STATUS (REAL-TIME AUTOMATION)
+        </h4>
+        <div style="font-size:0.84rem;color:#334155;line-height:1.6;">
+            These 9 clearance milestones update <strong>automatically in real time</strong> as each operational department (Documentation, TANCIS Customs, Port Field, Accounts, and Yard) completes its tasks in the system.
+        </div>
+        <div style="margin-top:0.45rem;display:flex;flex-direction:column;gap:0.35rem;font-size:0.82rem;color:#0F172A;">
+            <div><i class="fa-solid fa-circle-check" style="color:#16A34A;margin-right:0.35rem;"></i> When an operational task is completed by the responsible department, its card turns from <span style="display:inline-flex;width:18px;height:18px;border-radius:50%;background:#DC2626;color:#FFF;align-items:center;justify-content:center;font-size:0.65rem;font-weight:900;">✖</span> to <span style="display:inline-flex;width:18px;height:18px;border-radius:50%;background:#16A34A;color:#FFF;align-items:center;justify-content:center;font-size:0.65rem;font-weight:900;">✔</span>.</div>
+            <div><i class="fa-solid fa-circle-check" style="color:#16A34A;margin-right:0.35rem;"></i> The blue card marked with <span style="color:#2563EB;font-weight:bold;">⏳</span> indicates the milestone currently in progress.</div>
+        </div>
+    </div>
+
+    <!-- =========================================================================
+         THE 9 REAL-WORLD VEHICLE TRACKING MILESTONES (EXACT CARD GRID FORMAT)
+         ========================================================================= -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:1.15rem;margin-bottom:2rem;">
+        {% for m in milestones %}
+        <div style="background:#FFFFFF;border:1.5px solid {% if m.done %}#86EFAC{% elif m.current %}#93C5FD{% else %}#FECACA{% endif %};border-radius:12px;padding:1.35rem 1.15rem;text-align:center;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform 0.15s ease, box-shadow 0.15s ease;"
+             onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.06)';"
+             onmouseout="this.style.transform='none';this.style.boxShadow='0 1px 3px rgba(0,0,0,0.04)';">
+            
+            <!-- STEP NUMBER & TITLE -->
+            <div>
+                <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:0.25rem;">
+                    STEP {{ m.id }}
+                </div>
+                <h4 style="font-size:0.95rem;font-weight:800;color:#0F172A;margin:0;min-height:2.4rem;display:flex;align-items:center;justify-content:center;line-height:1.25;">
+                    {{ m.name }}
+                </h4>
+            </div>
+
+            <!-- STATUS CIRCLE (BIG CHECKMARK OR X) -->
+            <div style="margin:1.15rem 0 0.85rem 0;">
+                {% if m.done %}
+                <!-- GREEN CIRCLE TICK -->
+                <div style="width:54px;height:54px;border-radius:50%;background:#16A34A;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto;box-shadow:0 4px 12px rgba(22,163,74,0.3);">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div style="margin-top:0.65rem;font-weight:800;font-size:0.84rem;color:#15803D;">
+                    Completed
+                </div>
+                {% elif m.current %}
+                <!-- BLUE CIRCLE IN PROGRESS -->
+                <div style="width:54px;height:54px;border-radius:50%;background:#2563EB;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:1.45rem;margin:0 auto;box-shadow:0 4px 12px rgba(37,99,235,0.3);">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                </div>
+                <div style="margin-top:0.65rem;font-weight:800;font-size:0.84rem;color:#1D4ED8;">
+                    In Progress
+                </div>
+                {% else %}
+                <!-- RED CIRCLE X -->
+                <div style="width:54px;height:54px;border-radius:50%;background:#DC2626;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto;box-shadow:0 4px 12px rgba(220,38,38,0.2);">
+                    <i class="fa-solid fa-xmark"></i>
+                </div>
+                <div style="margin-top:0.65rem;font-weight:800;font-size:0.84rem;color:#991B1B;">
+                    Pending
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- SUBTITLE / DETAILS (AUTO-SYNCED) -->
+            <div>
+                <div style="font-size:0.75rem;color:var(--text-muted);border-top:1px solid #F1F5F9;padding-top:0.5rem;font-weight:600;min-height:2.2rem;display:flex;align-items:center;justify-content:center;">
+                    {{ m.subtitle }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- SHIPMENT DOCUMENTS ATTACHMENTS (OPTIONAL DOWNLOAD) -->
+    {% if documents %}
+    <div class="card-panel" style="background:#FFFFFF;padding:1.25rem 1.5rem;">
+        <h4 style="font-size:0.95rem;font-weight:800;color:#0F172A;margin:0 0 0.85rem 0;">
+            <i class="fa-solid fa-file-pdf" style="color:#DC2626;margin-right:0.35rem;"></i>
+            Available Clearance Documents ({{ documents|length }})
+        </h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:0.75rem;">
+            {% for doc in documents %}
+            <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+                <div style="overflow:hidden;">
+                    <strong style="font-size:0.84rem;color:#0F172A;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                        {{ doc.title|default:doc.document_type }}
+                    </strong>
+                    <span style="font-size:0.72rem;color:var(--text-muted);">{{ doc.uploaded_at|date:"d M Y H:i" }}</span>
+                </div>
+                <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="padding:0.3rem 0.65rem;font-size:0.74rem;white-space:nowrap;">
+                    <i class="fa-solid fa-download"></i> View
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

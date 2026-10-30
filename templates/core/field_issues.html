@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+
+{% block title %}Field Challenges & Issues | Port Operations{% endblock %}
+
+{% block content %}
+<div style="max-width:960px;margin:0 auto;">
+
+    <!-- TOP HEADER -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+        <div>
+            <h2 style="font-family:var(--font-heading);font-size:1.35rem;font-weight:800;color:var(--brand-navy-900);letter-spacing:-0.02em;">
+                <i class="fa-solid fa-triangle-exclamation" style="color:#EF4444;"></i> Port & Field Issues Tracker
+            </h2>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin-top:0.2rem;">
+                Report and track terminal bottlenecks: gate queues, quay crane breakdowns, haulage delays, or customs physical inspection holds.
+            </p>
+        </div>
+        {% if not is_ceo %}
+        <button type="button" onclick="toggleReportForm()" class="btn-header-action btn-primary" style="background:#DC2626;border-color:#DC2626;font-weight:700;">
+            <i class="fa-solid fa-plus-circle"></i> Report Field Issue
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- 3 KPI SUMMARY CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+        <div class="card-panel" style="padding:1.1rem;border-left:4px solid #EF4444;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Active / Open Issues</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#DC2626;margin-top:0.25rem;">{{ open_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Requires field intervention</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.1rem;border-left:4px solid #F59E0B;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Action Taken / In Progress</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#B45309;margin-top:0.25rem;">{{ action_taken_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Escalated to management</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.1rem;border-left:4px solid #10B981;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Resolved Challenges</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#059669;margin-top:0.25rem;">{{ resolved_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Successfully cleared</div>
+        </div>
+    </div>
+
+    <!-- REPORT ISSUE FORM PANEL (COLLAPSIBLE / TOGGLEABLE) -->
+    <div id="reportIssuePanel" class="card-panel" style="padding:1.5rem;margin-bottom:1.5rem;border-top:4px solid #DC2626;{% if not selected_job_id %}display:none;{% endif %}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+            <div>
+                <h4 style="font-family:var(--font-heading);font-size:1.1rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color:#DC2626;"></i> Log New Terminal / Port Bottleneck
+                </h4>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">
+                    Recording this incident will flag the shipment as <span class="badge-pill badge-delayed" style="font-size:0.7rem;">DELAYED</span> across all dashboards.
+                </div>
+            </div>
+            <button type="button" onclick="toggleReportForm()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form method="POST" action="{% url 'field_issue_create' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1rem;margin-bottom:1rem;">
+                <div class="form-group">
+                    <label>Affected Shipment *</label>
+                    <select name="job_id" class="form-control" required style="font-weight:700;">
+                        {% for j in active_jobs %}
+                        <option value="{{ j.id }}" {% if selected_job_id == j.id %}selected{% endif %}>
+                            {{ j.job_number }} &bull; {{ j.container_numbers }} &bull; {{ j.customer.company_name|truncatechars:20 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Challenge Category *</label>
+                    <select name="issue_type" class="form-control" required>
+                        <option value="PORT_DELAY">🚢 Port Delay / Crane Breakdown / Terminal Congestion</option>
+                        <option value="VEHICLE_PROBLEM">🚛 Vehicle Problem / Mechanical Breakdown / Flat Tyre</option>
+                        <option value="INSPECTION_DELAY">⏳ Inspection Delay / Customs Query / Sampling Hold</option>
+                        <option value="CUSTOMS_HOLD">🛑 Customs Physical Hold / TFDA / TBS Discrepancy</option>
+                        <option value="OTHER">⚠️ Other Operational Challenge</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Detailed Incident Description *</label>
+                <textarea name="description" class="form-control" rows="3" placeholder="Describe what occurred at the port/terminal, specific berth/yard (e.g. Berth 4, Gate 3), and root cause..." required></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Immediate Mitigation Action Taken *</label>
+                <textarea name="action_taken" class="form-control" rows="2" placeholder="What immediate steps did you initiate? (e.g., liaised with TPA supervisor, summoned mechanical support, alerted customs clearing officer)..." required></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.25rem;">
+                <label><i class="fa-solid fa-camera"></i> Photo / Evidence Document (Camera or File)</label>
+                <input type="file" name="evidence_photo" class="form-control" accept="image/*" capture="environment">
+                <small style="color:var(--text-muted);font-size:0.75rem;">Optional photograph of damaged cargo, blocked gate, or terminal yard hold notice.</small>
+            </div>
+
+            <div style="display:flex;gap:0.75rem;">
+                <button type="submit" class="btn-header-action btn-primary" style="background:#DC2626;border-color:#DC2626;padding:0.75rem 1.5rem;font-weight:700;">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Submit Field Issue
+                </button>
+                <button type="button" onclick="toggleReportForm()" class="btn-header-action btn-outline">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- FILTER TABS -->
+    <div class="card-panel" style="padding:0.75rem 1rem;margin-bottom:1.5rem;">
+        <div style="display:flex;gap:0.4rem;overflow-x:auto;">
+            <a href="?status=ALL" class="badge-pill {% if status_filter == 'ALL' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                All Issues ({{ issues.count }})
+            </a>
+            <a href="?status=OPEN" class="badge-pill {% if status_filter == 'OPEN' %}badge-delayed{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                <i class="fa-solid fa-circle-exclamation"></i> Open ({{ open_count }})
+            </a>
+            <a href="?status=ACTION_TAKEN" class="badge-pill {% if status_filter == 'ACTION_TAKEN' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                <i class="fa-solid fa-spinner"></i> In Progress ({{ action_taken_count }})
+            </a>
+            <a href="?status=RESOLVED" class="badge-pill {% if status_filter == 'RESOLVED' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                <i class="fa-solid fa-check-circle"></i> Resolved ({{ resolved_count }})
+            </a>
+        </div>
+    </div>
+
+    <!-- ISSUES LIST -->
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+        {% for issue in issues %}
+        <div class="card-panel" style="padding:1.25rem;border-left:4px solid {% if issue.status == 'OPEN' %}#EF4444{% elif issue.status == 'ACTION_TAKEN' %}#F59E0B{% else %}#10B981{% endif %};">
+            
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+                <div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                        <span style="font-family:var(--font-heading);font-weight:800;font-size:1.1rem;color:var(--brand-navy-900);">
+                            {{ issue.job.job_number }}
+                        </span>
+                        <span style="font-weight:700;color:#0F766E;font-size:0.85rem;background:#CCFBF1;padding:0.2rem 0.5rem;border-radius:var(--radius-sm);">
+                            {{ issue.job.container_numbers }}
+                        </span>
+                        {% if issue.status == 'OPEN' %}
+                        <span class="badge-pill badge-delayed" style="font-size:0.75rem;">
+                            <i class="fa-solid fa-circle-exclamation"></i> OPEN / ACTIVE
+                        </span>
+                        {% elif issue.status == 'ACTION_TAKEN' %}
+                        <span class="badge-pill" style="background:#FEF3C7;color:#B45309;font-size:0.75rem;">
+                            <i class="fa-solid fa-spinner"></i> ACTION TAKEN / ESCALATED
+                        </span>
+                        {% else %}
+                        <span class="badge-pill" style="background:#D1FAE5;color:#047857;font-size:0.75rem;">
+                            <i class="fa-solid fa-circle-check"></i> RESOLVED
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem;">
+                        <strong>Client:</strong> {{ issue.job.customer.company_name }} &bull;
+                        <strong>Reported By:</strong> {{ issue.reported_by.get_full_name|default:issue.reported_by.username }} &bull;
+                        <strong>Time:</strong> {{ issue.created_at|date:"d M Y H:i" }}
+                    </div>
+                </div>
+
+                <div style="text-align:right;">
+                    <span style="font-size:0.8rem;font-weight:700;color:{% if issue.status == 'OPEN' %}#DC2626{% elif issue.status == 'ACTION_TAKEN' %}#D97706{% else %}#059669{% endif %};background:#F8FAFC;padding:0.35rem 0.75rem;border-radius:var(--radius-md);border:1px solid #E2E8F0;">
+                        {{ issue.get_issue_type_display }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- DESCRIPTION & ACTIONS GRID -->
+            <div style="background:#F8FAFC;border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:1rem;font-size:0.85rem;">
+                <div>
+                    <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.25rem;">
+                        <i class="fa-solid fa-comment-dots"></i> Challenge Description
+                    </div>
+                    <div style="color:var(--brand-navy-900);line-height:1.45;">
+                        {{ issue.description }}
+                    </div>
+                </div>
+
+                <div>
+                    <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.25rem;">
+                        <i class="fa-solid fa-bolt"></i> Action Taken On Ground
+                    </div>
+                    <div style="color:var(--brand-navy-900);line-height:1.45;white-space:pre-line;">
+                        {{ issue.action_taken|default:"No initial mitigation notes recorded." }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- PHOTO EVIDENCE & ACTIONS FOOTER -->
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+                <div>
+                    {% if issue.evidence_photo %}
+                    <a href="{{ issue.evidence_photo.url }}" target="_blank" style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:#0D9488;font-weight:700;text-decoration:none;">
+                        <i class="fa-solid fa-image"></i> View Evidence Photo
+                    </a>
+                    {% endif %}
+                </div>
+
+                {% if issue.status != 'RESOLVED' %}
+                <div style="display:flex;gap:0.5rem;">
+                    {% if not is_ceo %}
+                    <!-- QUICK RESOLVE MODAL BUTTON -->
+                    <button type="button" onclick="openResolveModal('{{ issue.id }}', '{{ issue.job.job_number }}', '{{ issue.get_issue_type_display|escapejs }}')" class="btn-header-action" style="background:#059669;color:#fff;font-size:0.8rem;padding:0.4rem 0.85rem;font-weight:700;">
+                        <i class="fa-solid fa-check"></i> Mark Resolved / Update
+                    </button>
+                    {% else %}
+                    <span class="badge-pill badge-draft" style="font-size:0.75rem;">
+                        <i class="fa-solid fa-eye"></i> Oversight Only
+                    </span>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div style="font-size:0.75rem;color:#059669;font-weight:600;">
+                    <i class="fa-solid fa-check-double"></i> Cleared on {{ issue.resolved_at|date:"d M Y H:i" }}
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+        {% empty %}
+        <div class="card-panel" style="padding:3.5rem 1.5rem;text-align:center;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#ECFDF5;color:#059669;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem auto;font-size:1.75rem;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h4 style="font-family:var(--font-heading);color:var(--brand-navy-900);font-size:1.15rem;font-weight:700;">No Issues Reported</h4>
+            <p style="color:var(--text-muted);font-size:0.85rem;max-width:380px;margin:0.25rem auto 1.25rem auto;">
+                No active challenges reported in this view. Port clearance operations are running smoothly.
+            </p>
+            {% if not is_ceo %}
+            <button type="button" onclick="toggleReportForm()" class="btn-header-action btn-outline" style="display:inline-flex;">
+                <i class="fa-solid fa-plus-circle"></i> Log An Issue
+            </button>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- RESOLVE ISSUE MODAL -->
+<div id="resolveModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:var(--radius-lg);max-width:480px;width:100%;padding:1.5rem;box-shadow:var(--shadow-xl);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+            <h4 style="font-family:var(--font-heading);font-size:1.1rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
+                Update / Resolve Issue
+            </h4>
+            <button type="button" onclick="closeResolveModal()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="resolveForm" method="POST" action="">
+            {% csrf_token %}
+            <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;" id="modalIssueTitle">
+                Updating issue for Job...
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Resolution Status *</label>
+                <select name="status" class="form-control" required>
+                    <option value="RESOLVED">✅ RESOLVED - Issue Cleared / Operations Resumed</option>
+                    <option value="ACTION_TAKEN">⏳ IN PROGRESS - Mitigation Underway / Monitored</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.25rem;">
+                <label>Resolution Actions & Outcomes *</label>
+                <textarea name="action_taken" class="form-control" rows="3" placeholder="Describe resolution steps taken or final clearance outcomes..." required></textarea>
+            </div>
+
+            <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                <button type="button" onclick="closeResolveModal()" class="btn-header-action btn-outline">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#059669;border-color:#059669;font-weight:700;">
+                    Save Resolution
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleReportForm() {
+    var p = document.getElementById('reportIssuePanel');
+    if (p.style.display === 'none' || p.style.display === '') {
+        p.style.display = 'block';
+        p.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        p.style.display = 'none';
+    }
+}
+
+function openResolveModal(issueId, jobNo, issueTitle) {
+    var modal = document.getElementById('resolveModal');
+    var form = document.getElementById('resolveForm');
+    var title = document.getElementById('modalIssueTitle');
+
+    form.action = '/field/issues/' + issueId + '/resolve/';
+    title.innerHTML = '<strong>' + jobNo + '</strong> &bull; ' + issueTitle;
+    modal.style.display = 'flex';
+}
+
+function closeResolveModal() {
+    document.getElementById('resolveModal').style.display = 'none';
+}
+</script>
+{% endblock %}

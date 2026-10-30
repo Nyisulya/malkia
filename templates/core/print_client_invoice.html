@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commercial Invoice {{ invoice.invoice_number }} - {{ job.chassis_number|default:job.job_number }} | Malkia C&amp;F</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #F1F5F9;
+            color: #0F172A;
+            padding: 1.5rem 1rem;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* Top Action Toolbar */
+        .toolbar {
+            max-width: 760px;
+            margin: 0 auto 1.25rem auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0B152B;
+            color: #fff;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-back { background: #334155; color: #fff; }
+        .btn-back:hover { background: #475569; }
+        .btn-print { background: #10B981; color: #fff; }
+        .btn-print:hover { background: #059669; }
+
+        /* Single Page Printable Invoice */
+        .invoice-card {
+            max-width: 760px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            padding: 2.2rem 2.5rem;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #0F172A;
+            padding-bottom: 1rem;
+            margin-bottom: 1.25rem;
+        }
+        .brand-name {
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: #0B152B;
+            letter-spacing: -0.01em;
+            text-transform: uppercase;
+        }
+        .brand-sub {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #0D9488;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin: 0.15rem 0 0.35rem 0;
+        }
+        .brand-info {
+            font-size: 0.75rem;
+            color: #475569;
+            line-height: 1.4;
+        }
+        .invoice-title-block {
+            text-align: right;
+        }
+        .invoice-title {
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: #0B152B;
+            letter-spacing: -0.02em;
+        }
+        .status-badge {
+            display: inline-block;
+            margin-top: 0.35rem;
+            padding: 0.2rem 0.65rem;
+            font-size: 0.75rem;
+            font-weight: 800;
+            border-radius: 4px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .badge-paid {
+            background: #ECFDF5;
+            color: #059669;
+            border: 1px solid #10B981;
+        }
+        .badge-due {
+            background: #FEF2F2;
+            color: #DC2626;
+            border: 1px solid #EF4444;
+        }
+
+        /* Details Grid: Billed To & Shipment */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 6px;
+            padding: 0.9rem 1.15rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.8rem;
+        }
+        .details-col h4 {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            color: #64748B;
+            letter-spacing: 0.06em;
+            font-weight: 800;
+            margin-bottom: 0.4rem;
+            border-bottom: 1px solid #E2E8F0;
+            padding-bottom: 0.25rem;
+        }
+        .field-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.18rem 0;
+            line-height: 1.35;
+        }
+        .field-label {
+            color: #64748B;
+        }
+        .field-val {
+            font-weight: 700;
+            color: #0F172A;
+            text-align: right;
+        }
+
+        /* Clean Table */
+        .clean-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.25rem;
+            font-size: 0.82rem;
+        }
+        .clean-table th {
+            background: #F1F5F9;
+            color: #1E293B;
+            font-weight: 800;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 0.6rem 0.75rem;
+            border-top: 1px solid #CBD5E1;
+            border-bottom: 2px solid #CBD5E1;
+            text-align: left;
+        }
+        .clean-table td {
+            padding: 0.65rem 0.75rem;
+            border-bottom: 1px solid #E2E8F0;
+            color: #1E293B;
+        }
+        .clean-table tr:last-child td {
+            border-bottom: 2px solid #0F172A;
+        }
+
+        /* Summary Totals */
+        .totals-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1.25rem;
+        }
+        .totals-table {
+            width: 320px;
+            font-size: 0.82rem;
+        }
+        .totals-table .t-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.3rem 0;
+            color: #475569;
+        }
+        .totals-table .t-row.grand {
+            border-top: 1px solid #CBD5E1;
+            border-bottom: 2px solid #0F172A;
+            padding: 0.45rem 0;
+            margin: 0.25rem 0;
+            font-size: 0.95rem;
+            font-weight: 900;
+            color: #0F172A;
+        }
+        .balance-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #F8FAFC;
+            border: 1.5px solid #CBD5E1;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            margin-top: 0.4rem;
+            font-weight: 900;
+            font-size: 0.95rem;
+        }
+        .balance-paid {
+            background: #ECFDF5;
+            border-color: #10B981;
+            color: #059669;
+        }
+        .balance-due {
+            background: #FEF2F2;
+            border-color: #EF4444;
+            color: #DC2626;
+        }
+
+        /* Payments & Payment Channel */
+        .info-bar {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 6px;
+            padding: 0.65rem 0.85rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.74rem;
+            color: #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Signatures */
+        .sign-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-top: 1.75rem;
+            padding-top: 1rem;
+            border-top: 1px dashed #CBD5E1;
+        }
+        .sign-box {
+            font-size: 0.75rem;
+            color: #475569;
+        }
+        .sign-line {
+            border-top: 1px solid #1E293B;
+            margin-top: 2.2rem;
+            padding-top: 0.35rem;
+            font-weight: 700;
+            color: #0F172A;
+            text-align: center;
+        }
+
+        /* Print Media Styles */
+        @media print {
+            body { background: #fff !important; padding: 0 !important; }
+            .toolbar { display: none !important; }
+            .invoice-card {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0.5rem 0 !important;
+                max-width: 100% !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP TOOLBAR -->
+    <div class="toolbar">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+            <a href="{% url 'yard_operations' %}" class="btn btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Yard Operations
+            </a>
+            <span style="font-size:0.8rem;color:#94A3B8;">
+                BL: <strong>{{ job.bl_number|default:job.job_number }}</strong> &bull; Invoice: <strong>{{ invoice.invoice_number }}</strong>
+            </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+            {% if balance_due <= 0 %}
+            <span style="background:#059669;color:#fff;font-size:0.75rem;font-weight:800;padding:0.3rem 0.65rem;border-radius:4px;">
+                <i class="fa-solid fa-check"></i> FULLY PAID
+            </span>
+            {% else %}
+            <span style="background:#DC2626;color:#fff;font-size:0.75rem;font-weight:800;padding:0.3rem 0.65rem;border-radius:4px;">
+                <i class="fa-solid fa-clock"></i> DUE: TZS {{ balance_due|floatformat:0 }}
+            </span>
+            {% endif %}
+            <button onclick="window.print()" class="btn btn-print">
+                <i class="fa-solid fa-print"></i> Print Invoice
+            </button>
+        </div>
+    </div>
+
+    <!-- INVOICE CARD -->
+    <div class="invoice-card">
+        
+        <!-- HEADER -->
+        <div class="header">
+            <div>
+                <div class="brand-name">MALKIA CLEARING &amp; FORWARDING</div>
+                <div class="brand-sub">Customs Clearance &bull; Port Logistics</div>
+                <div class="brand-info">
+                    Bandari Road, Kurasini Wharf, Dar es Salaam<br>
+                    Tel: +255 754 123 456 &bull; TIN: 142-892-019
+                </div>
+            </div>
+
+            <div class="invoice-title-block">
+                <div class="invoice-title">COMMERCIAL INVOICE</div>
+                <div style="font-size:0.82rem;font-weight:700;color:#0F172A;margin-top:0.25rem;">
+                    #{{ invoice.invoice_number }}
+                </div>
+                <div style="font-size:0.74rem;color:#64748B;">
+                    Date: {{ invoice.issue_date|date:"d M Y" }}
+                </div>
+                <div>
+                    {% if balance_due <= 0 and invoice.amount_paid > 0 %}
+                    <span class="status-badge badge-paid"><i class="fa-solid fa-check"></i> PAID IN FULL</span>
+                    {% elif balance_due <= 0 and invoice.total_amount == 0 %}
+                    <span class="status-badge badge-paid">COMPLIMENTARY</span>
+                    {% else %}
+                    <span class="status-badge badge-due"><i class="fa-solid fa-circle-exclamation"></i> PAYMENT DUE</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- DETAILS GRID -->
+        <div class="details-grid">
+            <div class="details-col">
+                <h4>Billed To</h4>
+                <div class="field-row">
+                    <span class="field-label">Customer:</span>
+                    <span class="field-val">{{ customer.company_name }}</span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Phone:</span>
+                    <span class="field-val">{{ customer.phone|default:"-" }}</span>
+                </div>
+                {% if customer.tin_number %}
+                <div class="field-row">
+                    <span class="field-label">TIN:</span>
+                    <span class="field-val">{{ customer.tin_number }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="details-col">
+                <h4>Shipment Details</h4>
+                <div class="field-row">
+                    <span class="field-label">B/L Number:</span>
+                    <span class="field-val" style="font-weight:800;">{{ job.bl_number|default:"-" }}</span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Chassis No:</span>
+                    <span class="field-val" style="font-family:monospace;">{{ job.chassis_number|default:job.container_numbers }}</span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Vehicle:</span>
+                    <span class="field-val">{{ job.cargo_description|default:"Vehicle" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHARGES TABLE -->
+        <table class="clean-table">
+            <thead>
+                <tr>
+                    <th style="width:35px;text-align:center;">#</th>
+                    <th>Description</th>
+                    <th style="width:160px;text-align:right;">Amount (TZS)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="text-align:center;font-weight:700;">1</td>
+                    <td style="font-weight:700;">Clearing Agency Fee</td>
+                    <td style="text-align:right;font-weight:800;">
+                        {{ invoice.amount_clearing_agency_fee|default:350000|floatformat:0 }}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align:center;font-weight:700;">2</td>
+                    <td style="font-weight:700;">Shipping Line Delivery Order (D/O) Release</td>
+                    <td style="text-align:right;font-weight:800;">
+                        {{ invoice.amount_shipping_line_do|default:0|floatformat:0 }}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align:center;font-weight:700;">3</td>
+                    <td style="font-weight:700;">Port Wharfage &amp; Terminal Handling (ICD)</td>
+                    <td style="text-align:right;font-weight:800;">
+                        {{ invoice.amount_port_charges|default:0|floatformat:0 }}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align:center;font-weight:700;">4</td>
+                    <td style="font-weight:700;">Vehicle Inspection &amp; Port-to-Yard Transfer</td>
+                    <td style="text-align:right;font-weight:800;">
+                        {{ invoice.amount_transport|default:20000|floatformat:0 }}
+                    </td>
+                </tr>
+                {% if invoice.amount_duty_reimbursement > 0 %}
+                <tr>
+                    <td style="text-align:center;font-weight:700;">5</td>
+                    <td style="font-weight:700;">Customs Duty Advance (TRA TANCIS)</td>
+                    <td style="text-align:right;font-weight:800;">
+                        {{ invoice.amount_duty_reimbursement|floatformat:0 }}
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- TOTALS & BALANCE -->
+        <div class="totals-section">
+            <div class="totals-table">
+                <div class="t-row">
+                    <span>Total Charges:</span>
+                    <strong>TZS {{ invoice.total_amount|floatformat:0 }}</strong>
+                </div>
+                <div class="t-row" style="color:#059669;">
+                    <span>Amount Paid:</span>
+                    <strong>- TZS {{ invoice.amount_paid|floatformat:0 }}</strong>
+                </div>
+                <div class="t-row grand">
+                    <span>TOTAL PAYABLE:</span>
+                    <span>TZS {{ invoice.total_amount|floatformat:0 }}</span>
+                </div>
+                <div class="balance-box {% if balance_due <= 0 %}balance-paid{% else %}balance-due{% endif %}">
+                    <span>BALANCE DUE:</span>
+                    <span>{% if balance_due <= 0 %}TZS 0.00 (PAID){% else %}TZS {{ balance_due|floatformat:0 }}{% endif %}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAYMENT DETAILS / CHANNELS -->
+        <div class="info-bar">
+            <div>
+                <strong>Lipa Namba (M-Pesa / Tigo / Airtel):</strong> <span style="font-weight:900;background:#E2E8F0;padding:0.1rem 0.35rem;border-radius:3px;">5892019</span> (Malkia C&amp;F)
+            </div>
+            <div>
+                <strong>CRDB Bank:</strong> <span style="font-weight:800;">0150-8921-4400</span>
+            </div>
+        </div>
+
+        <!-- SIGNATURES -->
+        <div class="sign-grid">
+            <div class="sign-box">
+                <div>Authorized Signatory</div>
+                <div class="sign-line">Malkia Clearing &amp; Forwarding</div>
+            </div>
+            <div class="sign-box">
+                <div>Customer / Receiver Acceptance</div>
+                <div class="sign-line">Date &amp; Signature</div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

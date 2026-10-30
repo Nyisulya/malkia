@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Operations Archive | Malkia C&F{% endblock %}
+
+{% block content %}
+<div class="page-header-box">
+    <div>
+        <h2 class="page-title"><i class="fa-solid fa-box-archive" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Completed Shipments Archive</h2>
+        <p class="page-subtitle">Historical repository of finalized and delivered shipments, Proof of Delivery (POD) records, and audit history.</p>
+    </div>
+    <div>
+        <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline">
+            <i class="fa-solid fa-boxes-stacked"></i> Back to Active Jobs
+        </a>
+    </div>
+</div>
+
+<!-- SEARCH BAR -->
+<div class="card-panel" style="padding:1.25rem;margin-bottom:1.5rem;background:#FFFFFF;">
+    <form method="GET" action="{% url 'jobs_archive' %}" style="display:flex;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <div style="flex:1;min-width:260px;">
+            <input type="text" name="q" class="form-control" placeholder="Search archive by Job #, B/L #, Container, or Client..." value="{{ search_query }}">
+        </div>
+        <div>
+            <button type="submit" class="btn-header-action btn-primary" style="padding:0.65rem 1.25rem;">
+                <i class="fa-solid fa-magnifying-glass"></i> Search Archive
+            </button>
+            {% if search_query %}
+            <a href="{% url 'jobs_archive' %}" class="btn-header-action btn-outline" style="padding:0.65rem 1rem;">
+                Reset
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- ARCHIVE TABLE -->
+<div class="card-panel">
+    <div class="card-panel-header">
+        <div>
+            <h3 class="panel-title"><i class="fa-solid fa-folder-closed"></i> Archived Shipment Records</h3>
+            <p class="panel-description">Showing {{ total_archived }} completed clearing operations</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>{% if is_ceo or is_admin %}Job Reference{% else %}B/L &amp; Chassis No{% endif %}</th>
+                    <th>Client / Consignee</th>
+                    <th>Containers & Cargo</th>
+                    <th>Vessel & Origin</th>
+                    <th>Destination</th>
+                    <th>Delivery Status</th>
+                    <th>Operational Officers</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in archived_jobs %}
+                <tr>
+                    <td>
+                        {% if is_ceo or is_admin %}
+                        <strong style="font-size:0.95rem;color:var(--brand-navy-900);">
+                            <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;">
+                                {{ job.job_number }}
+                            </a>
+                        </strong>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">B/L: {{ job.bl_number }}</div>
+                        {% else %}
+                        <strong style="font-family:monospace;font-size:0.95rem;color:var(--brand-navy-900);">
+                            <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;">
+                                {{ job.bl_number|default:job.job_number }}
+                            </a>
+                        </strong>
+                        {% if job.chassis_number %}
+                        <div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">Chassis: {{ job.chassis_number }}</div>
+                        {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="color:var(--text-main);">{{ job.customer.company_name }}</strong>
+                    </td>
+                    <td>
+                        <div style="font-weight:600;color:#0F172A;">{{ job.container_numbers }}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">{{ job.cargo_description|truncatechars:28 }}</div>
+                    </td>
+                    <td>
+                        <div style="font-size:0.85rem;font-weight:600;">{{ job.vessel_name }}</div>
+                        <div style="font-size:0.72rem;color:var(--text-muted);">{{ job.port_of_origin }}</div>
+                    </td>
+                    <td>
+                        <div style="font-size:0.85rem;"><i class="fa-solid fa-location-dot" style="color:#059669;"></i> {{ job.final_destination }}</div>
+                    </td>
+                    <td>
+                        <span class="badge-pill badge-completed">
+                            <i class="fa-solid fa-circle-check"></i> Delivered & Closed
+                        </span>
+                        <div style="margin-top:0.3rem;">
+                            <span style="font-size:0.72rem;font-weight:700;background:#FEF3C7;color:#92400E;padding:0.15rem 0.45rem;border-radius:3px;">
+                                <i class="fa-solid fa-folder-closed"></i> {{ job.box_number|default:"Kabati Kuu" }}
+                            </span>
+                        </div>
+                        <div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.2rem;">
+                            {{ job.updated_at|date:"d M Y" }}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size:0.78rem;">
+                            <strong>Docs:</strong> {{ job.documentation_officer.first_name|default:"-" }} &bull;
+                            <strong>Clear:</strong> {{ job.clearing_officer.first_name|default:"-" }} &bull;
+                            <strong>Port:</strong> {{ job.port_officer.first_name|default:"-" }}
+                        </div>
+                    </td>
+                    <td>
+                        <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.75rem;font-size:0.8rem;">
+                            Audit File <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align:center;padding:3rem;color:var(--text-muted);">
+                        <i class="fa-solid fa-box-archive" style="font-size:2.5rem;color:#CBD5E1;margin-bottom:0.75rem;display:block;"></i>
+                        No archived shipments found matching your search.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

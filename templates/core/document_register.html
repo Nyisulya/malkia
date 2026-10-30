@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block title %}Document Receive Register | Malkia C&amp;F{% endblock %}
+
+{% block content %}
+<div style="max-width:1140px;margin:0 auto;padding-bottom:3rem;">
+
+    <!-- PAGE HEADER -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
+        <div>
+            <h2 style="font-family:var(--font-heading);font-size:1.45rem;font-weight:800;color:var(--brand-navy-900);letter-spacing:-0.02em;margin:0;">
+                <i class="fa-solid fa-folder-open" style="color:#0D9488;margin-right:0.35rem;"></i> 1. Document Receive &amp; File Opening Register
+            </h2>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin:0.25rem 0 0 0;">
+                Checklist of client intake documents (BL, Invoice, Packing List, TBS, Export Cert) and company generated forms.
+            </p>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+            {% if not is_ceo %}
+            <a href="{% url 'job_create' %}" class="btn-header-action btn-primary" style="padding:0.55rem 1.15rem;font-weight:800;font-size:0.85rem;">
+                <i class="fa-solid fa-plus"></i> Receive Documents &amp; Open File
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- FILTER & SEARCH BAR -->
+    <div class="card-panel" style="padding:0.85rem 1.15rem;margin-bottom:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+            
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.78rem;font-weight:800;color:#0F766E;background:#CCFBF1;padding:0.25rem 0.65rem;border-radius:999px;">
+                    <i class="fa-solid fa-list-check"></i> {{ jobs|length }} Active Dossier{% if jobs|length != 1 %}s{% endif %}
+                </span>
+            </div>
+
+            <!-- SEARCH FORM -->
+            <form method="GET" action="{% url 'document_register' %}" style="display:flex;gap:0.4rem;align-items:center;flex-grow:1;max-width:360px;">
+                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search B/L, Chassis, Customer..." style="padding:0.45rem 0.85rem;font-size:0.82rem;">
+                <button type="submit" class="btn-header-action btn-outline" style="padding:0.45rem 0.85rem;font-size:0.82rem;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+                {% if search_query %}
+                <a href="{% url 'document_register' %}" class="btn-header-action btn-outline" style="padding:0.45rem 0.65rem;font-size:0.82rem;" title="Clear Search">
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
+                {% endif %}
+            </form>
+
+        </div>
+    </div>
+
+    <!-- COMPACT DOCUMENT REGISTER TABLE -->
+    <div class="card-panel" style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
+        
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
+                <thead>
+                    <tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;color:#64748B;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">
+                        <th style="padding:0.75rem 1rem;font-weight:800;min-width:180px;">B/L &amp; Chassis No</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;min-width:200px;">Customer / Consignee</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;min-width:190px;">Client Docs (5 Items)</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;min-width:170px;">Physical Original Docs</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;min-width:160px;">Company Forms</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;min-width:110px;text-align:right;">Archive &amp; Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for j in jobs %}
+                    <tr style="border-bottom:1px solid #F1F5F9;transition:background 0.15s ease;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#fff'">
+                        
+                        <!-- 1. B/L & CHASSIS NUMBER -->
+                        <td style="padding:0.8rem 1rem;vertical-align:middle;">
+                            {% if is_ceo or is_admin %}
+                            <div style="font-weight:800;font-size:0.82rem;color:#0F766E;">
+                                <a href="{% url 'job_detail' j.id %}" style="color:#0F766E;text-decoration:none;">{{ j.job_number }}</a>
+                            </div>
+                            <div style="font-size:0.85rem;color:#0F172A;font-weight:800;letter-spacing:0.01em;">
+                                B/L: {{ j.bl_number|default:"—" }}
+                            </div>
+                            {% else %}
+                            <div style="font-weight:800;font-size:0.88rem;color:#0F172A;letter-spacing:0.01em;">
+                                <a href="{% url 'job_detail' j.id %}" style="color:#0F172A;text-decoration:none;">{{ j.bl_number|default:j.job_number }}</a>
+                            </div>
+                            {% endif %}
+
+                            {% if j.chassis_number %}
+                            <div style="font-family:monospace;font-size:0.75rem;color:#1E40AF;margin-top:0.15rem;white-space:nowrap;">
+                                Chassis: <span style="background:#EFF6FF;padding:0.05rem 0.35rem;border-radius:3px;font-weight:700;">{{ j.chassis_number }}</span>
+                            </div>
+                            {% endif %}
+
+                            <div style="margin-top:0.25rem;">
+                                <span style="font-size:0.68rem;font-weight:800;color:#2563EB;background:#EFF6FF;padding:0.12rem 0.45rem;border-radius:3px;text-transform:uppercase;">
+                                    {{ j.get_doc_receive_method_display }}
+                                </span>
+                            </div>
+                        </td>
+
+                        <!-- 2. CUSTOMER / CONSIGNEE -->
+                        <td style="padding:0.8rem 1rem;vertical-align:middle;">
+                            <div style="font-weight:800;color:#0F172A;font-size:0.9rem;white-space:nowrap;" title="{{ j.customer.company_name }}">
+                                {{ j.customer.company_name }}
+                            </div>
+                            <div style="font-size:0.75rem;color:#64748B;margin-top:0.2rem;white-space:nowrap;">
+                                <i class="fa-solid fa-phone" style="font-size:0.7rem;color:#059669;margin-right:0.3rem;"></i>{{ j.customer.phone }}
+                                {% if j.customer.tin_number %}
+                                <span style="margin-left:0.4rem;font-family:monospace;background:#F1F5F9;padding:0.05rem 0.35rem;border-radius:3px;font-weight:700;">TIN: {{ j.customer.tin_number }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- 3. CLIENT DOCUMENTS CHECKLIST (5 ITEMS COMPACT) -->
+                        <td style="padding:0.8rem 1rem;vertical-align:middle;">
+                            <div style="display:flex;flex-direction:column;gap:0.35rem;">
+                                <!-- OVERALL PROGRESS BADGE -->
+                                <div>
+                                    {% if j.doc_bl_received and j.doc_invoice_received and j.doc_packing_list_received and j.doc_tbs_cert_received and j.doc_export_cert_received %}
+                                    <span style="display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;font-weight:800;color:#059669;background:#ECFDF5;padding:0.18rem 0.55rem;border-radius:999px;border:1px solid #A7F3D0;white-space:nowrap;">
+                                        <i class="fa-solid fa-circle-check"></i> 5/5 Received
+                                    </span>
+                                    {% else %}
+                                    <span style="display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;font-weight:800;color:#D97706;background:#FFFBEB;padding:0.18rem 0.55rem;border-radius:999px;border:1px solid #FDE68A;white-space:nowrap;">
+                                        <i class="fa-solid fa-clock"></i> Incomplete
+                                    </span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- 5 MINI CHECKLIST PILLS -->
+                                <div style="display:flex;gap:0.25rem;align-items:center;flex-wrap:wrap;font-size:0.68rem;font-weight:800;">
+                                    <span style="padding:0.08rem 0.3rem;border-radius:3px;{% if j.doc_bl_received %}background:#DCFCE7;color:#166534;{% else %}background:#FEE2E2;color:#991B1B;{% endif %}" title="Bill of Lading">
+                                        BL {% if j.doc_bl_received %}✓{% else %}✗{% endif %}
+                                    </span>
+                                    <span style="padding:0.08rem 0.3rem;border-radius:3px;{% if j.doc_invoice_received %}background:#DCFCE7;color:#166534;{% else %}background:#FEE2E2;color:#991B1B;{% endif %}" title="Commercial Invoice">
+                                        INV {% if j.doc_invoice_received %}✓{% else %}✗{% endif %}
+                                    </span>
+                                    <span style="padding:0.08rem 0.3rem;border-radius:3px;{% if j.doc_packing_list_received %}background:#DCFCE7;color:#166534;{% else %}background:#FEE2E2;color:#991B1B;{% endif %}" title="Packing List">
+                                        PL {% if j.doc_packing_list_received %}✓{% else %}✗{% endif %}
+                                    </span>
+                                    <span style="padding:0.08rem 0.3rem;border-radius:3px;{% if j.doc_tbs_cert_received %}background:#DCFCE7;color:#166534;{% else %}background:#FEE2E2;color:#991B1B;{% endif %}" title="TBS Certificate">
+                                        TBS {% if j.doc_tbs_cert_received %}✓{% else %}✗{% endif %}
+                                    </span>
+                                    <span style="padding:0.08rem 0.3rem;border-radius:3px;{% if j.doc_export_cert_received %}background:#DCFCE7;color:#166534;{% else %}background:#FEE2E2;color:#991B1B;{% endif %}" title="Export Certificate">
+                                        EXP {% if j.doc_export_cert_received %}✓{% else %}✗{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- 4. PHYSICAL ORIGINAL DOCS DISPATCH -->
+                        <td style="padding:0.8rem 1rem;vertical-align:middle;">
+                            {% if j.original_docs_dispatched_to_field %}
+                            <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px;padding:0.35rem 0.55rem;font-size:0.75rem;">
+                                <div style="font-weight:800;color:#065F46;white-space:nowrap;">
+                                    <i class="fa-solid fa-circle-check"></i> Dispatched to Field
+                                </div>
+                                <div style="font-size:0.7rem;color:#047857;margin-top:0.1rem;white-space:nowrap;">
+                                    {{ j.original_docs_recipient }} ({{ j.original_docs_dispatched_at|date:"d M H:i" }})
+                                </div>
+                            </div>
+                            {% else %}
+                            <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+                                <span style="font-size:0.72rem;font-weight:800;color:#92400E;background:#FFFBEB;padding:0.2rem 0.5rem;border-radius:4px;border:1px solid #FDE68A;white-space:nowrap;">
+                                    <i class="fa-solid fa-folder-closed"></i> In Office
+                                </span>
+                                {% if not is_ceo %}
+                                <button type="button" class="btn-header-action btn-outline" onclick="openHandoverModal('{{ j.id }}', '{{ j.job_number }}', '{{ j.bl_number }}')" style="padding:0.2rem 0.5rem;font-size:0.72rem;background:#FFFFFF;font-weight:700;white-space:nowrap;" title="Dispatch original BL to field agent">
+                                    <i class="fa-solid fa-hand-holding-hand"></i> Handover
+                                </button>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- 5. COMPANY PRINTED FORMS -->
+                        <td style="padding:0.8rem 1rem;vertical-align:middle;">
+                            <div style="display:flex;gap:0.35rem;flex-wrap:wrap;align-items:center;">
+                                <a href="{% url 'print_c41_document' j.id %}" target="_blank" class="badge-pill" style="background:#DCFCE7;color:#166534;text-decoration:none;font-weight:800;font-size:0.72rem;padding:0.25rem 0.55rem;border:1px solid #BBF7D0;white-space:nowrap;" title="Print TRA Form C.41">
+                                    <i class="fa-solid fa-print"></i> C41 (TRA)
+                                </a>
+                                <a href="{% url 'print_tbs_letter' j.id %}" target="_blank" class="badge-pill" style="background:#DBEAFE;color:#1D4ED8;text-decoration:none;font-weight:800;font-size:0.72rem;padding:0.25rem 0.55rem;border:1px solid #BFDBFE;white-space:nowrap;" title="Print TBS Application Letter">
+                                    <i class="fa-solid fa-print"></i> TBS Letter
+                                </a>
+                            </div>
+                        </td>
+
+                        <!-- 6. ARCHIVE & ACTION -->
+                        <td style="padding:0.8rem 1rem;vertical-align:middle;text-align:right;white-space:nowrap;">
+                            <div style="display:inline-flex;align-items:center;gap:0.4rem;">
+                                {% if j.box_number %}
+                                <span style="font-size:0.72rem;font-weight:800;background:#FEF3C7;color:#92400E;padding:0.2rem 0.5rem;border-radius:4px;border:1px solid #FDE68A;" title="Physical Storage Location">
+                                    <i class="fa-solid fa-box-archive"></i> {{ j.box_number }}
+                                </span>
+                                {% endif %}
+                                <a href="{% url 'job_detail' j.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.75rem;font-weight:700;">
+                                    <i class="fa-solid fa-folder-open"></i> File &rarr;
+                                </a>
+                            </div>
+                        </td>
+
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="padding:3rem 1.5rem;text-align:center;color:#94A3B8;">
+                            <i class="fa-solid fa-inbox" style="font-size:2.2rem;color:#CBD5E1;margin-bottom:0.75rem;display:block;"></i>
+                            <strong style="color:#64748B;font-size:0.95rem;">No documents received yet</strong>
+                            <p style="font-size:0.82rem;margin:0.25rem 0 0 0;">
+                                Click 'Receive Documents &amp; Open File' to intake incoming shipments.
+                            </p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- MODAL: HANDOVER PHYSICAL ORIGINAL DOCS TO FIELD -->
+<div id="handoverDocsModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:540px;">
+        <form id="handoverDocsForm" action="" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title"><i class="fa-solid fa-hand-holding-hand" style="color:var(--brand-primary);margin-right:0.35rem;"></i> Handover Physical Original Docs</h3>
+                    <p id="handoverModalJobContext" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Dispatch original Bill of Lading &amp; Invoice to Port/Field Agent for Shipping Line D/O</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('handoverDocsModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:1.15rem;">
+                <div style="background:#EFF6FF;border:1px solid #BFDBFE;padding:0.85rem 1rem;border-radius:8px;font-size:0.82rem;color:#1E40AF;line-height:1.4;">
+                    <i class="fa-solid fa-circle-info" style="margin-right:0.3rem;"></i>
+                    <strong>Physical Handover:</strong> Record the field officer/messenger taking the physical original B/L to the shipping line counter at port for Delivery Order (D/O).
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;">Recipient Field Officer / Agent *</label>
+                    <input type="text" name="original_docs_recipient" class="form-control" placeholder="e.g. Juma Kavishe (Port Field Inspector)" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:600;font-size:0.82rem;">Dispatch Notes / Documents Handed Over</label>
+                    <textarea name="original_docs_dispatch_notes" class="form-control" rows="2" placeholder="e.g. Original Bill of Lading (3/3), Commercial Invoice, and Export Certificate dispatched to port for D/O processing."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('handoverDocsModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.65rem 1.5rem;">
+                    <i class="fa-solid fa-paper-plane"></i> Confirm Handover
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openHandoverModal(jobId, jobRef, blNumber) {
+    const modal = document.getElementById('handoverDocsModal');
+    const form = document.getElementById('handoverDocsForm');
+    const subtitle = document.getElementById('handoverModalJobContext');
+    if (form) form.action = `/jobs/${jobId}/handover-original-docs/`;
+    if (subtitle) subtitle.innerHTML = `Dispatching Original BL &amp; Invoice for <strong>${jobRef}</strong> (B/L: ${blNumber})`;
+    if (modal) modal.classList.add('show');
+}
+function closeModal(id) {
+    const m = document.getElementById(id);
+    if (m) m.classList.remove('show');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Unified File Pack - BL {{ job.bl_number|default:job.job_number }} | Malkia C&F</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #E2E8F0;
+            color: #0F172A;
+            margin: 0;
+            padding: 1.5rem 1rem;
+        }
+        .toolbar {
+            max-width: 860px;
+            margin: 0 auto 1.25rem auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0F172A;
+            color: #fff;
+            padding: 0.9rem 1.25rem;
+            border-radius: 10px;
+            position: sticky;
+            top: 0.75rem;
+            z-index: 100;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-back { background: #334155; color: #fff; }
+        .btn-print { background: #10B981; color: #fff; }
+        .page {
+            max-width: 860px;
+            margin: 0 auto 2rem auto;
+            background: #FFFFFF;
+            padding: 2.25rem 2.5rem;
+            border: 1px solid #CBD5E1;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+            page-break-after: always;
+        }
+        .page:last-child {
+            page-break-after: auto;
+        }
+        .header-box {
+            text-align: center;
+            border-bottom: 2px solid #0F172A;
+            padding-bottom: 1rem;
+            margin-bottom: 1.35rem;
+            position: relative;
+        }
+        .form-code {
+            position: absolute;
+            top: 0;
+            right: 0;
+            border: 2px solid #0F172A;
+            padding: 0.3rem 0.7rem;
+            font-weight: 900;
+            font-size: 0.9rem;
+        }
+        .section-title {
+            background: #F1F5F9;
+            border-left: 4px solid #0F172A;
+            padding: 0.45rem 0.75rem;
+            font-weight: 800;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin: 1.25rem 0 0.65rem 0;
+        }
+        table.info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.86rem;
+        }
+        table.info-table th, table.info-table td {
+            border: 1px solid #94A3B8;
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+        }
+        table.info-table th {
+            background: #F8FAFC;
+            width: 32%;
+            font-weight: 700;
+            color: #334155;
+        }
+        .mode-banner {
+            padding: 0.85rem 1.15rem;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .mode-direct {
+            background: #ECFDF5;
+            border: 2px solid #10B981;
+            color: #065F46;
+        }
+        .mode-bond {
+            background: #FEF3C7;
+            border: 2px solid #F59E0B;
+            color: #92400E;
+        }
+        @media print {
+            body { background: #fff; padding: 0; }
+            .toolbar { display: none !important; }
+            .page { border: none; box-shadow: none; padding: 1rem; max-width: 100%; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div>
+            <strong><i class="fa-solid fa-layer-group" style="color:#38BDF8;"></i> Unified File Dossier (C41 + TBS Letter + {{ scanned_docs|length }} Scanned Document{{ scanned_docs|length|pluralize }})</strong>
+            <span style="margin-left:0.75rem;font-size:0.82rem;color:#94A3B8;">BL: {{ job.bl_number|default:"—" }} | File: {{ job.job_number }}</span>
+        </div>
+        <div style="display:flex;gap:0.6rem;">
+            <a href="{% url 'job_detail' job.id %}" class="btn btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Back to File
+            </a>
+            <button onclick="window.print()" class="btn btn-print">
+                <i class="fa-solid fa-print"></i> Print / Save Complete PDF Pack
+            </button>
+        </div>
+    </div>
+
+    <!-- ===================================================================
+         PAGE 1: FILE COVER SUMMARY + AUTO-GENERATED FORM C.41 (TRA)
+         =================================================================== -->
+    <div class="page">
+        <!-- TRA DECLARATION MODE BANNER FOR DECLARATION OFFICER -->
+        <div class="mode-banner {% if job.clearance_mode == 'BOND' %}mode-bond{% else %}mode-direct{% endif %}">
+            <div>
+                <i class="fa-solid {% if job.clearance_mode == 'BOND' %}fa-warehouse{% else %}fa-money-bill-transfer{% endif %}"></i>
+                TRA DECLARATION MODE: {{ job.get_clearance_mode_display|upper }}
+            </div>
+            <div style="font-family:monospace;font-size:0.88rem;">
+                BL: {{ job.bl_number|default:"—" }} &bull; File: {{ job.job_number }}
+            </div>
+        </div>
+
+        <div class="header-box">
+            <div class="form-code">FORM C.41</div>
+            <div style="font-size:0.8rem;font-weight:700;letter-spacing:0.08em;color:#475569;">UNITED REPUBLIC OF TANZANIA</div>
+            <h2 style="margin:0.2rem 0;font-size:1.3rem;font-weight:900;">TANZANIA REVENUE AUTHORITY (TRA)</h2>
+            <div style="font-size:0.9rem;font-weight:800;color:#1E293B;">CUSTOMS &amp; EXCISE DEPARTMENT</div>
+            <div style="font-size:0.85rem;font-weight:700;margin-top:0.3rem;text-decoration:underline;">
+                AUTHORISATION OF CUSTOMS CLEARING &amp; FORWARDING AGENT (FORM C.41)
+            </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:0.85rem;">
+            <div><strong>C.41 Ref:</strong> <code>{{ job.c41_reference_no }}</code></div>
+            <div><strong>File Cover (BL):</strong> <code>{{ job.bl_number|default:"—" }}</code></div>
+            <div><strong>Boss Sequence:</strong> <code>{{ job.job_number }}</code></div>
+            <div><strong>Date:</strong> {{ job.file_opened_at|default:today|date:"d M Y" }}</div>
+        </div>
+
+        <div class="section-title">1. Client / Importer Particulars</div>
+        <table class="info-table">
+            <tr>
+                <th>Client / Importer Name</th>
+                <td><strong>{{ job.customer.company_name }}</strong></td>
+            </tr>
+            <tr>
+                <th>TIN Number &amp; ID Number</th>
+                <td>TIN: <strong style="font-family:monospace;">{{ job.customer.tin_number|default:"—" }}</strong> &bull; ID: <strong style="font-family:monospace;">{{ job.customer.id_number|default:"—" }}</strong></td>
+            </tr>
+            <tr>
+                <th>Phone &amp; Email</th>
+                <td>{{ job.customer.phone }} &bull; {{ job.customer.email|default:"—" }}</td>
+            </tr>
+            <tr>
+                <th>TRA Clearance / Duty Instruction</th>
+                <td>
+                    <strong>{{ job.get_clearance_mode_display }}</strong>
+                    {% if job.clearance_mode == 'BOND' %}
+                    (Lodge as In-Bond / Warehousing in TRA TANCIS)
+                    {% else %}
+                    (Lodge for Direct Duty Payment / Control Number in TRA TANCIS)
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title">2. Vehicle &amp; Shipment Particulars</div>
+        <table class="info-table">
+            <tr>
+                <th>Bill of Lading (BL) Number</th>
+                <td><strong style="font-family:monospace;font-size:0.95rem;">{{ job.bl_number|default:"—" }}</strong></td>
+            </tr>
+            <tr>
+                <th>Chassis Number</th>
+                <td><strong style="font-family:monospace;font-size:0.95rem;">{{ job.chassis_number|default:"—" }}</strong></td>
+            </tr>
+            <tr>
+                <th>Vehicle Description</th>
+                <td><strong>{{ job.cargo_description }}</strong></td>
+            </tr>
+            <tr>
+                <th>Vessel Name</th>
+                <td>{{ job.vessel_name|default:"TBA" }}</td>
+            </tr>
+            <tr>
+                <th>Client Checklist &amp; Bundled Scans</th>
+                <td>
+                    {% for doc_name, is_rec in job.received_docs_checklist %}
+                        <span style="display:inline-block;margin-right:0.75rem;">
+                            {% if is_rec %}&#9745;{% else %}&#9744;{% endif %} {{ doc_name }}
+                        </span>
+                    {% endfor %}
+                    <div style="margin-top:0.35rem;font-size:0.8rem;color:#059669;font-weight:700;">
+                        + Auto-Bundled with Form C.41, TBS Letter, and {{ scanned_docs|length }} Scanned Client File(s).
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div style="font-size:0.84rem;line-height:1.55;margin:1rem 0;padding:0.85rem;border:1px dashed #64748B;background:#FAFAFA;">
+            <strong>DECLARATION &amp; AUTHORISATION:</strong><br>
+            I/We, <strong>{{ job.customer.company_name }}</strong> (TIN: <strong>{{ job.customer.tin_number|default:"N/A" }}</strong>), hereby authorize <strong>MALKIA FREIGHT &amp; LOGISTICS LTD</strong> to act as our lawful Customs Clearing and Forwarding Agent before the Tanzania Revenue Authority (TRA) for the clearance of the above-described motor vehicle under BL No. <strong>{{ job.bl_number|default:"N/A" }}</strong> and Chassis No. <strong>{{ job.chassis_number|default:"N/A" }}</strong> under <strong>{{ job.get_clearance_mode_display }}</strong> mode.
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+            <div style="border:1px solid #94A3B8;padding:0.85rem;min-height:110px;">
+                <div style="font-weight:800;font-size:0.78rem;text-transform:uppercase;color:#334155;margin-bottom:1.8rem;">
+                    Importer / Client ({{ job.customer.company_name }})
+                </div>
+                <div style="border-bottom:1px dotted #475569;margin-bottom:0.3rem;"></div>
+                <div style="font-size:0.74rem;color:#64748B;">Client Signature &amp; Date</div>
+            </div>
+            <div style="border:1px solid #94A3B8;padding:0.85rem;min-height:110px;">
+                <div style="font-weight:800;font-size:0.78rem;text-transform:uppercase;color:#334155;margin-bottom:1.8rem;">
+                    Authorized Agent (MALKIA FREIGHT &amp; LOGISTICS LTD)
+                </div>
+                <div style="border-bottom:1px dotted #475569;margin-bottom:0.3rem;"></div>
+                <div style="font-size:0.74rem;color:#64748B;">Authorized Signature &amp; Official Company Stamp</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================
+         PAGE 2: AUTO-GENERATED COMPANY TBS LETTER
+         =================================================================== -->
+    <div class="page">
+        <div style="border-bottom:3px solid #1E3A8A;padding-bottom:0.85rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:flex-end;">
+            <div>
+                <h1 style="margin:0;font-size:1.35rem;font-weight:900;color:#1E3A8A;">MALKIA FREIGHT &amp; LOGISTICS LTD</h1>
+                <div style="font-size:0.8rem;font-weight:700;color:#475569;">CUSTOMS CLEARING, FORWARDING &amp; MOTOR VEHICLE LOGISTICS</div>
+            </div>
+            <div style="text-align:right;font-size:0.78rem;color:#334155;">
+                <strong>Dar es Salaam, Tanzania</strong><br>
+                File Cover (BL): <code>{{ job.bl_number|default:"—" }}</code><br>
+                Seq Ref: <code>{{ job.job_number }}</code>
+            </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:0.86rem;margin-bottom:1.25rem;">
+            <div><strong>Our Ref:</strong> <code>{{ job.tbs_letter_reference_no }}</code></div>
+            <div><strong>Date:</strong> {{ job.file_opened_at|default:today|date:"d F Y" }}</div>
+        </div>
+
+        <div style="font-size:0.88rem;line-height:1.5;margin-bottom:1.25rem;">
+            <strong>TO:</strong><br>
+            <strong>THE DIRECTOR GENERAL,</strong><br>
+            TANZANIA BUREAU OF STANDARDS (TBS),<br>
+            MOROGORO / SAM NUJOMA ROAD, UBUNGO,<br>
+            P.O. BOX 9524, DAR ES SALAAM, TANZANIA.
+        </div>
+
+        <div style="font-weight:800;font-size:0.92rem;text-decoration:underline;margin:1rem 0;color:#0F172A;">
+            RE: APPLICATION FOR TBS CLEARANCE / VERIFICATION OF MOTOR VEHICLE UNDER BL NO. {{ job.bl_number|default:"N/A" }} (CHASSIS NO: {{ job.chassis_number|default:"N/A" }})
+        </div>
+
+        <p style="font-size:0.88rem;line-height:1.6;">
+            We, <strong>MALKIA FREIGHT &amp; LOGISTICS LTD</strong>, acting as the appointed Clearing and Forwarding Agent for our client <strong>{{ job.customer.company_name }}</strong>, kindly submit this official request for TBS clearance and standards verification for the motor vehicle detailed below:
+        </p>
+
+        <table class="info-table" style="margin:1rem 0;">
+            <tr>
+                <th>Importer / Consignee Name</th>
+                <td><strong>{{ job.customer.company_name }}</strong> (TIN: {{ job.customer.tin_number|default:"—" }} | ID: {{ job.customer.id_number|default:"—" }})</td>
+            </tr>
+            <tr>
+                <th>Bill of Lading (BL) Number</th>
+                <td><strong style="font-family:monospace;">{{ job.bl_number|default:"—" }}</strong></td>
+            </tr>
+            <tr>
+                <th>Vehicle Chassis Number</th>
+                <td><strong style="font-family:monospace;">{{ job.chassis_number|default:"—" }}</strong></td>
+            </tr>
+            <tr>
+                <th>Vehicle Description</th>
+                <td><strong>{{ job.cargo_description }}</strong></td>
+            </tr>
+            <tr>
+                <th>TRA Clearance Mode</th>
+                <td><strong>{{ job.get_clearance_mode_display }}</strong></td>
+            </tr>
+        </table>
+
+        <p style="font-size:0.88rem;line-height:1.6;">
+            Attached in this unified file pack are the client's scanned supporting documents (BL Document, Commercial Invoice, Packing List, TBS Inspection Certificate, and Export Certificate).
+        </p>
+
+        <div style="margin-top:2rem;font-size:0.88rem;">
+            Yours faithfully,<br>
+            <strong>FOR: MALKIA FREIGHT &amp; LOGISTICS LTD</strong>
+            <div style="margin-top:2.2rem;border-bottom:1px dotted #475569;width:260px;"></div>
+            <div style="font-size:0.8rem;color:#475569;margin-top:0.3rem;">
+                {{ job.documentation_officer.get_full_name|default:job.documentation_officer.username|default:"Authorized Documentation Officer" }}<br>
+                <strong>Official Company Stamp &amp; Signature</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================
+         PAGES 3+: SCANNED CLIENT DOCUMENTS BUNDLED INTO THIS FILE
+         =================================================================== -->
+    {% for doc in scanned_docs %}
+    <div class="page">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0F172A;padding-bottom:0.75rem;margin-bottom:1.25rem;">
+            <div>
+                <div style="font-size:0.75rem;font-weight:800;color:#0284C7;text-transform:uppercase;">
+                    Bundled Scanned Client Document #{{ forloop.counter }} of {{ scanned_docs|length }}
+                </div>
+                <h3 style="margin:0.15rem 0 0 0;font-size:1.1rem;font-weight:800;">{{ doc.title }}</h3>
+            </div>
+            <div style="text-align:right;font-size:0.8rem;color:#475569;">
+                <div><strong>BL Cover:</strong> <code>{{ job.bl_number|default:"—" }}</code></div>
+                <div><strong>Scanned:</strong> {{ doc.uploaded_at|date:"d M Y H:i" }}</div>
+            </div>
+        </div>
+
+        {% if doc.file.url|lower|slice:"-4:" == ".pdf" %}
+            <div style="border:1px solid #CBD5E1;border-radius:8px;overflow:hidden;background:#F8FAFC;">
+                <iframe src="{{ doc.file.url }}" style="width:100%;height:780px;border:none;"></iframe>
+            </div>
+            <div style="margin-top:0.65rem;text-align:right;">
+                <a href="{{ doc.file.url }}" target="_blank" class="btn btn-back" style="font-size:0.78rem;">
+                    <i class="fa-solid fa-up-right-from-square"></i> Open Original PDF in Full Tab
+                </a>
+            </div>
+        {% else %}
+            <div style="text-align:center;border:1px solid #CBD5E1;border-radius:8px;padding:0.75rem;background:#F8FAFC;">
+                <img src="{{ doc.file.url }}" alt="{{ doc.title }}" style="max-width:100%;max-height:850px;object-fit:contain;">
+            </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <div class="page" style="text-align:center;padding:3rem;">
+        <i class="fa-solid fa-scanner" style="font-size:2.5rem;color:#94A3B8;margin-bottom:0.75rem;"></i>
+        <h3 style="margin:0 0 0.4rem 0;color:#334155;">No Scanned Client Pages Attached Yet</h3>
+        <p style="font-size:0.9rem;color:#64748B;max-width:520px;margin:0 auto;">
+            Form C.41 and the TBS Letter have been generated above. Once you scan the client's physical documents on the office scanner and drop them into the File, they will automatically merge here.
+        </p>
+    </div>
+    {% endfor %}
+
+</body>
+</html>
+

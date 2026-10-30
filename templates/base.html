@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Malkia C&F | Clearing & Forwarding Management System{% endblock %}</title>
+    
+    <!-- Google Fonts (non-blocking) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    
+    <!-- Lucide / FontAwesome Icons (non-blocking) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'">
+    
+    <!-- Chart.js is loaded only on pages that draw charts (see extra_js blocks) -->
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Mobile Sidebar Backdrop Overlay -->
+        <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="toggleMobileSidebar(true)"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside class="app-sidebar">
+            <div class="brand-section">
+                <div class="brand-logo-badge">
+                    <i class="fa-solid fa-ship"></i>
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <h1 class="brand-title">MALKIA C&F</h1>
+                    <span class="brand-subtitle">Freight & Logistics</span>
+                </div>
+                <button type="button" class="mobile-sidebar-close" onclick="toggleMobileSidebar(true)" aria-label="Close Menu">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <ul class="nav-menu">
+                {% if is_doc %}
+                <!-- =========================================================
+                     1. DOCUMENTATION OFFICER MODULE (EXACTLY 4 BUTTONS)
+                     ========================================================= -->
+                <li class="nav-section-title">Documentation Module</li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <a href="{% url 'dashboard' %}">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'job_create' %}active{% endif %}">
+                    <a href="{% url 'job_create' %}">
+                        <i class="fa-solid fa-file-circle-plus"></i>
+                        <span>New Intake</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'document_register' %}active{% endif %}">
+                    <a href="{% url 'document_register' %}">
+                        <i class="fa-solid fa-book-bookmark"></i>
+                        <span>Document Register</span>
+                        {% if global_active_jobs %}
+                        <span class="nav-badge badge-amber">{{ global_active_jobs }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'customers_list' %}active{% endif %}">
+                    <a href="{% url 'customers_list' %}">
+                        <i class="fa-solid fa-building-user"></i>
+                        <span>Clients</span>
+                    </a>
+                </li>
+                {% elif is_ops %}
+                <!-- =========================================================
+                     2. YARD RECEPTION & CUSTOMER HANDOVER MODULE (4 CLEAN BUTTONS)
+                     ========================================================= -->
+                <li class="nav-section-title">Yard & Handover</li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'yard_operations' and not request.GET.tab %}active{% endif %}">
+                    <a href="{% url 'yard_operations' %}">
+                        <i class="fa-solid fa-warehouse"></i>
+                        <span>Yard Vehicles</span>
+                        {% if global_yard_ready_count %}
+                        <span class="nav-badge badge-teal">{{ global_yard_ready_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item {% if request.GET.tab == 'bond' %}active{% endif %}">
+                    <a href="{% url 'yard_operations' %}?tab=bond">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>In-Bond Storage</span>
+                        {% if global_bond_count %}
+                        <span class="nav-badge badge-amber">{{ global_bond_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'finance_billing' %}active{% endif %}">
+                    <a href="{% url 'finance_billing' %}">
+                        <i class="fa-solid fa-receipt"></i>
+                        <span>Customer Payments</span>
+                        {% if global_unpaid_invoices_count %}
+                        <span class="nav-badge badge-rose">{{ global_unpaid_invoices_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item {% if request.GET.tab == 'delivered' or request.resolver_match.url_name == 'jobs_archive' %}active{% endif %}">
+                    <a href="{% url 'yard_operations' %}?tab=delivered">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Delivered Archive</span>
+                    </a>
+                </li>
+                {% elif is_clearing %}
+                <!-- =========================================================
+                     3. CUSTOMS DECLARER MODULE (CLEAN 3 BUTTONS)
+                     ========================================================= -->
+                <li class="nav-section-title">Customs & Declarations</li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <a href="{% url 'dashboard' %}">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'customs_pending_declarations' or request.resolver_match.url_name == 'customs_assessments' %}active{% endif %}">
+                    <a href="{% url 'customs_pending_declarations' %}">
+                        <i class="fa-solid fa-stamp"></i>
+                        <span>TANCIS Declarations</span>
+                        {% if global_pending_receipts_count %}
+                        <span class="nav-badge" style="background:#2563EB;color:#fff;font-weight:700;">{{ global_pending_receipts_count }} Receipt</span>
+                        {% elif global_pending_declarations %}
+                        <span class="nav-badge badge-amber">{{ global_pending_declarations }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'customs_archive' %}active{% endif %}">
+                    <a href="{% url 'customs_archive' %}">
+                        <i class="fa-solid fa-box-archive"></i>
+                        <span>Customs Archive</span>
+                    </a>
+                </li>
+                {% elif is_finance %}
+                <!-- =========================================================
+                     4. FINANCE OFFICER MODULE (EXACTLY 4 BUTTONS ACCORDING TO SPEC)
+                     ========================================================= -->
+                <li class="nav-section-title">Finance & Accounts</li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <a href="{% url 'dashboard' %}">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <span>Finance Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'finance_pending_payments' or request.resolver_match.url_name == 'finance' %}active{% endif %}">
+                    <a href="{% url 'finance_pending_payments' %}">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Pending Payments</span>
+                        {% if global_pending_expenses %}
+                        <span class="nav-badge badge-rose">{{ global_pending_expenses }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'finance_transactions' %}active{% endif %}">
+                    <a href="{% url 'finance_transactions' %}">
+                        <i class="fa-solid fa-receipt"></i>
+                        <span>Transactions</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'finance_billing' %}active{% endif %}">
+                    <a href="{% url 'finance_billing' %}">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                        <span>Billing & Invoices</span>
+                        {% if global_unpaid_invoices %}
+                        <span class="nav-badge badge-amber">{{ global_unpaid_invoices }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                {% elif is_port %}
+                <!-- =========================================================
+                     7. FIELD AGENT / WHARFINGER MODULE (EXACTLY 3 BUTTONS ACCORDING TO SPEC)
+                     ========================================================= -->
+                <li class="nav-section-title">Port & Field Operations</li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'field_today_jobs' or request.resolver_match.url_name == 'field_mobile' %}active{% endif %}">
+                    <a href="{% url 'field_today_jobs' %}">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span>Today's Jobs</span>
+                        {% if global_field_today_jobs %}
+                        <span class="nav-badge badge-teal">{{ global_field_today_jobs }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'field_updates' %}active{% endif %}">
+                    <a href="{% url 'field_updates' %}">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>Updates</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'field_issues' %}active{% endif %}">
+                    <a href="{% url 'field_issues' %}">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Issues</span>
+                        {% if global_open_field_issues %}
+                        <span class="nav-badge badge-rose">{{ global_open_field_issues }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                {% elif is_ceo or is_admin %}
+                <!-- =========================================================
+                     DIRECTOR & EXECUTIVE CONSOLE (STREAMLINED 5 CORE MODULES)
+                     1. Dashboard
+                     2. Shipments (Jobs)
+                     3. Yard & In-Bond
+                     4. Finance & Accounts
+                     5. Settings
+                     ========================================================= -->
+                <li class="nav-section-title">Director &amp; Executive</li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <a href="{% url 'dashboard' %}">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'jobs_list' or request.resolver_match.url_name == 'job_detail' or request.resolver_match.url_name == 'job_create' or request.resolver_match.url_name == 'admin_operations' or request.resolver_match.url_name == 'container_tracking_list' %}active{% endif %}">
+                    <a href="{% url 'jobs_list' %}">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                        <span>Shipments</span>
+                        {% if global_active_jobs %}
+                        <span class="nav-badge badge-blue">{{ global_active_jobs }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'yard_operations' %}active{% endif %}">
+                    <a href="{% url 'yard_operations' %}">
+                        <i class="fa-solid fa-warehouse"></i>
+                        <span>Yard &amp; In-Bond</span>
+                        {% if global_bond_count %}
+                        <span class="nav-badge badge-amber">{{ global_bond_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'finance' or request.resolver_match.url_name == 'finance_pending_payments' or request.resolver_match.url_name == 'finance_transactions' or request.resolver_match.url_name == 'finance_billing' %}active{% endif %}">
+                    <a href="{% url 'finance' %}">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                        <span>Finance &amp; Accounts</span>
+                        {% if global_pending_expenses %}
+                        <span class="nav-badge badge-rose">{{ global_pending_expenses }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'system_settings' or request.resolver_match.url_name == 'audit_trail' or request.resolver_match.url_name == 'users_list' or request.resolver_match.url_name == 'user_profile' %}active{% endif %}">
+                    <a href="{% url 'system_settings' %}">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                {% else %}
+                <!-- FALLBACK FOR UNRECOGNIZED ROLES -->
+                <li class="nav-section-title">Core Operations</li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <a href="{% url 'dashboard' %}">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'jobs_list' %}active{% endif %}">
+                    <a href="{% url 'jobs_list' %}">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                        <span>Jobs</span>
+                    </a>
+                </li>
+                {% endif %}
+
+                <!-- =========================================================
+                     COMMUNICATION & TEAM CHAT (ACCESSIBLE TO ALL STAFF ROLES)
+                     ========================================================= -->
+                <li class="nav-section-title">Communication</li>
+                <li class="nav-item {% if request.resolver_match.url_name == 'internal_chat' %}active{% endif %}">
+                    <a href="{% url 'internal_chat' %}" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                        <div style="display:flex;align-items:center;gap:0.75rem;">
+                            <i class="fa-solid fa-comments"></i>
+                            <span>Team Chat / SMS</span>
+                        </div>
+                        <span id="globalChatSidebarBadge" class="nav-badge badge-rose" style="display:none;background:#EF4444;color:#fff;border-radius:999px;padding:2px 8px;font-size:0.72rem;font-weight:700;">0</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="user-profile-badge" style="justify-content:space-between;">
+                    <a href="{% url 'my_profile' %}" style="display:flex;align-items:center;gap:0.75rem;text-decoration:none;color:inherit;flex:1;min-width:0;" title="My Profile">
+                        <div class="user-avatar-circle">
+                            {{ request.user.first_name|default:request.user.username|slice:":1"|upper }}
+                        </div>
+                        <div class="user-info-text" style="overflow:hidden;">
+                            <div class="user-name" style="white-space:nowrap;text-overflow:ellipsis;overflow:hidden;">{{ request.user.get_full_name|default:request.user.username }}</div>
+                            <div class="user-role">{{ current_user_role_display }}</div>
+                        </div>
+                    </a>
+                    <a href="{% url 'logout' %}" title="Log Out" style="color:#F87171;font-size:1.1rem;padding:0.3rem;">
+                        <i class="fa-solid fa-power-off"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- Top Navbar -->
+            <header class="top-navbar">
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <button type="button" class="mobile-menu-toggle" onclick="toggleMobileSidebar()" aria-label="Open Menu">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="mobile-brand-title">
+                        <div class="brand-logo-badge" style="width:28px;height:28px;font-size:0.85rem;border-radius:6px;box-shadow:none;">
+                            <i class="fa-solid fa-ship"></i>
+                        </div>
+                        <span style="font-family:var(--font-heading);font-weight:800;font-size:1.05rem;color:var(--brand-navy-900);">MALKIA</span>
+                    </div>
+                </div>
+
+                <form action="{% url 'jobs_list' %}" method="GET" class="search-bar-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon-inside"></i>
+                    <input type="text" name="q" class="search-bar-input" placeholder="Search B/L #, Chassis No, Client..." value="{{ request.GET.q }}">
+                </form>
+
+                <div class="top-navbar-actions" style="display:flex;align-items:center;gap:0.75rem;">
+                    <!-- Client Receipts Notification Dropdown -->
+                    <div class="receipt-notification-wrapper" style="position:relative;">
+                        <button type="button" id="btnReceiptNotifications" onclick="toggleReceiptDropdown()" class="top-nav-btn" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:{% if global_pending_receipts_count %}#EFF6FF{% else %}#F1F5F9{% endif %};color:{% if global_pending_receipts_count %}#2563EB{% else %}#334155{% endif %};border:none;cursor:pointer;transition:all 0.2s;" title="Client Payment Receipts ({{ global_pending_receipts_count }})">
+                            <i class="fa-solid fa-file-invoice-dollar" style="font-size:1.15rem;"></i>
+                            {% if global_pending_receipts_count %}
+                            <span style="position:absolute;top:-4px;right:-4px;background:#2563EB;color:#fff;font-size:0.68rem;font-weight:800;padding:2px 6px;border-radius:999px;border:2px solid #fff;box-shadow:0 2px 6px rgba(37,99,235,0.4);">
+                                {{ global_pending_receipts_count }}
+                            </span>
+                            {% endif %}
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="receiptDropdownMenu" style="display:none;position:absolute;top:48px;right:0;width:340px;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,0.15);z-index:9999;overflow:hidden;">
+                            <div style="background:#F8FAFC;padding:0.75rem 1rem;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+                                <strong style="font-size:0.85rem;color:var(--brand-navy-900);">
+                                    <i class="fa-solid fa-bell" style="color:#2563EB;"></i> Client Payment Receipts
+                                </strong>
+                                <span class="badge-pill" style="background:#EFF6FF;color:#1D4ED8;font-size:0.72rem;font-weight:700;">
+                                    {{ global_pending_receipts_count }} Pending
+                                </span>
+                            </div>
+                            
+                            <div style="max-height:280px;overflow-y:auto;padding:0.5rem;">
+                                {% for job in global_pending_receipts_jobs %}
+                                <a href="{% url 'job_detail' job.id %}" style="display:block;padding:0.65rem 0.75rem;border-radius:8px;text-decoration:none;transition:background 0.15s;border-bottom:1px solid #F1F5F9;margin-bottom:0.25rem;" onmouseover="this.style.background='#EFF6FF'" onmouseout="this.style.background='transparent'">
+                                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                                        <strong style="color:#2563EB;font-size:0.88rem;">{{ job.job_number }}</strong>
+                                        <span style="font-size:0.68rem;background:#DCFCE7;color:#15803D;padding:0.1rem 0.4rem;border-radius:4px;font-weight:700;">Stage 4</span>
+                                    </div>
+                                    <div style="font-size:0.8rem;color:#1E293B;font-weight:600;margin-top:0.15rem;">{{ job.customer.company_name }}</div>
+                                    <div style="font-size:0.72rem;color:#64748B;margin-top:0.15rem;">
+                                        TRA Duty: TSh {{ job.assessed_duty_amount|floatformat:2 }} &bull; <strong style="color:#2563EB;">Click to Inspect Receipt</strong>
+                                    </div>
+                                </a>
+                                {% empty %}
+                                <div style="text-align:center;padding:1.5rem;color:#94A3B8;font-size:0.8rem;">
+                                    <i class="fa-solid fa-check-circle" style="font-size:1.5rem;color:#10B981;margin-bottom:0.35rem;display:block;"></i>
+                                    No pending client receipts
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div style="background:#F8FAFC;padding:0.5rem 1rem;border-top:1px solid #E2E8F0;text-align:center;">
+                                <a href="{% url 'customs_pending_declarations' %}?tab=assessed" style="font-size:0.78rem;color:#2563EB;text-decoration:none;font-weight:700;">
+                                    View in TANCIS Declarations &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="{% url 'internal_chat' %}" class="top-nav-btn chat-nav-trigger" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:#F1F5F9;color:#334155;text-decoration:none;transition:all 0.2s;" title="Team Chat & Live SMS">
+                        <i class="fa-solid fa-comments" style="font-size:1.15rem;"></i>
+                        <span id="globalChatNavBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#EF4444;color:#fff;font-size:0.68rem;font-weight:700;padding:2px 6px;border-radius:999px;border:2px solid #fff;box-shadow:0 2px 5px rgba(239,68,68,0.4);">0</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Page Content Body -->
+            <div class="page-content">
+                <!-- Messages & Alerts -->
+                {% if messages %}
+                <div class="toast-messages-container">
+                    {% for message in messages %}
+                    <div class="alert-toast {{ message.tags }}">
+                        <span>
+                            {% if message.tags == 'success' %}
+                            <i class="fa-solid fa-circle-check"></i>
+                            {% elif message.tags == 'error' %}
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            {% else %}
+                            <i class="fa-solid fa-circle-info"></i>
+                            {% endif %}
+                            {{ message }}
+                        </span>
+                        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;cursor:pointer;color:inherit;">&times;</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Global Floating Live Chat Notification Toast -->
+    <div id="chatToastNotification" style="position:fixed;bottom:24px;right:24px;z-index:99999;max-width:360px;background:#0F172A;color:#FFFFFF;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,0.3);padding:1rem 1.15rem;display:none;align-items:flex-start;gap:0.85rem;border:1px solid rgba(255,255,255,0.12);animation:slideUpToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg, #2563EB, #1D4ED8);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-weight:700;font-size:0.9rem;">
+            <i class="fa-solid fa-comment-dots"></i>
+        </div>
+        <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.2rem;">
+                <span id="toastSenderName" style="font-size:0.88rem;font-weight:700;color:#F8FAFC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+                <span id="toastTime" style="font-size:0.72rem;color:#94A3B8;"></span>
+            </div>
+            <div id="toastMessageSnippet" style="font-size:0.8rem;color:#CBD5E1;line-height:1.35;margin-bottom:0.6rem;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <a id="toastOpenLink" href="{% url 'internal_chat' %}" style="font-size:0.75rem;font-weight:700;color:#38BDF8;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;">
+                    <span>Open Conversation</span>
+                    <i class="fa-solid fa-arrow-right" style="font-size:0.68rem;"></i>
+                </a>
+                <button type="button" onclick="document.getElementById('chatToastNotification').style.display='none'" style="background:none;border:none;color:#94A3B8;cursor:pointer;font-size:0.75rem;padding:2px 4px;">Dismiss</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/app.js"></script>
+    <script>
+    (function() {
+        let lastNotifiedMsgId = null;
+
+        function playNotificationChime() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.36);
+            } catch(e) {}
+        }
+
+        async function checkGlobalChatUnread() {
+            try {
+                const res = await fetch('/chat/api/unread/');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.status !== 'success') return;
+
+                const count = data.total_unread || 0;
+                const navBadge = document.getElementById('globalChatNavBadge');
+                const sideBadge = document.getElementById('globalChatSidebarBadge');
+
+                if (navBadge) {
+                    if (count > 0) {
+                        navBadge.textContent = count > 99 ? '99+' : count;
+                        navBadge.style.display = 'inline-block';
+                    } else {
+                        navBadge.style.display = 'none';
+                    }
+                }
+
+                if (sideBadge) {
+                    if (count > 0) {
+                        sideBadge.textContent = count > 99 ? '99+' : count;
+                        sideBadge.style.display = 'inline-block';
+                    } else {
+                        sideBadge.style.display = 'none';
+                    }
+                }
+
+                if (data.latest_unread && data.latest_unread.id !== lastNotifiedMsgId) {
+                    const isChatPage = window.location.pathname.startsWith('/chat');
+                    const activeContactId = window.ACTIVE_CHAT_CONTACT_ID;
+                    
+                    if (!(isChatPage && activeContactId && parseInt(activeContactId) === parseInt(data.latest_unread.sender_id))) {
+                        if (lastNotifiedMsgId !== null) {
+                            playNotificationChime();
+                        }
+                        lastNotifiedMsgId = data.latest_unread.id;
+
+                        const toast = document.getElementById('chatToastNotification');
+                        const toastSender = document.getElementById('toastSenderName');
+                        const toastTime = document.getElementById('toastTime');
+                        const toastMsg = document.getElementById('toastMessageSnippet');
+                        const toastLink = document.getElementById('toastOpenLink');
+
+                        if (toast && toastSender && toastMsg) {
+                            toastSender.textContent = data.latest_unread.sender_name + ' (' + data.latest_unread.sender_role + ')';
+                            toastTime.textContent = data.latest_unread.time;
+                            toastMsg.textContent = data.latest_unread.snippet;
+                            toastLink.href = '/chat/?user=' + data.latest_unread.sender_id;
+                            toast.style.display = 'flex';
+
+                            setTimeout(() => {
+                                if (toast.style.display === 'flex') {
+                                    toast.style.display = 'none';
+                                }
+                            }, 7000);
+                        }
+                    } else {
+                        lastNotifiedMsgId = data.latest_unread.id;
+                    }
+                }
+            } catch (err) {}
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkGlobalChatUnread();
+            setInterval(checkGlobalChatUnread, 3500);
+        });
+    })();
+
+    function toggleReceiptDropdown() {
+        const menu = document.getElementById('receiptDropdownMenu');
+        if (menu) {
+            menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'block' : 'none';
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        const wrapper = document.querySelector('.receipt-notification-wrapper');
+        const menu = document.getElementById('receiptDropdownMenu');
+        if (wrapper && menu && !wrapper.contains(e.target)) {
+            menu.style.display = 'none';
+        }
+    });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Client Files | Malkia C&F{% endblock %}
+
+{% block content %}
+<div class="page-header-box">
+    <div>
+        <h2 class="page-title"><i class="fa-solid fa-folder-open" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Client Files</h2>
+        <p class="page-subtitle">Manage opened client files, received documents, and generated company forms (C41 &amp; TBS Letter).</p>
+    </div>
+    <div>
+        {% if not is_ceo %}
+        <a href="{% url 'job_create' %}" class="btn-header-action btn-primary">
+            <i class="fa-solid fa-plus"></i> 1. Receive Documents &amp; Open File
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- FILTER CONTROLS BAR -->
+<div class="card-panel" style="padding:1.25rem;margin-bottom:1.5rem;background:#FFFFFF;">
+    <form method="GET" action="{% url 'jobs_list' %}" style="display:flex;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <div style="flex:1;min-width:240px;">
+            <input type="text" name="q" class="form-control" placeholder="Search by File #, BL #, Chassis #, or Client Name..." value="{{ search_query }}">
+        </div>
+        <div style="width:200px;">
+            <select name="customer" class="form-control" onchange="this.form.submit()">
+                <option value="">All Clients</option>
+                {% for c in customers %}
+                <option value="{{ c.id }}" {% if selected_customer == c.id|stringformat:"i" %}selected{% endif %}>{{ c.company_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="btn-header-action btn-primary" style="padding:0.65rem 1.25rem;">
+                <i class="fa-solid fa-filter"></i> Filter
+            </button>
+            {% if search_query or selected_status or selected_customer %}
+            <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline" style="padding:0.65rem 1rem;">
+                Reset
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- FILES TABLE -->
+<div class="card-panel">
+    <div class="table-responsive">
+        <table class="modern-table" data-page-size="10">
+            <thead>
+                <tr>
+                    <th>{% if is_ceo or is_admin %}File No (MF/Year/#) &amp; BL{% else %}File Name (BL Number){% endif %}</th>
+                    <th>Client</th>
+                    <th>Chassis &amp; Vehicle</th>
+                    <th>TRA Mode (Duty / Bond)</th>
+                    <th>Client Docs</th>
+                    <th>Unified Pack (C41 + TBS + Scans)</th>
+                    <th>Box No</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+                <tr>
+                    <td>
+                        {% if is_ceo or is_admin %}
+                        <strong style="font-size:0.95rem;color:var(--brand-navy-900);">
+                            <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;">
+                                {{ job.job_number }}
+                            </a>
+                        </strong>
+                        <div style="font-size:0.8rem;font-weight:700;color:#0F172A;font-family:monospace;">BL: {{ job.bl_number|default:"—" }}</div>
+                        {% else %}
+                        <strong style="font-size:0.95rem;font-family:monospace;color:var(--brand-navy-900);">
+                            <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;">
+                                {{ job.staff_file_name }}
+                            </a>
+                        </strong>
+                        {% endif %}
+                        <div style="font-size:0.74rem;color:var(--text-muted);">{{ job.created_at|date:"d M Y" }}</div>
+                    </td>
+                    <td>
+                        <strong style="color:var(--text-main);">{{ job.customer.company_name }}</strong>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">{{ job.customer.phone }} | TIN: {{ job.customer.tin_number|default:"—" }}</div>
+                    </td>
+                    <td>
+                        {% if job.chassis_number %}<div><strong>Chassis:</strong> <span style="font-family:monospace;">{{ job.chassis_number }}</span></div>{% endif %}
+                        <div style="font-size:0.75rem;color:var(--text-muted);">{{ job.cargo_description|default:"1 Motor Vehicle" }}</div>
+                    </td>
+                    <td>
+                        {% if job.clearance_mode == 'BOND' %}
+                        <span class="badge-pill" style="background:#FEF3C7;color:#92400E;border:1px solid #F59E0B;font-size:0.75rem;font-weight:800;">
+                            <i class="fa-solid fa-warehouse"></i> In-Bond
+                        </span>
+                        {% elif job.clearance_mode == 'EX_BOND' %}
+                        <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;font-size:0.75rem;font-weight:800;">
+                            <i class="fa-solid fa-unlock-keyhole"></i> Ex-Bond
+                        </span>
+                        {% else %}
+                        <span class="badge-pill" style="background:#ECFDF5;color:#065F46;border:1px solid #10B981;font-size:0.75rem;font-weight:800;">
+                            <i class="fa-solid fa-money-bill-transfer"></i> Direct Duty
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge-pill {% if job.received_docs_count == 5 %}badge-completed{% else %}badge-active{% endif %}">
+                            {{ job.received_docs_count }} / 5 Docs
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                            <a href="{% url 'print_combined_pack' job.id %}" target="_blank" class="badge-pill" style="background:#0F172A;color:#FFFFFF;text-decoration:none;font-weight:800;font-size:0.73rem;">
+                                <i class="fa-solid fa-layer-group" style="color:#38BDF8;"></i> Full Pack
+                            </a>
+                            <a href="{% url 'print_c41_document' job.id %}" target="_blank" class="badge-pill" style="background:#DCFCE7;color:#166534;text-decoration:none;font-weight:700;font-size:0.73rem;">
+                                C41
+                            </a>
+                            <a href="{% url 'print_tbs_letter' job.id %}" target="_blank" class="badge-pill" style="background:#DBEAFE;color:#1D4ED8;text-decoration:none;font-weight:700;font-size:0.73rem;">
+                                TBS
+                            </a>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-family:monospace;font-size:0.82rem;color:var(--text-muted);">{{ job.box_number|default:"—" }}</span>
+                    </td>
+                    <td style="white-space:nowrap;">
+                        <div style="display:flex;gap:0.4rem;align-items:center;">
+                            <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="padding:0.35rem 0.7rem;font-size:0.78rem;background:#16A34A;color:#FFFFFF;border:none;font-weight:800;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:0.35rem;box-shadow:0 1px 2px rgba(22,163,74,0.3);" title="Track 9 Clearance Milestones">
+                                <i class="fa-solid fa-route"></i> Track
+                            </a>
+                            <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.78rem;border-radius:6px;">
+                                Open <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align:center;padding:2.5rem;color:var(--text-muted);">
+                        No files registered yet. Click <strong>'1. Receive Documents &amp; Open File'</strong> to begin.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

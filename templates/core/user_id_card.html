@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+
+{% block title %}Official ID Card - {{ target_user.get_full_name|default:target_user.username }} ({{ profile.employee_id|default:"MC-STAFF" }}) | Malkia Cargo Wave{% endblock %}
+
+{% block content %}
+<!-- Include html2canvas for instant high-definition PNG badge download -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<!-- BREADCRUMB & ACTION BAR -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.75rem;">
+    <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--text-muted);">
+        <a href="{% url 'user_profile' target_user.id %}" style="color:var(--brand-primary);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:0.35rem;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Staff Profile
+        </a>
+        <span style="color:#CBD5E1;">/</span>
+        <span style="color:var(--brand-navy-900);font-weight:700;">
+            Official Identity Badge: {{ target_user.get_full_name|default:target_user.username }} ({{ profile.employee_id|default:"MC-STAFF" }})
+        </span>
+    </div>
+
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button type="button" class="btn-header-action btn-outline" onclick="toggleCardFlip()">
+            <i class="fa-solid fa-arrows-rotate"></i> Flip Card
+        </button>
+        <button type="button" class="btn-header-action btn-outline" style="color:#059669;border-color:#6EE7B7;background:#ECFDF5;" onclick="downloadCardImages()">
+            <i class="fa-solid fa-download"></i> Download PNG
+        </button>
+        <button type="button" class="btn-header-action btn-primary" onclick="triggerColorPrint()">
+            <i class="fa-solid fa-print"></i> Print Full-Color Badge
+        </button>
+    </div>
+</div>
+
+<!-- =========================================================================
+     INTERACTIVE 3D ID CARD DISPLAY AREA
+     ========================================================================= -->
+<div class="card-panel" style="background:#F8FAFC;border:1px solid #E2E8F0;padding:2rem 1.25rem;text-align:center;">
+    
+    <!-- QUICK FACE TOGGLE CONTROLLER -->
+    <div style="display:inline-flex;background:#E2E8F0;padding:4px;border-radius:999px;margin-bottom:1.75rem;gap:4px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.1);max-width:100%;overflow-x:auto;">
+        <button type="button" id="btnFaceFront" class="profile-tab-item active" style="min-width:120px;padding:0.45rem 1rem;border-radius:999px;font-size:0.82rem;" onclick="setCardFace('front')">
+            <i class="fa-solid fa-id-badge"></i> Front Face
+        </button>
+        <button type="button" id="btnFaceBack" class="profile-tab-item" style="min-width:120px;padding:0.45rem 1rem;border-radius:999px;font-size:0.82rem;" onclick="setCardFace('back')">
+            <i class="fa-solid fa-barcode"></i> Back Face
+        </button>
+        <button type="button" id="btnFaceDual" class="profile-tab-item" style="min-width:120px;padding:0.45rem 1rem;border-radius:999px;font-size:0.82rem;" onclick="toggleDualView()">
+            <i class="fa-solid fa-table-columns"></i> Side-by-Side
+        </button>
+    </div>
+
+    <!-- 3D CARD WRAPPER / PRINT CONTAINER -->
+    <div id="idCardPrintWrapper" class="idcard-print-container">
+        
+        <!-- FLIPPABLE 3D SCENE -->
+        <div id="singleCardScene" class="idcard-scene">
+            <div id="interactiveIdCard" class="idcard-object" onclick="toggleCardFlip()" title="Click to flip between front and back">
+                
+                <!-- ================= FRONT FACE ================= -->
+                <div id="cardFaceFrontElement" class="idcard-face idcard-face-front" style="background:#FFFFFF;">
+                    <!-- Top Lanyard & Header Ribbon -->
+                    <div class="idcard-header-front" style="background:linear-gradient(135deg, #07132B 0%, #0F2552 40%, #1D4ED8 85%, #3B82F6 100%) !important;">
+                        <div class="idcard-lanyard-slot" title="Lanyard Slot"></div>
+                        <div class="idcard-brand-logo">
+                            <i class="fa-solid fa-ship" style="color:#38BDF8;font-size:1rem;"></i>
+                            <span>MALKIA CARGO WAVE</span>
+                        </div>
+                        <div class="idcard-brand-sub">Tanzania &bull; Freight & Logistics</div>
+                        <span class="idcard-badge-type" style="background:linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%) !important;color:#0F172A !important;">OFFICIAL STAFF IDENTITY</span>
+                    </div>
+
+                    <!-- Body with Photo & Identifiers -->
+                    <div class="idcard-body-front" style="background:radial-gradient(circle at 50% 30%, #F8FAFC 0%, #FFFFFF 80%) !important;">
+                        <div class="idcard-photo-frame" style="border:3px solid #2563EB !important;box-shadow:0 8px 18px rgba(37,99,235,0.2) !important;">
+                            {% if profile.avatar %}
+                            <img src="{{ profile.avatar.url }}" alt="{{ target_user.get_full_name }}">
+                            {% else %}
+                            <div class="idcard-photo-placeholder" style="background:linear-gradient(135deg, #1E3A8A, #3B82F6) !important;color:#FFFFFF !important;">
+                                {{ target_user.first_name|default:target_user.username|slice:":1"|upper }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <h3 class="idcard-staff-name">{{ target_user.get_full_name|default:target_user.username }}</h3>
+                        <div class="idcard-staff-title" style="color:#2563EB !important;">{{ profile.title|default:profile.get_role_display }}</div>
+
+                        <div class="idcard-staff-id-pill" style="background:#0F172A !important;color:#FFFFFF !important;">
+                            <i class="fa-solid fa-id-badge" style="color:#38BDF8;"></i>
+                            <span>{{ profile.employee_id|default:"MC-STAFF" }}</span>
+                        </div>
+
+                        <div class="idcard-meta-grid">
+                            <div class="idcard-meta-box" style="background:rgba(241,245,249,0.9) !important;border:1px solid #E2E8F0 !important;">
+                                <span class="idcard-meta-box-label">Department</span>
+                                <span class="idcard-meta-box-val">{{ profile.get_department_display|truncatechars:18 }}</span>
+                            </div>
+                            <div class="idcard-meta-box" style="background:rgba(241,245,249,0.9) !important;border:1px solid #E2E8F0 !important;">
+                                <span class="idcard-meta-box-label">Station</span>
+                                <span class="idcard-meta-box-val">{{ profile.work_station|default:"Dar HQ"|truncatechars:16 }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Mini QR Code & Hologram -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:auto;padding-top:0.6rem;">
+                            <!-- Scannable 2D QR Code Matrix -->
+                            <div style="text-align:left;">
+                                <div style="background:#FFFFFF;padding:4px;border:1.5px solid #CBD5E1;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.06);display:inline-block;">
+                                    {% if qr_code_b64 %}
+                                    <img src="data:image/png;base64,{{ qr_code_b64 }}" alt="QR Code" style="width:52px;height:52px;display:block;image-rendering:pixelated;">
+                                    {% else %}
+                                    <div id="frontQrCode" style="width:52px;height:52px;"></div>
+                                    {% endif %}
+                                </div>
+                                <div style="font-size:0.55rem;font-weight:800;color:#0F172A;letter-spacing:0.04em;text-transform:uppercase;margin-top:0.2rem;display:flex;align-items:center;gap:0.25rem;">
+                                    <i class="fa-solid fa-qrcode" style="color:var(--brand-primary);font-size:0.65rem;"></i> VERIFICATION QR CODE
+                                </div>
+                            </div>
+
+                            <!-- Hologram Security Seal -->
+                            <div style="text-align:right;">
+                                <div style="display:inline-flex;align-items:center;gap:0.25rem;background:#FEF3C7 !important;color:#92400E !important;border:1px solid #FCD34D !important;padding:0.2rem 0.45rem;border-radius:999px;font-size:0.58rem;font-weight:800;">
+                                    <i class="fa-solid fa-award" style="color:#D97706;"></i> AUTHENTIC
+                                </div>
+                                <div style="font-size:0.55rem;color:#64748B;margin-top:0.2rem;font-weight:600;">
+                                    Valid: {% if profile.employment_type == 'PERMANENT' %}PERMANENT{% else %}DEC 2027{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Bar -->
+                    <div class="idcard-footer-front" style="background:#0F172A !important;color:#94A3B8 !important;border-top:2px solid #F59E0B !important;">
+                        <span>MALKIA LOGISTICS CO. LTD</span>
+                        <span style="font-family:monospace;font-weight:700;color:#FBBF24;">VERIFIED STAFF</span>
+                    </div>
+                </div>
+
+                <!-- ================= BACK FACE ================= -->
+                <div id="cardFaceBackElement" class="idcard-face idcard-face-back" style="background:#FFFFFF;">
+                    <!-- Top Lanyard Slot -->
+                    <div class="idcard-header-back" style="background:#0F172A !important;">
+                        <div class="idcard-lanyard-slot"></div>
+                    </div>
+
+                    <!-- High-Security Magnetic Stripe -->
+                    <div class="idcard-magstripe" style="background:#0F172A !important;"></div>
+
+                    <!-- Back Body Info -->
+                    <div class="idcard-body-back" style="background:#FFFFFF !important;">
+                        <table class="idcard-info-table">
+                            <tbody>
+                                <tr>
+                                    <td>NIDA (National ID):</td>
+                                    <td>{{ profile.national_id|default:"N/A" }}</td>
+                                </tr>
+                                <tr>
+                                    <td>TRA TIN Number:</td>
+                                    <td>{{ profile.tin_number|default:"N/A" }}</td>
+                                </tr>
+                                {% if profile.driving_license_number %}
+                                <tr>
+                                    <td>Driver's License:</td>
+                                    <td>{{ profile.driving_license_number }} ({{ profile.license_class|default:"Class C" }})</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td>Official Phone:</td>
+                                    <td>{{ profile.phone_number|default:"+255 759 887 766" }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Emergency Contact:</td>
+                                    <td style="color:#DC2626;">{{ profile.emergency_contact_phone|default:"+255 700 000 000" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Official Return Disclaimer -->
+                        <div class="idcard-terms-box" style="background:#F8FAFC !important;border:1px solid #E2E8F0 !important;">
+                            <strong>LEGAL NOTICE:</strong> This identity card remains the exclusive property of Malkia Cargo Wave Co. Ltd. The cardholder must wear or display it while on official duty or within port terminals. If found, please return to our Posta HQ or Port Operations Office, Dar es Salaam, or call: +255 759 887 766.
+                        </div>
+
+                        <!-- Barcode Simulation (1D Linear Barcode) -->
+                        <div class="idcard-barcode-wrap">
+                            <div style="font-size:0.55rem;font-weight:700;color:#64748B;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.15rem;">
+                                <i class="fa-solid fa-barcode"></i> Staff Barcode
+                            </div>
+                            <div class="idcard-barcode-lines"></div>
+                            <div class="idcard-barcode-text">* {{ profile.employee_id|default:"MC-STAFF" }} *</div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Back with Signature -->
+                    <div class="idcard-footer-back" style="background:#F1F5F9 !important;border-top:1px solid #E2E8F0 !important;">
+                        <div>
+                            <span style="display:block;font-size:0.55rem;color:#94A3B8;">Managing Director Signature:</span>
+                            <span style="font-family:'Brush Script MT', cursive, sans-serif;font-size:0.95rem;color:#1E3A8A;font-weight:bold;">Malkia M.</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="display:block;font-size:0.55rem;color:#94A3B8;">Headquarters:</span>
+                            <span style="font-weight:700;color:#0F172A;">Posta, Dar es Salaam</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- DUAL VIEW WRAPPER (SHOWN WHEN SIDE-BY-SIDE IS CLICKED OR ON PRINT) -->
+        <div id="dualViewContainer" style="display:none;justify-content:center;gap:2rem;flex-wrap:wrap;">
+            <!-- Rendered front and back side by side -->
+        </div>
+
+    </div>
+
+    <!-- Quick Action Buttons Below Card -->
+    <div class="idcard-actions-bar">
+        <button type="button" class="btn-header-action btn-primary" onclick="toggleCardFlip()" style="padding:0.65rem 1.5rem;font-size:0.9rem;">
+            <i class="fa-solid fa-arrows-rotate"></i> Flip ID Card (Front / Back)
+        </button>
+        <button type="button" class="btn-header-action btn-outline" style="color:#059669;border-color:#6EE7B7;background:#ECFDF5;padding:0.65rem 1.25rem;" onclick="downloadCardImages()">
+            <i class="fa-solid fa-download"></i> Download Badge (PNG)
+        </button>
+        <button type="button" class="btn-header-action btn-outline" onclick="triggerColorPrint()" style="padding:0.65rem 1.25rem;">
+            <i class="fa-solid fa-print"></i> Print PVC Badge
+        </button>
+    </div>
+
+</div>
+
+<!-- =========================================================================
+     LIGHTWEIGHT INTERACTION, PRINT & PNG DOWNLOAD SCRIPT
+     ========================================================================= -->
+<script>
+let isFlipped = false;
+let isDual = false;
+
+function setCardFace(face) {
+    const card = document.getElementById('interactiveIdCard');
+    const single = document.getElementById('singleCardScene');
+    const dual = document.getElementById('dualViewContainer');
+    const btnFront = document.getElementById('btnFaceFront');
+    const btnBack = document.getElementById('btnFaceBack');
+    const btnDual = document.getElementById('btnFaceDual');
+
+    single.style.display = 'block';
+    dual.style.display = 'none';
+    isDual = false;
+    btnDual.classList.remove('active');
+
+    if (face === 'front') {
+        isFlipped = false;
+        card.classList.remove('is-flipped');
+        btnFront.classList.add('active');
+        btnBack.classList.remove('active');
+    } else {
+        isFlipped = true;
+        card.classList.add('is-flipped');
+        btnBack.classList.add('active');
+        btnFront.classList.remove('active');
+    }
+}
+
+function toggleCardFlip() {
+    if (isFlipped) {
+        setCardFace('front');
+    } else {
+        setCardFace('back');
+    }
+}
+
+function toggleDualView() {
+    const single = document.getElementById('singleCardScene');
+    const dual = document.getElementById('dualViewContainer');
+    const btnFront = document.getElementById('btnFaceFront');
+    const btnBack = document.getElementById('btnFaceBack');
+    const btnDual = document.getElementById('btnFaceDual');
+
+    isDual = !isDual;
+    if (isDual) {
+        single.style.display = 'none';
+        dual.style.display = 'flex';
+        btnDual.classList.add('active');
+        btnFront.classList.remove('active');
+        btnBack.classList.remove('active');
+        renderDualSides();
+    } else {
+        setCardFace('front');
+    }
+}
+
+function renderDualSides() {
+    const dual = document.getElementById('dualViewContainer');
+    dual.innerHTML = '';
+    
+    const frontClone = document.getElementById('cardFaceFrontElement').cloneNode(true);
+    const backClone = document.getElementById('cardFaceBackElement').cloneNode(true);
+    
+    frontClone.id = 'dualFrontClone';
+    frontClone.style.position = 'relative';
+    frontClone.style.transform = 'none';
+    frontClone.style.webkitTransform = 'none';
+    frontClone.style.width = '340px';
+    frontClone.style.height = '540px';
+    frontClone.style.boxShadow = '0 16px 35px -5px rgba(15, 23, 42, 0.25)';
+    
+    backClone.id = 'dualBackClone';
+    backClone.style.position = 'relative';
+    backClone.style.transform = 'none';
+    backClone.style.webkitTransform = 'none';
+    backClone.style.width = '340px';
+    backClone.style.height = '540px';
+    backClone.style.boxShadow = '0 16px 35px -5px rgba(15, 23, 42, 0.25)';
+    
+    dual.appendChild(frontClone);
+    dual.appendChild(backClone);
+}
+
+function triggerColorPrint() {
+    renderDualSides();
+    window.print();
+}
+
+// Download High-Definition Full-Color PNG of both Front and Back
+async function downloadCardImages() {
+    renderDualSides();
+    showToast('Preparing high-definition badge images...', 'info');
+
+    const frontEl = document.getElementById('dualFrontClone') || document.getElementById('cardFaceFrontElement');
+    const backEl = document.getElementById('dualBackClone') || document.getElementById('cardFaceBackElement');
+    const staffId = "{{ profile.employee_id|default:'MC-STAFF' }}";
+
+    if (typeof html2canvas !== 'undefined') {
+        try {
+            // Render Front
+            const canvasFront = await html2canvas(frontEl, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
+            const linkFront = document.createElement('a');
+            linkFront.download = `ID_${staffId}_Front.png`;
+            linkFront.href = canvasFront.toDataURL('image/png');
+            linkFront.click();
+
+            // Render Back after short delay
+            setTimeout(async () => {
+                const canvasBack = await html2canvas(backEl, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
+                const linkBack = document.createElement('a');
+                linkBack.download = `ID_${staffId}_Back.png`;
+                linkBack.href = canvasBack.toDataURL('image/png');
+                linkBack.click();
+                showToast('Front and back badge images downloaded successfully!', 'success');
+            }, 600);
+        } catch (e) {
+            triggerColorPrint();
+        }
+    } else {
+        triggerColorPrint();
+    }
+}
+</script>
+
+{% endblock %}

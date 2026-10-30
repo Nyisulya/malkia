@@ -1,0 +1,1845 @@
+{% extends 'base.html' %}
+
+{% block title %}Customs Declarations Hub (TRA TANESW & TBS) | Malkia C&F{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Sleek Copy Toast */
+#copyToast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #0F172A;
+    color: #FFFFFF;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 100000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    transform: translateY(10px);
+    border: 1px solid #334155;
+}
+#copyToast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Field Data Row */
+.data-field-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    transition: border-color 0.15s;
+}
+.data-field-card:hover {
+    border-color: var(--brand-primary);
+}
+.data-field-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.15rem;
+}
+.data-field-val {
+    font-size: 0.88rem;
+    color: #0F172A;
+    font-weight: 700;
+    word-break: break-word;
+}
+.data-field-val.is-empty {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-style: italic;
+}
+.copy-btn-inline {
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    color: var(--brand-navy-900);
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+.copy-btn-inline:hover {
+    background: var(--brand-primary);
+    color: #FFFFFF;
+    border-color: var(--brand-primary);
+}
+.copy-btn-inline.copied {
+    background: #10B981 !important;
+    color: #FFFFFF !important;
+    border-color: #10B981 !important;
+}
+
+/* Modal Viewport Fit */
+.tancis-modal-viewport {
+    width: 95vw !important;
+    max-width: 960px !important;
+    height: 88vh !important;
+    max-height: 88vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #FFFFFF !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Fill the space between header and footer and scroll inside it.
+   Without this the sheet sections get squashed to a few pixels. */
+.tancis-modal-viewport .modal-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+}
+
+.tancis-modal-viewport .modal-body > * {
+    flex: 0 0 auto;
+}
+
+.tancis-modal-viewport .modal-footer {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    padding: 0.7rem 1.25rem !important;
+    gap: 0.5rem !important;
+}
+
+.tancis-modal-viewport .modal-footer .btn-header-action {
+    width: auto !important;
+}
+
+@media (max-height: 600px) {
+    .tancis-modal-viewport {
+        height: 96vh !important;
+        max-height: 96vh !important;
+    }
+    .tancis-modal-viewport .modal-header {
+        padding: 0.6rem 1rem !important;
+    }
+}
+
+.customs-tab-btn {
+    padding: 0.75rem 1.25rem;
+    font-weight: 600;
+    font-size: 0.88rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+}
+.customs-tab-btn.active-tab {
+    color: var(--brand-primary);
+    border-bottom: 3px solid var(--brand-primary);
+    font-weight: 700;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Toast Notification Element -->
+<div id="copyToast"><i class="fa-solid fa-circle-check" style="color:#10B981;"></i> <span id="copyToastText">Copied to clipboard</span></div>
+
+<div style="max-width:1140px;margin:0 auto;padding-bottom:3rem;">
+
+<div class="page-header-box">
+    <div>
+        <h2 class="page-title"><i class="fa-solid fa-stamp" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Customs Declarations Hub (TRA TANESW & TBS)</h2>
+        <p class="page-subtitle">Inspect source shipping dossiers, lodge TANSAD entries into TRA TANESW, synchronize TBS clearances, and dispatch GePG tax assessment notices.</p>
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+        <a href="{% url 'customs_archive' %}" class="btn-header-action btn-outline">
+            <i class="fa-solid fa-box-archive"></i> Customs Archive
+        </a>
+    </div>
+</div>
+
+<!-- KPI SUMMARY BANNER (4 WORKFLOW STATS) -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));margin-bottom:1.5rem;">
+    <!-- 1. Awaiting Lodgement -->
+    <div class="kpi-card kpi-amber" onclick="switchCustomsTab('pending')" style="cursor:pointer;">
+        <div class="kpi-header">
+            <span class="kpi-title">Awaiting TANESW Entry</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-file-invoice"></i></div>
+        </div>
+        <div class="kpi-value" id="kpiPendingCount">{{ awaiting_lodgement_count }}</div>
+        <div class="kpi-meta">
+            <span>Ready for TANSAD lodgement</span>
+        </div>
+    </div>
+
+    <!-- 2. At TRA 76h SLA Review -->
+    <div class="kpi-card" onclick="switchCustomsTab('tanesw_76h')" style="cursor:pointer;border-left:4px solid #F59E0B;background:#FFFBEB;">
+        <div class="kpi-header">
+            <span class="kpi-title" style="color:#B45309;">At TRA Review</span>
+            <div class="kpi-icon-wrap" style="color:#F59E0B;background:#FEF3C7;"><i class="fa-solid fa-stopwatch"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#92400E;">{{ tanesw_76h_count }}</div>
+        <div class="kpi-meta" style="color:#B45309;">
+            <span>Under customs officer review</span>
+        </div>
+    </div>
+
+    <!-- 3. Accepted & Control Number -->
+    <div class="kpi-card kpi-emerald" onclick="switchCustomsTab('assessed')" style="cursor:pointer;">
+        <div class="kpi-header">
+            <span class="kpi-title">Accepted & Control #</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+        <div class="kpi-value">{{ accepted_count }}</div>
+        <div class="kpi-meta">
+            <span>GePG control number issued</span>
+        </div>
+    </div>
+
+    <!-- 4. TRA Objections / Queries -->
+    <div class="kpi-card kpi-rose" onclick="switchCustomsTab('objections')" style="cursor:pointer;">
+        <div class="kpi-header">
+            <span class="kpi-title">TRA Objections</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        </div>
+        <div class="kpi-value">{{ objection_count }}</div>
+        <div class="kpi-meta">
+            <span>Pending amendment / query reply</span>
+        </div>
+    </div>
+
+
+</div>
+
+<!-- CLIENT-SIDE TABS NAVIGATION (5 WORKFLOW TABS) -->
+<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #E2E8F0;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem;">
+    <div style="display:flex;gap:0.25rem;flex-wrap:wrap;" id="tabButtonGroup">
+        <!-- TAB 1: Awaiting TANESW -->
+        <button type="button" id="tabBtnPending" onclick="switchCustomsTab('pending')" class="customs-tab-btn active-tab">
+            <i class="fa-solid fa-hourglass-half"></i> 1. Awaiting TANESW Entry
+            <span style="background:var(--brand-primary);color:#FFFFFF;padding:0.15rem 0.55rem;border-radius:12px;font-size:0.75rem;font-weight:700;">
+                {{ awaiting_lodgement_count }}
+            </span>
+        </button>
+
+        <!-- TAB 2: At TRA 76h Review & TBS -->
+        <button type="button" id="tabBtnTanesw76h" onclick="switchCustomsTab('tanesw_76h')" class="customs-tab-btn">
+            <i class="fa-solid fa-clock-rotate-left"></i> 2. At TRA Review & TBS
+            <span style="background:#F59E0B;color:#FFFFFF;padding:0.15rem 0.55rem;border-radius:12px;font-size:0.75rem;font-weight:700;">
+                {{ tanesw_76h_count }}
+            </span>
+        </button>
+        
+        <!-- TAB 3: Accepted & Control No -->
+        <button type="button" id="tabBtnAssessed" onclick="switchCustomsTab('assessed')" class="customs-tab-btn">
+            <i class="fa-solid fa-circle-check"></i> 3. Accepted & Control No
+            <span style="background:#10B981;color:#FFFFFF;padding:0.15rem 0.55rem;border-radius:12px;font-size:0.75rem;font-weight:700;">
+                {{ accepted_count }}
+            </span>
+        </button>
+
+        <!-- TAB 4: TRA Objections -->
+        <button type="button" id="tabBtnObjections" onclick="switchCustomsTab('objections')" class="customs-tab-btn">
+            <i class="fa-solid fa-triangle-exclamation"></i> 4. TRA Objections
+            <span style="background:{% if objection_count %}#EF4444;color:#FFFFFF{% else %}#E2E8F0;color:#475569{% endif %};padding:0.15rem 0.55rem;border-radius:12px;font-size:0.75rem;font-weight:700;">
+                {{ objection_count }}
+            </span>
+        </button>
+        
+        <!-- TAB 5: All Active Files -->
+        <button type="button" id="tabBtnAll" onclick="switchCustomsTab('all')" class="customs-tab-btn">
+            <i class="fa-solid fa-list-check"></i> 5. All Active Files
+            <span style="background:#E2E8F0;color:#475569;padding:0.15rem 0.55rem;border-radius:12px;font-size:0.75rem;font-weight:700;">
+                {{ all_jobs|length }}
+            </span>
+        </button>
+    </div>
+</div>
+
+<!-- SEARCH & CHANNEL FILTER BAR -->
+<div class="card-panel" style="padding:1rem 1.25rem;margin-bottom:1.5rem;background:#FFFFFF;">
+    <form method="GET" action="{% url 'customs_pending_declarations' %}" style="display:flex;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <div style="flex:1;min-width:260px;">
+            <input type="text" name="q" class="form-control" placeholder="Search B/L #, Job #, TANSAD #, GePG Control #, Importer, Vessel..." value="{{ search_query }}">
+        </div>
+
+        <div>
+            <button type="submit" class="btn-header-action btn-primary" style="padding:0.6rem 1.25rem;">
+                <i class="fa-solid fa-magnifying-glass"></i> Filter
+            </button>
+            {% if search_query %}
+            <a href="{% url 'customs_pending_declarations' %}" class="btn-header-action btn-outline" style="padding:0.6rem 1rem;">
+                Reset
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- =========================================================================
+     TAB 1: AWAITING TANESW LODGEMENT TABLE
+     ========================================================================= -->
+<div id="tabContentPending" class="customs-tab-pane">
+    <div class="card-panel">
+        <div class="card-panel-header">
+            <div>
+                <h3 class="panel-title"><i class="fa-solid fa-hourglass-half" style="color:#D97706;"></i> Shipments Awaiting TRA TANESW Entry</h3>
+                <p class="panel-description">Inspect digital file dossier, verify whether client is Direct Duty or In-Bond, check physical original docs dispatch, and lodge TANSAD.</p>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
+                <thead>
+                    <tr>
+                        <th style="min-width:210px;">B/L &amp; Chassis No</th>
+                        <th style="min-width:240px;">Consignee &amp; Cargo</th>
+                        <th style="min-width:180px;">Vessel &amp; Carrier</th>
+                        <th style="min-width:140px;">Scanned Dossier</th>
+                        <th style="min-width:190px;text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in awaiting_lodgement_jobs %}
+                    <tr>
+                        <!-- 1. B/L & Chassis No (with Smart Badge for Clearance Mode) -->
+                        <td>
+                            {% if is_ceo %}
+                            <div style="font-size:0.76rem;font-weight:800;color:#0F766E;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:#0F766E;text-decoration:none;">{{ job.job_number }}</a>
+                            </div>
+                            <div style="font-size:0.95rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;margin-top:0.1rem;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                            </div>
+                            {% else %}
+                            <div style="font-size:0.98rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                            </div>
+                            {% endif %}
+
+                            {% if job.chassis_number %}
+                            <div style="font-family:monospace;font-size:0.75rem;color:#1E40AF;margin-top:0.2rem;white-space:nowrap;">
+                                Chassis: <span style="background:#EFF6FF;padding:0.08rem 0.38rem;border-radius:4px;font-weight:700;border:1px solid #DBEAFE;">{{ job.chassis_number }}</span>
+                            </div>
+                            {% endif %}
+
+                            <!-- Smart Clearance Mode Badge -->
+                            <div style="margin-top:0.35rem;">
+                                {% if job.clearance_mode == 'BOND' %}
+                                <span class="badge-pill badge-amber" style="font-weight:800;font-size:0.7rem;padding:0.15rem 0.45rem;display:inline-flex;align-items:center;gap:0.3rem;">
+                                    <i class="fa-solid fa-shield-halved"></i> IN-BOND
+                                </span>
+                                {% elif job.clearance_mode == 'EX_BOND' %}
+                                <span class="badge-pill badge-purple" style="font-weight:800;font-size:0.7rem;padding:0.15rem 0.45rem;display:inline-flex;align-items:center;gap:0.3rem;">
+                                    <i class="fa-solid fa-box-open"></i> EX-BOND
+                                </span>
+                                {% else %}
+                                <span class="badge-pill" style="background:#ECFDF5;color:#047857;border:1px solid #A7F3D0;font-weight:800;font-size:0.7rem;padding:0.15rem 0.45rem;display:inline-flex;align-items:center;gap:0.3rem;">
+                                    <i class="fa-solid fa-bolt"></i> DIRECT DUTY
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- 2. Consignee & Cargo -->
+                        <td>
+                            <strong style="color:var(--brand-navy-900);font-size:0.9rem;display:block;">{{ job.customer.company_name }}</strong>
+                            <div style="font-size:0.78rem;color:#475569;margin-top:0.2rem;font-weight:600;">
+                                <i class="fa-solid fa-car" style="color:var(--brand-primary);margin-right:0.25rem;"></i> {{ job.cargo_description|default:"1 Unit Motor Vehicle" }}
+                            </div>
+                        </td>
+
+                        <!-- 3. Vessel & Carrier -->
+                        <td>
+                            <div style="font-weight:700;font-size:0.85rem;color:#0F172A;">
+                                <i class="fa-solid fa-ship" style="color:var(--brand-primary);margin-right:0.25rem;"></i> {{ job.vessel_name|default:"Vessel TBD" }}
+                            </div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.15rem;">
+                                Carrier: <strong>{{ job.get_shipping_line_display|default:job.shipping_line }}</strong>
+                            </div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.15rem;">
+                                <i class="fa-solid fa-anchor"></i> {{ job.port_of_origin|default:"Yokohama, Japan" }}
+                            </div>
+                        </td>
+
+                        <!-- 4. Scanned Dossier -->
+                        <td>
+                            <div style="display:flex;flex-direction:column;gap:0.25rem;">
+                                <span style="font-size:0.75rem;font-weight:700;color:#0F172A;">
+                                    <i class="fa-solid fa-paperclip"></i> {{ job.documents.all|length }} file{{ job.documents.all|length|pluralize }} synced
+                                </span>
+                                <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
+                                    {% for doc in job.documents.all|slice:":3" %}
+                                    {% if doc.file %}
+                                    <a href="{{ doc.file.url }}" target="_blank" class="badge-pill badge-gray" style="font-size:0.68rem;text-decoration:none;padding:0.15rem 0.4rem;" title="{{ doc.get_document_type_display }}">
+                                        <i class="fa-regular fa-file-pdf"></i> {{ doc.get_document_type_display|slice:":12" }}
+                                    </a>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- 5. Actions -->
+                        <td style="text-align:right;">
+                            <div style="display:inline-flex;flex-direction:column;gap:0.35rem;align-items:flex-end;">
+                                {% if not is_ceo %}
+                                <button type="button" class="btn-header-action btn-primary" onclick="openLodgeTaneswModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.customer.company_name|escapejs }}', '{{ job.declaration_number|default:'' }}')" style="padding:0.45rem 0.85rem;font-size:0.8rem;white-space:nowrap;">
+                                    <i class="fa-solid fa-stamp"></i> Lodge TANESW Entry
+                                </button>
+                                {% endif %}
+                                <button type="button" class="btn-header-action btn-outline" onclick="openTancisDataSheet('{{ job.id }}')" style="padding:0.35rem 0.65rem;font-size:0.74rem;white-space:nowrap;background:#F8FAFC;">
+                                    <i class="fa-solid fa-file-lines" style="color:var(--brand-primary);"></i> TANCIS Prep Sheet
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align:center;padding:3.5rem 2rem;color:var(--text-muted);">
+                            <i class="fa-solid fa-circle-check" style="font-size:2.5rem;color:#10B981;margin-bottom:0.75rem;display:block;"></i>
+                            <h4 style="color:var(--brand-navy-900);margin-bottom:0.25rem;">No Pending Declarations!</h4>
+                            <p style="font-size:0.85rem;">All opened shipments have been lodged into TRA TANESW.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     TAB 2: AT TRA (76-HOUR SLA REVIEW) & TBS TABLE
+     ========================================================================= -->
+<div id="tabContentTanesw76h" class="customs-tab-pane" style="display:none;">
+    <div class="card-panel">
+        <div class="card-panel-header">
+            <div>
+                <h3 class="panel-title"><i class="fa-solid fa-clock-rotate-left" style="color:#F59E0B;"></i> Consignments Under TRA Review &amp; TBS Clearance</h3>
+                <p class="panel-description">Active tracking for TRA customs officer review. Record assessment outcome (Acceptance or Objections) and synchronize TBS status.</p>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
+                <thead>
+                    <tr>
+                        <th style="min-width:200px;">B/L &amp; Chassis No</th>
+                        <th>Consignee</th>
+                        <th>TANSAD Entry #</th>
+                        <th>TBS Clearance Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in tanesw_76h_jobs %}
+                    <tr>
+                        <!-- 1. B/L & Chassis No -->
+                        <td>
+                            {% if is_ceo %}
+                            <div style="font-size:0.76rem;font-weight:800;color:#0F766E;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:#0F766E;text-decoration:none;">{{ job.job_number }}</a>
+                            </div>
+                            <div style="font-size:0.95rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;margin-top:0.1rem;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                            </div>
+                            {% else %}
+                            <div style="font-size:0.98rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                            </div>
+                            {% endif %}
+
+                            {% if job.chassis_number %}
+                            <div style="font-family:monospace;font-size:0.75rem;color:#1E40AF;margin-top:0.2rem;white-space:nowrap;">
+                                Chassis: <span style="background:#EFF6FF;padding:0.08rem 0.38rem;border-radius:4px;font-weight:700;border:1px solid #DBEAFE;">{{ job.chassis_number }}</span>
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- 2. Consignee -->
+                        <td>
+                            <strong style="color:var(--text-main);font-size:0.88rem;white-space:nowrap;display:block;">{{ job.customer.company_name }}</strong>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">TIN: {{ job.customer.tin_number|default:"N/A" }}</div>
+                        </td>
+
+                        <!-- 3. TANSAD Entry # -->
+                        <td>
+                            <span style="font-family:monospace;font-weight:800;font-size:0.9rem;color:#0F172A;background:#F1F5F9;padding:0.25rem 0.55rem;border-radius:6px;border:1px solid #CBD5E1;display:inline-block;">
+                                {{ job.declaration_number }}
+                            </span>
+                            <div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">
+                                Lodged: {{ job.tanesw_lodged_at|date:"d M Y H:i" }}
+                            </div>
+                        </td>
+
+
+
+                        
+                        <!-- 6. TBS Clearance Status -->
+                        <td>
+                            {% if job.tbs_status == 'APPROVED' %}
+                            <span class="badge-pill badge-green" style="font-weight:800;font-size:0.75rem;padding:0.3rem 0.6rem;display:inline-block;">
+                                <i class="fa-solid fa-circle-check"></i> Released / Approved
+                            </span>
+                            {% elif job.tbs_status == 'QUERY' %}
+                            <span class="badge-pill badge-red" style="font-weight:800;font-size:0.75rem;padding:0.3rem 0.6rem;display:inline-block;">
+                                <i class="fa-solid fa-circle-question"></i> Query Raised
+                            </span>
+                            {% elif job.tbs_status == 'PENDING_APPROVAL' %}
+                            <span class="badge-pill badge-amber" style="font-weight:800;font-size:0.75rem;padding:0.3rem 0.6rem;display:inline-block;">
+                                <i class="fa-solid fa-clock"></i> Pending Approval
+                            </span>
+                            {% else %}
+                            <span class="badge-pill badge-gray" style="font-weight:700;font-size:0.75rem;padding:0.3rem 0.6rem;display:inline-block;">
+                                Not Lodged
+                            </span>
+                            {% endif %}
+                            
+                            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.25rem;">
+                                Ref: <strong>{{ job.tbs_reference_no|default:"Pending" }}</strong>
+                            </div>
+                            
+                            {% if not is_ceo %}
+                            <button type="button" class="btn-header-action btn-outline" onclick="openUpdateTbsModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.tbs_status }}', '{{ job.tbs_reference_no|default:''|escapejs }}', '{{ job.tbs_notes|default:''|escapejs }}')" style="padding:0.25rem 0.5rem;font-size:0.7rem;margin-top:0.35rem;background:#FFFFFF;">
+                                <i class="fa-solid fa-pen-to-square"></i> Update TBS
+                            </button>
+                            {% endif %}
+                        </td>
+
+                        <!-- 7. Actions -->
+                        <td>
+                            <div style="display:flex;flex-direction:column;gap:0.4rem;">
+                                {% if not is_ceo %}
+                                {% if job.clearance_mode == 'BOND' %}
+                                <button type="button" class="btn-header-action btn-primary" onclick="openRecordOutcomeModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.declaration_number }}', 'BOND', '{{ job.c41_reference_no|default:''|escapejs }}')" style="padding:0.45rem 0.85rem;font-size:0.8rem;white-space:nowrap;background:#D97706;border-color:#D97706;">
+                                    <i class="fa-solid fa-stamp"></i> Record Bond Release
+                                </button>
+                                {% else %}
+                                <button type="button" class="btn-header-action btn-primary" onclick="openRecordOutcomeModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.declaration_number }}', 'DIRECT_DUTY', '')" style="padding:0.45rem 0.85rem;font-size:0.8rem;white-space:nowrap;background:#1E3A8A;border-color:#1E3A8A;">
+                                    <i class="fa-solid fa-clipboard-check"></i> Record TRA Outcome
+                                </button>
+                                {% endif %}
+                                {% endif %}
+                                <button type="button" class="btn-header-action btn-outline" onclick="openTancisDataSheet('{{ job.id }}')" style="padding:0.35rem 0.65rem;font-size:0.75rem;background:#F8FAFC;">
+                                    <i class="fa-solid fa-file-lines"></i> View Prep Sheet
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align:center;padding:3.5rem 2rem;color:var(--text-muted);">
+                            <i class="fa-solid fa-check-double" style="font-size:2.5rem;color:#3B82F6;margin-bottom:0.75rem;display:block;"></i>
+                            <h4 style="color:var(--brand-navy-900);margin-bottom:0.25rem;">No Active Consignments at TRA!</h4>
+                            <p style="font-size:0.85rem;">All lodged entries have completed review and been moved to Accepted or Objections.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     TAB 3: ACCEPTED & CONTROL NUMBERS TABLE
+     ========================================================================= -->
+<div id="tabContentAssessed" class="customs-tab-pane" style="display:none;">
+    <div class="card-panel" style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);margin-bottom:1.5rem;">
+        <div style="padding:1rem 1.25rem;border-bottom:1px solid #E2E8F0;background:#FFFFFF;">
+            <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
+                <i class="fa-solid fa-circle-check" style="color:#10B981;"></i> Accepted Declarations &amp; GePG Control Numbers
+            </h3>
+            <p style="margin:0.25rem 0 0 0;font-size:0.8rem;color:var(--text-muted);">
+                Official tax assessment notices issued by TRA. Print official notices, dispatch WhatsApp reminders to clients, and verify incoming tax payments.
+            </p>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
+                <thead style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;color:#64748B;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">
+                    <tr>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:22%;">B/L &amp; Chassis No</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:24%;">Customer / Consignee</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:20%;">TRA &amp; GePG Control #</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:15%;">Assessed Duty</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:9%;">Accepted At</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:10%;text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in accepted_jobs %}
+                    <tr style="border-bottom:1px solid #F1F5F9;transition:background 0.15s ease;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#fff'">
+                        <!-- 1. B/L & Chassis No -->
+                        <td style="padding:0.75rem 1rem;vertical-align:middle;white-space:nowrap;">
+                            {% if is_ceo %}
+                            <div style="font-size:0.76rem;font-weight:800;color:#0F766E;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:#0F766E;text-decoration:none;">{{ job.job_number }}</a>
+                            </div>
+                            <div style="font-size:0.95rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;margin-top:0.1rem;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                            </div>
+                            {% else %}
+                            <div style="font-size:0.98rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                            </div>
+                            {% endif %}
+
+                            {% if job.chassis_number %}
+                            <div style="font-family:monospace;font-size:0.75rem;color:#1E40AF;margin-top:0.2rem;white-space:nowrap;">
+                                Chassis: <span style="background:#EFF6FF;padding:0.08rem 0.38rem;border-radius:4px;font-weight:700;border:1px solid #DBEAFE;">{{ job.chassis_number }}</span>
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- 2. Customer / Consignee -->
+                        <td style="padding:0.75rem 1rem;vertical-align:middle;">
+                            <div style="font-weight:800;color:#0F172A;font-size:0.88rem;white-space:nowrap;">
+                                {{ job.customer.company_name }}
+                            </div>
+                            <div style="font-size:0.74rem;color:#64748B;margin-top:0.2rem;white-space:nowrap;">
+                                <span style="font-family:monospace;background:#F1F5F9;padding:0.05rem 0.35rem;border-radius:3px;font-weight:700;">TIN: {{ job.customer.tin_number|default:"—" }}</span>
+                            </div>
+                        </td>
+
+                        <!-- 3. TRA & GePG Control # -->
+                        <td style="padding:0.75rem 1rem;vertical-align:middle;">
+                            {% if job.duty_control_number %}
+                            <div style="display:flex;align-items:center;gap:0.35rem;white-space:nowrap;">
+                                <span style="font-family:monospace;font-size:0.92rem;font-weight:800;color:#0F172A;letter-spacing:0.04em;background:#F1F5F9;padding:0.15rem 0.45rem;border-radius:4px;border:1px solid #CBD5E1;">
+                                    {{ job.duty_control_number }}
+                                </span>
+                                <button type="button" class="copy-btn-inline" onclick="copyTextDirect('{{ job.duty_control_number }}', this)" title="Copy Control Number" style="padding:0.15rem 0.35rem;font-size:0.7rem;">
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                            </div>
+                            {% else %}
+                            <div style="font-size:0.75rem;color:#D97706;font-weight:700;">Pending Control #</div>
+                            {% endif %}
+
+                            {% if job.declaration_number %}
+                            <div style="font-family:monospace;font-size:0.74rem;color:#64748B;margin-top:0.25rem;white-space:nowrap;">
+                                TANSAD: <strong style="color:#334155;">{{ job.declaration_number }}</strong>
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- 4. Assessed Duty -->
+                        <td style="padding:0.75rem 1rem;vertical-align:middle;white-space:nowrap;">
+                            <div style="color:#059669;font-weight:900;font-size:0.95rem;white-space:nowrap;">
+                                TSh {{ job.assessed_duty_amount|floatformat:2 }}
+                            </div>
+                            <div style="font-size:0.72rem;margin-top:0.2rem;white-space:nowrap;">
+                                {% if job.duty_paid %}
+                                <span style="color:#059669;font-weight:800;"><i class="fa-solid fa-circle-check"></i> Paid &amp; Verified</span>
+                                {% else %}
+                                <span style="color:#D97706;font-weight:800;"><i class="fa-solid fa-clock"></i> Awaiting Payment</span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- 5. Accepted At -->
+                        <td style="padding:0.75rem 1rem;vertical-align:middle;white-space:nowrap;">
+                            <div style="font-size:0.82rem;font-weight:700;color:#0F172A;white-space:nowrap;">
+                                {{ job.tra_accepted_at|date:"d M Y"|default:job.updated_at|date:"d M Y" }}
+                            </div>
+                            <div style="font-size:0.72rem;color:#64748B;white-space:nowrap;">
+                                {{ job.tra_accepted_at|date:"H:i"|default:job.updated_at|date:"H:i" }}
+                            </div>
+                        </td>
+
+                        <!-- 6. Actions -->
+                        <td style="padding:0.75rem 1rem;vertical-align:middle;text-align:right;white-space:nowrap;">
+                            <div style="display:inline-flex;gap:0.35rem;align-items:center;">
+                                <a href="{% url 'print_assessment_notice' job.id %}" target="_blank" class="btn-header-action btn-outline" style="padding:0.35rem 0.6rem;font-size:0.74rem;white-space:nowrap;" title="Print Official Assessment Notice">
+                                    <i class="fa-solid fa-print"></i> Notice
+                                </a>
+                                <button type="button" class="btn-header-action" onclick="openSharePaymentNoticeModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.customer.company_name|escapejs }}', '{{ job.duty_control_number }}', '{{ job.assessed_duty_amount|floatformat:2 }}', '{{ job.declaration_number }}')" style="padding:0.35rem 0.6rem;font-size:0.74rem;background:#10B981;border-color:#10B981;color:#FFFFFF;white-space:nowrap;" title="Share Assessment Notice with Client via WhatsApp">
+                                    <i class="fa-brands fa-whatsapp"></i> Share
+                                </button>
+                                {% if job.duty_paid %}
+                                <span class="badge-pill" style="font-size:0.72rem;padding:0.3rem 0.55rem;background:#DEF7EC;color:#03543F;border:1px solid #BCF0DA;white-space:nowrap;">
+                                    <i class="fa-solid fa-circle-check"></i> Paid
+                                </span>
+                                {% else %}
+                                    {% if is_finance or is_admin or is_ops %}
+                                    <button type="button" class="btn-header-action btn-primary" onclick="openConfirmDutyModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.duty_control_number }}', '{{ job.assessed_duty_amount|stringformat:'.2f' }}', '{{ job.bl_number|escapejs }}')" style="padding:0.35rem 0.6rem;font-size:0.74rem;white-space:nowrap;">
+                                        <i class="fa-solid fa-receipt"></i> Verify
+                                    </button>
+                                    {% else %}
+                                    <span class="badge-pill" style="font-size:0.72rem;padding:0.3rem 0.55rem;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;white-space:nowrap;" title="Payment verification is processed by Finance">
+                                        <i class="fa-solid fa-clock"></i> Sent to Finance
+                                    </span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align:center;padding:3.5rem 2rem;color:var(--text-muted);">
+                            <i class="fa-solid fa-receipt" style="font-size:2.5rem;color:var(--brand-primary);margin-bottom:0.75rem;display:block;"></i>
+                            <h4 style="color:var(--brand-navy-900);margin-bottom:0.25rem;">No Accepted Declarations Yet</h4>
+                            <p style="font-size:0.85rem;">Declarations accepted by TRA will appear here along with GePG control numbers.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     TAB 4: TRA OBJECTIONS / QUERIES TABLE
+     ========================================================================= -->
+<div id="tabContentObjections" class="customs-tab-pane" style="display:none;">
+    <div class="card-panel">
+        <div class="card-panel-header">
+            <div>
+                <h3 class="panel-title"><i class="fa-solid fa-triangle-exclamation" style="color:#DC2626;"></i> Consignments with TRA Objections / Queries</h3>
+                <p class="panel-description">Review TRA customs rejection queries, valuation adjustments, or missing documentation notes. Rectify and re-lodge entry.</p>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
+                <thead>
+                    <tr>
+                        <th style="min-width:200px;">B/L &amp; Chassis No</th>
+                        <th>Consignee</th>
+                        <th>TANSAD Entry #</th>
+                        <th>Objection Lodged At</th>
+                        <th>TRA Objection / Query Details</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in objection_jobs %}
+                    <tr>
+                        <!-- 1. B/L & Chassis No -->
+                        <td>
+                            {% if is_ceo %}
+                            <div style="font-size:0.76rem;font-weight:800;color:#0F766E;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:#0F766E;text-decoration:none;">{{ job.job_number }}</a>
+                            </div>
+                            <div style="font-size:0.95rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;margin-top:0.1rem;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                            </div>
+                            {% else %}
+                            <div style="font-size:0.98rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                            </div>
+                            {% endif %}
+
+                            {% if job.chassis_number %}
+                            <div style="font-family:monospace;font-size:0.75rem;color:#1E40AF;margin-top:0.2rem;white-space:nowrap;">
+                                Chassis: <span style="background:#EFF6FF;padding:0.08rem 0.38rem;border-radius:4px;font-weight:700;border:1px solid #DBEAFE;">{{ job.chassis_number }}</span>
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- 2. Consignee -->
+                        <td>
+                            <strong style="color:var(--text-main);font-size:0.88rem;white-space:nowrap;display:block;">{{ job.customer.company_name }}</strong>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">TIN: {{ job.customer.tin_number|default:"N/A" }}</div>
+                        </td>
+
+                        <!-- 3. TANSAD Entry # -->
+                        <td>
+                            <span style="font-family:monospace;font-weight:800;font-size:0.9rem;color:#0F172A;background:#F1F5F9;padding:0.25rem 0.55rem;border-radius:6px;border:1px solid #CBD5E1;">
+                                {{ job.declaration_number }}
+                            </span>
+                        </td>
+
+                        <!-- 4. Objection Lodged At -->
+                        <td>
+                            <div style="font-size:0.82rem;font-weight:700;color:#DC2626;">
+                                {{ job.tra_objection_at|date:"d M Y"|default:job.updated_at|date:"d M Y" }}
+                            </div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);">
+                                {{ job.tra_objection_at|date:"H:i"|default:job.updated_at|date:"H:i" }}
+                            </div>
+                        </td>
+
+                        <!-- 5. Query Details -->
+                        <td>
+                            <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:0.5rem 0.75rem;color:#991B1B;font-size:0.82rem;line-height:1.4;max-width:380px;">
+                                <i class="fa-solid fa-circle-exclamation" style="margin-right:0.25rem;"></i>
+                                <strong>Query Note:</strong> {{ job.tra_objection_notes|default:"Query raised by TRA customs officer. Inspection or valuation documents required." }}
+                            </div>
+                        </td>
+
+                        <!-- 6. Actions -->
+                        <td>
+                            <div style="display:flex;flex-direction:column;gap:0.4rem;">
+                                {% if not is_ceo %}
+                                <button type="button" class="btn-header-action btn-primary" onclick="openLodgeTaneswModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.customer.company_name|escapejs }}', '{{ job.declaration_number }}')" style="padding:0.45rem 0.75rem;font-size:0.78rem;white-space:nowrap;background:#DC2626;border-color:#DC2626;">
+                                    <i class="fa-solid fa-rotate"></i> Amend &amp; Re-lodge
+                                </button>
+                                {% endif %}
+                                <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.75rem;background:#F8FAFC;">
+                                    <i class="fa-solid fa-folder-open"></i> Full Dossier
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align:center;padding:3.5rem 2rem;color:var(--text-muted);">
+                            <i class="fa-solid fa-circle-check" style="font-size:2.5rem;color:#10B981;margin-bottom:0.75rem;display:block;"></i>
+                            <h4 style="color:var(--brand-navy-900);margin-bottom:0.25rem;">Zero Active Objections!</h4>
+                            <p style="font-size:0.85rem;">All customs declarations have cleared without queries or objections.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     TAB 5: ALL ACTIVE CUSTOMS FILES TABLE
+     ========================================================================= -->
+<div id="tabContentAll" class="customs-tab-pane" style="display:none;">
+    <div class="card-panel">
+        <div class="card-panel-header">
+            <div>
+                <h3 class="panel-title"><i class="fa-solid fa-list-check" style="color:var(--brand-primary);"></i> All Active Customs Operations Register</h3>
+                <p class="panel-description">Comprehensive list of all active files passing through stages 2, 3, 4, 5, and 6.</p>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
+                <thead>
+                    <tr>
+                        <th style="min-width:200px;">B/L &amp; Chassis No</th>
+                        <th>Consignee</th>
+                        <th>Vessel &amp; Origin</th>
+                        <th>TANSAD Entry #</th>
+                        <th>Stage</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in all_jobs %}
+                    <tr>
+                        <td>
+                            {% if is_ceo %}
+                            <div style="font-size:0.76rem;font-weight:800;color:#0F766E;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:#0F766E;text-decoration:none;">{{ job.job_number }}</a>
+                            </div>
+                            <div style="font-size:0.95rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;margin-top:0.1rem;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                            </div>
+                            {% else %}
+                            <div style="font-size:0.98rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;">
+                                <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                            </div>
+                            {% endif %}
+
+                            {% if job.chassis_number %}
+                            <div style="font-family:monospace;font-size:0.75rem;color:#1E40AF;margin-top:0.2rem;white-space:nowrap;">
+                                Chassis: <span style="background:#EFF6FF;padding:0.08rem 0.38rem;border-radius:4px;font-weight:700;border:1px solid #DBEAFE;">{{ job.chassis_number }}</span>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong style="color:var(--text-main);font-size:0.88rem;white-space:nowrap;display:block;">{{ job.customer.company_name }}</strong>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">TIN: {{ job.customer.tin_number|default:"N/A" }}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight:700;font-size:0.85rem;color:#0F172A;">{{ job.vessel_name }}</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">Origin: {{ job.port_of_origin }}</div>
+                        </td>
+                        <td>
+                            {% if job.declaration_number %}
+                            <span style="font-family:monospace;font-weight:700;color:#0F172A;background:#F1F5F9;padding:0.2rem 0.5rem;border-radius:4px;border:1px solid #CBD5E1;">
+                                {{ job.declaration_number }}
+                            </span>
+                            {% else %}
+                            <span style="color:#D97706;font-size:0.75rem;font-weight:600;"><i class="fa-solid fa-clock"></i> Pending Lodgement</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <span class="badge-pill badge-active" style="font-size:0.75rem;">
+                                Stage {{ job.current_stage_number }}: {{ job.current_stage_obj.name_en }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:0.35rem;align-items:center;">
+                                <button type="button" class="btn-header-action btn-outline" onclick="openTancisDataSheet('{{ job.id }}')" style="padding:0.35rem 0.65rem;font-size:0.75rem;">
+                                    <i class="fa-solid fa-file-lines"></i> Sheet
+                                </button>
+                                <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-primary" style="padding:0.35rem 0.65rem;font-size:0.75rem;">
+                                    <i class="fa-solid fa-eye"></i> View
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align:center;padding:3rem;color:var(--text-muted);">No active customs files.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     COMPREHENSIVE TANCIS DATA PREPARATION SHEET MODAL
+     (Direct copy button for every field)
+     ========================================================================= -->
+<div id="tancisDataSheetModal" class="modal-overlay" style="align-items:center;justify-content:center;">
+    <div class="modal-card tancis-modal-viewport">
+        <!-- MODAL HEADER -->
+        <div class="modal-header" style="background:linear-gradient(135deg, #0F172A 0%, #1E293B 100%);color:#FFFFFF;padding:1.15rem 1.5rem;flex-shrink:0;">
+            <div>
+                <div style="display:flex;align-items:center;gap:0.6rem;">
+                    <i class="fa-solid fa-stamp" style="font-size:1.2rem;color:var(--brand-primary);"></i>
+                    <h3 class="modal-title" style="color:#FFFFFF;font-size:1.15rem;">TANCIS SGD Data Preparation Sheet</h3>
+                </div>
+                <p id="dsModalSubtitle" style="font-size:0.8rem;color:#94A3B8;margin-top:0.25rem;">Shipment data prepared for rapid copying into TRA TANCIS</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.65rem;">
+                <button type="button" class="copy-btn-inline" onclick="copyFullTancisSummary(this)" style="background:#334155;color:#FFFFFF;border-color:#475569;">
+                    <i class="fa-regular fa-clone"></i> Copy Full Summary
+                </button>
+                <button type="button" class="modal-close-btn" onclick="closeModal('tancisDataSheetModal')" style="color:#FFFFFF;">&times;</button>
+            </div>
+        </div>
+
+        <!-- MODAL BODY -->
+        <div class="modal-body" style="padding:1.25rem 1.5rem;overflow-y:auto;display:flex;flex-direction:column;gap:1.25rem;background:#F8FAFC;">
+            <!-- SECTION 1: HEADER & IMPORTER DETAILS -->
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="background:#F1F5F9;padding:0.65rem 1rem;border-bottom:1px solid #E2E8F0;font-size:0.8rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;justify-content:space-between;">
+                    <span><i class="fa-solid fa-id-card" style="color:var(--brand-primary);margin-right:0.4rem;"></i> SECTION 1: IMPORTER / CONSIGNEE IDENTIFICATION</span>
+                    <span style="font-size:0.72rem;color:var(--text-muted);">TANCIS BOX 8</span>
+                </div>
+                <div style="padding:1rem;display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:0.85rem;">
+                    <div class="data-field-card">
+                        <div>
+                            <div class="data-field-label">Importer / Consignee Full Name</div>
+                            <div class="data-field-val" id="dsConsigneeName">-</div>
+                        </div>
+                        <button type="button" class="copy-btn-inline" onclick="copySpecific('consignee_name', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+
+                    <div class="data-field-card">
+                        <div>
+                            <div class="data-field-label">TRA Taxpayer ID (TIN Number)</div>
+                            <div class="data-field-val" id="dsTinNumber">-</div>
+                        </div>
+                        <button type="button" class="copy-btn-inline" onclick="copySpecific('tin_number', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+
+                    <div class="data-field-card">
+                        <div>
+                            <div class="data-field-label">VAT Registration Number (VRN)</div>
+                            <div class="data-field-val" id="dsVrnNumber">-</div>
+                        </div>
+                        <button type="button" class="copy-btn-inline" onclick="copySpecific('vrn_number', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+
+                    <div class="data-field-card">
+                        <div>
+                            <div class="data-field-label">Physical Address / Business Location</div>
+                            <div class="data-field-val" id="dsPhysicalAddress">-</div>
+                        </div>
+                        <button type="button" class="copy-btn-inline" onclick="copySpecific('physical_address', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: TRANSPORT, MANIFEST & VESSEL -->
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="background:#F1F5F9;padding:0.65rem 1rem;border-bottom:1px solid #E2E8F0;font-size:0.8rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;justify-content:space-between;">
+                    <span><i class="fa-solid fa-ship" style="color:var(--brand-primary);margin-right:0.4rem;"></i> SECTION 2: TRANSPORT, MANIFEST &amp; VOYAGE</span>
+                    <span style="font-size:0.72rem;color:var(--text-muted);">TANCIS BOX 18 &amp; 21</span>
+                </div>
+                <div style="padding:1rem;display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:0.85rem;">
+                    <div class="data-field-card">
+                        <div>
+                            <div class="data-field-label">Bill of Lading Number (B/L)</div>
+                            <div class="data-field-val" id="dsBlNumber">-</div>
+                        </div>
+                        <button type="button" class="copy-btn-inline" onclick="copySpecific('bl_number', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+
+                    <div class="data-field-card">
+                        <div>
+                            <div class="data-field-label">Customs Manifest / Rotation Number</div>
+                            <div class="data-field-val" id="dsManifestNumber">-</div>
+                        </div>
+                        <button type="button" class="copy-btn-inline" onclick="copySpecific('manifest_number', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+
+                    <div class="data-field-card">
+                        <div>
+                            <div class="data-field-label">Vessel Name &amp; Voyage</div>
+                            <div class="data-field-val" id="dsVesselName">-</div>
+                        </div>
+                        <button type="button" class="copy-btn-inline" onclick="copySpecific('vessel_name', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+
+                    <div class="data-field-card">
+                        <div>
+                            <div class="data-field-label">Shipping Line / Carrier Agency</div>
+                            <div class="data-field-val" id="dsShippingLine">-</div>
+                        </div>
+                        <button type="button" class="copy-btn-inline" onclick="copySpecific('shipping_line', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+
+                    <div class="data-field-card">
+                        <div>
+                            <div class="data-field-label">Port of Loading / Origin</div>
+                            <div class="data-field-val" id="dsPortOfOrigin">-</div>
+                        </div>
+                        <button type="button" class="copy-btn-inline" onclick="copySpecific('port_of_origin', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+
+                    <div class="data-field-card">
+                        <div>
+                            <div class="data-field-label">Port of Discharge / Arrival</div>
+                            <div class="data-field-val" id="dsPortOfArrival">-</div>
+                        </div>
+                        <button type="button" class="copy-btn-inline" onclick="copySpecific('port_of_arrival', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: CARGO DESCRIPTION & CONTAINER UNITS -->
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="background:#F1F5F9;padding:0.65rem 1rem;border-bottom:1px solid #E2E8F0;font-size:0.8rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;justify-content:space-between;">
+                    <span><i class="fa-solid fa-boxes-stacked" style="color:var(--brand-primary);margin-right:0.4rem;"></i> SECTION 3: CARGO &amp; CONTAINER SPECIFICATIONS</span>
+                    <span style="font-size:0.72rem;color:var(--text-muted);">TANCIS BOX 31</span>
+                </div>
+                <div style="padding:1rem;display:flex;flex-direction:column;gap:1rem;">
+                    <div class="data-field-card">
+                        <div style="flex:1;">
+                            <div class="data-field-label">Cargo Description (Commercial Invoice Description)</div>
+                            <div class="data-field-val" id="dsCargoDescription" style="font-weight:600;line-height:1.4;">-</div>
+                        </div>
+                        <button type="button" class="copy-btn-inline" onclick="copySpecific('cargo_description', this)"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+
+                    <div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+                            <span class="data-field-label" style="font-size:0.75rem;margin-bottom:0;">Container Units &amp; Seals:</span>
+                            <button type="button" class="copy-btn-inline" onclick="copySpecific('containers_list', this)"><i class="fa-regular fa-copy"></i> Copy All Containers</button>
+                        </div>
+                        <div id="dsContainerTable" style="display:flex;flex-direction:column;gap:0.4rem;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: SOURCE DOCUMENTS -->
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="background:#F1F5F9;padding:0.65rem 1rem;border-bottom:1px solid #E2E8F0;font-size:0.8rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;justify-content:space-between;">
+                    <span><i class="fa-solid fa-file-pdf" style="color:#DC2626;margin-right:0.4rem;"></i> ORIGINAL SOURCE DOCUMENTS (CLOUDFLARE R2)</span>
+                    <span style="font-size:0.72rem;color:var(--text-muted);">ATTACHED FILES</span>
+                </div>
+                <div id="dsDocumentsList" style="padding:1rem;display:flex;gap:0.65rem;flex-wrap:wrap;"></div>
+            </div>
+        </div>
+
+        <!-- MODAL FOOTER -->
+        <div class="modal-footer" style="background:#FFFFFF;border-top:1px solid #E2E8F0;padding:1rem 1.5rem;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;">
+            <button type="button" class="btn-header-action btn-outline" onclick="closeModal('tancisDataSheetModal')">Close Sheet</button>
+            <button type="button" class="btn-header-action btn-primary" id="btnLaunchLodgeFromSheet" style="padding:0.65rem 1.5rem;">
+                <i class="fa-solid fa-stamp"></i> Lodge Entry in TANESW
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 1: LODGE INTO TRA TANESW (TANSAD & TBS)
+     ========================================================================= -->
+<div id="lodgeTaneswModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:620px;">
+        <form id="lodgeTaneswForm" action="" method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title"><i class="fa-solid fa-stamp" style="color:var(--brand-primary);margin-right:0.35rem;"></i> Lodge Entry into TRA TANESW</h3>
+                    <p id="lodgeModalShipmentContext" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Record TANSAD entry number and track customs review</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('lodgeTaneswModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:1.25rem;">
+                <!-- TANESW TANSAD ENTRY NUMBER -->
+                <div style="background:#F8FAFC;border:1px solid #E2E8F0;padding:1.25rem;border-radius:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-weight:700;font-size:0.95rem;color:var(--brand-navy-900);">TANSAD Entry Number *</label>
+                        <input type="text" id="lodgeTansadNo" name="declaration_number" class="form-control" placeholder="e.g. 26DARIM4001928" required style="font-family:monospace;font-weight:800;font-size:1.15rem;letter-spacing:0.05em;color:var(--brand-primary);padding:0.75rem 1rem;">
+                        <small style="color:var(--text-muted);font-size:0.8rem;margin-top:0.4rem;display:block;">
+                            Enter the official TANSAD declaration number generated by TRA TANESW after lodging your customs entry.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:600;font-size:0.82rem;color:var(--text-muted);">Remarks / Internal Notes (Optional)</label>
+                    <input type="text" name="notes" class="form-control" placeholder="Any optional notes for internal tracking">
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('lodgeTaneswModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.65rem 1.65rem;font-size:0.88rem;">
+                    <i class="fa-solid fa-stamp"></i> Save TANSAD Entry
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 2: RECORD TRA OUTCOME (ACCEPTANCE VS OBJECTION)
+     ========================================================================= -->
+<div id="recordOutcomeModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:680px;">
+        <form id="recordOutcomeForm" action="" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header" style="background:linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%);color:#FFFFFF;">
+                <div>
+                    <h3 class="modal-title" style="color:#FFFFFF;"><i class="fa-solid fa-clipboard-check" style="margin-right:0.35rem;"></i> Record TRA Review Outcome</h3>
+                    <p id="outcomeModalJobContext" style="font-size:0.8rem;color:#93C5FD;margin-top:0.2rem;">Record whether TRA Accepted the declaration or raised Objections</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('recordOutcomeModal')" style="color:#FFFFFF;">&times;</button>
+            </div>
+
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:1.25rem;">
+                <!-- OUTCOME SELECTOR -->
+                <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:1rem;">
+                    <label style="font-weight:800;font-size:0.84rem;color:#0F172A;display:block;margin-bottom:0.6rem;">TRA DECISION OUTCOME *</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <label style="display:flex;align-items:center;gap:0.5rem;padding:0.85rem;border:2px solid #86EFAC;background:#F0FDF4;border-radius:8px;cursor:pointer;">
+                            <input type="radio" name="outcome" value="ACCEPTED" id="radioAccepted" checked onchange="toggleOutcomeFields()" style="accent-color:#16A34A;">
+                            <div>
+                                <strong style="color:#166534;font-size:0.9rem;display:block;">1. ACCEPTED</strong>
+                                <span style="font-size:0.72rem;color:#15803D;">Control No &amp; Taxes Issued</span>
+                            </div>
+                        </label>
+
+                        <label style="display:flex;align-items:center;gap:0.5rem;padding:0.85rem;border:2px solid #FECACA;background:#FEF2F2;border-radius:8px;cursor:pointer;">
+                            <input type="radio" name="outcome" value="OBJECTION" id="radioObjection" onchange="toggleOutcomeFields()" style="accent-color:#DC2626;">
+                            <div>
+                                <strong style="color:#991B1B;font-size:0.9rem;display:block;">2. OBJECTION</strong>
+                                <span style="font-size:0.72rem;color:#B91C1C;">Queries / Rejection Reason</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- CONTAINER FOR ACCEPTED FIELDS -->
+                <div id="acceptedFieldsContainer" style="display:flex;flex-direction:column;gap:1rem;background:#F0FDF4;border:1px solid #BBF7D0;padding:1.15rem;border-radius:8px;">
+                    
+                    <!-- IN-BOND NOTICE BOX -->
+                    <div id="bondNoticeBox" style="display:none;background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:8px;padding:0.85rem 1rem;">
+                        <div style="font-weight:800;color:#92400E;display:flex;align-items:center;gap:0.4rem;font-size:0.88rem;">
+                            <i class="fa-solid fa-shield-halved" style="color:#D97706;"></i> IN-BOND CARGO • CUSTOMS BOND C.41
+                        </div>
+                        <div style="font-size:0.8rem;color:#78350F;margin-top:0.3rem;line-height:1.45;">
+                            Mzigo huu hauna kodi ya kulipa sasa hivi bandarini. Ushuru wa TRA umelindwa chini ya <strong>Dhamana ya Forodha (Customs Bond)</strong>.
+                            Kukubali kibali hiki kutahamisha mzigo moja kwa moja hadi <strong>Stage 5 (Port Verification &amp; Release)</strong> bila kudai malipo ya kodi bandarini.
+                        </div>
+                    </div>
+
+                    <!-- DIRECT DUTY FIELDS (CONTROL NO & ASSESSED DUTY) -->
+                    <div id="directDutyFields" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-weight:700;font-size:0.82rem;color:#166534;">TRA GePG Control Number *</label>
+                            <input type="text" name="control_number" id="outcomeControlNo" class="form-control" placeholder="e.g. 991200482910" style="font-family:monospace;font-weight:800;letter-spacing:0.05em;color:#0F172A;">
+                            <small style="color:#15803D;font-size:0.72rem;">Official 99-series payment control number.</small>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-weight:700;font-size:0.82rem;color:#166534;">Assessed Duty (TZS) *</label>
+                            <input type="number" step="0.01" name="assessed_duty_amount" id="outcomeDutyAmount" class="form-control" placeholder="e.g. 28500000" style="font-weight:800;font-size:0.95rem;color:#0F172A;">
+                            <small style="color:#15803D;font-size:0.72rem;">Total import duty and taxes payable.</small>
+                        </div>
+                    </div>
+
+                    <!-- IN-BOND FIELDS (REMOVAL ORDER / BOND RELEASE REF) -->
+                    <div id="bondFieldsContainer" style="display:none;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label style="font-weight:700;font-size:0.82rem;color:#92400E;">TRA Removal Order / Bond Release Ref (Optional)</label>
+                            <input type="text" name="removal_order_no" id="outcomeRemovalOrder" class="form-control" placeholder="e.g. RO-2026-0041 au Namba ya C.41" style="font-family:monospace;font-weight:700;color:#0F172A;">
+                            <small style="color:#92400E;font-size:0.72rem;">Kibali cha forodha cha kutoa mzigo bandarini kuelekea yadi chini ya bond.</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label id="lblAssessmentFile" style="font-weight:700;font-size:0.82rem;color:#166534;">Attach Assessment Notice / Removal Order (PDF)</label>
+                        <input type="file" name="assessment_file" class="form-control" accept=".pdf,image/*">
+                        <small style="color:#15803D;font-size:0.72rem;">Uploaded PDF is automatically archived into the client's file dossier.</small>
+                    </div>
+                </div>
+
+                <!-- CONTAINER FOR OBJECTION FIELDS -->
+                <div id="objectionFieldsContainer" style="display:none;background:#FEF2F2;border:1px solid #FECACA;padding:1.15rem;border-radius:8px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-weight:700;font-size:0.82rem;color:#991B1B;">TRA Objection / Query Details *</label>
+                        <textarea name="tra_objection_notes" id="outcomeObjectionNotes" class="form-control" rows="3" placeholder="Specify the exact query from the TRA customs officer, e.g. 'Values under-declared for item 3, please provide manufacturer commercial invoice or price proof'"></textarea>
+                        <small style="color:#B91C1C;font-size:0.72rem;">Shipment will be moved to the Objections tab for query resolution and re-lodgement.</small>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:600;font-size:0.82rem;">Remarks</label>
+                    <input type="text" name="notes" class="form-control" placeholder="Optional notes for internal tracking">
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('recordOutcomeModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" id="btnSubmitOutcome" style="padding:0.65rem 1.5rem;background:#16A34A;border-color:#16A34A;">
+                    <i class="fa-solid fa-check"></i> Save Outcome
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 3: UPDATE TBS STATUS
+     ========================================================================= -->
+<div id="updateTbsModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:540px;">
+        <form id="updateTbsForm" action="" method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title"><i class="fa-solid fa-vial-circle-check" style="color:var(--brand-primary);margin-right:0.35rem;"></i> Update TBS Clearance Status</h3>
+                    <p id="tbsModalJobContext" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Track Tanzania Bureau of Standards inspection &amp; release</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('updateTbsModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:1.15rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;">TBS Clearance Status *</label>
+                    <select name="tbs_status" id="tbsModalStatusSelect" class="form-control" required style="font-weight:700;">
+                        <option value="PENDING_APPROVAL">🟡 Pending Approval / Under Review</option>
+                        <option value="APPROVED">🟢 Approved / Released</option>
+                        <option value="QUERY">🔴 Query Raised</option>
+                        <option value="NOT_LODGED">⚪ Not Lodged</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;">TBS Reference / Certificate Number</label>
+                    <input type="text" name="tbs_reference_no" id="tbsModalRefInput" class="form-control" placeholder="e.g. TBS/2026/DAR/08492">
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:600;font-size:0.82rem;">Remarks / Notes</label>
+                    <textarea name="tbs_notes" id="tbsModalNotesInput" class="form-control" rows="2" placeholder="e.g. Sample verified, electronic release code issued by TBS inspector."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('updateTbsModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.65rem 1.5rem;">
+                    <i class="fa-solid fa-check"></i> Update TBS Status
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 4: HANDOVER PHYSICAL ORIGINAL DOCS TO FIELD AGENT
+     ========================================================================= -->
+<div id="handoverDocsModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:540px;">
+        <form id="handoverDocsForm" action="" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="/customs/declarations/?tab=pending">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title"><i class="fa-solid fa-hand-holding-hand" style="color:var(--brand-primary);margin-right:0.35rem;"></i> Handover Physical Original Docs</h3>
+                    <p id="handoverModalJobContext" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Dispatch original Bill of Lading &amp; Invoice to Port/Field Agent for Shipping Line D/O</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('handoverDocsModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:1.15rem;">
+                <div style="background:#EFF6FF;border:1px solid #BFDBFE;padding:0.85rem 1rem;border-radius:8px;font-size:0.82rem;color:#1E40AF;line-height:1.4;">
+                    <i class="fa-solid fa-circle-info" style="margin-right:0.3rem;"></i>
+                    <strong>Parallel Workflow:</strong> The Port Agent can process the Shipping Line Delivery Order (D/O) with original documents concurrently while the Declaration Officer lodges the digital dossier in TRA TANESW.
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;">Recipient Field Officer / Agent *</label>
+                    <input type="text" name="original_docs_recipient" class="form-control" placeholder="e.g. Juma Ally (Port Operations)" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:600;font-size:0.82rem;">Dispatch Notes / Documents Handed Over</label>
+                    <textarea name="original_docs_dispatch_notes" class="form-control" rows="2" placeholder="e.g. Original Bill of Lading (3/3), Commercial Invoice, and Packing List dispatched for Shipping Line Delivery Order endorsement."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('handoverDocsModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.65rem 1.5rem;">
+                    <i class="fa-solid fa-paper-plane"></i> Confirm Handover
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 5: SHARE GEPG CONTROL NUMBER NOTICE VIA WHATSAPP (100% ENGLISH)
+     ========================================================================= -->
+<div id="shareClientPaymentModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:620px;">
+        <div class="modal-header" style="background:linear-gradient(135deg, #065F46 0%, #047857 100%);color:#FFFFFF;padding:1.15rem 1.5rem;">
+            <div>
+                <h3 class="modal-title" style="color:#FFFFFF;display:flex;align-items:center;gap:0.5rem;">
+                    <i class="fa-brands fa-whatsapp"></i> TRA Customs Tax Assessment Notice (GePG)
+                </h3>
+                <p id="shareModalSubtitle" style="font-size:0.8rem;color:#D1FAE5;margin-top:0.2rem;">Send payment notice and GePG control number directly to the importer</p>
+            </div>
+            <button type="button" class="modal-close-btn" onclick="closeModal('shareClientPaymentModal')" style="color:#FFFFFF;">&times;</button>
+        </div>
+
+        <div class="modal-body" style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;">
+            <div style="background:#F0FDF4;border:1px solid #A7F3D0;border-radius:8px;padding:1rem;">
+                <div style="font-size:0.75rem;font-weight:700;color:#065F46;text-transform:uppercase;margin-bottom:0.35rem;">
+                    <i class="fa-solid fa-circle-info"></i> Formatted Notification Message:
+                </div>
+                <textarea id="shareMessageText" class="form-control" rows="8" readonly style="background:#FFFFFF;font-family:monospace;font-size:0.85rem;line-height:1.5;color:#0F172A;"></textarea>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:0.75rem 1rem;">
+                <div>
+                    <span style="font-size:0.75rem;color:var(--text-muted);display:block;">GePG Control Number:</span>
+                    <strong id="shareModalControlNo" style="font-size:1.1rem;font-family:monospace;color:#0F172A;letter-spacing:0.05em;">-</strong>
+                </div>
+                <div>
+                    <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Assessed Customs Duty:</span>
+                    <strong id="shareModalDutyAmount" style="font-size:1.1rem;color:#059669;">-</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;background:#F8FAFC;">
+            <button type="button" class="btn-header-action btn-outline" onclick="closeModal('shareClientPaymentModal')">Close</button>
+            <div style="display:flex;gap:0.5rem;">
+                <button type="button" class="btn-header-action btn-outline" onclick="copySharePaymentMessage(this)">
+                    <i class="fa-regular fa-copy"></i> Copy Text
+                </button>
+                <a id="btnOpenWhatsAppWeb" href="#" target="_blank" class="btn-header-action" style="background:#10B981;border-color:#10B981;color:#FFFFFF;text-decoration:none;padding:0.6rem 1.25rem;font-weight:700;display:inline-flex;align-items:center;gap:0.4rem;">
+                    <i class="fa-brands fa-whatsapp"></i> Send via WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 6: CONFIRM CLIENT CUSTOMS DUTY PAYMENT (ULTRA STREAMLINED)
+     ========================================================================= -->
+<div id="confirmDutyPaymentModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:520px;border-radius:12px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);">
+        <form id="confirmDutyPaymentForm" action="" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="amount_paid" id="confirmAmountPaid">
+            <input type="hidden" name="payment_date" id="confirmPaymentDate">
+            
+            <div class="modal-header" style="background:linear-gradient(135deg, #059669 0%, #047857 100%);color:#FFFFFF;padding:1.15rem 1.5rem;">
+                <div>
+                    <h3 class="modal-title" style="color:#FFFFFF;display:flex;align-items:center;gap:0.5rem;font-size:1.1rem;font-weight:800;">
+                        <i class="fa-solid fa-receipt"></i> Verify TRA Duty Payment
+                    </h3>
+                    <p style="font-size:0.8rem;color:#D1FAE5;margin-top:0.2rem;">Confirm GePG customs tax settlement</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('confirmDutyPaymentModal')" style="color:#FFFFFF;">&times;</button>
+            </div>
+
+            <div class="modal-body" style="padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;background:#FFFFFF;">
+                <!-- SUMMARY CARD -->
+                <div style="background:#ECFDF5;border:1.5px solid #A7F3D0;padding:1rem 1.25rem;border-radius:10px;text-align:center;">
+                    <div style="font-size:0.8rem;font-weight:700;color:#065F46;text-transform:uppercase;letter-spacing:0.04em;" id="confirmModalJobContext">B/L: MIN-3737-E | Control #: 77778899</div>
+                    <div style="font-size:1.65rem;font-weight:900;color:#047857;margin-top:0.35rem;" id="confirmModalAmountDisplay">TSh 0.00</div>
+                    <div style="font-size:0.75rem;color:#065F46;margin-top:0.35rem;">
+                        <i class="fa-solid fa-circle-info"></i> Approving automatically moves file to <strong>Stage 5: Port Verification</strong>.
+                    </div>
+                </div>
+
+                <!-- OPTIONAL RECEIPT REF (DEFAULTS TO CONTROL NO) -->
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;color:#334155;">Bank Slip / TRA E-Receipt Ref (Optional)</label>
+                    <input type="text" name="payment_reference" id="confirmPaymentRef" class="form-control" placeholder="Leave blank to use GePG Control #" style="font-family:monospace;font-size:0.88rem;">
+                    <small style="color:var(--text-muted);font-size:0.74rem;margin-top:0.2rem;display:block;">If left empty, system uses the GePG Control Number as verification proof.</small>
+                </div>
+
+                <!-- OPTIONAL FILE ATTACHMENT -->
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;color:#334155;">Attach Bank Slip / E-Receipt (Optional)</label>
+                    <input type="file" name="receipt_file" class="form-control" accept=".pdf,.png,.jpg,.jpeg" style="font-size:0.82rem;">
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;background:#F8FAFC;border-top:1px solid #E2E8F0;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('confirmDutyPaymentModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#059669;border-color:#059669;padding:0.65rem 1.65rem;font-size:0.9rem;font-weight:800;">
+                    <i class="fa-solid fa-circle-check"></i> Approve &amp; Release to Port
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- EMBEDDED JSON PAYLOAD OF ALL SHIPMENTS FOR ZERO-LATENCY PREP SHEET -->
+<script id="shipmentsData" type="application/json">
+[
+    {% for j in all_jobs %}
+    {
+        "id": "{{ j.id }}",
+        "job_number": "{{ j.job_number|escapejs }}",
+        "bl_number": "{{ j.bl_number|escapejs }}",
+        "consignee_name": "{{ j.customer.company_name|escapejs }}",
+        "tin_number": "{{ j.customer.tin_number|default:'N/A'|escapejs }}",
+        "vrn_number": "{{ j.customer.vrn_number|default:'N/A'|escapejs }}",
+        "physical_address": "{{ j.customer.physical_address|default:'Dar es Salaam, Tanzania'|escapejs }}",
+        "final_destination": "{{ j.final_destination|escapejs }}",
+        "manifest_number": "{{ j.customs_manifest_number|default:''|escapejs }}",
+        "shipping_line": "{{ j.get_shipping_line_display|default:j.shipping_line|escapejs }}",
+        "vessel_name": "{{ j.vessel_name|escapejs }}",
+        "port_of_origin": "{{ j.port_of_origin|escapejs }}",
+        "port_of_arrival": "{{ j.port_of_arrival|escapejs }}",
+        "eta_date": "{{ j.eta_arrival_date|date:'d M Y' }}",
+        "cargo_description": "{{ j.cargo_description|escapejs }}",
+        "shipment_type": "{{ j.get_shipment_type_display|escapejs }}",
+        "container_size_type": "{{ j.container_size_type|escapejs }}",
+        "container_numbers": "{{ j.container_numbers|escapejs }}",
+        "declaration_number": "{{ j.declaration_number|default:''|escapejs }}",
+        "customs_channel": "{{ j.customs_channel|default:'YELLOW'|escapejs }}",
+        "assessed_duty_amount": "{{ j.assessed_duty_amount|stringformat:'.2f'|default:'0' }}",
+        "duty_control_number": "{{ j.duty_control_number|default:''|escapejs }}",
+        "containers": [
+            {% for c in j.containers.all %}
+            {
+                "number": "{{ c.container_number|escapejs }}",
+                "size_type": "{{ c.get_size_type_display|escapejs }}",
+                "seal": "{{ c.seal_number|default:'N/A'|escapejs }}",
+                "weight": "{{ c.gross_weight_kg|default:'-' }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        "documents": [
+            {% for d in j.documents.all %}
+            {
+                "type": "{{ d.get_document_type_display|escapejs }}",
+                "title": "{{ d.title|escapejs }}",
+                "url": "{{ d.file.url|default:'' }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+]
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// =========================================================================
+// 1. CLIENT-SIDE 5-TAB SWITCHING (ZERO RELOAD)
+// =========================================================================
+function switchCustomsTab(tabName) {
+    const tabs = ['Pending', 'Tanesw76h', 'Assessed', 'Objections', 'All'];
+    tabs.forEach(t => {
+        const pane = document.getElementById('tabContent' + t);
+        if (pane) pane.style.display = 'none';
+        const btn = document.getElementById('tabBtn' + t);
+        if (btn) {
+            btn.classList.remove('active-tab');
+            btn.style.color = 'var(--text-muted)';
+            btn.style.borderBottom = '3px solid transparent';
+            btn.style.fontWeight = '600';
+        }
+    });
+
+    let targetKey = 'Pending';
+    if (tabName === 'tanesw_76h' || tabName === 'tanesw') targetKey = 'Tanesw76h';
+    else if (tabName === 'assessed' || tabName === 'accepted') targetKey = 'Assessed';
+    else if (tabName === 'objections' || tabName === 'objection') targetKey = 'Objections';
+    else if (tabName === 'all') targetKey = 'All';
+
+    const activePane = document.getElementById('tabContent' + targetKey);
+    const activeBtn = document.getElementById('tabBtn' + targetKey);
+    if (activePane) activePane.style.display = 'block';
+    if (activeBtn) {
+        activeBtn.classList.add('active-tab');
+        activeBtn.style.color = 'var(--brand-primary)';
+        activeBtn.style.borderBottom = '3px solid var(--brand-primary)';
+        activeBtn.style.fontWeight = '700';
+    }
+}
+
+// Auto open tab from query string
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedTab = urlParams.get('tab');
+    if (requestedTab) {
+        switchCustomsTab(requestedTab);
+    }
+});
+
+// =========================================================================
+// 2. PARSE SHIPMENTS DATA FOR INSTANT PREPARATION SHEET
+// =========================================================================
+let shipmentsMap = {};
+try {
+    const rawData = JSON.parse(document.getElementById('shipmentsData').textContent);
+    rawData.forEach(item => {
+        shipmentsMap[item.id] = item;
+    });
+} catch(e) {
+    console.error("Error parsing shipments data:", e);
+}
+
+let activeSheetJob = null;
+
+function setSheetValue(elementId, value, fallback) {
+    const el = document.getElementById(elementId);
+    const clean = (value === undefined || value === null || value === '' || value === 'N/A') ? '' : String(value);
+    el.textContent = clean || fallback;
+    el.classList.toggle('is-empty', !clean);
+}
+
+function openTancisDataSheet(jobId) {
+    const job = shipmentsMap[jobId];
+    if (!job) return;
+    activeSheetJob = job;
+
+    document.getElementById('dsModalSubtitle').textContent = {% if is_ceo %}`Shipment ${job.job_number} | B/L: ${job.bl_number} | Consignee: ${job.consignee_name}`{% else %}`B/L: ${job.bl_number || job.job_number} | Consignee: ${job.consignee_name}`{% endif %};
+    setSheetValue('dsConsigneeName', job.consignee_name, 'Not provided');
+    setSheetValue('dsTinNumber', job.tin_number, 'Not provided');
+    setSheetValue('dsVrnNumber', job.vrn_number, 'Not provided');
+    setSheetValue('dsPhysicalAddress', job.physical_address, 'Not provided');
+    setSheetValue('dsBlNumber', job.bl_number, 'Not provided');
+    setSheetValue('dsManifestNumber', job.manifest_number, 'Pending Rot #');
+    setSheetValue('dsVesselName', job.vessel_name, 'Not provided');
+    setSheetValue('dsShippingLine', job.shipping_line, 'Not provided');
+    setSheetValue('dsPortOfOrigin', job.port_of_origin, 'Not provided');
+    setSheetValue('dsPortOfArrival', job.port_of_arrival, 'Not provided');
+    setSheetValue('dsCargoDescription', job.cargo_description, 'Not provided');
+
+    // Populate Container Units
+    const contContainer = document.getElementById('dsContainerTable');
+    contContainer.innerHTML = '';
+    if (job.containers && job.containers.length > 0) {
+        job.containers.forEach((c, idx) => {
+            const row = document.createElement('div');
+            row.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:#FFFFFF;border:1px solid #E2E8F0;padding:0.45rem 0.75rem;border-radius:6px;font-size:0.8rem;";
+            row.innerHTML = `
+                <div>
+                    <strong style="font-family:monospace;font-size:0.88rem;color:#0F172A;">${c.number}</strong>
+                    <span style="color:var(--text-muted);font-size:0.75rem;margin-left:0.5rem;">(${c.size_type})</span>
+                    <span style="color:#0284C7;font-size:0.72rem;margin-left:0.5rem;">Seal: ${c.seal}</span>
+                    <span style="color:#64748B;font-size:0.72rem;margin-left:0.5rem;">Weight: ${c.weight} kg</span>
+                </div>
+                <button type="button" class="copy-btn-inline" style="padding:0.2rem 0.5rem;font-size:0.72rem;" onclick="copyTextDirect('${c.number}', this)">
+                    <i class="fa-regular fa-copy"></i> Unit
+                </button>
+            `;
+            contContainer.appendChild(row);
+        });
+    } else {
+        contContainer.innerHTML = '<span style="font-size:0.78rem;color:var(--text-muted);">No container records specified.</span>';
+    }
+
+    // Populate Documents
+    const docsContainer = document.getElementById('dsDocumentsList');
+    docsContainer.innerHTML = '';
+    if (job.documents && job.documents.length > 0) {
+        job.documents.forEach(d => {
+            if (d.url) {
+                const btn = document.createElement('a');
+                btn.href = d.url;
+                btn.target = "_blank";
+                btn.className = "copy-btn-inline";
+                btn.style.cssText = "text-decoration:none;background:#FFFFFF;border-color:#E2E8F0;font-size:0.78rem;";
+                btn.innerHTML = `<i class="fa-solid fa-file-pdf" style="color:#DC2626;"></i> ${d.type} (View)`;
+                docsContainer.appendChild(btn);
+            }
+        });
+    } else {
+        docsContainer.innerHTML = '<span style="font-size:0.78rem;color:var(--text-muted);">No documents attached to this shipment.</span>';
+    }
+
+    // Hook Launch Lodge Button
+    const btnLodge = document.getElementById('btnLaunchLodgeFromSheet');
+    btnLodge.onclick = function() {
+        closeModal('tancisDataSheetModal');
+        openLodgeTaneswModal(job.id, job.job_number, job.bl_number, job.consignee_name, job.declaration_number);
+    };
+
+    openModal('tancisDataSheetModal');
+}
+
+// 1-Click Copy helpers
+function copySpecific(fieldKey, btnElem) {
+    if (!activeSheetJob) return;
+    let val = '';
+    if (fieldKey === 'consignee_name') val = activeSheetJob.consignee_name;
+    else if (fieldKey === 'tin_number') val = activeSheetJob.tin_number;
+    else if (fieldKey === 'vrn_number') val = activeSheetJob.vrn_number;
+    else if (fieldKey === 'physical_address') val = activeSheetJob.physical_address;
+    else if (fieldKey === 'bl_number') val = activeSheetJob.bl_number;
+    else if (fieldKey === 'manifest_number') val = activeSheetJob.manifest_number;
+    else if (fieldKey === 'vessel_name') val = activeSheetJob.vessel_name;
+    else if (fieldKey === 'shipping_line') val = activeSheetJob.shipping_line;
+    else if (fieldKey === 'port_of_origin') val = activeSheetJob.port_of_origin;
+    else if (fieldKey === 'port_of_arrival') val = activeSheetJob.port_of_arrival;
+    else if (fieldKey === 'cargo_description') val = activeSheetJob.cargo_description;
+    else if (fieldKey === 'containers_list') {
+        val = activeSheetJob.containers.map(c => c.number).join(', ');
+    }
+    copyTextDirect(val, btnElem);
+}
+
+function copyFullTancisSummary(btnElem) {
+    if (!activeSheetJob) return;
+    const j = activeSheetJob;
+    const contStr = j.containers.map(c => `${c.number} (${c.size_type}, Seal: ${c.seal})`).join('\n');
+    const summary = `--- TANCIS PREPARATION SUMMARY ---
+{% if is_ceo %}Job Number: ${j.job_number}
+{% endif %}B/L Number: ${j.bl_number}
+Consignee: ${j.consignee_name}
+TIN: ${j.tin_number} | VRN: ${j.vrn_number}
+Address: ${j.physical_address}
+Vessel: ${j.vessel_name} (Line: ${j.shipping_line})
+Manifest / Rot: ${j.manifest_number}
+Origin: ${j.port_of_origin} -> Discharge: ${j.port_of_arrival}
+Cargo: ${j.cargo_description}
+Containers:
+${contStr}
+----------------------------------`;
+    copyTextDirect(summary, btnElem);
+}
+
+function copyTextDirect(text, btnElem) {
+    if (!text || text === '-') {
+        showToast("No data to copy");
+        return;
+    }
+    navigator.clipboard.writeText(text).then(() => {
+        showToast("Copied to clipboard!");
+        if (btnElem) {
+            const originalHTML = btnElem.innerHTML;
+            btnElem.classList.add('copied');
+            btnElem.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
+            setTimeout(() => {
+                btnElem.classList.remove('copied');
+                btnElem.innerHTML = originalHTML;
+            }, 1600);
+        }
+    }).catch(err => {
+        console.error("Clipboard copy error:", err);
+    });
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('copyToast');
+    const toastText = document.getElementById('copyToastText');
+    if (toast && toastText) {
+        toastText.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2200);
+    }
+}
+
+// =========================================================================
+// 3. MODAL HANDLERS
+// =========================================================================
+
+// Modal 1: Lodge in TANESW
+function openLodgeTaneswModal(jobId, jobNumber, blNumber, consignee, currentTansad) {
+    document.getElementById('lodgeTaneswForm').action = `/customs/declarations/${jobId}/lodge-tanesw/`;
+    document.getElementById('lodgeModalShipmentContext').textContent = {% if is_ceo %}`Shipment ${jobNumber} | B/L: ${blNumber} | Importer: ${consignee}`{% else %}`B/L: ${blNumber || jobNumber} | Importer: ${consignee}`{% endif %};
+    document.getElementById('lodgeTansadNo').value = currentTansad || '';
+    openModal('lodgeTaneswModal');
+}
+
+// Modal 2: Record TRA Outcome
+let currentRecordClearanceMode = 'DIRECT_DUTY';
+
+function openRecordOutcomeModal(jobId, jobNumber, blNumber, currentTansad, clearanceMode, bondRef) {
+    currentRecordClearanceMode = clearanceMode || 'DIRECT_DUTY';
+    document.getElementById('recordOutcomeForm').action = `/customs/declarations/${jobId}/tra-outcome/`;
+    document.getElementById('outcomeModalJobContext').textContent = {% if is_ceo %}`Shipment ${jobNumber} | B/L: ${blNumber} | TANSAD: ${currentTansad}`{% else %}`B/L: ${blNumber || jobNumber} | TANSAD: ${currentTansad || 'Pending'}`{% endif %};
+    document.getElementById('radioAccepted').checked = true;
+    
+    const isBond = (currentRecordClearanceMode === 'BOND');
+    const bondBox = document.getElementById('bondNoticeBox');
+    const directFields = document.getElementById('directDutyFields');
+    const bondFields = document.getElementById('bondFieldsContainer');
+    const removalInput = document.getElementById('outcomeRemovalOrder');
+    const lblFile = document.getElementById('lblAssessmentFile');
+    
+    if (bondBox) bondBox.style.display = isBond ? 'block' : 'none';
+    if (directFields) directFields.style.display = isBond ? 'none' : 'grid';
+    if (bondFields) bondFields.style.display = isBond ? 'block' : 'none';
+    if (removalInput && isBond) removalInput.value = bondRef || '';
+    if (lblFile) {
+        lblFile.textContent = isBond ? 'Attach Removal Order / Release Note (PDF)' : 'Attach Assessment Notice / SGD (PDF)';
+    }
+
+    toggleOutcomeFields();
+    openModal('recordOutcomeModal');
+}
+
+function toggleOutcomeFields() {
+    const isAccepted = document.getElementById('radioAccepted').checked;
+    const acceptedBox = document.getElementById('acceptedFieldsContainer');
+    const objectionBox = document.getElementById('objectionFieldsContainer');
+    const controlInput = document.getElementById('outcomeControlNo');
+    const dutyInput = document.getElementById('outcomeDutyAmount');
+    const objectionInput = document.getElementById('outcomeObjectionNotes');
+    const submitBtn = document.getElementById('btnSubmitOutcome');
+    const isBond = (currentRecordClearanceMode === 'BOND');
+
+    if (isAccepted) {
+        acceptedBox.style.display = 'flex';
+        objectionBox.style.display = 'none';
+        if (isBond) {
+            controlInput.required = false;
+            dutyInput.required = false;
+            submitBtn.style.background = '#D97706';
+            submitBtn.style.borderColor = '#D97706';
+            submitBtn.innerHTML = '<i class="fa-solid fa-truck-fast"></i> Approve In-Bond Release to Port (Skip Duty)';
+        } else {
+            controlInput.required = true;
+            dutyInput.required = true;
+            submitBtn.style.background = '#16A34A';
+            submitBtn.style.borderColor = '#16A34A';
+            submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Record Acceptance & Issue Control No';
+        }
+        objectionInput.required = false;
+    } else {
+        acceptedBox.style.display = 'none';
+        objectionBox.style.display = 'block';
+        controlInput.required = false;
+        dutyInput.required = false;
+        objectionInput.required = true;
+        submitBtn.style.background = '#DC2626';
+        submitBtn.style.borderColor = '#DC2626';
+        submitBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Record TRA Objection';
+    }
+}
+
+// Modal 3: Update TBS
+function openUpdateTbsModal(jobId, jobNumber, currentStatus, currentRef, currentNotes) {
+    document.getElementById('updateTbsForm').action = `/customs/declarations/${jobId}/tbs-update/`;
+    document.getElementById('tbsModalJobContext').textContent = {% if is_ceo %}`Shipment ${jobNumber}`{% else %}`B/L: ${jobNumber}`{% endif %};
+    if (currentStatus) document.getElementById('tbsModalStatusSelect').value = currentStatus;
+    document.getElementById('tbsModalRefInput').value = currentRef || '';
+    document.getElementById('tbsModalNotesInput').value = currentNotes || '';
+    openModal('updateTbsModal');
+}
+
+// Modal 4: Handover Docs
+function openHandoverDocsModal(jobId, jobNumber, blNumber) {
+    document.getElementById('handoverDocsForm').action = `/jobs/${jobId}/handover-original-docs/`;
+    document.getElementById('handoverModalJobContext').textContent = `Shipment ${jobNumber} | B/L: ${blNumber}`;
+    openModal('handoverDocsModal');
+}
+
+// Modal 5: Share Payment Notice (100% English)
+function openSharePaymentNoticeModal(jobId, jobNumber, blNumber, consignee, controlNo, dutyAmount, declarationNo) {
+    document.getElementById('shareModalSubtitle').textContent = `Job: ${jobNumber} | B/L: ${blNumber} | Importer: ${consignee}`;
+    document.getElementById('shareModalControlNo').textContent = controlNo || 'Pending';
+    document.getElementById('shareModalDutyAmount').textContent = 'TSh ' + dutyAmount;
+
+    const msg = `*MALKIA CUSTOMS CLEARING & FORWARDING*
+*TRA Customs Duty Assessment Notice*
+---------------------------------------
+Dear Client (${consignee}),
+
+Your customs declaration has been formally accepted by the Tanzania Revenue Authority (TRA) with the following payment details:
+
+• *Job Reference:* ${jobNumber}
+• *Bill of Lading (B/L):* ${blNumber}
+• *TANSAD Entry No:* ${declarationNo || '-'}
+• *GePG Control Number:* ${controlNo}
+• *Total Assessed Duty:* TSh ${dutyAmount}
+• *Payment Due:* Immediate / Prior to Port Clearance
+
+Please settle the assessed customs taxes directly through any Tanzanian Commercial Bank, Mobile Money (M-Pesa / TigoPesa / AirtelMoney / Halopesa) or the GePG portal using the Control Number above.
+
+Upon payment, kindly provide the electronic payment receipt so our customs team can proceed immediately with cargo release.
+
+Thank you for choosing Malkia C&F.`;
+
+    document.getElementById('shareMessageText').value = msg;
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    document.getElementById('btnOpenWhatsAppWeb').href = waUrl;
+
+    openModal('shareClientPaymentModal');
+}
+
+function copySharePaymentMessage(btnElem) {
+    const text = document.getElementById('shareMessageText').value;
+    copyTextDirect(text, btnElem);
+}
+
+// Modal 6: Confirm Duty Payment
+function openConfirmDutyModal(jobId, jobNumber, controlNo, dutyAmount, blNumber) {
+    document.getElementById('confirmDutyPaymentForm').action = `/customs/declarations/${jobId}/confirm-duty/`;
+    const isCeo = {% if is_ceo %}true{% else %}false{% endif %};
+    const title = isCeo ? `Shipment ${jobNumber} | Control #: ${controlNo || 'N/A'}` : `B/L: ${blNumber || jobNumber} | Control #: ${controlNo || 'N/A'}`;
+    document.getElementById('confirmModalJobContext').textContent = title;
+    const disp = document.getElementById('confirmModalAmountDisplay');
+    if (disp) disp.textContent = "TSh " + Number(dutyAmount || 0).toLocaleString();
+    document.getElementById('confirmAmountPaid').value = dutyAmount || '0.00';
+    const refInput = document.getElementById('confirmPaymentRef');
+    if (refInput) {
+        refInput.value = '';
+        refInput.placeholder = controlNo ? `GePG-${controlNo}` : 'TRA-REC-XXXX';
+    }
+    document.getElementById('confirmPaymentDate').value = new Date().toISOString().split('T')[0];
+    openModal('confirmDutyPaymentModal');
+}
+</script>
+{% endblock %}

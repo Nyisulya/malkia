@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+
+{% block title %}Today's Field Jobs | Port &amp; Field Operations{% endblock %}
+
+{% block content %}
+<div style="max-width:960px;margin:0 auto;">
+
+    <!-- GPS & STATION LIVE BANNER -->
+    <div style="background:linear-gradient(135deg, #042F2E 0%, #0D9488 100%);color:#fff;border-radius:var(--radius-xl);padding:1.5rem;margin-bottom:1.5rem;box-shadow:var(--shadow-md);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;background:rgba(255,255,255,0.2);padding:0.25rem 0.75rem;border-radius:999px;font-weight:700;">
+                    <i class="fa-solid fa-car"></i> Port Officer &amp; Field Console
+                </span>
+                <span style="background:rgba(45,212,191,0.25);color:#5EEAD4;font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:999px;font-weight:600;">
+                    <i class="fa-solid fa-circle" style="font-size:0.5rem;vertical-align:middle;"></i> Dar Port &amp; ICD
+                </span>
+            </div>
+            <div style="font-size:0.8rem;color:#CCFBF1;">
+                <i class="fa-regular fa-calendar-check"></i> {{ today|date:"l, d M Y" }}
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <div>
+                <h2 style="font-family:var(--font-heading);font-size:1.4rem;font-weight:800;letter-spacing:-0.02em;margin:0;">
+                    Today's Port &amp; ICD Vehicles
+                </h2>
+                <p style="font-size:0.85rem;color:#E6FFFA;margin-top:0.25rem;">
+                    TRA physical verification, vehicle condition check, and office yard dispatch.
+                </p>
+            </div>
+            <div style="display:flex;gap:0.5rem;">
+                <a href="{% url 'field_updates' %}" class="btn-header-action" style="background:#fff;color:#0F766E;font-weight:700;padding:0.5rem 1rem;border-radius:var(--radius-md);">
+                    <i class="fa-solid fa-pen-to-square"></i> Record Update
+                </a>
+                <a href="{% url 'field_issues' %}" class="btn-header-action" style="background:rgba(239,68,68,0.2);border:1px solid rgba(254,202,202,0.4);color:#fff;font-weight:700;padding:0.5rem 1rem;border-radius:var(--radius-md);">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Report Issue
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4 KPI SUMMARY CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+        <div class="card-panel" style="padding:1.1rem;border-left:4px solid #0D9488;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Assigned Today</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#0F766E;margin-top:0.25rem;">{{ my_jobs_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Shipments for your action</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.1rem;border-left:4px solid #3B82F6;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Pending Verification</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#1D4ED8;margin-top:0.25rem;">{{ verification_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Stage 5 Physical check</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.1rem;border-left:4px solid #F59E0B;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Gate &amp; Loading</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#B45309;margin-top:0.25rem;">{{ gate_loading_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Stages 8 &amp; 10 at terminal</div>
+        </div>
+
+        <div class="card-panel" style="padding:1.1rem;border-left:4px solid #EF4444;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Active Challenges</div>
+            <div style="font-size:1.6rem;font-weight:800;color:#DC2626;margin-top:0.25rem;">{{ open_issues_count }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Port / Mechanical delays</div>
+        </div>
+    </div>
+
+    <!-- FILTER TABS & SEARCH BAR -->
+    <div class="card-panel" style="padding:1rem;margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <!-- TABS -->
+            <div style="display:flex;gap:0.4rem;overflow-x:auto;padding-bottom:0.25rem;">
+                <a href="?tab=my" class="badge-pill {% if filter_tab == 'my' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-user-check"></i> My Assigned ({{ my_jobs_count }})
+                </a>
+                <a href="?tab=port_stages" class="badge-pill {% if filter_tab == 'port_stages' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-anchor"></i> Port Stages (5, 8, 10)
+                </a>
+                <a href="?tab=delayed" class="badge-pill {% if filter_tab == 'delayed' %}badge-delayed{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Delayed / Issues
+                </a>
+                <a href="?tab=all" class="badge-pill {% if filter_tab == 'all' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-border-all"></i> All Active
+                </a>
+            </div>
+
+            <!-- SEARCH -->
+            <form method="GET" action="{% url 'field_today_jobs' %}" style="display:flex;gap:0.4rem;flex:1;max-width:320px;min-width:220px;">
+                <input type="hidden" name="tab" value="{{ filter_tab }}">
+                <input type="text" name="q" class="form-control" placeholder="Search Container, BL, Chassis..." value="{{ search_q }}" style="font-size:0.85rem;padding:0.4rem 0.75rem;">
+                <button type="submit" class="btn-header-action btn-outline" style="padding:0.4rem 0.8rem;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JOB CARDS LIST -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+        {% for job in jobs %}
+        <div class="card-panel" style="padding:1.5rem;border-radius:var(--radius-lg);border-top:4px solid {% if job.status == 'DELAYED' %}#EF4444{% else %}#0D9488{% endif %};box-shadow:var(--shadow-sm);transition:transform 0.15s ease, box-shadow 0.15s ease;">
+
+            <!-- CARD TOP HEADER -->
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.85rem;">
+                <div>
+                    <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+                        {% if is_ceo %}
+                        <!-- CEO SEES OFFICIAL INTERNAL FILE NUMBER -->
+                        <span style="font-family:var(--font-heading);font-size:1.25rem;font-weight:800;color:var(--brand-navy-900);">
+                            {{ job.job_number }}
+                        </span>
+                        <span style="font-size:0.85rem;font-weight:700;color:#0D9488;background:#CCFBF1;padding:0.15rem 0.5rem;border-radius:4px;">
+                            BL: {{ job.bl_number|default:"-" }}
+                        </span>
+                        {% else %}
+                        <!-- INTERNAL USERS SEE BL NUMBER AS THE PRIMARY FILE IDENTIFIER -->
+                        <span style="font-family:var(--font-heading);font-size:1.3rem;font-weight:900;color:var(--brand-navy-900);letter-spacing:0.02em;">
+                            {{ job.bl_number|default:job.job_number }}
+                        </span>
+                        {% endif %}
+
+                        <span class="badge-pill {% if job.status == 'DELAYED' %}badge-delayed{% else %}badge-active{% endif %}" style="font-size:0.75rem;">
+                            Step {{ job.current_stage_number }}/11: {{ job.current_stage_obj.name_en }}
+                        </span>
+                    </div>
+
+                    <!-- CHASSIS DIRECTLY UNDER BL NUMBER + CONSIGNEE -->
+                    <div style="font-size:0.85rem;color:var(--text-muted);margin-top:0.3rem;">
+                        {% if job.chassis_number or job.container_numbers %}
+                        <span style="font-family:monospace;font-size:0.82rem;color:#1E40AF;background:#EFF6FF;padding:0.12rem 0.45rem;border-radius:4px;font-weight:800;margin-right:0.5rem;">
+                            Chassis: {{ job.chassis_number|default:job.container_numbers }}
+                        </span>
+                        {% endif %}
+                        <strong>Consignee:</strong> {{ job.customer.company_name }}
+                    </div>
+                </div>
+
+                <div style="text-align:right;">
+                    <div style="font-size:0.72rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Vessel &amp; Arrival</div>
+                    <div style="font-size:0.88rem;font-weight:700;color:var(--brand-navy-800);">
+                        {{ job.vessel_name|default:"TBA" }} ({{ job.eta_arrival_date|date:"d M Y"|default:"-" }})
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD DETAILS GRID -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;background:#F8FAFC;padding:1rem;border-radius:var(--radius-md);margin-bottom:1.25rem;font-size:0.85rem;">
+                
+                <div>
+                    <div style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">
+                        <i class="fa-solid fa-car"></i> Chassis / Vehicle
+                    </div>
+                    <div style="font-size:1.05rem;font-weight:800;color:#0F766E;margin-top:0.15rem;font-family:monospace;">
+                        {{ job.chassis_number|default:job.container_numbers }}
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.1rem;">
+                        {{ job.cargo_description|default:"Customer Vehicle" }}
+                    </div>
+                </div>
+
+                <div>
+                    <div style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">
+                        <i class="fa-solid fa-location-dot"></i> Current Location
+                    </div>
+                    <div style="font-weight:700;color:var(--brand-navy-900);margin-top:0.15rem;">
+                        {% if job.vehicle_arrived_at_office %}
+                        📍 Malkia Central Yard (Office)
+                        {% elif job.vehicle_dispatched_to_office %}
+                        🚗 En Route to Office Yard
+                        {% elif job.current_stage_number <= 5 %}
+                        Port / TRA Yard (Physical Verification)
+                        {% elif job.current_stage_number <= 9 %}
+                        Port / ICD (Awaiting D/O &amp; Payment)
+                        {% else %}
+                        ICD (Ready for Dispatch)
+                        {% endif %}
+                    </div>
+                    {% if job.final_destination %}
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.1rem;">
+                        Destination: {{ job.final_destination }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <div style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">
+                        <i class="fa-solid fa-clipboard-check"></i> Inspection Status
+                    </div>
+                    <div style="font-weight:700;color:var(--brand-navy-900);margin-top:0.15rem;">
+                        {% if job.vehicle_inspection_done %}
+                        <span style="color:#16A34A;">✅ Inspected at ICD</span>
+                        {% else %}
+                        <span style="color:#D97706;">⏳ Pending Inspection</span>
+                        {% endif %}
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.1rem;">
+                        Mode: {% if job.clearance_mode == 'BOND' %}<strong>IN-BOND</strong>{% else %}<strong>DIRECT</strong>{% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <div style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">
+                        <i class="fa-solid fa-user-shield"></i> Field Assignee
+                    </div>
+                    <div style="font-weight:700;color:var(--brand-navy-900);margin-top:0.15rem;">
+                        {{ job.port_officer.get_full_name|default:"Field Team" }}
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.1rem;">
+                        Clearer: {{ job.clearing_officer.first_name|default:"-" }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTIVE CHALLENGES WARNING IF ANY -->
+            {% with open_job_issues=job.field_issues.all %}
+            {% if open_job_issues %}
+            <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--radius-md);padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;color:#B91C1C;font-size:0.83rem;font-weight:700;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Active Challenge: {{ open_job_issues.first.get_issue_type_display }}
+                    <span style="font-weight:normal;color:#7F1D1D;">({{ open_job_issues.first.description|truncatechars:65 }})</span>
+                </div>
+                <a href="{% url 'field_issues' %}?job_id={{ job.id }}" style="font-size:0.78rem;color:#B91C1C;font-weight:700;text-decoration:underline;">
+                    View / Resolve Issue &rarr;
+                </a>
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- ACTION BUTTONS FOOTER -->
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;padding-top:0.5rem;">
+                {% if not is_ceo %}
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    <a href="{% url 'field_updates' %}?job_id={{ job.id }}" class="btn-header-action btn-primary" style="padding:0.5rem 1.1rem;font-size:0.85rem;background:#0D9488;border-color:#0D9488;">
+                        <i class="fa-solid fa-pen-to-square"></i> Post Update
+                    </a>
+                    <a href="{% url 'field_issues' %}?job_id={{ job.id }}" class="btn-header-action" style="background:#FFF1F2;color:#E11D48;border:1px solid #FECDD3;padding:0.5rem 1rem;font-size:0.85rem;font-weight:600;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Report Issue
+                    </a>
+                </div>
+                {% else %}
+                <div>
+                    <span class="badge-pill badge-draft" style="font-size:0.75rem;">
+                        <i class="fa-solid fa-eye"></i> Oversight Only
+                    </span>
+                </div>
+                {% endif %}
+
+                <div>
+                    <a href="{% url 'job_detail' job.id %}" style="font-size:0.85rem;color:var(--brand-primary);font-weight:700;text-decoration:none;">
+                        <i class="fa-solid fa-folder-open"></i> Full Job Folder &rarr;
+                    </a>
+                </div>
+            </div>
+
+        </div>
+        {% empty %}
+        <div class="card-panel" style="padding:3.5rem 1.5rem;text-align:center;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#F0FDFA;color:#0D9488;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem auto;font-size:1.75rem;">
+                <i class="fa-solid fa-anchor-circle-check"></i>
+            </div>
+            <h4 style="font-family:var(--font-heading);color:var(--brand-navy-900);font-size:1.15rem;font-weight:700;">
+                No Port Jobs In This View
+            </h4>
+            <p style="color:var(--text-muted);font-size:0.85rem;max-width:420px;margin:0.25rem auto 1.25rem auto;">
+                {% if search_q %}
+                No shipments match your search query "{{ search_q }}".
+                {% else %}
+                No shipments currently require operational action in this selected category.
+                {% endif %}
+            </p>
+            <a href="{% url 'field_today_jobs' %}?tab=all" class="btn-header-action btn-outline" style="display:inline-flex;">
+                <i class="fa-solid fa-rotate"></i> Show All Active Jobs
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

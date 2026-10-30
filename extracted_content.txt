@@ -1,0 +1,341 @@
+CLEARING & FORWARDING MANAGEMENT SYSTEM
+SYSTEM REQUIREMENTS DOCUMENT (SRD)
+Kiswahili – English Working Version / Technical Brief
+Document ya kumpa ICT Specialist kwa ajili ya kutengeneza mfumo wa Clearing & Forwarding
+1. PURPOSE YA MFUMO
+Nataka mfumo ambao utasimamia business yote ya Clearing & Forwarding kuanzia mteja anapowasilisha documents, kufunguliwa file, assessment & declaration, duty payment, physical verification, Delivery Order, Release Order, port charges, loading, transport mpaka cargo/container kufikishwa kwa customer na Job kufungwa.
+Mfumo usiwe database ya kuhifadhi taarifa tu. Uwe ni Management & Control System ambao CEO/Management anaweza kuingia na kuona kwa wakati huo shipment iko wapi, nani anahusika, imekaa siku ngapi, nini kimekwama, gharama zilizotumika, mteja amelipa kiasi gani na Job imeleta profit kiasi gani.
+2. MAIN OBJECTIVES
+Kila shipment/container iwe na unique Job Number.
+Kufuatilia shipment step-by-step mpaka delivery.
+Kila stage iwe na Responsible Person.
+Kurecord Start Date/Time, Completion Date/Time, Status, Remarks na Supporting Documents.
+Kusimamia revenue, expenses, approvals na client payments.
+CEO kupata live dashboard bila kutegemea taarifa za mtu kwa simu/WhatsApp.
+Field/Port staff waweze ku-update system kwa kutumia mobile phone.
+Kuwa na complete audit trail ya kila action na change.
+Kutoa reports za Operations, Finance, Clients na Profitability.
+3. WORKFLOW KUU YA SHIPMENT
+Workflow ifuate process iliyo kwenye Work Flow Chart niliyowasilisha:
+S/N
+PROCESS
+TARGET
+SYSTEM ITAKACHOFANYA
+1
+RECEIVED DOCUMENTS
+1 Day
+Documents zinapokelewa kutoka Japan/client/origin; shipment inasajiliwa.
+2
+OPENING FILE
+1 Day
+Digital Job File inafunguliwa baada ya documents kupokelewa.
+3
+ASSESSMENT & DECLARATION
+1–3 Days
+Customs assessment/declaration na follow-up yake.
+4
+DUTY PAYMENT
+1 Day
+Client ana-arrange na kulipa duty; payment ina-recordiwa.
+5
+PHYSICAL VERIFICATION
+1 Day
+Baada ya vessel arrival na confirmation ya duty payment, file ina-forwardiwa.
+6
+DELIVERY ORDER
+1–2 Days
+DO inaombwa na kufuatiliwa mpaka ipatikane.
+7
+RELEASE ORDER
+1 Day
+Release Order inafuatiliwa baada ya physical verification.
+8
+PORT INVOICE
+1 Day
+Port invoice inapatikana kulingana na DO/Release Order.
+9
+PORT CHARGES PAYMENT
+1 Day
+Port charges zinalipwa baada ya invoice kupatikana.
+10
+GET PASS & LOAD CONTAINER
+1 Day
+Gate pass, truck arrangement na container loading/pickup.
+11
+DELIVERY TO CUSTOMER
+1 Day
+Cargo/container inapelekwa kwa customer na POD inapatikana.
+4. JOB/SHIPMENT NUMBER
+Kila shipment iwe na unique Job Number, mfano: CF/2026/0001. Hii ndiyo iwe main reference ya documents, tasks, expenses, payments na reports zote.
+FIELD
+TAARIFA INAYOHITAJIKA
+Job Number
+System-generated unique number
+Client
+Customer anayehusika na shipment
+BL Number
+Bill of Lading number
+Container Number
+Container number; ziweze kuwa zaidi ya moja
+Container Size/Type
+20ft, 40ft, HC, etc.
+Vessel
+Vessel name/voyage
+Origin
+Country/Port of origin
+Port
+Port of arrival
+ETA / Arrival Date
+Expected na actual arrival
+Destination
+Final delivery destination
+Cargo Description
+Aina/maelezo ya cargo
+Responsible Officers
+Documentation, Clearing na Operations staff
+Job Status
+Current stage na overall status
+5. DETAILS ZA KILA STAGE
+5.1 RECEIVED DOCUMENTS
+Register Client na shipment.
+System itengeneze Job Number automatically.
+Capture BL, Vessel, Container, Cargo na Origin information.
+Upload documents.
+Record date/time received na staff aliyepokea.
+System ionyeshe missing documents kama zipo.
+5.2 OPENING FILE
+Digital file ifunguliwe chini ya Job Number.
+Documents zote zihifadhiwe kwenye file moja.
+Record file opening date na responsible officer.
+Ordinary user asiweze kufuta file bila permission.
+5.3 ASSESSMENT & DECLARATION
+Record declaration/assessment number.
+Record assessed duty na relevant charges.
+Track submitted/completed status.
+Upload supporting documents.
+System ionyeshe siku zilizotumika against target ya 1–3 days.
+5.4 DUTY PAYMENT
+Record amount payable, amount paid, payment date na payment reference.
+Upload receipt/evidence ya payment.
+Show outstanding balance.
+Next controlled stage isiruke kama payment confirmation bado haijapatikana.
+5.5 PHYSICAL VERIFICATION
+Record vessel arrival date.
+Record date file forwarded.
+Assign responsible officer.
+Record verification date, status na remarks.
+Field officer aweze kupakia photo/document kwa mobile.
+5.6 DELIVERY ORDER
+Record application date, DO number, charges na date received.
+Track PENDING / APPLIED / RECEIVED.
+Record responsible officer na remarks.
+5.7 RELEASE ORDER
+Record request date na receipt date.
+Record Release Order number.
+Record responsible officer.
+System ifungue next stage baada ya completion.
+5.8 PORT INVOICE
+Record invoice number, date, amount na due date.
+Link invoice na Job Number.
+Record payment status.
+5.9 PORT CHARGES PAYMENT
+Record amount payable na amount paid.
+Record payment date/reference.
+Upload receipt.
+Expense i-linkwe na Job Number.
+5.10 GATE PASS, LOADING & TRANSPORT
+Record Gate Pass number.
+Assign truck na driver.
+Record container number, seal number, pickup date/time.
+Record departure na destination.
+Port/field officer aweze ku-update kwa mobile.
+5.11 DELIVERY & JOB CLOSURE
+Record expected na actual delivery date.
+Upload Proof of Delivery (POD).
+Record customer acknowledgement/signature/photo where applicable.
+Job iwe CLOSED/COMPLETED baada ya required conditions kukamilika.
+Historia yote ibaki kwenye system kwa audit na future reference.
+6. USERS NA USER ROLES
+USER
+MAIN RESPONSIBILITIES / ACCESS
+CEO / Managing Director
+Full visibility; dashboard, reports, financial oversight, approvals na audit.
+Operations Manager
+Monitoring ya shipments, task assignment, port operations, transport na delivery.
+Documentation Officer
+Client registration, receiving documents, opening files, uploads na missing documents.
+Clearing Officer
+Assessment, declaration, customs updates, verification na release process.
+Accounts / Finance
+Invoices, receipts, payments, expenses, port charges, client balances na financial reports.
+Port / Operations Officer
+Mobile updates: vessel arrival, verification, DO, release, port invoice, loading na dispatch.
+Driver
+Limited mobile access: assigned job, pickup/delivery instructions na POD.
+System Administrator
+Users, roles, permissions, settings, backups/technical administration.
+7. SIMU AU COMPUTER?
+Office staff watumie zaidi Desktop/Laptop.
+Port/Field staff watumie Mobile Phone (iPhone/Android).
+System iwe Web-based/Cloud-based ili iwe accessible kutoka office, port na field.
+Mobile interface iwe responsive na iwe rahisi kupakia photos/documents.
+CEO/Management aweze kuingia remotely kwa secure connection.
+8. FINANCE, APPROVALS & INTERNAL CONTROL
+Nataka system iwe na control ya matumizi. Expense isiwe tu ina-recordiwa; pale inapohitajika ipitie approval kulingana na authority level.
+Kila expense inayohusiana na shipment lazima iunganishwe na Job Number.
+System iwe na configurable approval limits.
+Expense request ionyeshe Requester, Job Number, Purpose, Amount, Supporting Document, Approver, Approval Date na Payment Status.
+Status ziwe REQUESTED, APPROVED, REJECTED, PAID au CANCELLED.
+Approval limits ziweze kubadilishwa na management bila developer kubadilisha code.
+Mfano wa approval matrix — amounts hizi ni mfano na zitathibitishwa na management:
+AMOUNT
+EXAMPLE APPROVAL
+Hadi TSh 500,000
+Operations/Authorized Manager
+TSh 500,001–2,000,000
+Manager/Authorized Approver
+Zaidi ya TSh 2,000,000
+CEO/Senior Approver
+9. JOB PROFITABILITY
+Kila Job iweze kuonyesha Revenue dhidi ya Total Cost ili management ijue profitability ya kila shipment.
+ITEM
+EXAMPLE
+Client Revenue
+TSh 4,000,000
+Port Charges
+TSh 1,500,000
+Transport
+TSh 800,000
+Documentation/Other Costs
+TSh 250,000
+Total Job Cost
+TSh 2,550,000
+Gross Margin
+TSh 1,450,000
+10. CUSTOMER MANAGEMENT
+Company name, contact person, phone, email, address, TIN.
+Payment terms na credit limit.
+Outstanding balance.
+Complete shipment history.
+Revenue na profitability kwa client.
+Search by Client Name, Container Number, BL Number au Job Number.
+11. DOCUMENT MANAGEMENT
+Kila Job iwe na digital folder yenye, pale inapohitajika:
+Bill of Lading
+Commercial Invoice
+Packing List
+Certificate of Origin/other import documents
+Customs Declaration/Assessment
+Duty Payment Receipt
+Delivery Order
+Release Order
+Port Invoice
+Port Payment Receipt
+Gate Pass
+Proof of Delivery (POD)
+Other Supporting Documents
+12. ALERTS & NOTIFICATIONS
+Alert kama stage imezidi target days.
+Alert kwa pending client payment.
+Alert vessel ikifika na physical verification inaweza kuanza.
+Alert kwa pending DO/Release/Port Payment.
+Alert kwa delayed delivery.
+Dashboard ionyeshe overdue tasks.
+Future: SMS, Email na WhatsApp integration.
+13. CEO / MANAGEMENT DASHBOARD
+CEO akifungua dashboard aweze kuona kwa haraka:
+AREA
+KEY INFORMATION
+Operations
+Active Jobs, Completed, Pending, Delayed
+Port
+Containers at Port, Under Verification, Awaiting DO, Awaiting Release
+Transport
+In Transit, Scheduled Deliveries, Delivered
+Finance
+Revenue, Expenses, Gross Margin, Outstanding Client Payments
+Performance
+Average Clearance Time, Average Delivery Time, Jobs per Month
+Clients
+Jobs, Revenue na Outstanding Balance kwa kila Client
+14. REPORTS / OUTPUTS
+Job/Shipment Report
+Shipment Status/Tracking Report
+Client Invoice
+Payment Receipt
+Expense Voucher
+Expense Approval Report
+Container Tracking Report
+Daily Operations Report
+Weekly/Monthly Management Report
+Profitability per Shipment
+Client Statement
+Outstanding Payments Report
+Delayed Shipments Report
+Completed Jobs Report
+Proof of Delivery (POD)
+Reports ziweze kutolewa kwa PDF na Excel where appropriate.
+15. AUDIT TRAIL – MUHIMU SANA
+Kila transaction/change iwe na record ya WHO – WHAT – WHEN.
+Who created the record.
+Who changed the record.
+Date and time ya change.
+Previous value na new value kwa important fields.
+Who approved na approval date/time.
+Payment user na payment reference.
+Document upload history.
+16. SECURITY
+Individual username/password; shared accounts zisitumike.
+Role-based permissions.
+Two-factor authentication kwa management/critical users where feasible.
+Automatic backup.
+HTTPS/encrypted communication.
+Secure password policy na session timeout.
+Financial information iwe restricted kwa authorized users.
+Audit trail isiwe deletable/editable na ordinary users.
+17. JOB CLOSURE
+Job isifutwe baada ya completion. Iwe marked CLOSED/COMPLETED na history yote ibaki.
+Search ya Container Number au Job Number ionyeshe Client, Vessel, Documents, Duty, Port Charges, Transport, Revenue, Expenses, Profitability, Delivery Date na POD.
+18. MAIN SYSTEM MENU
+Dashboard
+Customers
+Shipments / Jobs
+Documents
+Customs / Clearing
+Port Operations
+Transport & Delivery
+Finance
+Expenses & Approvals
+Invoices & Receipts
+Reports
+Notifications
+Users & Permissions
+Settings
+Audit Trail
+19. DEVELOPMENT PHASES
+PHASE
+WHAT TO BUILD
+Phase 1 – Core System
+Customers, Job creation, documents, workflow tracking, users, dashboard na basic reports.
+Phase 2 – Finance
+Invoices, payments, expenses, approvals, profitability na client balances.
+Phase 3 – Field Operations
+Mobile interface, driver management, POD, photos na optional GPS/location.
+Phase 4 – Integrations
+SMS, WhatsApp, Email, accounting system na other authorized integrations/APIs.
+20. VERY IMPORTANT DESIGN PRINCIPLE
+Sitaki mfumo ambao una-record data tu. Nataka mfumo wa kusimamia business nzima ya Clearing & Forwarding. CEO aweze kufungua dashboard na kujua: shipment iko wapi, nani anahusika, imechukua muda gani, nini kimekwama, imetumia kiasi gani, client amelipa kiasi gani na Job ina profit kiasi gani.
+Kwa kila stage mfumo capture: Responsible Person + Start Date/Time + Completion Date/Time + Status + Remarks + Supporting Document + Approval (where required).
+21. MAMBO YA KUTHIBITISHA KABLA YA DEVELOPMENT
+Company name, logo na branding.
+Final list ya users na roles.
+Exact approval limits za expenses/payments.
+Final invoice/receipt formats.
+Accounting integration iwe Phase 1 au later.
+SMS/WhatsApp integration iwepo launch au Phase 2.
+Ports, shipping lines na special operational processes zinazotumika.
+Data retention na backup requirements.
+Hosting preference na budget.
+Government/Port/Customs integrations na available APIs/authorizations.
+22. FINAL NOTE TO ICT SPECIALIST
+Developer atengeneze system kwa kuzingatia kwamba workflow inaweza kubadilika na management inaweza kuongeza stages, users, approval limits au reports baadaye. Hivyo system iwe configurable as much as possible badala ya hard-coding kila kitu.

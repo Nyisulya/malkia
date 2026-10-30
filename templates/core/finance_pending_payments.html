@@ -1,0 +1,677 @@
+{% extends 'base.html' %}
+
+{% block title %}Pending Payments & Disbursements | Malkia C&F{% endblock %}
+
+{% block content %}
+<div class="page-header-box">
+    <div>
+        <h2 class="page-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Pending Payments & Disbursements Hub</h2>
+        <p class="page-subtitle">Review, authorize, and disburse operational payments across TRA duty, shipping line D/Os, port charges, gate passes, and haulage fuel.</p>
+    </div>
+    <div style="display:flex;gap:0.75rem;">
+        <a href="{% url 'finance_transactions' %}" class="btn-header-action btn-outline">
+            <i class="fa-solid fa-receipt"></i> Transactions Ledger
+        </a>
+        {% if is_finance and not is_ceo %}
+        <button type="button" class="btn-header-action btn-primary" onclick="openModal('createExpenseModal')">
+            <i class="fa-solid fa-plus"></i> Request Payment Voucher
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- KPI SUMMARY PILLS (EXPENSE CATEGORIES FROM SPEC) -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));margin-bottom:1.5rem;">
+    <div class="kpi-card kpi-rose">
+        <div class="kpi-header">
+            <span class="kpi-title">Total Pending Payments</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-money-bill-wave"></i></div>
+        </div>
+        <div class="kpi-value">{{ total_pending_count }}</div>
+        <div class="kpi-meta">
+            <span style="font-weight:700;color:#DC2626;">TSh {{ total_pending_amount|floatformat:0 }}</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-amber">
+        <div class="kpi-header">
+            <span class="kpi-title">TRA Customs Duty</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp"></i></div>
+        </div>
+        <div class="kpi-value">{{ tra_duty_count }}</div>
+        <div class="kpi-meta">
+            <span>Control numbers & tax bills</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-blue">
+        <div class="kpi-header">
+            <span class="kpi-title">Shipping Line D/O</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-ship"></i></div>
+        </div>
+        <div class="kpi-value">{{ shipping_do_count }}</div>
+        <div class="kpi-meta">
+            <span>D/O release fees & demurrage</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-cyan">
+        <div class="kpi-header">
+            <span class="kpi-title">Port & Wharfage</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-anchor"></i></div>
+        </div>
+        <div class="kpi-value">{{ port_charges_count }}</div>
+        <div class="kpi-meta">
+            <span>TPA & TICTS terminal charges</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-emerald">
+        <div class="kpi-header">
+            <span class="kpi-title">Gate Pass & Fuel</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-gas-pump"></i></div>
+        </div>
+        <div class="kpi-value">{{ gate_pass_count|add:fuel_count }}</div>
+        <div class="kpi-meta">
+            <span>Truck haulage & exit permits</span>
+        </div>
+    </div>
+</div>
+
+<!-- APPROVAL MATRIX POLICY BANNER -->
+<div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <strong style="color:var(--brand-navy-900);font-size:0.9rem;"><i class="fa-solid fa-shield-halved"></i> Multi-Tier Financial Authority Policy:</strong>
+        <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">
+            &le; TSh 500,000: <strong>Operations Manager</strong> &bull; 
+            TSh 500,001 - 2,000,000: <strong>Finance Director</strong> &bull; 
+            &gt; TSh 2,000,000: <strong>CEO / Managing Director</strong>
+        </div>
+    </div>
+    <span class="badge-pill" style="background:#F1F5F9;color:#334155;font-weight:700;">Internal Control Enforced</span>
+</div>
+
+<!-- SEARCH & FILTER BAR -->
+<div class="card-panel" style="padding:1.25rem;margin-bottom:1.5rem;background:#FFFFFF;">
+    <form method="GET" action="{% url 'finance_pending_payments' %}" style="display:flex;flex-direction:column;gap:1rem;">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:1rem;">
+            <div style="flex:1;min-width:260px;">
+                <input type="text" name="q" class="form-control" placeholder="Search by Voucher #, Job #, B/L #, Client, or description..." value="{{ search_query }}">
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <a href="{% url 'finance_pending_payments' %}?status=pending{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn-header-action {% if status_filter == 'pending' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
+                    Active Pending
+                </a>
+                <a href="{% url 'finance_pending_payments' %}?status=requested{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn-header-action {% if status_filter == 'requested' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
+                    Awaiting Approval
+                </a>
+                <a href="{% url 'finance_pending_payments' %}?status=approved{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn-header-action {% if status_filter == 'approved' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
+                    Ready for Payout
+                </a>
+                <a href="{% url 'finance_pending_payments' %}?status=paid{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn-header-action {% if status_filter == 'paid' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
+                    Disbursed / Paid
+                </a>
+            </div>
+            <div>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.6rem 1rem;">
+                    <i class="fa-solid fa-magnifying-glass"></i> Filter
+                </button>
+                {% if search_query or category_filter or status_filter != 'pending' %}
+                <a href="{% url 'finance_pending_payments' %}" class="btn-header-action btn-outline" style="padding:0.6rem 0.9rem;">
+                    Reset
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- CATEGORY PILLS FILTER (INSTANT CLIENT-SIDE FILTER) -->
+        <div style="display:flex;align-items:center;gap:0.5rem;overflow-x:auto;padding-top:0.5rem;border-top:1px solid #F1F5F9;" id="expenseCategoryPills">
+            <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);white-space:nowrap;">Category Filter:</span>
+            <button type="button" onclick="filterExpenseCategory('ALL', this)" class="badge-pill exp-cat-pill badge-active" style="border:none;cursor:pointer;">
+                All Categories
+            </button>
+            <button type="button" onclick="filterExpenseCategory('CUSTOMS_DUTY', this)" class="badge-pill exp-cat-pill badge-closed" style="border:none;cursor:pointer;">
+                TRA Duty ({{ tra_duty_count }})
+            </button>
+            <button type="button" onclick="filterExpenseCategory('SHIPPING_LINE', this)" class="badge-pill exp-cat-pill badge-closed" style="border:none;cursor:pointer;">
+                Shipping D/O ({{ shipping_do_count }})
+            </button>
+            <button type="button" onclick="filterExpenseCategory('PORT_CHARGES', this)" class="badge-pill exp-cat-pill badge-closed" style="border:none;cursor:pointer;">
+                Port Charges ({{ port_charges_count }})
+            </button>
+            <button type="button" onclick="filterExpenseCategory('PORT_HANDLING', this)" class="badge-pill exp-cat-pill badge-closed" style="border:none;cursor:pointer;">
+                Gate Pass ({{ gate_pass_count }})
+            </button>
+            <button type="button" onclick="filterExpenseCategory('TRANSPORT', this)" class="badge-pill exp-cat-pill badge-closed" style="border:none;cursor:pointer;">
+                Fuel & Haulage ({{ fuel_count }})
+            </button>
+            <button type="button" onclick="filterExpenseCategory('OTHER', this)" class="badge-pill exp-cat-pill badge-closed" style="border:none;cursor:pointer;">
+                Other Expenses ({{ other_count }})
+            </button>
+        </div>
+    </form>
+</div>
+
+{% if pending_duty_jobs %}
+<!-- TRA CUSTOMS DUTY VERIFICATIONS (DIRECT CLIENT PAYMENTS / GEPG) -->
+<div class="card-panel" style="margin-bottom:1.5rem;border-left:4px solid #F59E0B;">
+    <div class="card-panel-header" style="background:#FFFBEB;border-bottom:1px solid #FDE68A;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+            <h3 class="panel-title" style="color:#B45309;"><i class="fa-solid fa-stamp"></i> TRA Customs Duty - Pending Verification ({{ pending_duty_jobs|length }})</h3>
+            <p class="panel-description" style="color:#92400E;">GePG control numbers issued to clients. Once client deposits tax or sends TRA Electronic Receipt, verify here to advance cargo to Port Verification.</p>
+        </div>
+        <span class="badge-pill" style="background:#FEF3C7;color:#B45309;font-weight:700;">Stage 4: Duty Payment</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>B/L &amp; Chassis No</th>
+                    <th>Importer / Consignee</th>
+                    <th>TANSAD Entry #</th>
+                    <th>GePG Control #</th>
+                    <th>Assessed Duty</th>
+                    <th>Payment Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in pending_duty_jobs %}
+                <tr>
+                    <td style="white-space:nowrap;">
+                        {% if is_ceo %}
+                        <div style="font-size:0.76rem;font-weight:800;color:#0F766E;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:#0F766E;text-decoration:none;">{{ job.job_number }}</a>
+                        </div>
+                        <div style="font-size:0.95rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;margin-top:0.1rem;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                        </div>
+                        {% else %}
+                        <div style="font-size:0.95rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                        </div>
+                        {% endif %}
+                        {% if job.chassis_number %}
+                        <div style="font-family:monospace;font-size:0.75rem;color:#1E40AF;margin-top:0.15rem;white-space:nowrap;">
+                            Chassis: <span style="background:#EFF6FF;padding:0.06rem 0.35rem;border-radius:3px;font-weight:700;border:1px solid #DBEAFE;">{{ job.chassis_number }}</span>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="font-size:0.85rem;color:var(--brand-navy-900);">{{ job.customer.company_name }}</strong>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">TIN: {{ job.customer.tin_number|default:'N/A' }}</div>
+                    </td>
+                    <td>
+                        <span style="font-family:monospace;font-size:0.82rem;font-weight:700;">{{ job.declaration_number|default:'Pending' }}</span>
+
+                    </td>
+                    <td>
+                        {% if job.duty_control_number %}
+                        <div style="display:flex;align-items:center;gap:0.4rem;">
+                            <strong style="font-family:monospace;font-size:0.95rem;color:var(--brand-navy-900);letter-spacing:0.5px;">{{ job.duty_control_number }}</strong>
+                            <button type="button" class="btn-action-icon" onclick="navigator.clipboard.writeText('{{ job.duty_control_number }}');alert('Control Number Copied: {{ job.duty_control_number }}');" title="Copy Control Number" style="border:none;background:none;cursor:pointer;color:var(--text-muted);">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                        {% else %}
+                        <span style="color:var(--text-muted);font-size:0.8rem;">Pending Issue</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="font-size:0.95rem;color:#0F172A;">
+                            TSh {{ job.assessed_duty_amount|floatformat:2 }}
+                        </strong>
+                    </td>
+                    <td>
+                        <span class="badge-pill badge-amber" style="font-size:0.75rem;">
+                            <i class="fa-solid fa-clock"></i> Awaiting Receipt
+                        </span>
+                    </td>
+                    <td>
+                        {% if is_finance or is_admin or is_ops %}
+                        <button type="button" class="btn-header-action btn-primary" onclick="openVerifyDutyModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.duty_control_number }}', '{{ job.assessed_duty_amount|stringformat:'.2f' }}', '{{ job.bl_number|escapejs }}')" style="padding:0.4rem 0.85rem;font-size:0.78rem;font-weight:700;">
+                            <i class="fa-solid fa-circle-check"></i> Verify Payment
+                        </button>
+                        {% else %}
+                        <span style="font-size:0.75rem;color:var(--text-muted);">Finance only</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if status_filter == 'paid' and paid_duty_jobs %}
+<!-- TRA CUSTOMS DUTY VERIFIED & SETTLED (DIRECT CLIENT / GEPG SETTLEMENTS) -->
+<div class="card-panel" style="margin-bottom:1.5rem;border-left:4px solid #059669;">
+    <div class="card-panel-header" style="background:#ECFDF5;border-bottom:1px solid #A7F3D0;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+            <h3 class="panel-title" style="color:#065F46;"><i class="fa-solid fa-stamp"></i> TRA Customs Duty - Verified &amp; Settled ({{ paid_duty_jobs|length }})</h3>
+            <p class="panel-description" style="color:#047857;">Statutory customs duty payments verified by finance and cleared with TRA electronic receipts.</p>
+        </div>
+        <span class="badge-pill" style="background:#D1FAE5;color:#065F46;font-weight:700;">Verified TRA Payments</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>B/L &amp; Chassis No</th>
+                    <th>Importer / Consignee</th>
+                    <th>TANSAD Entry #</th>
+                    <th>GePG Control #</th>
+                    <th>Settled Duty</th>
+                    <th>TRA E-Receipt Ref</th>
+                    <th>Payment Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in paid_duty_jobs %}
+                <tr>
+                    <td style="white-space:nowrap;">
+                        {% if is_ceo %}
+                        <div style="font-size:0.76rem;font-weight:800;color:#0F766E;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:#0F766E;text-decoration:none;">{{ job.job_number }}</a>
+                        </div>
+                        <div style="font-size:0.95rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;margin-top:0.1rem;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                        </div>
+                        {% else %}
+                        <div style="font-size:0.95rem;font-weight:900;color:#0F172A;letter-spacing:0.02em;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:inherit;text-decoration:none;">{{ job.bl_number|default:job.job_number }}</a>
+                        </div>
+                        {% endif %}
+                        {% if job.chassis_number %}
+                        <div style="font-family:monospace;font-size:0.75rem;color:#1E40AF;margin-top:0.15rem;white-space:nowrap;">
+                            Chassis: <span style="background:#EFF6FF;padding:0.06rem 0.35rem;border-radius:3px;font-weight:700;border:1px solid #DBEAFE;">{{ job.chassis_number }}</span>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="font-size:0.85rem;color:var(--brand-navy-900);">{{ job.customer.company_name }}</strong>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">TIN: {{ job.customer.tin_number|default:'N/A' }}</div>
+                    </td>
+                    <td>
+                        <span style="font-family:monospace;font-size:0.82rem;font-weight:700;">{{ job.declaration_number|default:'N/A' }}</span>
+
+                    </td>
+                    <td>
+                        <strong style="font-family:monospace;font-size:0.92rem;color:var(--brand-navy-900);">{{ job.duty_control_number|default:'N/A' }}</strong>
+                    </td>
+                    <td>
+                        <strong style="font-size:0.95rem;color:#059669;">
+                            TSh {{ job.assessed_duty_amount|floatformat:2 }}
+                        </strong>
+                    </td>
+                    <td>
+                        <span style="font-family:monospace;font-weight:700;color:var(--brand-navy-900);background:#FEF3C7;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.82rem;">
+                            {{ job.duty_payment_reference|default:'TRA Verified' }}
+                        </span>
+                    </td>
+                    <td>
+                        <span style="font-size:0.82rem;color:var(--text-muted);">{{ job.duty_payment_date|date:"d M Y"|default:"Verified" }}</span>
+                    </td>
+                    <td>
+                        <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.75rem;font-size:0.78rem;">
+                            <i class="fa-solid fa-folder-open"></i> View Job
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- PAYMENTS TABLE -->
+<div class="card-panel">
+    <div class="card-panel-header">
+        <div>
+            <h3 class="panel-title"><i class="fa-solid fa-file-invoice-dollar"></i> Operational Payment Requests</h3>
+            <p class="panel-description">Review requested amounts, check supporting attachments, and authorize disbursement</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-table" id="expensesTable">
+            <thead>
+                <tr>
+                    <th>Voucher #</th>
+                    <th>Shipment Job Ref</th>
+                    <th>Expense Type</th>
+                    <th>Amount (TSh)</th>
+                    <th>Approval Authority</th>
+                    <th>Status</th>
+                    <th>Requester</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exp in expenses %}
+                <tr class="expense-row" data-category="{{ exp.category }}">
+
+                    <td>
+                        <strong style="font-family:monospace;font-size:0.9rem;color:var(--brand-navy-900);">
+                            {{ exp.voucher_number }}
+                        </strong>
+                        <div style="font-size:0.7rem;color:var(--text-muted);">{{ exp.requested_at|date:"d M Y H:i" }}</div>
+                    </td>
+                    <td>
+                        <strong style="font-size:0.9rem;">
+                            <a href="{% url 'job_detail' exp.job.id %}" style="color:var(--brand-primary);text-decoration:none;">
+                                {{ exp.job.job_number }}
+                            </a>
+                        </strong>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">{{ exp.job.customer.company_name|truncatechars:24 }}</div>
+                    </td>
+                    <td>
+                        <span class="badge-pill" style="background:#F1F5F9;color:#334155;font-weight:600;">
+                            {{ exp.get_category_display }}
+                        </span>
+                        {% if exp.control_number %}
+                        <div style="background:#EEF2FF;border:1px solid #C7D2FE;padding:0.2rem 0.45rem;border-radius:4px;margin-top:0.35rem;display:inline-flex;align-items:center;gap:0.35rem;">
+                            <strong style="color:#4338CA;font-family:monospace;font-size:0.85rem;">{{ exp.control_number }}</strong>
+                            <button type="button" onclick="navigator.clipboard.writeText('{{ exp.control_number }}');alert('Copied Control No: {{ exp.control_number }}');" style="border:none;background:none;cursor:pointer;color:#4F46E5;font-size:0.75rem;padding:0;" title="Copy to clipboard">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                        {% endif %}
+                        {% if exp.beneficiary_name %}
+                        <div style="font-size:0.72rem;color:#475569;font-weight:600;margin-top:0.15rem;">Payee: {{ exp.beneficiary_name }}</div>
+                        {% endif %}
+                        {% if exp.supporting_document %}
+                        <div style="margin-top:0.25rem;">
+                            <a href="{{ exp.supporting_document.url }}" target="_blank" class="badge-pill" style="background:#E0E7FF;color:#3730A3;font-size:0.7rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.25rem;">
+                                <i class="fa-solid fa-file-image"></i> View Slip
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% if exp.description %}
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ exp.description }}">
+                            {{ exp.description }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="font-size:0.95rem;color:var(--brand-navy-900);">
+                            TSh {{ exp.amount|floatformat:0 }}
+                        </strong>
+                    </td>
+                    <td>
+                        <span class="badge-pill" style="background:#FEF3C7;color:#B45309;font-weight:700;">
+                            {{ exp.get_required_role_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge-pill {% if exp.approval_status == 'APPROVED' %}badge-completed{% elif exp.approval_status == 'REQUESTED' %}badge-delayed{% elif exp.approval_status == 'PAID' %}badge-completed{% else %}badge-closed{% endif %}">
+                            {{ exp.get_approval_status_display }}
+                        </span>
+                        {% if exp.is_paid %}
+                        <div style="font-size:0.7rem;color:#059669;margin-top:0.2rem;font-weight:700;">
+                            <i class="fa-solid fa-circle-check"></i> Disbursed
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="font-size:0.8rem;color:var(--text-main);">
+                            {{ exp.requester.get_full_name|default:exp.requester.username }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if exp.approval_status == 'REQUESTED' %}
+                            {% if is_admin or is_ceo or is_finance and exp.amount <= 2000000 or is_ops and exp.amount <= 500000 %}
+                            <form action="{% url 'expense_approval' exp.id %}" method="POST" style="display:inline-flex;gap:0.35rem;">
+                                {% csrf_token %}
+                                <button type="submit" name="decision" value="APPROVE" class="btn-header-action btn-primary" style="background:#059669;padding:0.35rem 0.75rem;font-size:0.75rem;font-weight:700;">
+                                    <i class="fa-solid fa-check"></i> Approve
+                                </button>
+                                <button type="submit" name="decision" value="REJECT" class="btn-header-action btn-outline" style="color:#DC2626;border-color:#FCA5A5;padding:0.35rem 0.75rem;font-size:0.75rem;font-weight:700;">
+                                    <i class="fa-solid fa-xmark"></i> Reject
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="badge-pill" style="background:#FEF3C7;color:#B45309;font-size:0.72rem;font-weight:700;" title="Requires {{ exp.get_required_role_display }}">
+                                <i class="fa-solid fa-lock"></i> Pending {{ exp.get_required_role_display }}
+                            </span>
+                            {% endif %}
+                        {% elif exp.approval_status == 'APPROVED' and not exp.is_paid %}
+                            {% if is_finance or is_admin %}
+                            <button type="button" class="btn-header-action btn-primary" onclick="openDisburseModal('{{ exp.id }}', '{{ exp.voucher_number }}', '{{ exp.amount|floatformat:0 }}')" style="padding:0.35rem 0.85rem;font-size:0.75rem;white-space:nowrap;font-weight:700;">
+                                <i class="fa-solid fa-money-bill-wave"></i> Disburse Funds
+                            </button>
+                            {% else %}
+                            <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;"><i class="fa-solid fa-clock"></i> Awaiting Finance Payout</span>
+                            {% endif %}
+                        {% else %}
+                        <div style="font-size:0.75rem;color:var(--text-muted);">
+                            Ref: <strong>{{ exp.payment_reference|default:"Settled" }}</strong>
+                            {% if exp.supporting_document %}
+                            <a href="{{ exp.supporting_document.url }}" target="_blank" style="margin-left:0.3rem;color:var(--brand-primary);"><i class="fa-solid fa-file-pdf"></i></a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align:center;padding:3rem;color:var(--text-muted);">
+                        <i class="fa-solid fa-circle-check" style="font-size:2.5rem;color:#10B981;margin-bottom:0.75rem;display:block;"></i>
+                        No pending payments found matching your filter criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- DISBURSEMENT MODAL -->
+<div id="disburseModal" class="modal-overlay">
+    <div class="modal-card">
+        <form id="disburseForm" action="" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="PAY">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Disburse Payment Voucher</h3>
+                    <p id="disburseVoucherLabel" style="font-size:0.8rem;color:var(--text-muted);">Confirm funds disbursement</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('disburseModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Amount to Disburse</label>
+                    <input type="text" id="disburseAmountDisplay" class="form-control" readonly style="font-weight:700;font-size:1.1rem;background:#F8FAFC;">
+                </div>
+                <div class="form-group">
+                    <label>Disbursement Channel / Njia ya Kutoa Pesa *</label>
+                    <select name="payment_method" class="form-control">
+                        <option value="BANK">Bank Transfer / Cheque</option>
+                        <option value="CASH">Cashier Cash / Petty Cash</option>
+                        <option value="MOBILE_MONEY">Mobile Money (M-Pesa / TigoPesa)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Payment Reference / Transaction ID *</label>
+                    <input type="text" name="payment_reference" class="form-control" placeholder="e.g. CRDB-TT-948102, Cheque #00412, or M-PESA REF" required>
+                    <small style="color:var(--text-muted);font-size:0.75rem;">Bank transfer reference, cheque number, or petty cash voucher #.</small>
+                </div>
+                <div class="form-group">
+                    <label>Finance Disbursement Notes</label>
+                    <textarea name="remarks" class="form-control" rows="2" placeholder="e.g. Paid to shipping agent cashier for original BL release..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('disburseModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-check"></i> Confirm Payment & Disburse
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CREATE EXPENSE MODAL -->
+<div id="createExpenseModal" class="modal-overlay">
+    <div class="modal-card">
+        <form action="{% url 'expense_create' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h3 class="modal-title">Request Payment / Expense Voucher</h3>
+                <button type="button" class="modal-close-btn" onclick="closeModal('createExpenseModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select Shipment Job *</label>
+                    <select name="job_id" class="form-control" required>
+                        <option value="">-- Choose Job Shipment --</option>
+                        {% for j in jobs %}
+                        <option value="{{ j.id }}">{{ j.job_number }} - {{ j.customer.company_name }} ({{ j.bl_number }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Category *</label>
+                        <select name="category" class="form-control" required>
+                            {% for cat_val, cat_label in categories %}
+                            <option value="{{ cat_val }}">{{ cat_label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Amount (TSh) *</label>
+                        <input type="number" step="0.01" name="amount" class="form-control" placeholder="e.g. 850000" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Preferred Payment Channel / Njia ya Malipo</label>
+                    <select name="payment_method" class="form-control">
+                        <option value="BANK">Direct Bank Transfer / Cheque</option>
+                        <option value="CASH">Cashier Cash / Petty Cash</option>
+                        <option value="MOBILE_MONEY">Mobile Money (M-Pesa / TigoPesa)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description & Reason *</label>
+                    <textarea name="description" class="form-control" rows="2" placeholder="e.g. Shipping Line Delivery Order fee invoice settlement..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Supporting Receipt / Proforma Invoice (PDF or Image)</label>
+                    <input type="file" name="receipt_file" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('createExpenseModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-paper-plane"></i> Submit for Approval
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- VERIFY DUTY PAYMENT MODAL (FINANCE - ULTRA STREAMLINED) -->
+<div id="verifyDutyModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:520px;border-radius:12px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
+        <form id="verifyDutyForm" action="" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="finance">
+            <input type="hidden" name="amount_paid" id="verifyDutyAmount">
+            <input type="hidden" name="payment_date" id="verifyDutyDate">
+            
+            <div class="modal-header" style="background:linear-gradient(135deg, #0F766E 0%, #0D9488 100%);color:#FFFFFF;padding:1.15rem 1.5rem;">
+                <div>
+                    <h3 class="modal-title" style="color:#FFFFFF;display:flex;align-items:center;gap:0.5rem;font-size:1.1rem;font-weight:800;">
+                        <i class="fa-solid fa-receipt"></i> Verify TRA Duty Payment
+                    </h3>
+                    <p style="font-size:0.8rem;color:#CCFBF1;margin-top:0.2rem;">Confirm GePG customs tax settlement</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('verifyDutyModal')" style="color:#FFFFFF;">&times;</button>
+            </div>
+
+            <div class="modal-body" style="padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;background:#FFFFFF;">
+                <!-- SUMMARY CARD -->
+                <div style="background:#F0FDFA;border:1.5px solid #99F6E4;padding:1rem 1.25rem;border-radius:10px;text-align:center;">
+                    <div style="font-size:0.8rem;font-weight:700;color:#0F766E;text-transform:uppercase;letter-spacing:0.04em;" id="verifyDutyJobContext">B/L: MIN-3737-E | Control #: 77778899</div>
+                    <div style="font-size:1.65rem;font-weight:900;color:#0F766E;margin-top:0.35rem;" id="verifyDutyAmountDisplay">TSh 0.00</div>
+                    <div style="font-size:0.75rem;color:#115E59;margin-top:0.35rem;">
+                        <i class="fa-solid fa-circle-info"></i> Approving automatically moves file to <strong>Stage 5: Port Verification</strong>.
+                    </div>
+                </div>
+
+                <!-- OPTIONAL RECEIPT REF (DEFAULTS TO CONTROL NO) -->
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;color:#334155;">Bank Slip / TRA E-Receipt Ref (Optional)</label>
+                    <input type="text" name="payment_reference" id="verifyDutyRef" class="form-control" placeholder="Leave blank to use GePG Control #" style="font-family:monospace;font-size:0.88rem;">
+                    <small style="color:var(--text-muted);font-size:0.74rem;margin-top:0.2rem;display:block;">If left empty, system uses the GePG Control Number as verification proof.</small>
+                </div>
+
+                <!-- OPTIONAL FILE ATTACHMENT -->
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;color:#334155;">Attach Bank Slip / E-Receipt (Optional)</label>
+                    <input type="file" name="receipt_file" class="form-control" accept=".pdf,.png,.jpg,.jpeg" style="font-size:0.82rem;">
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;background:#F8FAFC;border-top:1px solid #E2E8F0;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('verifyDutyModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#059669;border-color:#059669;padding:0.65rem 1.65rem;font-size:0.9rem;font-weight:800;">
+                    <i class="fa-solid fa-circle-check"></i> Approve &amp; Release to Port
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterExpenseCategory(cat, btn) {
+    document.querySelectorAll('.exp-cat-pill').forEach(b => {
+        b.classList.remove('badge-active');
+        b.classList.add('badge-closed');
+    });
+    if (btn) {
+        btn.classList.remove('badge-closed');
+        btn.classList.add('badge-active');
+    }
+
+    document.querySelectorAll('.expense-row').forEach(row => {
+        const rowCat = row.getAttribute('data-category');
+        if (cat === 'ALL' || rowCat === cat) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function openDisburseModal(voucherId, voucherNum, amount) {
+    document.getElementById('disburseForm').action = "/finance/expense/" + voucherId + "/approval/";
+    document.getElementById('disburseVoucherLabel').textContent = "Voucher: " + voucherNum;
+    document.getElementById('disburseAmountDisplay').value = "TSh " + Number(amount).toLocaleString();
+    openModal('disburseModal');
+}
+
+function openVerifyDutyModal(jobId, jobNum, controlNo, dutyAmount, blNumber) {
+    document.getElementById('verifyDutyForm').action = "/customs/duty/" + jobId + "/confirm/";
+    const isCeo = {% if is_ceo %}true{% else %}false{% endif %};
+    const title = isCeo ? `Shipment ${jobNum} | Control #: ${controlNo || 'N/A'}` : `B/L: ${blNumber || jobNum} | Control #: ${controlNo || 'N/A'}`;
+    document.getElementById('verifyDutyJobContext').textContent = title;
+    document.getElementById('verifyDutyAmountDisplay').textContent = "TSh " + Number(dutyAmount || 0).toLocaleString();
+    document.getElementById('verifyDutyAmount').value = dutyAmount || '0.00';
+    document.getElementById('verifyDutyRef').value = '';
+    document.getElementById('verifyDutyRef').placeholder = controlNo ? `GePG-${controlNo}` : 'TRA-REC-XXXX';
+    document.getElementById('verifyDutyDate').value = new Date().toISOString().split('T')[0];
+    openModal('verifyDutyModal');
+}
+</script>
+{% endblock %}

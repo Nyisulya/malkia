@@ -1,0 +1,460 @@
+{% extends 'base.html' %}
+
+{% block title %}Staff Profile - {{ target_user.get_full_name|default:target_user.username }} | Malkia Cargo Wave{% endblock %}
+
+{% block content %}
+<!-- =========================================================================
+     TOP BREADCRUMB & MANAGEMENT ACTION BAR
+     ========================================================================= -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.75rem;">
+    <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--text-muted);">
+        {% if is_management %}
+        <a href="{% url 'users_list' %}" style="color:var(--brand-primary);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:0.35rem;">
+            <i class="fa-solid fa-arrow-left"></i> All Personnel
+        </a>
+        <span style="color:#CBD5E1;">/</span>
+        {% else %}
+        <a href="{% url 'dashboard' %}" style="color:var(--brand-primary);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:0.35rem;">
+            <i class="fa-solid fa-gauge-high"></i> Dashboard
+        </a>
+        <span style="color:#CBD5E1;">/</span>
+        {% endif %}
+        <span style="color:var(--brand-navy-900);font-weight:700;">
+            Profile: {{ target_user.get_full_name|default:target_user.username }} ({{ profile.employee_id|default:"MC-STAFF" }})
+        </span>
+    </div>
+
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <!-- ID Card Launch Button -->
+        <a href="{% url 'user_id_card' target_user.id %}" class="btn-header-action btn-outline" style="background:#F0FDF4;color:#15803D;border-color:#86EFAC;text-decoration:none;" title="View and Print Official Staff ID Card">
+            <i class="fa-solid fa-id-card-clip"></i> Staff ID Card
+        </a>
+
+        {% if is_management %}
+        <button type="button" class="btn-header-action btn-outline" style="color:#DC2626;border-color:#FCA5A5;" onclick="openModal('resetPasswordModal')">
+            <i class="fa-solid fa-key"></i> Reset Password
+        </button>
+        {% endif %}
+
+        {% if can_edit_profile %}
+        <button type="button" class="btn-header-action btn-primary" onclick="openModal('editProfileModal')">
+            <i class="fa-solid fa-pen-to-square"></i> Edit Profile
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- =========================================================================
+     PROFILE HEADER CARD (SIMPLIFIED & CLEAN)
+     ========================================================================= -->
+<div class="profile-hero-card" style="margin-bottom:1.5rem;">
+    <div class="profile-hero-banner">
+        <div class="profile-hero-banner-meta">
+            <span class="profile-hero-banner-tag">
+                <i class="fa-solid fa-shield-halved" style="margin-right:0.25rem;"></i> Malkia Cargo Wave Limited - Official Personnel
+            </span>
+        </div>
+    </div>
+
+    <div class="profile-hero-body" style="padding:1.5rem;">
+        <div class="profile-hero-main" style="width:100%;">
+            <!-- Avatar with Active Indicator -->
+            <div class="profile-avatar-container">
+                <div class="profile-avatar">
+                    {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" alt="{{ target_user.get_full_name }}">
+                    {% else %}
+                    {{ target_user.first_name|default:target_user.username|slice:":1"|upper }}
+                    {% endif %}
+                </div>
+                <span class="profile-status-indicator status-active" title="Active"></span>
+            </div>
+
+            <!-- Profile Details -->
+            <div class="profile-details" style="flex:1;">
+                <div class="profile-title-row">
+                    <h2 class="profile-name">
+                        {{ target_user.get_full_name|default:target_user.username }}
+                    </h2>
+                    <span class="profile-staff-badge" title="Employee ID (Click to copy)" onclick="copyText('{{ profile.employee_id|default:"MC-STAFF" }}', this)" style="cursor:pointer;">
+                        <i class="fa-solid fa-id-badge"></i> {{ profile.employee_id|default:"MC-STAFF" }}
+                        <i class="fa-regular fa-copy" style="font-size:0.75rem;opacity:0.7;margin-left:0.15rem;"></i>
+                    </span>
+                    <span class="profile-duty-badge duty-active">
+                        <i class="fa-solid fa-circle" style="font-size:0.45rem;"></i> Active Duty
+                    </span>
+                </div>
+
+                <div class="profile-role-meta" style="margin-top:0.4rem;font-size:0.9rem;">
+                    <span class="profile-role-tag" style="font-weight:700;color:var(--brand-primary);">
+                        <i class="fa-solid fa-briefcase" style="margin-right:0.25rem;"></i>
+                        {{ profile.title|default:profile.get_role_display }}
+                    </span>
+                    <span style="color:#CBD5E1;">&bull;</span>
+                    <span class="profile-dept-tag" style="color:var(--text-muted);">
+                        <i class="fa-solid fa-building-user"></i> {{ profile.get_department_display }}
+                    </span>
+                    <span style="color:#CBD5E1;">&bull;</span>
+                    <span class="profile-station-tag" style="color:var(--text-muted);">
+                        <i class="fa-solid fa-location-dot" style="color:#EF4444;"></i> {{ profile.work_station|default:"Dar es Salaam HQ" }}
+                    </span>
+                </div>
+
+                <!-- Action Buttons: Phone, WhatsApp, Email -->
+                <div class="profile-actions-bar" style="margin-top:0.85rem;">
+                    {% if profile.phone_number %}
+                    <a href="tel:{{ profile.phone_number }}" class="profile-action-pill pill-phone" title="Call Phone">
+                        <i class="fa-solid fa-phone"></i> {{ profile.phone_number }}
+                    </a>
+                    <a href="https://wa.me/{{ profile.phone_number|cut:' '|cut:'+'|cut:'-' }}" target="_blank" class="profile-action-pill pill-whatsapp" title="Send WhatsApp Message">
+                        <i class="fa-brands fa-whatsapp" style="font-size:0.95rem;"></i> WhatsApp
+                    </a>
+                    {% endif %}
+
+                    {% if target_user.email %}
+                    <a href="mailto:{{ target_user.email }}" class="profile-action-pill pill-email" title="Send Email">
+                        <i class="fa-solid fa-envelope"></i> {{ target_user.email }}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     ESSENTIAL DETAILS GRID (TAARIFA ZA MTU NA VITAMBULISHO TU)
+     ========================================================================= -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));gap:1.5rem;margin-bottom:2rem;">
+
+    <!-- CARD 1: TAARIFA ZA MTU NA MAWASILIANO -->
+    <div class="dossier-card" style="box-shadow:0 4px 15px rgba(0,0,0,0.04);border-radius:12px;border:1px solid #E2E8F0;">
+        <div class="dossier-card-header" style="background:#F8FAFC;padding:1.1rem 1.4rem;border-bottom:1px solid #E2E8F0;">
+            <h3 class="dossier-card-title" style="font-size:1.02rem;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.5rem;margin:0;">
+                <span class="dossier-card-icon icon-blue" style="width:34px;height:34px;border-radius:8px;background:#EFF6FF;color:#2563EB;display:inline-flex;align-items:center;justify-content:center;">
+                    <i class="fa-solid fa-user-check"></i>
+                </span>
+                Taarifa Binafsi & Kazi
+            </h3>
+        </div>
+        <div class="dossier-card-body" style="padding:1.4rem;display:flex;flex-direction:column;gap:1rem;">
+            
+            <div class="dossier-prop-tile" style="padding:0.75rem 1rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;">
+                <span class="dossier-prop-label" style="font-size:0.75rem;color:#64748B;text-transform:uppercase;font-weight:700;display:block;">Jina Kamili</span>
+                <div style="font-weight:700;font-size:1.05rem;color:var(--brand-navy-900);margin-top:0.2rem;">
+                    {{ target_user.get_full_name|default:target_user.username }}
+                </div>
+            </div>
+
+            <div class="dossier-prop-tile" style="padding:0.75rem 1rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;">
+                <span class="dossier-prop-label" style="font-size:0.75rem;color:#64748B;text-transform:uppercase;font-weight:700;display:block;">Wadhifa / Cheo</span>
+                <div style="font-weight:600;font-size:0.95rem;color:var(--brand-primary);margin-top:0.2rem;">
+                    {{ profile.title|default:profile.get_role_display }}
+                </div>
+            </div>
+
+            <div class="dossier-prop-tile" style="padding:0.75rem 1rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;">
+                <span class="dossier-prop-label" style="font-size:0.75rem;color:#64748B;text-transform:uppercase;font-weight:700;display:block;">Idara (Department)</span>
+                <div style="font-weight:600;font-size:0.95rem;color:#334155;margin-top:0.2rem;">
+                    {{ profile.get_department_display }}
+                </div>
+            </div>
+
+            <div class="dossier-prop-tile" style="padding:0.75rem 1rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;">
+                <span class="dossier-prop-label" style="font-size:0.75rem;color:#64748B;text-transform:uppercase;font-weight:700;display:block;">Namba ya Simu</span>
+                <div style="font-weight:600;font-size:0.95rem;color:#334155;margin-top:0.2rem;">
+                    {% if profile.phone_number %}
+                    <a href="tel:{{ profile.phone_number }}" style="color:var(--brand-primary);text-decoration:none;">
+                        <i class="fa-solid fa-phone" style="font-size:0.8rem;margin-right:0.3rem;"></i>{{ profile.phone_number }}
+                    </a>
+                    {% else %}
+                    <span style="color:#94A3B8;font-style:italic;">Hajaweka namba</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="dossier-prop-tile" style="padding:0.75rem 1rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;">
+                <span class="dossier-prop-label" style="font-size:0.75rem;color:#64748B;text-transform:uppercase;font-weight:700;display:block;">Barua Pepe (Email)</span>
+                <div style="font-weight:600;font-size:0.95rem;color:#334155;margin-top:0.2rem;">
+                    {% if target_user.email %}
+                    <a href="mailto:{{ target_user.email }}" style="color:var(--brand-navy-900);text-decoration:none;">
+                        <i class="fa-regular fa-envelope" style="margin-right:0.3rem;"></i>{{ target_user.email }}
+                    </a>
+                    {% else %}
+                    <span style="color:#94A3B8;font-style:italic;">Hajaweka barua pepe</span>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- CARD 2: VITAMBULISHO RASMI (OFFICIAL IDS) -->
+    <div class="dossier-card" style="box-shadow:0 4px 15px rgba(0,0,0,0.04);border-radius:12px;border:1px solid #E2E8F0;">
+        <div class="dossier-card-header" style="background:#F8FAFC;padding:1.1rem 1.4rem;border-bottom:1px solid #E2E8F0;">
+            <h3 class="dossier-card-title" style="font-size:1.02rem;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.5rem;margin:0;">
+                <span class="dossier-card-icon icon-emerald" style="width:34px;height:34px;border-radius:8px;background:#ECFDF5;color:#059669;display:inline-flex;align-items:center;justify-content:center;">
+                    <i class="fa-solid fa-id-card"></i>
+                </span>
+                Vitambulisho vya Mtumiaji
+            </h3>
+        </div>
+        <div class="dossier-card-body" style="padding:1.4rem;display:flex;flex-direction:column;gap:1.1rem;">
+            
+            <!-- STAFF ID -->
+            <div class="dossier-prop-tile" style="padding:1rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span class="dossier-prop-label" style="font-size:0.75rem;color:#64748B;text-transform:uppercase;font-weight:700;display:block;">Kitambulisho cha Kazi (Staff ID)</span>
+                    <div style="font-weight:800;font-size:1.2rem;color:var(--brand-primary);font-family:monospace;margin-top:0.25rem;">
+                        {{ profile.employee_id|default:"MC-STAFF" }}
+                    </div>
+                </div>
+                <button type="button" class="dossier-copy-btn" title="Copy Staff ID" onclick="copyText('{{ profile.employee_id|default:"MC-STAFF" }}', this)" style="border:1px solid #CBD5E1;background:#fff;border-radius:6px;padding:0.4rem 0.65rem;cursor:pointer;">
+                    <i class="fa-regular fa-copy"></i>
+                </button>
+            </div>
+
+            <!-- NIDA -->
+            <div class="dossier-prop-tile" style="padding:1rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span class="dossier-prop-label" style="font-size:0.75rem;color:#64748B;text-transform:uppercase;font-weight:700;display:block;">Kitambulisho cha Taifa (NIDA)</span>
+                    <div style="font-weight:700;font-size:1.1rem;color:var(--brand-navy-900);font-family:monospace;margin-top:0.25rem;">
+                        {% if profile.national_id %}
+                        {{ profile.national_id }}
+                        {% else %}
+                        <span style="color:#94A3B8;font-size:0.9rem;font-style:italic;">Haijawekwa</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if profile.national_id %}
+                <button type="button" class="dossier-copy-btn" title="Copy NIDA" onclick="copyText('{{ profile.national_id }}', this)" style="border:1px solid #CBD5E1;background:#fff;border-radius:6px;padding:0.4rem 0.65rem;cursor:pointer;">
+                    <i class="fa-regular fa-copy"></i>
+                </button>
+                {% endif %}
+            </div>
+
+            <!-- TIN -->
+            <div class="dossier-prop-tile" style="padding:1rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <span class="dossier-prop-label" style="font-size:0.75rem;color:#64748B;text-transform:uppercase;font-weight:700;display:block;">Namba ya Mlipa Kodi (TIN Number)</span>
+                    <div style="font-weight:700;font-size:1.1rem;color:var(--brand-navy-900);font-family:monospace;margin-top:0.25rem;">
+                        {% if profile.tin_number %}
+                        {{ profile.tin_number }}
+                        {% else %}
+                        <span style="color:#94A3B8;font-size:0.9rem;font-style:italic;">Haijawekwa</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if profile.tin_number %}
+                <button type="button" class="dossier-copy-btn" title="Copy TIN" onclick="copyText('{{ profile.tin_number }}', this)" style="border:1px solid #CBD5E1;background:#fff;border-radius:6px;padding:0.4rem 0.65rem;cursor:pointer;">
+                    <i class="fa-regular fa-copy"></i>
+                </button>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- =========================================================================
+     MODAL: EDIT EMPLOYEE PROFILE
+     ========================================================================= -->
+{% if can_edit_profile %}
+<div id="editProfileModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:650px;width:95%;">
+        <form action="{% url 'user_update' target_user.id %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header" style="background:#F8FAFC;border-bottom:1px solid #E2E8F0;padding:1.25rem 1.5rem;">
+                <div>
+                    <h3 class="modal-title" style="color:var(--brand-navy-900);font-size:1.15rem;">
+                        <i class="fa-solid fa-pen-to-square" style="color:var(--brand-primary);margin-right:0.4rem;"></i>
+                        Badilisha Taarifa: {{ target_user.get_full_name|default:target_user.username }}
+                    </h3>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('editProfileModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="padding:1.5rem;max-height:75vh;overflow-y:auto;">
+                <!-- BASIC INFO -->
+                <div style="margin-bottom:1.25rem;">
+                    <h4 style="font-size:0.88rem;color:var(--brand-primary);font-weight:700;margin-bottom:0.75rem;">
+                        Taarifa Binafsi
+                    </h4>
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+                        <div class="form-group" style="flex:1;min-width:180px;">
+                            <label>Jina la Kwanza</label>
+                            <input type="text" name="first_name" class="form-control" value="{{ target_user.first_name }}">
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:180px;">
+                            <label>Jina la Ukoo</label>
+                            <input type="text" name="last_name" class="form-control" value="{{ target_user.last_name }}">
+                        </div>
+                    </div>
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1;min-width:180px;">
+                            <label>Namba ya Simu</label>
+                            <input type="tel" name="phone_number" class="form-control" value="{{ profile.phone_number }}" required>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:180px;">
+                            <label>Barua Pepe (Email)</label>
+                            <input type="email" name="email" class="form-control" value="{{ target_user.email }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VITAMBULISHO -->
+                <div style="margin-bottom:1.25rem;border-top:1px solid #F1F5F9;padding-top:1rem;">
+                    <h4 style="font-size:0.88rem;color:var(--brand-primary);font-weight:700;margin-bottom:0.75rem;">
+                        Vitambulisho Rasmi
+                    </h4>
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1;min-width:180px;">
+                            <label>Kitambulisho cha NIDA</label>
+                            <input type="text" name="national_id" class="form-control" value="{{ profile.national_id }}" placeholder="NIDA Number">
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:180px;">
+                            <label>Namba ya TRA TIN</label>
+                            <input type="text" name="tin_number" class="form-control" value="{{ profile.tin_number }}" placeholder="TIN Number">
+                        </div>
+                    </div>
+                </div>
+
+                {% if is_management %}
+                <!-- MANAGEMENT FIELDS -->
+                <div style="margin-bottom:1.25rem;background:#F8FAFC;padding:1rem;border-radius:8px;border:1px solid #E2E8F0;">
+                    <h4 style="font-size:0.88rem;color:var(--brand-navy-900);font-weight:800;margin-bottom:0.75rem;">
+                        Idara & Wadhifa (Usimamizi)
+                    </h4>
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+                        <div class="form-group" style="flex:1;min-width:160px;">
+                            <label>Staff ID</label>
+                            <input type="text" name="employee_id" class="form-control" value="{{ profile.employee_id }}">
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:160px;">
+                            <label>Wadhifa (Role)</label>
+                            <select name="role" class="form-control">
+                                {% for r_code, r_name in roles %}
+                                <option value="{{ r_code }}" {% if profile.role == r_code %}selected{% endif %}>{{ r_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1;min-width:160px;">
+                            <label>Idara (Department)</label>
+                            <select name="department" class="form-control">
+                                {% for d_code, d_name in departments %}
+                                <option value="{{ d_code }}" {% if profile.department == d_code %}selected{% endif %}>{{ d_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:160px;">
+                            <label>Kituo cha Kazi</label>
+                            <input type="text" name="work_station" class="form-control" value="{{ profile.work_station }}">
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- AVATAR PHOTO -->
+                <div style="border-top:1px solid #F1F5F9;padding-top:1rem;">
+                    <div class="form-group">
+                        <label>Picha ya Pasipoti (Avatar)</label>
+                        <input type="file" name="avatar" class="form-control" accept="image/*">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="background:#F8FAFC;border-top:1px solid #E2E8F0;padding:1rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('editProfileModal')">Ghairi</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-check"></i> Hifadhi Mabadiliko
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- =========================================================================
+     MODAL: RESET EMPLOYEE PASSWORD
+     ========================================================================= -->
+{% if is_management %}
+<div id="resetPasswordModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:440px;">
+        <form action="{% url 'user_password_reset' target_user.id %}" method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Weka Upya Nenosiri</h3>
+                    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">
+                        Weka nenosiri jipya la: <strong>{{ target_user.get_full_name|default:target_user.username }}</strong>
+                    </p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('resetPasswordModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nenosiri Jipya *</label>
+                    <input type="password" name="new_password" class="form-control" placeholder="Weka nenosiri jipya" required>
+                </div>
+                <div class="form-group" style="margin-top:0.75rem;">
+                    <label>Thibitisha Nenosiri *</label>
+                    <input type="password" name="confirm_password" class="form-control" placeholder="Rudia nenosiri jipya" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('resetPasswordModal')">Ghairi</button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#DC2626;">
+                    <i class="fa-solid fa-key"></i> Badilisha Nenosiri Sasa
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- =========================================================================
+     COPY TO CLIPBOARD HELPER SCRIPT
+     ========================================================================= -->
+<script>
+function copyText(text, btnElement) {
+    if (!text || text === 'N/A' || text.includes('Not Set') || text.includes('Pending') || text.includes('Haijawekwa')) return;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Imenakiliwa: ' + text, 'success');
+            if (btnElement) {
+                const originalHtml = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="fa-solid fa-check" style="color:#059669;"></i>';
+                setTimeout(() => {
+                    btnElement.innerHTML = originalHtml;
+                }, 1800);
+            }
+        }).catch(err => {
+            fallbackCopy(text);
+        });
+    } else {
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        showToast('Imenakiliwa: ' + text, 'success');
+    } catch (err) {
+        showToast('Imeshindwa kunakili', 'warning');
+    }
+    document.body.removeChild(textArea);
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}Dispatch Dashboard | Logistics & Fleet{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;">
+
+    <!-- TOP HERO BANNER -->
+    <div style="background:linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%);color:#fff;border-radius:var(--radius-xl);padding:1.5rem 1.75rem;margin-bottom:1.5rem;box-shadow:var(--shadow-lg);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;background:rgba(255,255,255,0.2);padding:0.25rem 0.75rem;border-radius:999px;font-weight:700;">
+                    <i class="fa-solid fa-truck-fast"></i> Fleet & Haulage Control
+                </span>
+                <span style="background:rgba(129,140,248,0.25);color:#C7D2FE;font-size:0.75rem;padding:0.25rem 0.65rem;border-radius:999px;font-weight:600;">
+                    <i class="fa-solid fa-satellite-dish"></i> Live GPS Telematics
+                </span>
+            </div>
+            <div style="font-size:0.8rem;color:#E0E7FF;">
+                <i class="fa-regular fa-calendar-check"></i> {{ today|date:"l, d F Y" }} &bull; Hub: Dar Central Yard / Port Gate 4
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <div>
+                <h2 style="font-family:var(--font-heading);font-size:1.45rem;font-weight:800;letter-spacing:-0.02em;margin:0;">
+                    Dispatch & Transportation Dashboard
+                </h2>
+                <p style="font-size:0.85rem;color:#E0E7FF;margin-top:0.25rem;">
+                    Manage vehicle allocation, driver rosters, cross-country corridor transit, and electronic Proof of Delivery (POD).
+                </p>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <a href="{% url 'logistics_jobs' %}" class="btn-header-action" style="background:#fff;color:#3730A3;font-weight:700;padding:0.5rem 1rem;border-radius:var(--radius-md);">
+                    <i class="fa-solid fa-truck-ramp-box"></i> Assign Truck
+                </a>
+                <a href="{% url 'logistics_fleet' %}" class="btn-header-action" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;font-weight:700;padding:0.5rem 1rem;border-radius:var(--radius-md);">
+                    <i class="fa-solid fa-truck"></i> Fleet Status
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5 SPEC KPI CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+        
+        <!-- 1. Jobs ready for dispatch -->
+        <div class="card-panel" style="padding:1.15rem;border-left:4px solid #F59E0B;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Ready for Dispatch</div>
+            <div style="font-size:1.65rem;font-weight:800;color:#B45309;margin-top:0.25rem;">{{ jobs_ready_for_dispatch }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Cleared & awaiting truck</div>
+        </div>
+
+        <!-- 2. Vehicles available -->
+        <div class="card-panel" style="padding:1.15rem;border-left:4px solid #10B981;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Vehicles Available</div>
+            <div style="font-size:1.65rem;font-weight:800;color:#059669;margin-top:0.25rem;">{{ vehicles_available }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Ready in staging yard</div>
+        </div>
+
+        <!-- 3. Vehicles in transit -->
+        <div class="card-panel" style="padding:1.15rem;border-left:4px solid #3B82F6;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Vehicles in Transit</div>
+            <div style="font-size:1.65rem;font-weight:800;color:#1D4ED8;margin-top:0.25rem;">{{ vehicles_in_transit }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Rolling on highway</div>
+        </div>
+
+        <!-- 4. Deliveries today -->
+        <div class="card-panel" style="padding:1.15rem;border-left:4px solid #8B5CF6;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Deliveries Today</div>
+            <div style="font-size:1.65rem;font-weight:800;color:#6D28D9;margin-top:0.25rem;">{{ deliveries_today }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Delivered & signed POD</div>
+        </div>
+
+        <!-- 5. Delayed deliveries -->
+        <div class="card-panel" style="padding:1.15rem;border-left:4px solid #EF4444;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Delayed Deliveries</div>
+            <div style="font-size:1.65rem;font-weight:800;color:#DC2626;margin-top:0.25rem;">{{ delayed_deliveries }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">With field or transit query</div>
+        </div>
+
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT GRID -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+
+        <!-- ACTIVE TRANSIT SHIPMENTS -->
+        <div class="card-panel" style="padding:1.5rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.75rem;">
+                <div>
+                    <h3 style="font-family:var(--font-heading);font-size:1.1rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
+                        <i class="fa-solid fa-route" style="color:#4F46E5;"></i> Active Shipments in Dispatch Pipeline
+                    </h3>
+                    <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Active consignments being loaded at port and rolling along transport corridors</div>
+                </div>
+                <a href="{% url 'logistics_jobs' %}" style="font-size:0.82rem;color:var(--brand-primary);font-weight:700;text-decoration:none;">
+                    View All &rarr;
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table" style="font-size:0.85rem;">
+                    <thead>
+                        <tr>
+                            <th>Job # / Client</th>
+                            <th>Container</th>
+                            <th>Truck & Driver</th>
+                            <th>Destination</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for j in active_dispatches %}
+                        <tr>
+                            <td>
+                                <strong style="color:var(--brand-navy-900);">{{ j.job_number }}</strong>
+                                <div style="font-size:0.75rem;color:var(--text-muted);">{{ j.customer.company_name|truncatechars:18 }}</div>
+                            </td>
+                            <td>
+                                <span style="font-weight:700;color:#0F766E;">{{ j.container_numbers|truncatechars:15 }}</span>
+                                <div style="font-size:0.72rem;color:var(--text-muted);">{{ j.container_size_type }}</div>
+                            </td>
+                            <td>
+                                {% if j.truck_number %}
+                                <span style="font-weight:700;color:var(--brand-navy-900);"><i class="fa-solid fa-truck"></i> {{ j.truck_number }}</span>
+                                <div style="font-size:0.72rem;color:var(--text-muted);">{{ j.driver.get_full_name|default:"Unassigned" }}</div>
+                                {% else %}
+                                <span style="color:#B45309;font-size:0.78rem;font-weight:600;"><i class="fa-solid fa-clock"></i> Truck Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span style="color:var(--brand-navy-900);font-weight:600;">{{ j.final_destination|truncatechars:18 }}</span>
+                            </td>
+                            <td>
+                                <span class="badge-pill {% if j.status == 'DELAYED' %}badge-delayed{% else %}badge-active{% endif %}" style="font-size:0.75rem;">
+                                    Step {{ j.current_stage_number }}/11
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'logistics_jobs' %}?q={{ j.job_number }}" class="btn-header-action btn-outline" style="padding:0.3rem 0.6rem;font-size:0.75rem;">
+                                    Manage
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">
+                                No active shipments pending haulage dispatch at this time.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FLEET STANDBY STATUS BOX -->
+        <div class="card-panel" style="padding:1.5rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.75rem;">
+                <h4 style="font-family:var(--font-heading);font-size:1.05rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
+                    <i class="fa-solid fa-truck-moving" style="color:#0D9488;"></i> Fleet Vehicles
+                </h4>
+                <a href="{% url 'logistics_fleet' %}" style="font-size:0.8rem;color:var(--brand-primary);font-weight:700;text-decoration:none;">
+                    All Fleet &rarr;
+                </a>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                {% for v in fleet_summary %}
+                <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:var(--radius-md);padding:0.75rem 0.85rem;font-size:0.82rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem;">
+                        <span style="font-weight:800;color:var(--brand-navy-900);font-size:0.9rem;">
+                            {{ v.plate_number }}
+                        </span>
+                        {% if v.current_status == 'AVAILABLE' %}
+                        <span style="background:#D1FAE5;color:#065F46;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;">
+                            AVAILABLE
+                        </span>
+                        {% elif v.current_status == 'IN_TRANSIT' %}
+                        <span style="background:#DBEAFE;color:#1E40AF;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;">
+                            IN TRANSIT
+                        </span>
+                        {% else %}
+                        <span style="background:#FEE2E2;color:#991B1B;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:999px;">
+                            {{ v.current_status }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="color:var(--text-muted);font-size:0.75rem;">{{ v.make_model }}</div>
+                    <div style="margin-top:0.35rem;font-size:0.75rem;color:var(--brand-navy-800);">
+                        <i class="fa-solid fa-location-dot" style="color:#0D9488;"></i> {{ v.current_location|truncatechars:30 }}
+                    </div>
+                </div>
+                {% empty %}
+                <div style="color:var(--text-muted);font-size:0.82rem;font-style:italic;">No fleet vehicles recorded.</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-top:1.25rem;text-align:center;">
+                <a href="{% url 'logistics_fleet' %}" class="btn-header-action btn-outline" style="width:100%;justify-content:center;font-size:0.85rem;">
+                    <i class="fa-solid fa-plus-circle"></i> Add Vehicle or Driver
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

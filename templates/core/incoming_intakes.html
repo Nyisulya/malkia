@@ -1,0 +1,601 @@
+{% extends 'base.html' %}
+
+{% block title %}Incoming Shipment Intakes & File Opening | Malkia C&F{% endblock %}
+
+{% block content %}
+<div style="max-width:1250px;margin:0 auto;padding-bottom:3rem;">
+
+    <!-- TOP HEADER -->
+    <div class="page-header-box" style="margin-bottom:1.5rem;">
+        <div>
+            <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.25rem;">
+                <a href="{% url 'jobs_list' %}" style="color:var(--text-muted);text-decoration:none;"><i class="fa-solid fa-arrow-left"></i> Operations</a> &bull; 
+                <span style="color:var(--brand-primary);font-weight:600;">Document Verification & File Opening</span>
+            </div>
+            <h2 class="page-title" style="font-size:1.55rem;font-weight:800;letter-spacing:-0.02em;">
+                <i class="fa-solid fa-inbox" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Incoming Shipment Intakes & File Opening
+            </h2>
+            <p class="page-subtitle" style="font-size:0.9rem;color:var(--text-muted);">
+                Review original shipping documents (B/L, Invoice, Packing List) submitted by Documentation Officers, verify compliance, and approve digital file opening for TANCIS customs declaration.
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline" style="border-radius:var(--radius-md);">
+                <i class="fa-solid fa-boxes-stacked"></i> View All Active Shipments
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI SUMMARY CARDS -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:var(--radius-lg);padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);border-left:4px solid #F59E0B;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Pending Review</span>
+                <span style="width:32px;height:32px;border-radius:8px;background:#FEF3C7;color:#D97706;display:flex;align-items:center;justify-content:center;font-size:0.9rem;">
+                    <i class="fa-solid fa-clock"></i>
+                </span>
+            </div>
+            <div style="font-size:1.75rem;font-weight:800;font-family:var(--font-heading);color:var(--brand-navy-900);">
+                {{ pending_count }}
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">
+                Awaiting Operations Manager verification & approval
+            </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:var(--radius-lg);padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);border-left:4px solid #10B981;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Approved & Dispatched</span>
+                <span style="width:32px;height:32px;border-radius:8px;background:#DCFCE7;color:#15803D;display:flex;align-items:center;justify-content:center;font-size:0.9rem;">
+                    <i class="fa-solid fa-circle-check"></i>
+                </span>
+            </div>
+            <div style="font-size:1.75rem;font-weight:800;font-family:var(--font-heading);color:#059669;">
+                {{ approved_count }}
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">
+                Digital files opened and handed over to Customs (Stage 3+)
+            </div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:var(--radius-lg);padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);border-left:4px solid #0284C7;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Operational Gate</span>
+                <span style="width:32px;height:32px;border-radius:8px;background:#E0F2FE;color:#0284C7;display:flex;align-items:center;justify-content:center;font-size:0.9rem;">
+                    <i class="fa-solid fa-user-check"></i>
+                </span>
+            </div>
+            <div style="font-size:1rem;font-weight:700;color:var(--brand-navy-900);margin-top:0.25rem;">
+                Review & Open File
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">
+                Approved intakes advance immediately to Customs Declarations
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CARD WITH TABS -->
+    <div class="card-panel" style="background:#FFFFFF;border-radius:var(--radius-xl);border:1px solid #E2E8F0;box-shadow:var(--shadow-md);overflow:hidden;padding:0;">
+        
+        <!-- TABS BAR -->
+        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #E2E8F0;background:#F8FAFC;padding:0 1.25rem;flex-wrap:wrap;gap:1rem;">
+            <div style="display:flex;gap:0.5rem;">
+                <a href="?tab=pending{% if search_query %}&q={{ search_query }}{% endif %}" 
+                   style="display:inline-flex;align-items:center;gap:0.5rem;padding:1rem 1.25rem;font-size:0.9rem;font-weight:700;text-decoration:none;border-bottom:3px solid {% if active_tab == 'pending' %}#0284C7{% else %}transparent{% endif %};color:{% if active_tab == 'pending' %}#0284C7{% else %}var(--text-muted){% endif %};">
+                    <i class="fa-solid fa-clock-rotate-left"></i> 
+                    Pending Review
+                    <span style="background:{% if active_tab == 'pending' %}#0284C7{% else %}#E2E8F0{% endif %};color:{% if active_tab == 'pending' %}#FFFFFF{% else %}#475569{% endif %};border-radius:999px;padding:0.15rem 0.6rem;font-size:0.75rem;">
+                        {{ pending_count }}
+                    </span>
+                </a>
+
+                <a href="?tab=approved{% if search_query %}&q={{ search_query }}{% endif %}" 
+                   style="display:inline-flex;align-items:center;gap:0.5rem;padding:1rem 1.25rem;font-size:0.9rem;font-weight:700;text-decoration:none;border-bottom:3px solid {% if active_tab == 'approved' %}#059669{% else %}transparent{% endif %};color:{% if active_tab == 'approved' %}#059669{% else %}var(--text-muted){% endif %};">
+                    <i class="fa-solid fa-circle-check"></i> 
+                    Approved & Dispatched to Customs
+                    <span style="background:{% if active_tab == 'approved' %}#059669{% else %}#E2E8F0{% endif %};color:{% if active_tab == 'approved' %}#FFFFFF{% else %}#475569{% endif %};border-radius:999px;padding:0.15rem 0.6rem;font-size:0.75rem;">
+                        {{ approved_count }}
+                    </span>
+                </a>
+            </div>
+
+            <!-- SEARCH FORM -->
+            <form method="GET" action="{% url 'incoming_intakes' %}" style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;">
+                <input type="hidden" name="tab" value="{{ active_tab }}">
+                <input type="text" name="q" class="form-control" placeholder="Search Job #, B/L, Client, Container..." value="{{ search_query }}" style="height:36px;font-size:0.85rem;min-width:240px;">
+                <button type="submit" class="btn-header-action" style="background:#0284C7;color:#fff;padding:0.4rem 0.9rem;font-size:0.8rem;border:none;border-radius:var(--radius-md);">
+                    <i class="fa-solid fa-magnifying-glass"></i> Filter
+                </button>
+                {% if search_query %}
+                <a href="?tab={{ active_tab }}" class="btn-header-action btn-outline" style="padding:0.4rem 0.75rem;font-size:0.8rem;">Reset</a>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- TABLE SECTION -->
+        <div style="padding:1.25rem;">
+            <div class="table-responsive">
+                <table class="modern-table" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;">
+                            <th style="padding:0.75rem 1rem;font-size:0.8rem;">Job Reference & B/L</th>
+                            <th style="padding:0.75rem 1rem;font-size:0.8rem;">Client / Consignee</th>
+                            <th style="padding:0.75rem 1rem;font-size:0.8rem;">Shipping Line & Vessel</th>
+                            <th style="padding:0.75rem 1rem;font-size:0.8rem;">Containers</th>
+                            <th style="padding:0.75rem 1rem;font-size:0.8rem;">Origin Documents</th>
+                            <th style="padding:0.75rem 1rem;font-size:0.8rem;">Current Status</th>
+                            <th style="padding:0.75rem 1rem;font-size:0.8rem;text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in intakes %}
+                        <tr style="border-bottom:1px solid #E2E8F0;">
+                            <!-- JOB REF -->
+                            <td style="padding:0.85rem 1rem;">
+                                <strong style="font-size:0.95rem;color:var(--brand-navy-900);">
+                                    <a href="javascript:void(0)" onclick="openReviewModal('{{ job.id }}')" style="color:#0284C7;text-decoration:none;font-weight:800;">
+                                        {{ job.job_number }}
+                                    </a>
+                                </strong>
+                                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.2rem;">
+                                    B/L: <strong style="color:var(--brand-navy-900);">{{ job.bl_number }}</strong>
+                                </div>
+                                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.15rem;">
+                                    <i class="fa-regular fa-calendar"></i> {{ job.created_at|date:"d M Y, H:i" }}
+                                </div>
+                            </td>
+
+                            <!-- CUSTOMER & REGIME -->
+                            <td style="padding:0.85rem 1rem;">
+                                <strong style="font-size:0.9rem;color:var(--text-main);">{{ job.customer.company_name }}</strong>
+                                <div style="margin-top:0.25rem;">
+                                    {% if job.shipment_type == 'TRANSIT' %}
+                                    <span class="badge-pill" style="background:#FEF3C7;color:#B45309;font-weight:700;font-size:0.7rem;padding:0.15rem 0.5rem;">TRANSIT</span>
+                                    {% else %}
+                                    <span class="badge-pill" style="background:#F1F5F9;color:#334155;font-weight:700;font-size:0.7rem;padding:0.15rem 0.5rem;">LOCAL IMPORT</span>
+                                    {% endif %}
+                                    <span style="font-size:0.75rem;color:var(--text-muted);margin-left:0.25rem;">{{ job.final_destination }}</span>
+                                </div>
+                            </td>
+
+                            <!-- VESSEL & LINE -->
+                            <td style="padding:0.85rem 1rem;">
+                                <div style="font-weight:700;color:var(--brand-navy-900);font-size:0.85rem;">
+                                    <span class="badge-pill" style="background:#E0F2FE;color:#0369A1;font-size:0.7rem;padding:0.15rem 0.45rem;">
+                                        {{ job.get_shipping_line_display|default:job.shipping_line }}
+                                    </span>
+                                </div>
+                                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.2rem;">
+                                    <i class="fa-solid fa-ship"></i> {{ job.vessel_name }}
+                                </div>
+                                {% if job.customs_manifest_number %}
+                                <div style="font-size:0.7rem;color:var(--text-muted);">
+                                    Manifest: {{ job.customs_manifest_number }}
+                                </div>
+                                {% endif %}
+                            </td>
+
+                            <!-- CONTAINERS -->
+                            <td style="padding:0.85rem 1rem;">
+                                <span class="badge-pill" style="background:rgba(3,105,161,0.1);color:#0284C7;font-weight:800;font-size:0.75rem;padding:0.2rem 0.55rem;">
+                                    <i class="fa-solid fa-boxes-stacked"></i> {{ job.containers.count|default:1 }} Container(s)
+                                </span>
+                                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.25rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ job.container_numbers }}">
+                                    {{ job.container_numbers }}
+                                </div>
+                            </td>
+
+                            <!-- DOCUMENTS -->
+                            <td style="padding:0.85rem 1rem;">
+                                <div style="display:flex;flex-direction:column;gap:0.3rem;">
+                                    {% for doc in job.documents.all %}
+                                    <div style="display:flex;align-items:center;justify-content:space-between;background:#F8FAFC;padding:0.25rem 0.5rem;border-radius:4px;border:1px solid #E2E8F0;font-size:0.75rem;">
+                                        <span style="max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                            <i class="fa-solid fa-file-pdf" style="color:#DC2626;"></i> {{ doc.get_document_type_display }}
+                                        </span>
+                                        {% if doc.file %}
+                                        <a href="{{ doc.file.url }}" target="_blank" style="color:#0284C7;font-weight:700;text-decoration:none;margin-left:0.4rem;">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    {% empty %}
+                                    <span style="font-size:0.75rem;color:#DC2626;"><i class="fa-solid fa-triangle-exclamation"></i> No documents attached</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+
+                            <!-- STATUS -->
+                            <td style="padding:0.85rem 1rem;">
+                                {% if job.current_stage_number < 3 %}
+                                <span class="badge-pill" style="background:#FEF3C7;color:#92400E;font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;">
+                                    <i class="fa-solid fa-clock"></i> Awaiting Review
+                                </span>
+                                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">
+                                    Uploaded by: {{ job.documentation_officer.first_name|default:"Docs Officer" }}
+                                </div>
+                                {% else %}
+                                <span class="badge-pill" style="background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;font-size:0.75rem;font-weight:700;padding:0.25rem 0.65rem;">
+                                    <i class="fa-solid fa-circle-check"></i> Approved & Dispatched
+                                </span>
+                                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">
+                                    Stage {{ job.current_stage_number }}: {{ job.current_stage_obj.name_en }}
+                                </div>
+                                {% endif %}
+                            </td>
+
+                            <!-- ACTIONS -->
+                            <td style="padding:0.85rem 1rem;text-align:right;">
+                                <div style="display:flex;flex-direction:column;gap:0.35rem;align-items:flex-end;">
+                                    <!-- INSPECT DETAILS BUTTON (Primary Action) -->
+                                    <button type="button" onclick="openReviewModal('{{ job.id }}')" 
+                                            class="btn-header-action" 
+                                            style="background:#F1F5F9;color:#334155;border:1px solid #CBD5E1;font-size:0.75rem;padding:0.35rem 0.75rem;border-radius:var(--radius-md);cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;">
+                                        <i class="fa-solid fa-magnifying-glass-arrow-right" style="color:#0284C7;"></i> Review & Inspect Details
+                                    </button>
+
+                                    {% if active_tab == 'pending' %}
+                                    <!-- DIRECT APPROVE BUTTON -->
+                                    <button type="button" onclick="openApproveModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.customer.company_name|escapejs }}', '{{ job.bl_number|escapejs }}')" 
+                                            class="btn-header-action" 
+                                            style="background:#059669;color:#fff;border:none;font-size:0.75rem;padding:0.35rem 0.85rem;border-radius:var(--radius-md);cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;font-weight:700;box-shadow:var(--shadow-sm);">
+                                        <i class="fa-solid fa-circle-check"></i> Approve & Open File
+                                    </button>
+                                    {% else %}
+                                    <!-- TRACK IN CUSTOMS -->
+                                    <a href="{% url 'job_detail' job.id %}" class="btn-header-action" style="background:#E0F2FE;color:#0369A1;font-size:0.75rem;padding:0.3rem 0.7rem;text-decoration:none;border-radius:var(--radius-md);font-weight:700;">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Track in Customs (Stage {{ job.current_stage_number }})
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- HIDDEN DATA FOR INSPECTION MODAL -->
+                        <div id="job-data-{{ job.id }}" style="display:none;"
+                             data-job-number="{{ job.job_number }}"
+                             data-client-name="{{ job.customer.company_name }}"
+                             data-tin="{{ job.customer.tin_number|default:'N/A' }}"
+                             data-bl="{{ job.bl_number }}"
+                             data-shipping-line="{{ job.get_shipping_line_display|default:job.shipping_line }}"
+                             data-vessel="{{ job.vessel_name }}"
+                             data-manifest="{{ job.customs_manifest_number|default:'Pending Manifest' }}"
+                             data-route="{{ job.port_of_origin }} &rarr; {{ job.port_of_arrival }}"
+                             data-destination="{{ job.final_destination }}"
+                             data-regime="{{ job.get_shipment_type_display|default:job.shipment_type }}"
+                             data-cargo="{{ job.cargo_description }}"
+                             data-revenue="TSh {{ job.contracted_revenue|floatformat:0 }}"
+                             data-eta="{{ job.eta_arrival_date|date:'d M Y' }}"
+                             data-doc-officer="{{ job.documentation_officer.get_full_name|default:job.documentation_officer.username }}"
+                             data-detail-url="{% url 'job_detail' job.id %}">
+                             
+                             <!-- Containers JSON-like list -->
+                             <div class="modal-containers-data">
+                                 {% for c in job.containers.all %}
+                                 <div class="c-item" data-number="{{ c.container_number }}" data-size="{{ c.get_size_type_display }}" data-seal="{{ c.seal_number|default:'-' }}" data-weight="{{ c.gross_weight_kg|default:'-' }}" data-freedays="{{ c.empty_free_days }}"></div>
+                                 {% empty %}
+                                 <div class="c-item" data-number="{{ job.container_numbers }}" data-size="{{ job.container_size_type }}" data-seal="{{ job.seal_number|default:'-' }}" data-weight="-" data-freedays="14"></div>
+                                 {% endfor %}
+                             </div>
+
+                             <!-- Documents list -->
+                             <div class="modal-docs-data">
+                                 {% for doc in job.documents.all %}
+                                 <div class="d-item" data-title="{{ doc.get_document_type_display }}" data-url="{% if doc.file %}{{ doc.file.url }}{% endif %}"></div>
+                                 {% endfor %}
+                             </div>
+                        </div>
+
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" style="text-align:center;padding:3rem;color:var(--text-muted);">
+                                <i class="fa-solid fa-circle-check" style="font-size:2.5rem;color:#10B981;margin-bottom:0.75rem;display:block;"></i>
+                                {% if active_tab == 'pending' %}
+                                All incoming intakes have been verified! No pending documents requiring approval at this time.
+                                {% else %}
+                                No approved digital files found in this category.
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+     SHIPMENT COMPREHENSIVE INSPECTION MODAL
+     ========================================================= -->
+<div id="reviewInspectModal" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#FFFFFF;border-radius:var(--radius-xl);max-width:760px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-xl);padding:1.75rem;animation:fadeIn 0.2s ease;">
+        
+        <!-- HEADER -->
+        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #E2E8F0;padding-bottom:1rem;margin-bottom:1.25rem;">
+            <div>
+                <span style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Shipment Origin Document & File Inspection</span>
+                <h3 id="inspectJobNumber" style="font-family:var(--font-heading);font-size:1.35rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
+                    CF/2026/0000
+                </h3>
+            </div>
+            <button type="button" onclick="closeReviewModal()" style="border:none;background:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+        </div>
+
+        <!-- MATRIX DETAILS -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;">
+            <div>
+                <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Client / Consignee</div>
+                <div id="inspectClientName" style="font-size:0.95rem;font-weight:800;color:var(--brand-navy-900);">---</div>
+                <div id="inspectTin" style="font-size:0.75rem;color:var(--text-muted);">TIN: ---</div>
+            </div>
+            <div>
+                <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Shipment Regime</div>
+                <div id="inspectRegime" style="font-size:0.95rem;font-weight:800;color:#0284C7;">---</div>
+                <div id="inspectDestination" style="font-size:0.75rem;color:var(--text-muted);">Destination: ---</div>
+            </div>
+            <div>
+                <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Shipping Line & B/L Number</div>
+                <div id="inspectShippingLine" style="font-size:0.9rem;font-weight:700;color:var(--brand-navy-900);">---</div>
+                <div id="inspectBl" style="font-size:0.8rem;color:#0284C7;font-weight:700;">B/L: ---</div>
+            </div>
+            <div>
+                <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Vessel & Manifest No</div>
+                <div id="inspectVessel" style="font-size:0.9rem;font-weight:700;color:var(--brand-navy-900);">---</div>
+                <div id="inspectManifest" style="font-size:0.75rem;color:var(--text-muted);">Manifest: ---</div>
+            </div>
+        </div>
+
+        <!-- CARGO SPEC -->
+        <div style="margin-bottom:1.25rem;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.35rem;">Cargo Description & Packaging:</div>
+            <div id="inspectCargo" style="background:#FFFFFF;border:1px solid #CBD5E1;border-radius:var(--radius-md);padding:0.75rem 1rem;font-size:0.85rem;color:#334155;line-height:1.4;">
+                ---
+            </div>
+        </div>
+
+        <!-- CONTAINERS BREAKDOWN -->
+        <div style="margin-bottom:1.25rem;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.35rem;">
+                <i class="fa-solid fa-boxes-stacked" style="color:#0284C7;"></i> Containers Fleet, Seals & VGM:
+            </div>
+            <div style="border:1px solid #CBD5E1;border-radius:var(--radius-md);overflow:hidden;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.82rem;" id="inspectContainersTable">
+                    <thead>
+                        <tr style="background:#F1F5F9;text-align:left;color:#334155;">
+                            <th style="padding:0.5rem 0.75rem;">Container Number</th>
+                            <th style="padding:0.5rem 0.75rem;">Size / Type</th>
+                            <th style="padding:0.5rem 0.75rem;">Seal No</th>
+                            <th style="padding:0.5rem 0.75rem;">Gross Weight (VGM)</th>
+                            <th style="padding:0.5rem 0.75rem;">Free Days</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inspectContainersBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- DOCUMENTS PREVIEW VAULT -->
+        <div style="margin-bottom:1.5rem;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.5rem;">
+                <i class="fa-solid fa-folder-open" style="color:#D97706;"></i> Origin Documents Uploaded (PDF / Image Previews):
+            </div>
+            <div id="inspectDocsContainer" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:0.75rem;">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- ACTIONS FOOTER -->
+        <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid #E2E8F0;padding-top:1.25rem;flex-wrap:wrap;gap:0.75rem;">
+            <a id="inspectFullJobLink" href="#" class="btn-header-action btn-outline" style="font-size:0.82rem;padding:0.55rem 1rem;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full Job File
+            </a>
+            
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <button type="button" onclick="closeReviewModal()" class="btn-header-action btn-outline" style="font-size:0.82rem;padding:0.55rem 1rem;">
+                    Close
+                </button>
+                <button type="button" id="inspectBtnReject" class="btn-header-action" style="background:#FEE2E2;color:#DC2626;border:1px solid #FCA5A5;font-size:0.82rem;padding:0.55rem 1rem;font-weight:700;cursor:pointer;">
+                    <i class="fa-solid fa-rotate-left"></i> Request Rescan
+                </button>
+                <button type="button" id="inspectBtnApprove" class="btn-header-action" style="background:#059669;color:#fff;border:none;font-size:0.85rem;padding:0.55rem 1.25rem;font-weight:800;border-radius:var(--radius-md);cursor:pointer;box-shadow:var(--shadow-sm);">
+                    <i class="fa-solid fa-circle-check"></i> Approve & Open Digital File
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+     APPROVE CONFIRMATION MODAL
+     ========================================================= -->
+<div id="approveModal" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:99999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#FFFFFF;border-radius:var(--radius-xl);max-width:480px;width:100%;box-shadow:var(--shadow-xl);padding:1.5rem;animation:fadeIn 0.2s ease;">
+        <form id="approveForm" action="" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="review_action" value="approve">
+            
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;border-bottom:1px solid #E2E8F0;padding-bottom:0.75rem;">
+                <div style="width:42px;height:42px;border-radius:50%;background:#DCFCE7;color:#15803D;display:flex;align-items:center;justify-content:center;font-size:1.35rem;">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <h4 style="margin:0;font-size:1.15rem;font-weight:800;color:var(--brand-navy-900);">Approve & Open Job File</h4>
+                    <p id="approveJobSubtitle" style="margin:0.2rem 0 0 0;font-size:0.8rem;color:var(--text-muted);">Shipment: ---</p>
+                </div>
+            </div>
+
+            <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:1rem;margin-bottom:1.25rem;font-size:0.85rem;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:0.4rem;">
+                    <span style="color:var(--text-muted);">Job Reference:</span>
+                    <strong id="approveJobNum" style="color:#0284C7;">---</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:0.4rem;">
+                    <span style="color:var(--text-muted);">Client / Consignee:</span>
+                    <strong id="approveClientName" style="color:var(--brand-navy-900);">---</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                    <span style="color:var(--text-muted);">Bill of Lading:</span>
+                    <strong id="approveBlNum" style="color:var(--text-main);">---</strong>
+                </div>
+            </div>
+
+            <div style="font-size:0.85rem;color:#334155;line-height:1.5;margin-bottom:1.25rem;">
+                <p style="margin:0 0 0.5rem 0;">
+                    <strong>Are you sure you want to approve this intake and open the official digital file?</strong>
+                </p>
+                <p style="margin:0;font-size:0.78rem;color:var(--text-muted);">
+                    Upon confirmation, this shipment will be moved from the Pending queue, mark Stages 1 and 2 as completed, and advance immediately to <strong>Customs Declarations (Stage 3: TANCIS)</strong>.
+                </p>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;gap:0.75rem;border-top:1px solid #E2E8F0;padding-top:1rem;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('approveModal')">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-header-action" style="background:#059669;color:#fff;font-weight:800;border:none;padding:0.6rem 1.4rem;border-radius:var(--radius-md);cursor:pointer;">
+                    <i class="fa-solid fa-check"></i> Yes, Approve & Open File
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- =========================================================
+     RESCAN / REJECT MODAL
+     ========================================================= -->
+<div id="rescanModal" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:99999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#FFFFFF;border-radius:var(--radius-xl);max-width:500px;width:100%;box-shadow:var(--shadow-xl);padding:1.5rem;animation:fadeIn 0.2s ease;">
+        <form id="rescanForm" action="" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="review_action" value="reject">
+            
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;border-bottom:1px solid #E2E8F0;padding-bottom:0.75rem;">
+                <div style="width:40px;height:40px;border-radius:50%;background:#FEE2E2;color:#DC2626;display:flex;align-items:center;justify-content:center;font-size:1.25rem;">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </div>
+                <div>
+                    <h4 style="margin:0;font-size:1.15rem;font-weight:700;color:var(--brand-navy-900);">Request Document Rescan / Correction</h4>
+                    <p id="rescanJobLabel" style="font-size:0.8rem;color:var(--text-muted);margin:0.2rem 0 0 0;">Specify issue to Documentation Officer</p>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.25rem;">
+                <label style="font-weight:700;font-size:0.85rem;color:var(--brand-navy-900);">Reason for Rejection / Rescan Request *</label>
+                <textarea name="reason" class="form-control" rows="4" placeholder="e.g. B/L is blurry, Packing List missing official stamp, or Invoice total does not match..." required style="font-size:0.88rem;"></textarea>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;gap:0.75rem;border-top:1px solid #E2E8F0;padding-top:1rem;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('rescanModal')">Cancel</button>
+                <button type="submit" class="btn-header-action" style="background:#DC2626;color:#fff;border:none;font-weight:700;padding:0.6rem 1.25rem;border-radius:var(--radius-md);cursor:pointer;">
+                    <i class="fa-solid fa-paper-plane"></i> Send Rescan Notice
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentActiveJobId = null;
+
+function openReviewModal(jobId) {
+    currentActiveJobId = jobId;
+    const dataDiv = document.getElementById('job-data-' + jobId);
+    if (!dataDiv) return;
+
+    // Populate Matrix
+    document.getElementById('inspectJobNumber').textContent = dataDiv.dataset.jobNumber;
+    document.getElementById('inspectClientName').textContent = dataDiv.dataset.clientName;
+    document.getElementById('inspectTin').textContent = 'TIN: ' + dataDiv.dataset.tin;
+    document.getElementById('inspectRegime').textContent = dataDiv.dataset.regime;
+    document.getElementById('inspectDestination').textContent = 'Destination: ' + dataDiv.dataset.destination;
+    document.getElementById('inspectShippingLine').textContent = dataDiv.dataset.shippingLine;
+    document.getElementById('inspectBl').textContent = 'B/L: ' + dataDiv.dataset.bl;
+    document.getElementById('inspectVessel').textContent = dataDiv.dataset.vessel;
+    document.getElementById('inspectManifest').textContent = 'Manifest: ' + dataDiv.dataset.manifest;
+    document.getElementById('inspectCargo').textContent = dataDiv.dataset.cargo;
+    document.getElementById('inspectFullJobLink').href = dataDiv.dataset.detailUrl;
+
+    // Populate Containers Table
+    const cBody = document.getElementById('inspectContainersBody');
+    cBody.innerHTML = '';
+    const cItems = dataDiv.querySelectorAll('.modal-containers-data .c-item');
+    cItems.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #E2E8F0';
+        tr.innerHTML = `
+            <td style="padding:0.5rem 0.75rem;font-weight:700;color:#0284C7;">${item.dataset.number}</td>
+            <td style="padding:0.5rem 0.75rem;">${item.dataset.size}</td>
+            <td style="padding:0.5rem 0.75rem;">${item.dataset.seal}</td>
+            <td style="padding:0.5rem 0.75rem;">${item.dataset.weight !== '-' ? (Number(item.dataset.weight).toLocaleString() + ' kg') : '-'}</td>
+            <td style="padding:0.5rem 0.75rem;">${item.dataset.freedays} days</td>
+        `;
+        cBody.appendChild(tr);
+    });
+
+    // Populate Docs Preview Cards
+    const docsContainer = document.getElementById('inspectDocsContainer');
+    docsContainer.innerHTML = '';
+    const dItems = dataDiv.querySelectorAll('.modal-docs-data .d-item');
+    if (dItems.length === 0) {
+        docsContainer.innerHTML = `<span style="color:#DC2626;font-size:0.8rem;"><i class="fa-solid fa-triangle-exclamation"></i> No origin documents uploaded for this shipment yet.</span>`;
+    } else {
+        dItems.forEach(d => {
+            const card = document.createElement('div');
+            card.style.background = '#F8FAFC';
+            card.style.border = '1px solid #CBD5E1';
+            card.style.borderRadius = '6px';
+            card.style.padding = '0.65rem 0.85rem';
+            card.style.display = 'flex';
+            card.style.alignItems = 'center';
+            card.style.justifyContent = 'space-between';
+            card.innerHTML = `
+                <div style="font-size:0.8rem;font-weight:700;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.35rem;">
+                    <i class="fa-solid fa-file-pdf" style="color:#DC2626;"></i> ${d.dataset.title}
+                </div>
+                ${d.dataset.url ? `<a href="${d.dataset.url}" target="_blank" class="btn-header-action" style="background:#0284C7;color:#fff;padding:0.25rem 0.6rem;font-size:0.75rem;text-decoration:none;border-radius:4px;"><i class="fa-solid fa-eye"></i> View PDF</a>` : `<span style="font-size:0.72rem;color:var(--text-muted);">No file</span>`}
+            `;
+            docsContainer.appendChild(card);
+        });
+    }
+
+    // Connect action buttons inside inspect modal
+    document.getElementById('inspectBtnApprove').onclick = function() {
+        closeReviewModal();
+        openApproveModal(jobId, dataDiv.dataset.jobNumber, dataDiv.dataset.clientName, dataDiv.dataset.bl);
+    };
+    document.getElementById('inspectBtnReject').onclick = function() {
+        closeReviewModal();
+        openRescanModal(jobId, dataDiv.dataset.jobNumber);
+    };
+
+    document.getElementById('reviewInspectModal').style.display = 'flex';
+}
+
+function closeReviewModal() {
+    document.getElementById('reviewInspectModal').style.display = 'none';
+}
+
+function openApproveModal(jobId, jobNum, clientName, blNum) {
+    document.getElementById('approveForm').action = "/operations/intakes/" + jobId + "/action/";
+    document.getElementById('approveJobSubtitle').textContent = "Shipment: " + jobNum;
+    document.getElementById('approveJobNum').textContent = jobNum;
+    document.getElementById('approveClientName').textContent = clientName || 'N/A';
+    document.getElementById('approveBlNum').textContent = blNum || 'N/A';
+    document.getElementById('approveModal').style.display = 'flex';
+}
+
+function openRescanModal(jobId, jobNum) {
+    document.getElementById('rescanForm').action = "/operations/intakes/" + jobId + "/action/";
+    document.getElementById('rescanJobLabel').textContent = "Shipment: " + jobNum;
+    document.getElementById('rescanModal').style.display = 'flex';
+}
+
+function closeModal(modalId) {
+    const m = document.getElementById(modalId);
+    if (m) m.style.display = 'none';
+}
+</script>
+{% endblock %}

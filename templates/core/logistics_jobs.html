@@ -1,0 +1,347 @@
+{% extends 'base.html' %}
+
+{% block title %}Dispatch Jobs | Logistics & Fleet{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;">
+
+    <!-- TOP HEADER -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+        <div>
+            <h2 style="font-family:var(--font-heading);font-size:1.35rem;font-weight:800;color:var(--brand-navy-900);letter-spacing:-0.02em;">
+                <i class="fa-solid fa-truck-ramp-box" style="color:#D97706;"></i> Dispatch Jobs & Haulage Allocation
+            </h2>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin-top:0.2rem;">
+                Allocate fleet prime movers & skeletal trailers, assign vetted drivers, verify seal integrity, and coordinate consignee haulage.
+            </p>
+        </div>
+        <a href="{% url 'logistics_dashboard' %}" class="btn-header-action btn-outline">
+            <i class="fa-solid fa-arrow-left"></i> Dispatch Dashboard
+        </a>
+    </div>
+
+    <!-- FILTER TABS & SEARCH -->
+    <div class="card-panel" style="padding:1rem;margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <!-- TABS -->
+            <div style="display:flex;gap:0.4rem;overflow-x:auto;">
+                <a href="?tab=all" class="badge-pill {% if tab == 'all' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    All Jobs ({{ jobs.count }})
+                </a>
+                <a href="?tab=ready" class="badge-pill {% if tab == 'ready' %}badge-delayed{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-clock"></i> Awaiting Truck ({{ ready_count }})
+                </a>
+                <a href="?tab=assigned" class="badge-pill {% if tab == 'assigned' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-truck"></i> Truck Assigned ({{ assigned_count }})
+                </a>
+                <a href="?tab=in_transit" class="badge-pill {% if tab == 'in_transit' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
+                    <i class="fa-solid fa-road"></i> In Transit ({{ transit_count }})
+                </a>
+            </div>
+
+            <!-- SEARCH -->
+            <form method="GET" action="{% url 'logistics_jobs' %}" style="display:flex;gap:0.4rem;flex:1;max-width:320px;min-width:220px;">
+                <input type="hidden" name="tab" value="{{ tab }}">
+                <input type="text" name="q" class="form-control" placeholder="Search Job, Container, Truck..." value="{{ search_q }}" style="font-size:0.85rem;padding:0.4rem 0.75rem;">
+                <button type="submit" class="btn-header-action btn-outline" style="padding:0.4rem 0.8rem;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DISPATCH JOBS TABLE -->
+    <div class="card-panel" style="padding:1.5rem;">
+        <div class="table-responsive">
+            <table class="data-table" style="font-size:0.85rem;">
+                <thead>
+                    <tr>
+                        <th>Job Number</th>
+                        <th>Consignee</th>
+                        <th>Container / Size</th>
+                        <th>Destination</th>
+                        <th>Vehicle & Chassis</th>
+                        <th>Assigned Driver</th>
+                        <th>Dispatch Status</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in jobs %}
+                    <tr>
+                        <td>
+                            <strong style="color:var(--brand-navy-900);font-size:0.95rem;">{{ job.job_number }}</strong>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">BL: {{ job.bl_number }}</div>
+                            <div style="margin-top:0.25rem;">
+                                <span class="badge-pill" style="background:#EEF2FF;color:#4F46E5;font-size:0.72rem;font-weight:700;">
+                                    <i class="fa-solid fa-boxes-stacked"></i> {{ job.containers.count|default:1 }} {% if job.containers.count > 1 %}Containers{% else %}Container{% endif %}
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <strong>{{ job.customer.company_name }}</strong>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">{{ job.cargo_type }}</div>
+                        </td>
+                        <td>
+                            {% if job.containers.all %}
+                            <div style="display:flex;flex-direction:column;gap:0.35rem;">
+                                {% for cnt in job.containers.all %}
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:var(--radius-sm);padding:0.25rem 0.5rem;font-size:0.75rem;">
+                                    <div>
+                                        <strong style="font-family:monospace;color:#0F172A;">{{ cnt.container_number }}</strong> 
+                                        <span style="color:#64748B;">({{ cnt.get_size_type_display }})</span>
+                                        <div style="font-size:0.7rem;color:var(--text-muted);">
+                                            {% if cnt.assigned_truck %}
+                                            <span style="color:#0284C7;font-weight:700;"><i class="fa-solid fa-truck"></i> {{ cnt.assigned_truck }}</span>
+                                            {% if cnt.assigned_driver %} &bull; {{ cnt.assigned_driver.get_full_name|default:cnt.assigned_driver.username }}{% endif %}
+                                            {% else %}
+                                            <span style="color:#DC2626;"><i class="fa-solid fa-circle-exclamation"></i> No Truck</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% if not is_ceo %}
+                                    <button type="button" 
+                                        onclick="openAssignModal('{{ job.id }}', '{{ job.job_number }}', '{{ cnt.container_number|escapejs }}', '{{ cnt.assigned_truck|escapejs }}', '{{ cnt.assigned_trailer|escapejs }}', '{{ cnt.assigned_driver_id|default:'' }}', '{{ cnt.seal_number|escapejs }}', '{{ job.final_destination|escapejs }}', '{{ cnt.id }}')" 
+                                        class="badge-pill" style="border:none;background:#EEF2FF;color:#4F46E5;cursor:pointer;font-weight:700;padding:0.2rem 0.5rem;font-size:0.7rem;">
+                                        Assign
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span style="font-weight:700;color:#0F766E;background:#CCFBF1;padding:0.2rem 0.5rem;border-radius:var(--radius-sm);">
+                                {{ job.container_numbers }}
+                            </span>
+                            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.15rem;">{{ job.container_size_type }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span style="font-weight:700;color:var(--brand-navy-900);">
+                                <i class="fa-solid fa-location-dot" style="color:#EF4444;"></i> {{ job.final_destination }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if job.truck_number %}
+                            <div style="font-weight:700;color:var(--brand-navy-900);">
+                                <i class="fa-solid fa-truck"></i> {{ job.truck_number }}
+                            </div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);">
+                                Chassis: {{ job.trailer_number|default:"Standard Chassis" }}
+                            </div>
+                            <div style="font-size:0.72rem;color:#0D9488;">
+                                Seal: {{ job.seal_number|default:"Pending Seal" }}
+                            </div>
+                            {% else %}
+                            <span style="color:#DC2626;font-size:0.78rem;font-weight:700;background:#FEF2F2;padding:0.2rem 0.5rem;border-radius:var(--radius-sm);">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Unassigned
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if job.driver %}
+                            <div style="font-weight:700;color:var(--brand-navy-900);">
+                                <i class="fa-solid fa-id-card"></i> {{ job.driver.get_full_name }}
+                            </div>
+                            <div style="font-size:0.72rem;color:var(--text-muted);">
+                                {{ job.driver.profile.phone_number|default:"+255 754 ..." }}
+                            </div>
+                            {% else %}
+                            <span style="color:var(--text-muted);font-style:italic;">No Driver</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if job.current_stage_number == 11 %}
+                            <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;font-size:0.75rem;">
+                                <i class="fa-solid fa-truck-fast"></i> In Transit
+                            </span>
+                            {% elif job.truck_number %}
+                            <span class="badge-pill badge-active" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-check"></i> Truck Ready
+                            </span>
+                            {% else %}
+                            <span class="badge-pill" style="background:#FEF3C7;color:#B45309;font-size:0.75rem;">
+                                <i class="fa-solid fa-clock"></i> Needs Truck
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right;">
+                            <div style="display:inline-flex;gap:0.4rem;">
+                                {% if not is_ceo %}
+                                <button type="button" 
+                                    onclick="openAssignModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.container_numbers|escapejs }}', '{{ job.truck_number|escapejs }}', '{{ job.trailer_number|escapejs }}', '{{ job.driver_id|default:'' }}', '{{ job.seal_number|escapejs }}', '{{ job.final_destination|escapejs }}', 'ALL')" 
+                                    class="btn-header-action btn-primary" style="padding:0.35rem 0.75rem;font-size:0.78rem;background:#4F46E5;border-color:#4F46E5;">
+                                    <i class="fa-solid fa-truck-ramp-box"></i> {% if job.truck_number %}Change{% else %}Assign{% endif %}
+                                </button>
+                                {% endif %}
+                                <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.6rem;font-size:0.78rem;" title="View Job Details">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align:center;padding:3rem 1.5rem;color:var(--text-muted);">
+                            <div style="font-size:1.1rem;font-weight:700;color:var(--brand-navy-900);margin-bottom:0.25rem;">No dispatch jobs found</div>
+                            No consignments match the selected search criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- ASSIGN VEHICLE & DRIVER MODAL -->
+<div id="assignModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:var(--radius-lg);max-width:540px;width:100%;padding:1.75rem;box-shadow:var(--shadow-xl);max-height:90vh;overflow-y:auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;border-bottom:1px solid #E2E8F0;padding-bottom:0.75rem;">
+            <div>
+                <h4 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
+                    <i class="fa-solid fa-truck-ramp-box" style="color:#4F46E5;"></i> Assign Vehicle & Driver
+                </h4>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;" id="modalJobTitle">
+                    Job: MK-2026-0001
+                </div>
+            </div>
+            <button type="button" onclick="closeAssignModal()" style="background:none;border:none;color:var(--text-muted);font-size:1.25rem;cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="assignForm" method="POST" action="">
+            {% csrf_token %}
+            <input type="hidden" name="container_id" id="modalContainerIdHidden" value="ALL">
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                <div class="form-group">
+                    <label>Select Fleet Prime Mover (Truck) *</label>
+                    <select name="truck_number" id="truckSelect" class="form-control" required onchange="fillTrailerInfo(this)">
+                        <option value="">-- Choose Truck --</option>
+                        {% for v in available_vehicles %}
+                        <option value="{{ v.plate_number }}" data-trailer="{{ v.trailer_plate }}" data-driver="{{ v.assigned_driver_id|default:'' }}">
+                            {{ v.plate_number }} &bull; {{ v.make_model|truncatechars:18 }} (Free)
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Or Custom Truck Plate #</label>
+                    <input type="text" id="customTruckInput" class="form-control" placeholder="e.g. T 412 DXE" oninput="if(this.value){document.getElementById('truckSelect').value='';}">
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                <div class="form-group">
+                    <label>Trailer / Chassis Number</label>
+                    <input type="text" name="trailer_number" id="trailerInput" class="form-control" placeholder="e.g. T 789 DXX / Chassis 40ft">
+                </div>
+
+                <div class="form-group">
+                    <label>Container Seal Number</label>
+                    <input type="text" name="seal_number" id="sealInput" class="form-control" placeholder="e.g. SL-COS-99120">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Assigned Professional Driver *</label>
+                <select name="driver_id" id="driverSelect" class="form-control" required>
+                    <option value="">-- Choose Driver --</option>
+                    {% for d in drivers %}
+                    <option value="{{ d.id }}">
+                        {{ d.get_full_name }} ({{ d.username }}) - {{ d.profile.phone_number }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.5rem;">
+                <label>Final Destination / Consignee Delivery Address *</label>
+                <input type="text" name="destination" id="destinationInput" class="form-control" placeholder="e.g. Dar es Salaam, Tabata Industrial Area" required>
+            </div>
+
+            <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                <button type="button" onclick="closeAssignModal()" class="btn-header-action btn-outline">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#4F46E5;border-color:#4F46E5;font-weight:700;">
+                    <i class="fa-solid fa-check"></i> Save & Confirm Dispatch
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAssignModal(jobId, jobNo, container, truck, trailer, driverId, seal, dest, containerId) {
+    var modal = document.getElementById('assignModal');
+    var form = document.getElementById('assignForm');
+    var title = document.getElementById('modalJobTitle');
+    var hiddenCnt = document.getElementById('modalContainerIdHidden');
+
+    form.action = '/logistics/jobs/' + jobId + '/assign/';
+    title.innerHTML = '<strong>' + jobNo + '</strong> &bull; Container: ' + container;
+    hiddenCnt.value = containerId || 'ALL';
+
+    // Reset select
+    document.getElementById('truckSelect').value = '';
+    document.getElementById('customTruckInput').value = '';
+
+    // Pre-fill inputs
+    if (truck) {
+        var truckSelect = document.getElementById('truckSelect');
+        var found = false;
+        for (var i = 0; i < truckSelect.options.length; i++) {
+            if (truckSelect.options[i].value === truck) {
+                truckSelect.selectedIndex = i;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            document.getElementById('customTruckInput').value = truck;
+        }
+    }
+    document.getElementById('trailerInput').value = trailer || '';
+    document.getElementById('sealInput').value = seal || '';
+    document.getElementById('destinationInput').value = dest || '';
+
+    if (driverId) {
+        document.getElementById('driverSelect').value = driverId;
+    }
+
+    modal.style.display = 'flex';
+}
+
+function fillTrailerInfo(selectEl) {
+    var opt = selectEl.options[selectEl.selectedIndex];
+    if (opt) {
+        var trailer = opt.getAttribute('data-trailer');
+        var driver = opt.getAttribute('data-driver');
+        if (trailer) document.getElementById('trailerInput').value = trailer;
+        if (driver) document.getElementById('driverSelect').value = driver;
+        document.getElementById('customTruckInput').value = '';
+    }
+}
+
+document.getElementById('assignForm').addEventListener('submit', function() {
+    var customTruck = document.getElementById('customTruckInput').value.trim();
+    if (customTruck) {
+        // Create or set truck_number
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'truck_number';
+        input.value = customTruck;
+        this.appendChild(input);
+    }
+});
+
+function closeAssignModal() {
+    document.getElementById('assignModal').style.display = 'none';
+}
+</script>
+{% endblock %}

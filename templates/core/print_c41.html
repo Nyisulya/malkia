@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TRA Form C.41 - {{ job.job_number }} | Malkia C&F</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #F1F5F9;
+            color: #0F172A;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .toolbar {
+            max-width: 820px;
+            margin: 0 auto 1.25rem auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0F172A;
+            color: #fff;
+            padding: 0.85rem 1.25rem;
+            border-radius: 10px;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-back { background: #334155; color: #fff; }
+        .btn-print { background: #10B981; color: #fff; }
+        .page {
+            max-width: 820px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            padding: 2.5rem 2.75rem;
+            border: 1px solid #CBD5E1;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+        }
+        .header-box {
+            text-align: center;
+            border-bottom: 2px solid #0F172A;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        .form-code {
+            position: absolute;
+            top: 0;
+            right: 0;
+            border: 2px solid #0F172A;
+            padding: 0.35rem 0.75rem;
+            font-weight: 900;
+            font-size: 1rem;
+        }
+        .section-title {
+            background: #F1F5F9;
+            border-left: 4px solid #0F172A;
+            padding: 0.45rem 0.75rem;
+            font-weight: 800;
+            font-size: 0.88rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin: 1.35rem 0 0.75rem 0;
+        }
+        table.info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        table.info-table th, table.info-table td {
+            border: 1px solid #94A3B8;
+            padding: 0.55rem 0.75rem;
+            text-align: left;
+        }
+        table.info-table th {
+            background: #F8FAFC;
+            width: 32%;
+            font-weight: 700;
+            color: #334155;
+        }
+        .declaration-text {
+            font-size: 0.88rem;
+            line-height: 1.65;
+            text-align: justify;
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 1px dashed #64748B;
+            background: #FAFAFA;
+        }
+        .sig-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .sig-box {
+            border: 1px solid #94A3B8;
+            padding: 1rem;
+            min-height: 150px;
+        }
+        @media print {
+            body { background: #fff; padding: 0; }
+            .toolbar { display: none !important; }
+            .page { border: none; box-shadow: none; padding: 1rem; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div>
+            <strong><i class="fa-solid fa-file-shield"></i> Company Form: TRA Form C.41</strong>
+            <span style="margin-left:0.75rem;font-size:0.82rem;color:#94A3B8;">File: {{ job.job_number }} | Ref: {{ job.c41_reference_no }}</span>
+        </div>
+        <div style="display:flex;gap:0.6rem;">
+            <a href="{% url 'job_detail' job.id %}" class="btn btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Back to File
+            </a>
+            <button onclick="window.print()" class="btn btn-print">
+                <i class="fa-solid fa-print"></i> Print / Save PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="header-box">
+            <div class="form-code">FORM C.41</div>
+            <div style="font-size:0.82rem;font-weight:700;letter-spacing:0.08em;color:#475569;">UNITED REPUBLIC OF TANZANIA</div>
+            <h2 style="margin:0.25rem 0;font-size:1.35rem;font-weight:900;">TANZANIA REVENUE AUTHORITY (TRA)</h2>
+            <div style="font-size:0.95rem;font-weight:800;color:#1E293B;">CUSTOMS &amp; EXCISE DEPARTMENT</div>
+            <div style="font-size:0.88rem;font-weight:700;margin-top:0.35rem;text-decoration:underline;">
+                AUTHORISATION OF CUSTOMS CLEARING &amp; FORWARDING AGENT (FORM C.41)
+            </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:0.86rem;margin-bottom:1rem;">
+            <div><strong>C.41 Reference No:</strong> <code>{{ job.c41_reference_no }}</code></div>
+            <div><strong>File No:</strong> <code>{{ job.job_number }}</code></div>
+            <div><strong>Date:</strong> {{ job.file_opened_at|default:today|date:"d M Y" }}</div>
+        </div>
+
+        <div class="section-title">1. Importer / Consignee Particulars (Client Details)</div>
+        <table class="info-table">
+            <tr>
+                <th>Client / Importer Name</th>
+                <td><strong>{{ job.customer.company_name }}</strong></td>
+            </tr>
+            <tr>
+                <th>TIN Number</th>
+                <td><strong style="font-family:monospace;font-size:0.95rem;">{{ job.customer.tin_number|default:"—" }}</strong></td>
+            </tr>
+            <tr>
+                <th>ID Number (NIDA / Passport)</th>
+                <td><strong style="font-family:monospace;">{{ job.customer.id_number|default:"—" }}</strong></td>
+            </tr>
+            <tr>
+                <th>Phone Number &amp; Email</th>
+                <td>{{ job.customer.phone }} &bull; {{ job.customer.email|default:"—" }}</td>
+            </tr>
+        </table>
+
+        <div class="section-title">2. Appointed Clearing &amp; Forwarding Agent (Company)</div>
+        <table class="info-table">
+            <tr>
+                <th>Clearing Agent Name</th>
+                <td><strong>MALKIA FREIGHT &amp; LOGISTICS LTD</strong></td>
+            </tr>
+            <tr>
+                <th>Office Address</th>
+                <td>Dar es Salaam, Tanzania (Port &amp; Customs Clearing Division)</td>
+            </tr>
+            <tr>
+                <th>File Opened By (Officer)</th>
+                <td>{{ job.documentation_officer.get_full_name|default:job.documentation_officer.username|default:"Documentation Officer" }}</td>
+            </tr>
+        </table>
+
+        <div class="section-title">3. Consignment / Motor Vehicle Particulars</div>
+        <table class="info-table">
+            <tr>
+                <th>Bill of Lading (BL) Number</th>
+                <td><strong style="font-family:monospace;font-size:0.95rem;">{{ job.bl_number|default:"—" }}</strong></td>
+            </tr>
+            <tr>
+                <th>Chassis Number</th>
+                <td><strong style="font-family:monospace;font-size:0.95rem;">{{ job.chassis_number|default:"—" }}</strong></td>
+            </tr>
+            <tr>
+                <th>Vehicle / Cargo Description</th>
+                <td><strong>{{ job.cargo_description }}</strong></td>
+            </tr>
+            <tr>
+                <th>Vessel Name / Port of Arrival</th>
+                <td>{{ job.vessel_name|default:"TBA" }} &bull; {{ job.port_of_arrival }}</td>
+            </tr>
+            <tr>
+                <th>Supporting Documents Attached</th>
+                <td>
+                    {% for doc_name, is_rec in job.received_docs_checklist %}
+                        <span style="display:inline-block;margin-right:0.9rem;">
+                            {% if is_rec %}&#9745;{% else %}&#9744;{% endif %} {{ doc_name }}
+                        </span>
+                    {% endfor %}
+                </td>
+            </tr>
+        </table>
+
+        <div class="declaration-text">
+            <strong>DECLARATION &amp; AUTHORISATION:</strong><br>
+            I/We, <strong>{{ job.customer.company_name }}</strong> (TIN: <strong>{{ job.customer.tin_number|default:"N/A" }}</strong>, ID: <strong>{{ job.customer.id_number|default:"N/A" }}</strong>), hereby authorize <strong>MALKIA FREIGHT &amp; LOGISTICS LTD</strong> to act as our lawful Customs Clearing and Forwarding Agent before the Tanzania Revenue Authority (TRA) for the clearance of the above-described motor vehicle / consignment under Bill of Lading No. <strong>{{ job.bl_number|default:"N/A" }}</strong> and Chassis No. <strong>{{ job.chassis_number|default:"N/A" }}</strong>. We declare that the documents submitted (Invoice, Packing List, BL, TBS Certificate, Export Certificate) are true, genuine, and authentic.
+        </div>
+
+        <div class="sig-grid">
+            <div class="sig-box">
+                <div style="font-weight:800;font-size:0.82rem;text-transform:uppercase;color:#334155;margin-bottom:2.2rem;">
+                    For Importer / Client ({{ job.customer.company_name }})
+                </div>
+                <div style="border-bottom:1px dotted #475569;margin-bottom:0.4rem;"></div>
+                <div style="font-size:0.78rem;color:#64748B;">Signature &amp; Date</div>
+                <div style="margin-top:0.8rem;font-size:0.8rem;"><strong>Phone:</strong> {{ job.customer.phone }}</div>
+            </div>
+
+            <div class="sig-box">
+                <div style="font-weight:800;font-size:0.82rem;text-transform:uppercase;color:#334155;margin-bottom:2.2rem;">
+                    For Authorized Agent (MALKIA FREIGHT &amp; LOGISTICS LTD)
+                </div>
+                <div style="border-bottom:1px dotted #475569;margin-bottom:0.4rem;"></div>
+                <div style="font-size:0.78rem;color:#64748B;">Authorized Signature &amp; Official Company Stamp</div>
+                <div style="margin-top:0.8rem;font-size:0.8rem;"><strong>File Ref:</strong> {{ job.job_number }}</div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+

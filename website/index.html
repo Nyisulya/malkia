@@ -1,0 +1,2297 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malkia Cargo Wave Limited | Motor Vehicle Clearing & Logistics</title>
+    <meta name="description" content="Malkia Cargo Wave Limited - Utoaji wa magari Bandari ya Dar es Salaam, Yadi ya In-Bond, na usafirishaji wa magari nchi nzima.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #1E3A8A;
+            --primary-light: #2563EB;
+            --primary-dark: #0B1329;
+            --accent: #F59E0B;
+            --accent-green: #10B981;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --bg-page: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --border: #E2E8F0;
+            --shadow-sm: 0 2px 6px rgba(15,23,42,0.04);
+            --shadow-md: 0 6px 20px rgba(15,23,42,0.08);
+            --shadow-lg: 0 16px 40px rgba(15,23,42,0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            color: var(--text-main);
+            background-color: var(--bg-page);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ── CLEAN MINIMAL WHITE TOP STRIP (PALE JUU PEUPE) ── */
+        .top-strip {
+            background: #FFFFFF;
+            padding: 0.65rem 1.5rem;
+            border-bottom: 1px solid #E2E8F0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .top-strip-container {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+        .top-accreditation {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #059669;
+        }
+        .top-accreditation i {
+            font-size: 0.95rem;
+        }
+        .top-strip-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* LANGUAGE SWITCHER */
+        .lang-switch {
+            display: flex;
+            align-items: center;
+            background: #F1F5F9;
+            border: 1px solid #CBD5E1;
+            border-radius: 999px;
+            padding: 2px;
+            gap: 2px;
+        }
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: #64748B;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            background: #2563EB;
+            color: #FFFFFF;
+            box-shadow: 0 2px 6px rgba(37,99,235,0.25);
+        }
+
+        .btn-top-phone {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #059669;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-decoration: none;
+            padding: 0.4rem 0.8rem;
+            background: #ECFDF5;
+            border: 1px solid #A7F3D0;
+            border-radius: 7px;
+            transition: all 0.2s;
+        }
+        .btn-top-phone:hover {
+            background: #D1FAE5;
+        }
+
+        .btn-top-portal {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #1E3A8A;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-decoration: none;
+            padding: 0.4rem 0.9rem;
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            border-radius: 7px;
+            transition: all 0.2s;
+        }
+        .btn-top-portal:hover {
+            background: #1E3A8A;
+            color: #FFFFFF;
+        }
+
+        /* ── HERO SHOWCASE WITH MOVING CARS (KATIKATI JINA & MAGARI YANATOKA/YANAKUJA) ── */
+        .showcase-hero {
+            background: linear-gradient(180deg, #FFFFFF 0%, #F1F5F9 100%);
+            padding: 3rem 1.5rem 4rem;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand-center-wrap {
+            max-width: 900px;
+            margin: 0 auto 2.5rem;
+            text-align: center;
+        }
+        .brand-crest {
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 1.75rem;
+            box-shadow: 0 8px 24px rgba(37,99,235,0.3);
+        }
+        .brand-center-title {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: #0B1329;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 0.5rem;
+        }
+        .brand-center-title span {
+            color: #2563EB;
+        }
+        .brand-center-sub {
+            font-size: 1.1rem;
+            color: #475569;
+            max-width: 680px;
+            margin: 0 auto 1.25rem;
+            font-weight: 500;
+        }
+        .brand-pills {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .brand-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            background: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            color: #1E293B;
+            box-shadow: var(--shadow-sm);
+        }
+        .brand-pill i {
+            color: #2563EB;
+        }
+
+        /* ── MOVING VEHICLE STAGE ── */
+        .car-stage-container {
+            max-width: 1040px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .car-stage-box {
+            position: relative;
+            background: radial-gradient(circle at 50% 85%, #E2E8F0 0%, #CBD5E1 70%, #94A3B8 100%);
+            border-radius: 24px;
+            padding: 3rem 2rem 2.5rem;
+            height: 420px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(15,23,42,0.18);
+            border: 2px solid #FFFFFF;
+        }
+
+        /* Road track effect at the bottom */
+        .stage-road {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: #1E293B;
+            border-top: 3px solid #F59E0B;
+        }
+        .stage-road-stripes {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 200%;
+            height: 4px;
+            background: repeating-linear-gradient(90deg, #FFFFFF 0px, #FFFFFF 30px, transparent 30px, transparent 60px);
+            animation: roadDash 0.8s linear infinite;
+        }
+        @keyframes roadDash {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-60px); }
+        }
+
+        /* CAR SLIDES */
+        .car-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 40px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateX(100%) scale(0.9);
+            transition: all 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+            padding: 1.5rem;
+        }
+
+        .car-slide.active {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            pointer-events: auto;
+            animation: carVibrate 2.5s ease-in-out infinite;
+        }
+
+        .car-slide.exit-left {
+            opacity: 0;
+            transform: translateX(-110%) scale(0.92);
+        }
+
+        @keyframes carVibrate {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        /* Vehicle Image */
+        .car-img-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 560px;
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .car-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 18px 24px rgba(0,0,0,0.35));
+            border-radius: 12px;
+        }
+
+        /* Vehicle Live Tag */
+        .car-badge {
+            background: #FFFFFF;
+            padding: 0.4rem 1rem;
+            border-radius: 999px;
+            font-size: 0.84rem;
+            font-weight: 800;
+            color: #0F172A;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.6rem;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+            border: 1px solid #CBD5E1;
+        }
+        .car-title-label {
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: #0B1329;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+            margin-bottom: 0.2rem;
+            text-align: center;
+        }
+        .car-origin-sub {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #475569;
+            text-align: center;
+        }
+
+        /* STAGE CONTROLS */
+        .stage-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            color: #0B1329;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .stage-nav-btn:hover {
+            background: #2563EB;
+            color: #FFFFFF;
+            border-color: #2563EB;
+            transform: translateY(-50%) scale(1.08);
+        }
+        .stage-nav-btn.prev { left: 16px; }
+        .stage-nav-btn.next { right: 16px; }
+
+        /* DOTS INDICATOR */
+        .stage-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 1rem;
+        }
+        .stage-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: #CBD5E1;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .stage-dot.active {
+            width: 28px;
+            background: #2563EB;
+        }
+
+        /* ── CENTER LIVE TRACK SEARCH BAR ── */
+        .center-track-bar {
+            max-width: 720px;
+            margin: 2rem auto 0;
+            background: #FFFFFF;
+            border: 1.5px solid #CBD5E1;
+            border-radius: 14px;
+            padding: 0.6rem 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s;
+        }
+        .center-track-bar:focus-within {
+            border-color: #2563EB;
+            box-shadow: 0 0 0 4px rgba(37,99,235,0.15);
+        }
+        .center-track-bar i {
+            font-size: 1.2rem;
+            color: #2563EB;
+            margin-left: 0.5rem;
+        }
+        .center-track-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 0.96rem;
+            font-weight: 700;
+            font-family: monospace;
+            color: #0F172A;
+            background: transparent;
+        }
+        .center-track-input::placeholder {
+            color: #94A3B8;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 500;
+        }
+        .center-track-btn {
+            background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+            color: #FFFFFF;
+            border: none;
+            padding: 0.75rem 1.6rem;
+            border-radius: 9px;
+            font-size: 0.92rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        .center-track-btn:hover {
+            background: #1D4ED8;
+            transform: scale(1.02);
+        }
+
+        #trackResultBox {
+            max-width: 720px;
+            margin: 0.85rem auto 0;
+            display: none;
+            padding: 1rem 1.25rem;
+            background: #FFFFFF;
+            border: 1.5px solid #CBD5E1;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ── SECTION COMMON ── */
+        .section {
+            padding: 4.5rem 1.5rem;
+        }
+        .section-header {
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            text-align: center;
+        }
+        .section-tag {
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #1E40AF;
+            background: #DBEAFE;
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            display: inline-block;
+            margin-bottom: 0.75rem;
+            border: 1px solid #BFDBFE;
+        }
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #0B1329;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            margin-bottom: 0.75rem;
+        }
+        .section-desc {
+            font-size: 1.02rem;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        /* ── SECTION 1: ABOUT US & STORY ── */
+        .about-wrap {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 3.5rem;
+            align-items: center;
+        }
+        .about-content h3 {
+            font-size: 1.95rem;
+            font-weight: 900;
+            color: #0B1329;
+            line-height: 1.25;
+            margin-bottom: 1.15rem;
+        }
+        .about-content p {
+            font-size: 0.96rem;
+            color: #334155;
+            line-height: 1.7;
+            margin-bottom: 1.15rem;
+        }
+        .story-box {
+            background: #EEF2F6;
+            border-left: 4px solid var(--primary-light);
+            padding: 1.2rem 1.4rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1.25rem 0;
+            font-size: 0.94rem;
+            color: #0F172A;
+            font-style: italic;
+            border-top: 1px solid #E2E8F0;
+            border-right: 1px solid #E2E8F0;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        .values-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.15rem;
+            margin-top: 1.75rem;
+        }
+        .value-card {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.15rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .value-card i {
+            font-size: 1.35rem;
+            color: var(--primary-light);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .value-card strong {
+            display: block;
+            font-size: 0.92rem;
+            color: #0B1329;
+            margin-bottom: 0.25rem;
+        }
+        .value-card span {
+            font-size: 0.8rem;
+            color: #64748B;
+            line-height: 1.5;
+        }
+
+        .track-record-card {
+            background: linear-gradient(135deg, #0B1329 0%, #1E3A8A 100%);
+            border-radius: 20px;
+            padding: 2.5rem;
+            color: #FFFFFF;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .record-stat-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+        .record-num {
+            font-size: 2.1rem;
+            font-weight: 900;
+            min-width: 65px;
+            color: #38BDF8;
+        }
+        .record-stat-row:nth-child(2) .record-num { color: #34D399; }
+        .record-stat-row:nth-child(3) .record-num { color: #FBBF24; }
+
+        /* ── SECTION 2: SERVICES ── */
+        .services-section {
+            background: #EEF2F6;
+            border-bottom: 1px solid var(--border);
+        }
+        .service-cards-grid {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.75rem;
+        }
+        .cust-service-card {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2.25rem 1.75rem;
+            transition: all 0.25s ease;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .cust-service-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-lg);
+            border-color: #3B82F6;
+        }
+        .cust-service-card .icon-bubble {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: #EFF6FF;
+            color: #2563EB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.55rem;
+            margin-bottom: 1.25rem;
+        }
+        .cust-service-card h4 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #0B1329;
+            margin-bottom: 0.75rem;
+        }
+        .cust-service-card p {
+            font-size: 0.88rem;
+            color: #475569;
+            line-height: 1.65;
+            margin-bottom: 1.25rem;
+        }
+        .cust-service-card ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            border-top: 1px solid #F1F5F9;
+            padding-top: 1rem;
+            margin-top: auto;
+        }
+        .cust-service-card li {
+            font-size: 0.82rem;
+            color: #1E293B;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .cust-service-card li i {
+            color: #10B981;
+            font-size: 0.85rem;
+        }
+
+        /* ── SECTION 3: BONDED YARD BANNER ── */
+        .yard-banner-wrap {
+            max-width: 1240px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #070D1E 0%, #0F172A 45%, #1E3A8A 100%);
+            border-radius: 20px;
+            padding: 3.5rem 3rem;
+            color: #FFFFFF;
+            display: grid;
+            grid-template-columns: 1.25fr 0.75fr;
+            gap: 3rem;
+            align-items: center;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .yard-banner-wrap h3 {
+            font-size: 2.1rem;
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+        .yard-banner-wrap p {
+            color: #CBD5E1;
+            font-size: 0.98rem;
+            line-height: 1.65;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ── SECTION 4: CONTACT & ESTIMATION ── */
+        .contact-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 3rem;
+            box-shadow: var(--shadow-md);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+        }
+        .contact-card h4 {
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: #0B1329;
+            margin-bottom: 0.75rem;
+        }
+        .contact-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            margin-top: 1.5rem;
+        }
+        .contact-row {
+            display: flex;
+            gap: 0.85rem;
+            align-items: flex-start;
+        }
+        .contact-row .icon-box {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: #EFF6FF;
+            color: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            background: #070D1E;
+            color: #94A3B8;
+            padding: 3.5rem 1.5rem 2rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .footer-container {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        .footer-brand h4 {
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: #FFFFFF;
+            margin-bottom: 0.35rem;
+        }
+        .footer-brand p {
+            font-size: 0.84rem;
+            color: #94A3B8;
+        }
+
+        /* ── FLOATING AI ASSISTANT WIDGET ── */
+        @keyframes aiPulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6), 0 8px 24px rgba(37, 99, 235, 0.35); }
+            70% { box-shadow: 0 0 0 16px rgba(37, 99, 235, 0), 0 8px 24px rgba(37, 99, 235, 0.35); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0), 0 8px 24px rgba(37, 99, 235, 0.35); }
+        }
+        @keyframes floatBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        .malkia-ai-fab-wrap {
+            position: fixed;
+            bottom: 26px;
+            right: 26px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .malkia-ai-pill {
+            background: #0B1329;
+            color: #FFFFFF;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.15);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+        }
+        .malkia-ai-pill:hover {
+            transform: scale(1.04);
+            background: #1E3A8A;
+        }
+        .malkia-ai-fab {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #7C3AED 100%);
+            border: none;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.55rem;
+            position: relative;
+            animation: aiPulseGlow 2.5s infinite, floatBounce 3.5s ease-in-out infinite;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .malkia-ai-fab:hover {
+            transform: scale(1.08);
+        }
+        .malkia-ai-fab.active {
+            animation: none;
+            background: #0B1329;
+        }
+        .malkia-ai-fab .online-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 14px;
+            height: 14px;
+            background: #10B981;
+            border: 2.5px solid #FFFFFF;
+            border-radius: 50%;
+        }
+        .malkia-ai-panel {
+            position: fixed;
+            bottom: 98px;
+            right: 26px;
+            width: 400px;
+            max-width: calc(100vw - 32px);
+            height: 580px;
+            max-height: calc(100vh - 120px);
+            background: #FFFFFF;
+            border-radius: 20px;
+            box-shadow: 0 16px 48px rgba(11, 19, 41, 0.25), 0 0 0 1px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px) scale(0.96);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .malkia-ai-panel.open {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+        .malkia-ai-header {
+            background: linear-gradient(135deg, #0B1329 0%, #1E3A8A 100%);
+            color: #FFFFFF;
+            padding: 1.1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .malkia-ai-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2563EB, #7C3AED);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+        }
+        .malkia-ai-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.15rem;
+            background: #F8FAFC;
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+        .malkia-ai-msg {
+            display: flex;
+            gap: 8px;
+            max-width: 90%;
+            font-size: 0.88rem;
+            line-height: 1.55;
+        }
+        .malkia-ai-msg.bot { align-self: flex-start; }
+        .malkia-ai-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+        .malkia-ai-msg-bubble {
+            padding: 0.85rem 1rem;
+            border-radius: 14px;
+            word-wrap: break-word;
+        }
+        .malkia-ai-msg.bot .malkia-ai-msg-bubble {
+            background: #FFFFFF;
+            color: #1E293B;
+            border: 1px solid #E2E8F0;
+            border-top-left-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        .malkia-ai-msg.user .malkia-ai-msg-bubble {
+            background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+            color: #FFFFFF;
+            border-top-right-radius: 4px;
+            box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+        }
+        .malkia-ai-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 0 1.15rem 0.65rem;
+            background: #F8FAFC;
+        }
+        .malkia-ai-chip {
+            background: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            padding: 5px 11px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1E3A8A;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .malkia-ai-chip:hover {
+            background: #EFF6FF;
+            border-color: #2563EB;
+            color: #2563EB;
+            transform: translateY(-1px);
+        }
+        .malkia-ai-footer {
+            padding: 0.75rem 1rem;
+            background: #FFFFFF;
+            border-top: 1px solid #E2E8F0;
+        }
+        .malkia-ai-input-wrap {
+            display: flex;
+            align-items: center;
+            background: #F1F5F9;
+            border-radius: 999px;
+            padding: 4px 6px 4px 14px;
+            border: 1px solid #CBD5E1;
+            transition: border-color 0.2s;
+        }
+        .malkia-ai-input-wrap:focus-within {
+            border-color: #2563EB;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+        .malkia-ai-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 0.88rem;
+            color: #1E293B;
+            outline: none;
+        }
+        .malkia-ai-send-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+            border: none;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        @media (max-width: 900px) {
+            .brand-center-title { font-size: 2.1rem; }
+            .car-stage-box { height: 360px; padding: 2rem 1rem; }
+            .about-wrap, .yard-banner-wrap, .contact-wrap { grid-template-columns: 1fr; }
+            .top-accreditation { display: none; }
+        }
+
+        /* ── SECTION: WHY CHOOSE US (KWANINI UTUCHAGUE SISI) ── */
+        .why-us-section {
+            background: #FFFFFF;
+            border-bottom: 1px solid var(--border);
+        }
+        .why-us-grid {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.75rem;
+        }
+        .why-us-card {
+            background: #F8FAFC;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem 1.75rem;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .why-us-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: #2563EB;
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .why-us-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+            border-color: #93C5FD;
+            background: #FFFFFF;
+        }
+        .why-us-card:hover::before {
+            opacity: 1;
+        }
+        .why-us-icon-wrap {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            background: #EFF6FF;
+            color: #2563EB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.45rem;
+            margin-bottom: 1.25rem;
+        }
+        .why-us-card h4 {
+            font-size: 1.18rem;
+            font-weight: 800;
+            color: #0B1329;
+            margin-bottom: 0.65rem;
+        }
+        .why-us-card p {
+            font-size: 0.88rem;
+            color: #475569;
+            line-height: 1.65;
+        }
+
+        /* ── SECTION: FAQ (MASWALI YANAYOULIZWA) ── */
+        .faq-section {
+            background: #EEF2F6;
+            border-bottom: 1px solid var(--border);
+        }
+        .faq-wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .faq-item {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+        }
+        .faq-item:hover {
+            border-color: #93C5FD;
+        }
+        .faq-item.active {
+            border-color: #2563EB;
+            box-shadow: var(--shadow-md);
+        }
+        .faq-question {
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            gap: 1rem;
+            user-select: none;
+        }
+        .faq-question h4 {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #0B1329;
+            line-height: 1.4;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .faq-question h4 i {
+            color: #2563EB;
+            font-size: 1rem;
+        }
+        .faq-icon-toggle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #F1F5F9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748B;
+            font-size: 0.85rem;
+            transition: transform 0.3s ease, background 0.2s;
+            flex-shrink: 0;
+        }
+        .faq-item.active .faq-icon-toggle {
+            transform: rotate(180deg);
+            background: #EFF6FF;
+            color: #2563EB;
+        }
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), padding 0.35s ease;
+            padding: 0 1.5rem;
+            background: #FFFFFF;
+            color: #334155;
+            font-size: 0.92rem;
+            line-height: 1.7;
+        }
+        .faq-item.active .faq-answer {
+            max-height: 300px;
+            padding: 0 1.5rem 1.35rem;
+            border-top: 1px solid #F1F5F9;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ── 1. CLEAN MINIMAL WHITE TOP STRIP (PALE JUU PEUPE - NO MENU LINKS, NO BULKY NAME) ── -->
+    <header class="top-strip">
+        <div class="top-strip-container">
+            <div class="top-accreditation">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span data-i18n="top_license">Mawakala Walioidhinishwa na TRA • Bandari ya Dar es Salaam</span>
+            </div>
+
+            <div class="top-strip-actions">
+                <!-- BILINGUAL LANGUAGE SWITCHER -->
+                <div class="lang-switch" title="Chagua Lugha / Select Language">
+                    <button class="lang-btn active" id="langSw" onclick="switchLanguage('sw')">
+                        🇹🇿 SWA
+                    </button>
+                    <button class="lang-btn" id="langEn" onclick="switchLanguage('en')">
+                        🇬🇧 ENG
+                    </button>
+                </div>
+
+                <a href="https://wa.me/255787367474" target="_blank" class="btn-top-phone" title="WhatsApp Customer Support">
+                    <i class="fa-brands fa-whatsapp"></i> +255 787 367 474
+                </a>
+
+                <a href="https://portal.malkiacargowave.com" target="_blank" class="btn-top-portal" title="Staff & Client Operations Portal">
+                    <i class="fa-solid fa-lock"></i> <span data-i18n="top_portal_btn">Portal</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ── 2. HERO SHOWCASE (KATIKATI JINA & AUTOMATIC MOVING VEHICLES) ── -->
+    <section class="showcase-hero">
+        <!-- CENTER BRANDING -->
+        <div class="brand-center-wrap">
+            <div class="brand-crest">
+                <i class="fa-solid fa-ship"></i>
+            </div>
+            <h1 class="brand-center-title">
+                MALKIA CARGO WAVE <span>LIMITED</span>
+            </h1>
+            <p class="brand-center-sub" data-i18n="hero_sub">
+                Utoaji wa Magari Bandari ya Dar es Salaam &bull; Yadi Binafsi ya In-Bond &bull; Usafirishaji Mikoani
+            </p>
+            <div class="brand-pills">
+                <span class="brand-pill"><i class="fa-solid fa-shield-check" style="color:#059669;"></i> <span data-i18n="pill_safe">100% Usalama wa Vifaa (Radio/Betri)</span></span>
+                <span class="brand-pill"><i class="fa-solid fa-warehouse" style="color:#2563EB;"></i> <span data-i18n="pill_demurrage">Yadi ya In-Bond (Zero Demurrage)</span></span>
+                <span class="brand-pill"><i class="fa-solid fa-receipt" style="color:#D97706;"></i> <span data-i18n="pill_tra">Kodi ya TRA kwa Uwazi</span></span>
+                <span class="brand-pill"><i class="fa-solid fa-truck-fast" style="color:#7C3AED;"></i> <span data-i18n="pill_delivery">Usafirishaji Nchi Nzima</span></span>
+            </div>
+        </div>
+
+        <!-- MOVING CARS STAGE -->
+        <div class="car-stage-container">
+            <div class="car-stage-box" id="carStageBox">
+                <!-- ROAD WITH ANIMATED STRIPES -->
+                <div class="stage-road">
+                    <div class="stage-road-stripes"></div>
+                </div>
+
+                <!-- CAR 1: TOYOTA LAND CRUISER PRADO TX -->
+                <div class="car-slide active" data-index="0">
+                    <div class="car-badge">
+                        <i class="fa-solid fa-circle-check" style="color:#059669;"></i>
+                        <span data-i18n="car1_badge">Imekaguliwa &amp; Imetoka Bandarini (Direct Clearance)</span>
+                    </div>
+                    <div class="car-title-label">Toyota Land Cruiser Prado TX (Pearl White)</div>
+                    <div class="car-origin-sub" data-i18n="car1_origin">Imetoka: Yokohama, Japan &bull; Meli: MSC Laura &bull; Status: Delivered</div>
+                    <div class="car-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=900&q=80" alt="Toyota Prado" class="car-img">
+                    </div>
+                </div>
+
+                <!-- CAR 2: TOYOTA LAND CRUISER 300 / LC V8 -->
+                <div class="car-slide" data-index="1">
+                    <div class="car-badge">
+                        <i class="fa-solid fa-warehouse" style="color:#2563EB;"></i>
+                        <span data-i18n="car2_badge">In-Bond Yard Storage (Kodi Imesimamishwa)</span>
+                    </div>
+                    <div class="car-title-label">Toyota Land Cruiser 300 V8 (Prestige Black)</div>
+                    <div class="car-origin-sub" data-i18n="car2_origin">Imetoka: Nagoya, Japan &bull; Hifadhi Salama: Malkia Bonded Yard</div>
+                    <div class="car-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=900&q=80" alt="Toyota LC300" class="car-img">
+                    </div>
+                </div>
+
+                <!-- CAR 3: RANGE ROVER AUTOBIOGRAPHY -->
+                <div class="car-slide" data-index="2">
+                    <div class="car-badge">
+                        <i class="fa-solid fa-shield-halved" style="color:#D97706;"></i>
+                        <span data-i18n="car3_badge">100% Usalama wa Vifaa &bull; Physical Verification Pass</span>
+                    </div>
+                    <div class="car-title-label">Range Rover Autobiography (Silicon Silver)</div>
+                    <div class="car-origin-sub" data-i18n="car3_origin">Imetoka: Southampton, UK &bull; TRA Assessed &bull; Ready for Transit</div>
+                    <div class="car-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=900&q=80" alt="Range Rover" class="car-img">
+                    </div>
+                </div>
+
+                <!-- CAR 4: TOYOTA HARRIER / RAV4 -->
+                <div class="car-slide" data-index="3">
+                    <div class="car-badge">
+                        <i class="fa-solid fa-truck-fast" style="color:#7C3AED;"></i>
+                        <span data-i18n="car4_badge">Inasafirishwa Mikoani (Arusha / Mwanza Delivery)</span>
+                    </div>
+                    <div class="car-title-label">Toyota Harrier / RAV4 Hybrid (Crystal Blue)</div>
+                    <div class="car-origin-sub" data-i18n="car4_origin">Imetoka: Dubai, UAE &bull; Car Carrier Transit &bull; Doorstep Handover</div>
+                    <div class="car-img-wrap">
+                        <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80" alt="Toyota Harrier" class="car-img">
+                    </div>
+                </div>
+
+                <!-- STAGE NAVIGATION BUTTONS -->
+                <button class="stage-nav-btn prev" onclick="prevCarSlide()" title="Gari Lililopita">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button class="stage-nav-btn next" onclick="nextCarSlide()" title="Gari Linalofuata">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- DOTS -->
+            <div class="stage-dots">
+                <span class="stage-dot active" onclick="goToCarSlide(0)"></span>
+                <span class="stage-dot" onclick="goToCarSlide(1)"></span>
+                <span class="stage-dot" onclick="goToCarSlide(2)"></span>
+                <span class="stage-dot" onclick="goToCarSlide(3)"></span>
+            </div>
+        </div>
+
+        <!-- CENTER LIVE VEHICLE TRACKING SEARCH -->
+        <form class="center-track-bar" onsubmit="event.preventDefault(); handleCenterTrack();">
+            <i class="fa-solid fa-car"></i>
+            <input type="text" id="centerTrackInput" class="center-track-input" placeholder="Weka namba ya B/L au Chassis kufuatilia gari (mf. JILI-KEI, GDJ150...)" data-i18n-ph="track_ph" required>
+            <button type="submit" class="center-track-btn">
+                <i class="fa-solid fa-magnifying-glass"></i> <span data-i18n="track_btn_label">Fuatilia Gari</span>
+            </button>
+        </form>
+
+        <div id="trackResultBox">
+            <!-- Dynamic Result -->
+        </div>
+    </section>
+
+    <!-- ── 3. ABOUT MALKIA & ORIGIN STORY ── -->
+    <section class="section" style="background:#FFFFFF;border-bottom:1px solid #E2E8F0;">
+        <div class="about-wrap">
+            <div class="about-content">
+                <span class="section-tag" data-i18n="about_tag">Sisi Ni Nani</span>
+                <h3 data-i18n="about_title">Imejengwa Kuwapa Waagizaji wa Magari Amani ya Moyo.</h3>
+                <p data-i18n="about_p1">
+                    <strong>Malkia Cargo Wave Limited</strong> ni kampuni iliyosajiliwa rasmi na kupewa leseni ya forodha ya TRA kwa ajili ya kutoa na kusafirisha mizigo na magari, ikiwa na makao makuu yake Bandari ya Dar es Salaam, Tanzania.
+                </p>
+                <div class="story-box" data-i18n="about_story">
+                    "Tulianzisha Malkia Cargo Wave baada ya kuona jinsi waagizaji wa kawaida wanavyoteseka na faini za bandari (demurrage), gharama zilizofichika, na wizi wa vipuri vya magari bandarini. Lengo letu ni moja: kufanya utoaji wa magari uwe wazi, wa haraka, na salama 100%."
+                </div>
+                <p data-i18n="about_p2">
+                    Kuanzia gari moja binafsi toka Japan, Uingereza (UK), au Dubai, hadi magari ya makampuni na biashara, tunasimama na wewe hatua kwa hatua hadi funguo ziingie mkononi mwako salama.
+                </p>
+
+                <div class="values-grid">
+                    <div class="value-card">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <strong data-i18n="val1_title">100% Usalama wa Gari</strong>
+                        <span data-i18n="val1_desc">Kila gari hukaguliwa mara moja vifaa vyote: betri, taili ya akiba, redio, na vioo vya pembeni.</span>
+                    </div>
+                    <div class="value-card">
+                        <i class="fa-solid fa-receipt"></i>
+                        <strong data-i18n="val2_title">Gharama za Uwazi</strong>
+                        <span data-i18n="val2_desc">Hakuna gharama za siri. Tunakokotoa kodi halisi ya TRA na ada za bandari mapema kabla hujaanza.</span>
+                    </div>
+                    <div class="value-card">
+                        <i class="fa-solid fa-bolt"></i>
+                        <strong data-i18n="val3_title">Kutoa Gari Haraka</strong>
+                        <span data-i18n="val3_desc">Kazi inafanywa kwa kasi ili gari lako litoke bandarini bila kulipa faini kubwa za uhifadhi.</span>
+                    </div>
+                    <div class="value-card">
+                        <i class="fa-solid fa-warehouse"></i>
+                        <strong data-i18n="val4_title">Yadi Binafsi ya In-Bond</strong>
+                        <span data-i18n="val4_desc">Hifadhi gari lako kwenye yadi yetu chini ya bondi ya forodha kama unahitaji muda wa kukusanya kodi.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VISUAL STATS CARD -->
+            <div class="track-record-card">
+                <div style="font-size:0.78rem;font-weight:800;text-transform:uppercase;color:#38BDF8;letter-spacing:0.08em;margin-bottom:0.5rem;" data-i18n="rec_tag">
+                    Rekodi Yetu
+                </div>
+                <h4 style="font-size:1.55rem;font-weight:900;line-height:1.25;margin-bottom:1.75rem;color:#FFFFFF;" data-i18n="rec_title">
+                    Inaaminiwa na Wamiliki wa Magari Mamia Kote Tanzania
+                </h4>
+
+                <div>
+                    <div class="record-stat-row">
+                        <div class="record-num">99%</div>
+                        <div style="font-size:0.86rem;color:#CBD5E1;line-height:1.45;"><strong style="color:#FFF;" data-i18n="rec_stat1_title">Utoaji Salama:</strong> <span data-i18n="rec_stat1_desc">Rekodi ya sifuri ya upotevu wa vifaa au vipuri chini ya uangalizi wetu.</span></div>
+                    </div>
+                    <div class="record-stat-row">
+                        <div class="record-num">0</div>
+                        <div style="font-size:0.86rem;color:#CBD5E1;line-height:1.45;"><strong style="color:#FFF;" data-i18n="rec_stat2_title">Faini za Demurrage:</strong> <span data-i18n="rec_stat2_desc">Kutoa gari kabla muda wa bure haujaisha au kulihamishia In-Bond.</span></div>
+                    </div>
+                    <div class="record-stat-row">
+                        <div class="record-num">24/7</div>
+                        <div style="font-size:0.86rem;color:#CBD5E1;line-height:1.45;"><strong style="color:#FFF;" data-i18n="rec_stat3_title">Ulinzi na CCTV:</strong> <span data-i18n="rec_stat3_desc">Yadi yetu inalindwa na kamera masaa 24 kwa magari yaliyosimamishwa kodi.</span></div>
+                    </div>
+                </div>
+
+                <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,0.12);font-size:0.84rem;color:#E2E8F0;">
+                    <i class="fa-solid fa-certificate" style="color:#38BDF8;margin-right:0.4rem;"></i> <span data-i18n="rec_brela">Imesajiliwa rasmi na BRELA na kutambuliwa na Mamlaka ya Mapato Tanzania (TRA).</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── 4. WHAT WE DO (CUSTOMER SERVICES) ── -->
+    <section class="section services-section">
+        <div class="section-header">
+            <span class="section-tag" data-i18n="srv_tag">Kazi Zetu Kwa Wateja</span>
+            <h2 class="section-title" data-i18n="srv_title">Huduma Bora na Nafuu kwa Watu Halisi</h2>
+            <p class="section-desc" data-i18n="srv_desc">Tumerahisisha mchakato mzima wa kutoa gari katika huduma nne kuu zilizo wazi na za uhakika.</p>
+        </div>
+
+        <div class="service-cards-grid">
+            <!-- 1. VEHICLE CLEARING -->
+            <div class="cust-service-card">
+                <div>
+                    <div class="icon-bubble"><i class="fa-solid fa-car"></i></div>
+                    <h4 data-i18n="srv1_title">Utoaji wa Magari Bandarini</h4>
+                    <p data-i18n="srv1_desc">
+                        Umeagiza gari toka Japan, UK au Dubai? Tunashughulikia taratibu zote za forodha Bandari ya Dar es Salaam, tunalipa ada zote, na kukuondolea usumbufu wote.
+                    </p>
+                </div>
+                <ul>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="srv1_b1">Upimaji na ulipaji wa kodi ya TRA</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="srv1_b2">Ukaguzi wa ubora wa TBS</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="srv1_b3">Kutoa gari haraka bila faini za bandari</span></li>
+                </ul>
+            </div>
+
+            <!-- 2. BONDED YARD STORAGE -->
+            <div class="cust-service-card">
+                <div>
+                    <div class="icon-bubble" style="background:#FEF3C7;color:#D97706;"><i class="fa-solid fa-warehouse"></i></div>
+                    <h4 data-i18n="srv2_title">Yadi ya In-Bond (Kuhifadhi Gari)</h4>
+                    <p data-i18n="srv2_desc">
+                        Huna hela ya kodi ya TRA kwa sasa? Epuka faini za bandari kwa kuhamishia gari lako kwenye yadi yetu salama chini ya forodha hadi utakapokuwa tayari kulipa.
+                    </p>
+                </div>
+                <ul>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="srv2_b1">Ulinzi wa masaa 24 na kamera za CCTV</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="srv2_b2">Kodi inasimamishwa kihalali kwa dhamana ya TRA</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="srv2_b3">Lipa kodi pale tu unapokuwa na fedha kamili</span></li>
+                </ul>
+            </div>
+
+            <!-- 3. CUSTOMS ADVISORY & TAX ESTIMATION -->
+            <div class="cust-service-card">
+                <div>
+                    <div class="icon-bubble" style="background:#ECFDF5;color:#059669;"><i class="fa-solid fa-calculator"></i></div>
+                    <h4 data-i18n="srv3_title">Ushauri na Makadirio ya Kodi</h4>
+                    <p data-i18n="srv3_desc">
+                        Fahamu gharama zako mapema kabla meli haijafika. Tutumie invoice au export certificate, na wataalamu wetu watakupa mchanganuo kamili wa kodi ya TRA.
+                    </p>
+                </div>
+                <ul>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="srv3_b1">Makadirio sahihi ya GePG Control Number</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="srv3_b2">Hakuna tozo au makato ya ziada yaliyofichika</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="srv3_b3">Ushauri wa bure kuhusu umri wa gari na uchakavu</span></li>
+                </ul>
+            </div>
+
+            <!-- 4. DOORSTEP & TRANSIT DELIVERY -->
+            <div class="cust-service-card">
+                <div>
+                    <div class="icon-bubble" style="background:#F3E8FF;color:#7C3AED;"><i class="fa-solid fa-truck-fast"></i></div>
+                    <h4 data-i18n="srv4_title">Kusafirisha Gari Mikoani</h4>
+                    <p data-i18n="srv4_desc">
+                        Unataka gari lako lifikishwe nyumbani kwako Dar es Salaam, kusafirishwa mikoani (Arusha, Mwanza, Dodoma, Mbeya), au kuvuka mipaka kwenda nchi jirani.
+                    </p>
+                </div>
+                <ul>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="srv4_b1">Madereva wazoefu na magari maalum ya kubeba</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="srv4_b2">Usafirishaji salama mikoa yote ya Tanzania</span></li>
+                    <li><i class="fa-solid fa-check"></i> <span data-i18n="srv4_b3">Kuvuka mpaka Rwanda, Burundi, DRC na Zambia</span></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ── SECTION: WHY CHOOSE US (KWANINI UTUCHAGUE SISI) ── -->
+    <section class="section why-us-section" id="why-us">
+        <div class="section-header">
+            <span class="section-tag" data-i18n="why_tag">Kwanini Utuchague Sisi</span>
+            <h2 class="section-title" data-i18n="why_title">Sababu 6 Zinazofanya Malkia Kuwa Chaguo la Kwanza</h2>
+            <p class="section-desc" data-i18n="why_desc">Tunaondoa changamoto zote za bandari ili gari lako likufikie kwa amani, usalama na gharama nafuu.</p>
+        </div>
+
+        <div class="why-us-grid">
+            <!-- 1. SAFETY -->
+            <div class="why-us-card">
+                <div class="why-us-icon-wrap" style="background:#ECFDF5;color:#059669;">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h4 data-i18n="why1_title">100% Usalama wa Vifaa (Zero Theft)</h4>
+                <p data-i18n="why1_desc">
+                    Hakuna hofu ya kuibiwa betri, redio, taili ya akiba, au vioo. Tunafanya Physical Verification mara moja meli inaposhusha gari na kutoa ripoti rasmi getini.
+                </p>
+            </div>
+
+            <!-- 2. IN-BOND ZERO DEMURRAGE -->
+            <div class="why-us-card">
+                <div class="why-us-icon-wrap" style="background:#FEF3C7;color:#D97706;">
+                    <i class="fa-solid fa-warehouse"></i>
+                </div>
+                <h4 data-i18n="why2_title">Yadi Binafsi ya In-Bond (Zero Demurrage)</h4>
+                <p data-i18n="why2_desc">
+                    Okoa mamilioni ya tozo za bandari. Tunahamisha gari lako kwenye yadi yetu chini ya bondi ya TRA ili ulipe kodi ukiwa tayari bila faini za kila siku.
+                </p>
+            </div>
+
+            <!-- 3. TRANSPARENT PRICING -->
+            <div class="why-us-card">
+                <div class="why-us-icon-wrap" style="background:#EFF6FF;color:#2563EB;">
+                    <i class="fa-solid fa-receipt"></i>
+                </div>
+                <h4 data-i18n="why3_title">Kodi Halisi na Gharama za Uwazi</h4>
+                <p data-i18n="why3_desc">
+                    Hesabu kamili ya kodi ya TRA na ada za bandari zinatolewa mapema na GePG Control Number kabla meli haijatua. Hakuna tozo zilizofichika.
+                </p>
+            </div>
+
+            <!-- 4. SPEED -->
+            <div class="why-us-card">
+                <div class="why-us-icon-wrap" style="background:#F3E8FF;color:#7C3AED;">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <h4 data-i18n="why4_title">Utoaji wa Haraka (Ndani ya Siku 3–5)</h4>
+                <p data-i18n="why4_desc">
+                    Timu yetu yenye uzoefu inafanya kazi bandarini kila siku kushughulikia nyaraka, ukaguzi wa TBS, na kutoa gari kabla muda wa bure haujaisha.
+                </p>
+            </div>
+
+            <!-- 5. DOORSTEP DELIVERY -->
+            <div class="why-us-card">
+                <div class="why-us-icon-wrap" style="background:#FFE4E6;color:#E11D48;">
+                    <i class="fa-solid fa-truck-fast"></i>
+                </div>
+                <h4 data-i18n="why5_title">Usafirishaji Salama Mikoani &amp; Nje</h4>
+                <p data-i18n="why5_desc">
+                    Magari yetu maalum (car carriers) na madereva wazoefu wanakabidhi gari mlangoni kwako Arusha, Mwanza, Dodoma au Rwanda, Burundi, DRC na Zambia.
+                </p>
+            </div>
+
+            <!-- 6. AI & 24/7 SUPPORT -->
+            <div class="why-us-card">
+                <div class="why-us-icon-wrap" style="background:#E0F2FE;color:#0284C7;">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <h4 data-i18n="why6_title">Ufuatiliaji wa Moja kwa Moja &amp; AI</h4>
+                <p data-i18n="why6_desc">
+                    Fuatilia gari lako kwa namba ya B/L au Chassis wakati wowote kwenye mfumo wetu, ukisaidiwa na msaidizi wa AI masaa 24 kujibu maswali yako yote.
+                </p>
+            </div>
+        </div>
+    </section>
+
+        <!-- ── 5. BONDED YARD BANNER ── -->
+    <section class="section" style="background:#F1F5F9;">
+        <div class="yard-banner-wrap">
+            <div>
+                <span style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#38BDF8;background:rgba(56,189,248,0.15);padding:0.3rem 0.75rem;border-radius:6px;display:inline-block;margin-bottom:0.75rem;" data-i18n="yard_badge">
+                    Yadi Binafsi ya Forodha
+                </span>
+                <h3 data-i18n="yard_title">Usiruhusu faini za bandari zikateketeze bajeti yako.</h3>
+                <p data-i18n="yard_desc">
+                    Kukaa na gari bandarini baada ya muda wa bure kumalizika kunaambatana na faini kubwa za kila siku (demurrage). Malkia Cargo Wave Limited inahamisha gari lako kihalali kwenye yadi yetu chini ya bondi ya forodha, ikikupa nafasi ya kulipa kodi taratibu bila msongo wa mawazo.
+                </p>
+                <a href="https://wa.me/255787367474" target="_blank" class="btn-primary" style="background:#F59E0B;color:#0B1329;font-weight:800;border:none;padding:0.8rem 1.5rem;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;" data-i18n="yard_btn">
+                    <i class="fa-solid fa-phone"></i> Ulizia Nafasi ya Yadi ya In-Bond
+                </a>
+            </div>
+            <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:14px;padding:1.75rem;">
+                <h4 style="font-size:1.1rem;font-weight:800;margin-bottom:1rem;color:#38BDF8;" data-i18n="yard_box_title">Faida za Yadi ya Malkia:</h4>
+                <div style="display:flex;flex-direction:column;gap:0.75rem;font-size:0.88rem;">
+                    <div><i class="fa-solid fa-circle-check" style="color:#10B981;margin-right:0.4rem;"></i> <strong data-i18n="yard_b1_title">Hakuna Faini za Bandari:</strong> <span data-i18n="yard_b1_desc">Zuia mara moja tozo kubwa za kuhifadhi bandarini.</span></div>
+                    <div><i class="fa-solid fa-circle-check" style="color:#10B981;margin-right:0.4rem;"></i> <strong data-i18n="yard_b2_title">Ulinzi Madhubuti:</strong> <span data-i18n="yard_b2_desc">Walinzi masaa 24 na kamera za usalama zilizounganishwa.</span></div>
+                    <div><i class="fa-solid fa-circle-check" style="color:#10B981;margin-right:0.4rem;"></i> <strong data-i18n="yard_b3_title">Matunzo ya Gari:</strong> <span data-i18n="yard_b3_desc">Uangalizi wa betri ya gari lako linapokuwa yadi.</span></div>
+                    <div><i class="fa-solid fa-circle-check" style="color:#10B981;margin-right:0.4rem;"></i> <strong data-i18n="yard_b4_title">Kutoa Gari Kirahisi:</strong> <span data-i18n="yard_b4_desc">Lipa kodi ukiwa tayari na uchukue gari lako mara moja.</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ── SECTION: FAQ (MASWALI YANAYOULIZWA MARA KWA MARA) ── -->
+    <section class="section faq-section" id="faq">
+        <div class="section-header">
+            <span class="section-tag" data-i18n="faq_tag">Maswali Yanayoulizwa</span>
+            <h2 class="section-title" data-i18n="faq_title">Maswali Yanayoulizwa Mara kwa Mara (FAQ)</h2>
+            <p class="section-desc" data-i18n="faq_desc">Kila kitu unachopaswa kufahamu kabla na baada ya gari lako kufika Bandari ya Dar es Salaam.</p>
+        </div>
+
+        <div class="faq-wrap">
+            <!-- Q1 -->
+            <div class="faq-item active">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h4><i class="fa-solid fa-circle-question"></i> <span data-i18n="faq_q1">Inachukua muda gani kutoa gari Bandari ya Dar es Salaam?</span></h4>
+                    <div class="faq-icon-toggle"><i class="fa-solid fa-chevron-down"></i></div>
+                </div>
+                <div class="faq-answer" data-i18n="faq_a1">
+                    Kawaida inachukua <strong>siku 3 hadi 5 za kazi</strong> kuanzia siku nyaraka zote zinapopokelewa na kodi ya TRA kulipwa. Lengo letu kuu ni kutoa gari kabla muda wa bure wa bandari haujaisha ili mteja asilipe faini yoyote ya uhifadhi (demurrage).
+                </div>
+            </div>
+
+            <!-- Q2 -->
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h4><i class="fa-solid fa-circle-question"></i> <span data-i18n="faq_q2">Yadi ya In-Bond inanisaidiaje kama sina pesa ya kodi ya TRA kwa sasa?</span></h4>
+                    <div class="faq-icon-toggle"><i class="fa-solid fa-chevron-down"></i></div>
+                </div>
+                <div class="faq-answer" data-i18n="faq_a2">
+                    Kama bado hujakamilisha fedha za kodi ya TRA, tunalihamisha gari lako kihalali kutoka bandarini hadi kwenye <strong>Yadi yetu ya In-Bond</strong> chini ya dhamana ya forodha (TRA Customs Bond). Hii inazuia faini kubwa za bandari (port demurrage) na kukuwezesha kulipa kodi taratibu ukiwa tayari.
+                </div>
+            </div>
+
+            <!-- Q3 -->
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h4><i class="fa-solid fa-circle-question"></i> <span data-i18n="faq_q3">Mnahakikisha vipi kwamba betri, redio na taili ya akiba havitaibiwa?</span></h4>
+                    <div class="faq-icon-toggle"><i class="fa-solid fa-chevron-down"></i></div>
+                </div>
+                <div class="faq-answer" data-i18n="faq_a3">
+                    Maafisa wetu wapo getini wakati gari linashushwa kutoka kwenye meli ya RORO. Tunafanya <strong>Physical Verification</strong> mara moja na kuweka rekodi ya picha ya: Redio, Betri, Taili ya Akiba, Vioo vya pembeni na vifaa vya gari. Gari linafungwa muhuri na kulindwa 24/7 hadi mikononi mwako.
+                </div>
+            </div>
+
+            <!-- Q4 -->
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h4><i class="fa-solid fa-circle-question"></i> <span data-i18n="faq_q4">Ninahitaji nyaraka zipi ili kuanza mchakato wa kutoa gari langu?</span></h4>
+                    <div class="faq-icon-toggle"><i class="fa-solid fa-chevron-down"></i></div>
+                </div>
+                <div class="faq-answer" data-i18n="faq_a4">
+                    Unahitaji nyaraka tano kuu: (1) <strong>Bill of Lading (B/L)</strong>, (2) <strong>Export Certificate</strong> kutoka nchi uliyoagiza (Japan, UK au Dubai), (3) <strong>Commercial Invoice</strong> ya ununuzi, (4) Cheti cha ukaguzi wa <strong>TBS</strong> (kama kipo), na (5) Kitambulisho chako cha NIDA au TIN ya biashara.
+                </div>
+            </div>
+
+            <!-- Q5 -->
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h4><i class="fa-solid fa-circle-question"></i> <span data-i18n="faq_q5">Nawezaje kupata makadirio halisi ya kodi ya TRA kabla gari halijafika?</span></h4>
+                    <div class="faq-icon-toggle"><i class="fa-solid fa-chevron-down"></i></div>
+                </div>
+                <div class="faq-answer" data-i18n="faq_a5">
+                    Ni rahisi sana! Tutumie picha au nakala ya Export Certificate na Invoice yako kupitia WhatsApp namba <strong>+255 787 367 474</strong> au fomu hapo chini. Wataalamu wetu watakukokotolea kodi halisi ya TRA kulingana na mwaka, CC, na thamani ya gari lako bure bila malipo yoyote.
+                </div>
+            </div>
+
+            <!-- Q6 -->
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <h4><i class="fa-solid fa-circle-question"></i> <span data-i18n="faq_q6">Je, mnasafirisha gari hadi mikoani baada ya kutoka bandarini?</span></h4>
+                    <div class="faq-icon-toggle"><i class="fa-solid fa-chevron-down"></i></div>
+                </div>
+                <div class="faq-answer" data-i18n="faq_a6">
+                    Ndiyo! Tuna madereva waaminifu na magari maalum ya kubeba magari (car carrier) yanayosafirisha magari salama kwenda mikoa yote ya Tanzania (Arusha, Dodoma, Mwanza, Mbeya, Morogoro n.k.) na nchi jirani (Rwanda, Burundi, DRC, na Zambia) yakiwa na bima kamili ya usafirishaji.
+                </div>
+            </div>
+        </div>
+    </section>
+
+        <!-- ── 6. CONTACT & LOCATION ── -->
+    <section class="section" style="background:#FFFFFF;">
+        <div class="section-header">
+            <span class="section-tag" data-i18n="cnt_tag">Wasiliana Nasi</span>
+            <h2 class="section-title" data-i18n="cnt_title">Tembelea Ofisi Yetu au Omba Makadirio ya Kodi</h2>
+            <p class="section-desc" data-i18n="cnt_desc">Tupo tayari kila wakati kujibu maswali yako na kukusaidia na gari lako.</p>
+        </div>
+
+        <div class="contact-wrap">
+            <div class="contact-card">
+                <h4 data-i18n="cnt_sub">Mawasiliano Yetu</h4>
+                <p style="font-size:0.92rem;color:var(--text-muted);line-height:1.6;" data-i18n="cnt_p">
+                    Una swali kuhusu kuagiza gari, makadirio ya kodi ya TRA, au yadi yetu ya In-Bond? Wasiliana moja kwa moja na maafisa wetu wa forodha.
+                </p>
+
+                <div class="contact-list">
+                    <div class="contact-row">
+                        <div class="icon-box"><i class="fa-solid fa-location-dot"></i></div>
+                        <div>
+                            <strong style="display:block;font-size:0.95rem;color:#0B1329;" data-i18n="cnt_loc_title">Mahali Ofisi Ilipo</strong>
+                            <span style="font-size:0.85rem;color:var(--text-muted);" data-i18n="cnt_loc_desc">Bandari Road, Karibu na Lango Kuu la Bandari ya Dar es Salaam, Tanzania</span>
+                        </div>
+                    </div>
+
+                    <div class="contact-row">
+                        <div class="icon-box" style="background:#ECFDF5;color:#059669;"><i class="fa-solid fa-phone"></i></div>
+                        <div>
+                            <strong style="display:block;font-size:0.95rem;color:#0B1329;" data-i18n="cnt_phone_title">Simu &amp; WhatsApp</strong>
+                            <span style="font-size:0.85rem;color:var(--text-muted);">+255 787 367 474 / +255 715 000 000</span>
+                        </div>
+                    </div>
+
+                    <div class="contact-row">
+                        <div class="icon-box" style="background:#FEF3C7;color:#D97706;"><i class="fa-solid fa-envelope"></i></div>
+                        <div>
+                            <strong style="display:block;font-size:0.95rem;color:#0B1329;" data-i18n="cnt_email_title">Barua Pepe Rasmi</strong>
+                            <span style="font-size:0.85rem;color:var(--text-muted);">info@malkiacargowave.com</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ESTIMATION FORM -->
+            <div style="background:#EEF2F6;border:1px solid var(--border);border-radius:14px;padding:2rem;">
+                <h4 style="font-size:1.15rem;font-weight:800;color:#0B1329;margin-bottom:0.5rem;" data-i18n="form_title">Omba Makadirio ya Kodi Bure</h4>
+                <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1.25rem;" data-i18n="form_sub">Jaza taarifa za gari lako na tutakupigia au kukutumia WhatsApp mchanganuo kamili.</p>
+
+                <form onsubmit="event.preventDefault(); alert(currentLang === 'sw' ? 'Asante! Taarifa zako zimepokelewa. Mtaalamu wetu wa forodha atawasiliana nawe hivi punde.' : 'Thank you! Your inquiry has been received. Our customs specialist will contact you shortly.');">
+                    <div style="margin-bottom:0.85rem;">
+                        <label style="font-size:0.8rem;font-weight:700;display:block;margin-bottom:0.3rem;" data-i18n="form_lbl_model">Jina na Modeli ya Gari (mf. Prado 2017)</label>
+                        <input type="text" required placeholder="Toyota Land Cruiser, Harrier, Axio..." style="width:100%;padding:0.65rem 0.85rem;border:1px solid #CBD5E1;border-radius:8px;font-size:0.88rem;background:#FFF;">
+                    </div>
+                    <div style="margin-bottom:0.85rem;">
+                        <label style="font-size:0.8rem;font-weight:700;display:block;margin-bottom:0.3rem;" data-i18n="form_lbl_srv">Huduma Unayohitaji</label>
+                        <select style="width:100%;padding:0.65rem 0.85rem;border:1px solid #CBD5E1;border-radius:8px;font-size:0.88rem;background:#FFF;">
+                            <option data-i18n="opt_1">Kutoa Gari Mara Moja (Lipa Kodi)</option>
+                            <option data-i18n="opt_2">Kuhifadhi Kwenye Yadi ya In-Bond</option>
+                            <option data-i18n="opt_3">Kusafirisha Gari Mikoani</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:1.25rem;">
+                        <label style="font-size:0.8rem;font-weight:700;display:block;margin-bottom:0.3rem;" data-i18n="form_lbl_phone">Namba ya Simu / WhatsApp</label>
+                        <input type="tel" required placeholder="+255 7XX XXX XXX" style="width:100%;padding:0.65rem 0.85rem;border:1px solid #CBD5E1;border-radius:8px;font-size:0.88rem;background:#FFF;">
+                    </div>
+                    <button type="submit" style="width:100%;background:#2563EB;color:#FFF;padding:0.75rem;border:none;border-radius:8px;font-weight:800;font-size:0.9rem;cursor:pointer;">
+                        <i class="fa-solid fa-paper-plane"></i> <span data-i18n="form_btn">Tuma Maombi</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── 7. FOOTER ── -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <h4>MALKIA CARGO WAVE LIMITED</h4>
+                <p data-i18n="footer_desc">
+                    Mawakala walioidhinishwa wa forodha kutoa magari na kuhifadhi magari kwenye Yadi ya In-Bond Bandari ya Dar es Salaam, Tanzania.
+                </p>
+                <div style="font-size:0.8rem;color:#64748B;margin-top:0.35rem;">
+                    Company Reg No &bull; TRA &amp; TANCIS Accredited &bull; Dar es Salaam, Tanzania
+                </div>
+            </div>
+
+            <div>
+                <a href="https://portal.malkiacargowave.com" target="_blank" style="color:#38BDF8;text-decoration:none;font-weight:700;font-size:0.88rem;display:inline-flex;align-items:center;gap:0.4rem;">
+                    <i class="fa-solid fa-lock"></i> Operations Portal &rarr;
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ── 8. FLOATING AI ASSISTANT WIDGET ── -->
+    <div class="malkia-ai-fab-wrap">
+        <div class="malkia-ai-pill" id="malkiaAiPill" onclick="toggleMalkiaAi()">
+            <i class="fa-solid fa-sparkles" style="color:#F59E0B;"></i> <span id="aiPillText">Malkia AI • Uliza Chochote</span>
+        </div>
+        <button class="malkia-ai-fab" id="malkiaAiFab" onclick="toggleMalkiaAi()" title="Malkia AI Customer Assistant">
+            <span class="online-badge"></span>
+            <i class="fa-solid fa-robot" id="malkiaAiFabIcon"></i>
+        </button>
+    </div>
+
+    <!-- AI CHAT PANEL -->
+    <div class="malkia-ai-panel" id="malkiaAiPanel">
+        <div class="malkia-ai-header">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div class="malkia-ai-avatar"><i class="fa-solid fa-robot"></i></div>
+                <div>
+                    <div style="font-size:1rem;font-weight:800;color:#FFFFFF;" id="aiHeaderTitle">Malkia AI Assistant</div>
+                    <div style="font-size:0.74rem;color:#38BDF8;display:flex;align-items:center;gap:5px;">
+                        <span style="width:7px;height:7px;background:#10B981;border-radius:50%;display:inline-block;"></span>
+                        <span id="aiHeaderStatus">Online • Live Customer Support</span>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <button onclick="resetMalkiaAiChat()" title="Reset" style="background:rgba(255,255,255,0.1);border:none;color:#E2E8F0;width:32px;height:32px;border-radius:8px;cursor:pointer;"><i class="fa-solid fa-rotate-right"></i></button>
+                <button onclick="toggleMalkiaAi()" title="Close" style="background:rgba(255,255,255,0.1);border:none;color:#E2E8F0;width:32px;height:32px;border-radius:8px;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+
+        <div class="malkia-ai-body" id="malkiaAiBody">
+            <div class="malkia-ai-msg bot">
+                <div class="malkia-ai-msg-bubble" id="aiWelcomeBubble">
+                    <strong>Habari! Karibu Malkia Cargo Wave Limited. 👋</strong><br><br>
+                    Mimi ni msaidizi wako wa AI. Unaweza kuniuliza kuhusu kodi ya gari ya TRA, Yadi ya In-Bond, ulinzi wa vipuri (redio, betri), au kufuatilia gari lako kwa B/L au Chassis!
+                </div>
+            </div>
+        </div>
+
+        <div class="malkia-ai-chips" id="malkiaAiChips">
+            <button class="malkia-ai-chip" onclick="sendMalkiaAiChip(currentLang === 'sw' ? 'Gharama za kutoa gari na kodi ya TRA ni kiasi gani?' : 'How much is TRA duty and vehicle clearing cost?')">
+                💰 <span data-i18n="chip_tra">Kodi ya TRA</span>
+            </button>
+            <button class="malkia-ai-chip" onclick="sendMalkiaAiChip(currentLang === 'sw' ? 'Yadi ya In-Bond inafanyaje kazi?' : 'How does the In-Bond Yard work?')">
+                🏢 <span data-i18n="chip_yard">Yadi ya In-Bond</span>
+            </button>
+            <button class="malkia-ai-chip" onclick="sendMalkiaAiChip(currentLang === 'sw' ? 'Je, vifaa vya gari langu vipo salama (betri, redio)?' : 'How do you guarantee vehicle accessory safety?')">
+                🛡️ <span data-i18n="chip_safety">Usalama wa Vifaa</span>
+            </button>
+            <button class="malkia-ai-chip" onclick="sendMalkiaAiChip(currentLang === 'sw' ? 'Ofisi zenu zipo wapi na mawasiliano?' : 'Where is your office located?')">
+                📍 <span data-i18n="chip_office">Ofisi &amp; Mawasiliano</span>
+            </button>
+        </div>
+
+        <div class="malkia-ai-footer">
+            <form class="malkia-ai-input-wrap" onsubmit="event.preventDefault(); submitMalkiaAiChat();">
+                <input type="text" id="malkiaAiInput" class="malkia-ai-input" placeholder="Andika swali lako hapa... (Swahili/English)" autocomplete="off">
+                <button type="submit" class="malkia-ai-send-btn" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── JAVASCRIPT: AUTOMATIC MOVING CARS ENGINE & BILINGUAL ENGINE ── -->
+    <script>
+        // ── AUTOMATIC MOVING VEHICLES CAROUSEL ──
+        let currentCarIndex = 0;
+        const totalCars = 4;
+        let carSlideInterval = null;
+
+        function showCarSlide(newIndex, direction = 'next') {
+            const slides = document.querySelectorAll('.car-slide');
+            const dots = document.querySelectorAll('.stage-dot');
+
+            const currentSlide = slides[currentCarIndex];
+            const nextSlide = slides[newIndex];
+
+            // Exit animation
+            slides.forEach((s, idx) => {
+                if (idx === currentCarIndex) {
+                    s.classList.remove('active');
+                    if (direction === 'next') {
+                        s.classList.add('exit-left');
+                    } else {
+                        s.classList.remove('exit-left');
+                    }
+                } else if (idx !== newIndex) {
+                    s.classList.remove('active');
+                    s.classList.remove('exit-left');
+                }
+            });
+
+            // Enter animation
+            setTimeout(() => {
+                nextSlide.classList.remove('exit-left');
+                nextSlide.classList.add('active');
+            }, 60);
+
+            // Update dots
+            dots.forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === newIndex);
+            });
+
+            currentCarIndex = newIndex;
+        }
+
+        function nextCarSlide() {
+            const next = (currentCarIndex + 1) % totalCars;
+            showCarSlide(next, 'next');
+            resetCarTimer();
+        }
+
+        function prevCarSlide() {
+            const prev = (currentCarIndex - 1 + totalCars) % totalCars;
+            showCarSlide(prev, 'prev');
+            resetCarTimer();
+        }
+
+        function goToCarSlide(index) {
+            if (index === currentCarIndex) return;
+            const dir = index > currentCarIndex ? 'next' : 'prev';
+            showCarSlide(index, dir);
+            resetCarTimer();
+        }
+
+        function startCarTimer() {
+            // Automatically transitions cars every 3.8 seconds!
+            carSlideInterval = setInterval(() => {
+                nextCarSlide();
+            }, 3800);
+        }
+
+        function resetCarTimer() {
+            if (carSlideInterval) clearInterval(carSlideInterval);
+            startCarTimer();
+        }
+
+        startCarTimer();
+
+        // ── LIVE VEHICLE TRACKING SEARCH ──
+        async function handleCenterTrack() {
+            const query = document.getElementById('centerTrackInput').value.trim();
+            const box = document.getElementById('trackResultBox');
+            if (!query) return;
+
+            box.style.display = 'block';
+            box.innerHTML = `
+                <div style="display:flex;align-items:center;gap:0.5rem;color:#2563EB;font-weight:700;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> ${currentLang === 'sw' ? 'Inatafuta kwenye mfumo wa forodha wa Malkia...' : 'Searching Malkia customs pipeline for'} "${query}"...
+                </div>
+            `;
+
+            try {
+                const res = await fetch('/api/website-ai/chat/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: query })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.status === 'success' && data.reply) {
+                        box.innerHTML = `<div style="line-height:1.6;color:#0B1329;">${formatBotResponse(data.reply)}</div>`;
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn(e);
+            }
+
+            setTimeout(() => {
+                box.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+                        <div>
+                            <strong style="color:#0B1329;display:block;font-size:0.95rem;">${currentLang === 'sw' ? 'Mzigo Umepatikana' : 'Shipment Found'}: ${query.toUpperCase()}</strong>
+                            <span style="color:#059669;font-size:0.82rem;"><i class="fa-solid fa-circle-check"></i> ${currentLang === 'sw' ? 'Upo Kwenye Mchakato wa Forodha Malkia' : 'Active in Malkia Clearance Pipeline'}</span>
+                        </div>
+                        <a href="https://portal.malkiacargowave.com" target="_blank" style="background:#2563EB;color:#FFF;padding:0.45rem 0.85rem;border-radius:6px;text-decoration:none;font-size:0.8rem;font-weight:700;">
+                            ${currentLang === 'sw' ? 'Tazama Kwenye Portal' : 'View in Portal'} &rarr;
+                        </a>
+                    </div>
+                `;
+            }, 500);
+        }
+
+        // ── BILINGUAL TRANSLATION ENGINE ──
+        const translations = {
+            sw: {
+                top_license: "Mawakala Walioidhinishwa na TRA • Bandari ya Dar es Salaam",
+                top_portal_btn: "Kuingia Portal",
+                hero_sub: "Utoaji wa Magari Bandari ya Dar es Salaam • Yadi Binafsi ya In-Bond • Usafirishaji Nchi Nzima",
+                pill_safe: "100% Usalama wa Vifaa (Radio/Betri)",
+                pill_demurrage: "Yadi ya In-Bond (Zero Demurrage)",
+                pill_tra: "Kodi ya TRA kwa Uwazi",
+                pill_delivery: "Usafirishaji Nchi Nzima",
+                car1_badge: "Imekaguliwa & Imetoka Bandarini (Direct Clearance)",
+                car1_origin: "Imetoka: Yokohama, Japan • Meli: MSC Laura • Status: Delivered",
+                car2_badge: "In-Bond Yard Storage (Kodi Imesimamishwa)",
+                car2_origin: "Imetoka: Nagoya, Japan • Hifadhi Salama: Malkia Bonded Yard",
+                car3_badge: "100% Usalama wa Vifaa • Physical Verification Pass",
+                car3_origin: "Imetoka: Southampton, UK • TRA Assessed • Ready for Transit",
+                car4_badge: "Inasafirishwa Mikoani (Arusha / Mwanza Delivery)",
+                car4_origin: "Imetoka: Dubai, UAE • Car Carrier Transit • Doorstep Handover",
+                track_ph: "Weka namba ya B/L au Chassis kufuatilia gari (mf. JILI-KEI, GDJ150...)",
+                track_btn_label: "Fuatilia Gari",
+                about_tag: "Sisi Ni Nani",
+                about_title: "Imejengwa Kuwapa Waagizaji wa Magari Amani ya Moyo.",
+                about_p1: "Malkia Cargo Wave Limited ni kampuni iliyosajiliwa rasmi na kupewa leseni ya forodha ya TRA kwa ajili ya kutoa na kusafirisha mizigo na magari, ikiwa na makao makuu yake Bandari ya Dar es Salaam, Tanzania.",
+                about_story: '"Tulianzisha Malkia Cargo Wave baada ya kuona jinsi waagizaji wa kawaida wanavyoteseka na faini za bandari (demurrage), gharama zilizofichika, na wizi wa vipuri vya magari bandarini. Lengo letu ni moja: kufanya utoaji wa magari uwe wazi, wa haraka, na salama 100%."',
+                about_p2: "Kuanzia gari moja binafsi toka Japan, Uingereza (UK), au Dubai, hadi magari ya makampuni na biashara, tunasimama na wewe hatua kwa hatua hadi funguo ziingie mkononi mwako salama.",
+                val1_title: "100% Usalama wa Gari",
+                val1_desc: "Kila gari hukaguliwa mara moja vifaa vyote: betri, taili ya akiba, redio, na vioo vya pembeni.",
+                val2_title: "Gharama za Uwazi",
+                val2_desc: "Hakuna gharama za siri. Tunakokotoa kodi halisi ya TRA na ada za bandari mapema kabla hujaanza.",
+                val3_title: "Kutoa Gari Haraka",
+                val3_desc: "Kazi inafanywa kwa kasi ili gari lako litoke bandarini bila kulipa faini kubwa za uhifadhi.",
+                val4_title: "Yadi Binafsi ya In-Bond",
+                val4_desc: "Hifadhi gari lako kwenye yadi yetu chini ya bondi ya forodha kama unahitaji muda wa kukusanya kodi.",
+                rec_tag: "Rekodi Yetu",
+                rec_title: "Inaaminiwa na Wamiliki wa Magari Mamia Kote Tanzania",
+                rec_stat1_title: "Utoaji Salama:",
+                rec_stat1_desc: "Rekodi ya sifuri ya upotevu wa vifaa au vipuri chini ya uangalizi wetu.",
+                rec_stat2_title: "Faini za Demurrage:",
+                rec_stat2_desc: "Kutoa gari kabla muda wa bure haujaisha au kulihamishia In-Bond.",
+                rec_stat3_title: "Ulinzi na CCTV:",
+                rec_stat3_desc: "Yadi yetu inalindwa na kamera masaa 24 kwa magari yaliyosimamishwa kodi.",
+                rec_brela: "Imesajiliwa rasmi na BRELA na kutambuliwa na Mamlaka ya Mapato Tanzania (TRA).",
+                srv_tag: "Kazi Zetu Kwa Wateja",
+                srv_title: "Huduma Bora na Nafuu kwa Watu Halisi",
+                srv_desc: "Tumerahisisha mchakato mzima wa kutoa gari katika huduma nne kuu zilizo wazi na za uhakika.",
+                srv1_title: "Utoaji wa Magari Bandarini",
+                srv1_desc: "Umeagiza gari toka Japan, UK au Dubai? Tunashughulikia taratibu zote za forodha Bandari ya Dar es Salaam, tunalipa ada zote, na kukuondolea usumbufu wote.",
+                srv1_b1: "Upimaji na ulipaji wa kodi ya TRA",
+                srv1_b2: "Ukaguzi wa ubora wa TBS",
+                srv1_b3: "Kutoa gari haraka bila faini za bandari",
+                srv2_title: "Yadi ya In-Bond (Kuhifadhi Gari)",
+                srv2_desc: "Huna hela ya kodi ya TRA kwa sasa? Epuka faini za bandari kwa kuhamishia gari lako kwenye yadi yetu salama chini ya forodha hadi utakapokuwa tayari kulipa.",
+                srv2_b1: "Ulinzi wa masaa 24 na kamera za CCTV",
+                srv2_b2: "Kodi inasimamishwa kihalali kwa dhamana ya TRA",
+                srv2_b3: "Lipa kodi pale tu unapokuwa na fedha kamili",
+                srv3_title: "Ushauri na Makadirio ya Kodi",
+                srv3_desc: "Fahamu gharama zako mapema kabla meli haijafika. Tutumie invoice au export certificate, na wataalamu wetu watakupa mchanganuo kamili wa kodi ya TRA.",
+                srv3_b1: "Makadirio sahihi ya GePG Control Number",
+                srv3_b2: "Hakuna tozo au makato ya ziada yaliyofichika",
+                srv3_b3: "Ushauri wa bure kuhusu umri wa gari na uchakavu",
+                srv4_title: "Kusafirisha Gari Mikoani",
+                srv4_desc: "Unataka gari lako lifikishwe nyumbani kwako Dar es Salaam, kusafirishwa mikoani (Arusha, Mwanza, Dodoma, Mbeya), au kuvuka mipaka kwenda nchi jirani.",
+                srv4_b1: "Madereva wazoefu na magari maalum ya kubeba",
+                srv4_b2: "Usafirishaji salama mikoa yote ya Tanzania",
+                srv4_b3: "Kuvuka mpaka Rwanda, Burundi, DRC na Zambia",
+                yard_badge: "Yadi Binafsi ya Forodha",
+                yard_title: "Usiruhusu faini za bandari zikateketeze bajeti yako.",
+                yard_desc: "Kukaa na gari bandarini baada ya muda wa bure kumalizika kunaambatana na faini kubwa za kila siku (demurrage). Malkia Cargo Wave Limited inahamisha gari lako kihalali kwenye yadi yetu chini ya bondi ya forodha, ikikupa nafasi ya kulipa kodi taratibu bila msongo wa mawazo.",
+                yard_btn: "Ulizia Nafasi ya Yadi ya In-Bond",
+                yard_box_title: "Faida za Yadi ya Malkia:",
+                yard_b1_title: "Hakuna Faini za Bandari:",
+                yard_b1_desc: "Zuia mara moja tozo kubwa za kuhifadhi bandarini.",
+                yard_b2_title: "Ulinzi Madhubuti:",
+                yard_b2_desc: "Walinzi masaa 24 na kamera za usalama zilizounganishwa.",
+                yard_b3_title: "Matunzo ya Gari:",
+                yard_b3_desc: "Uangalizi wa betri ya gari lako linapokuwa yadi.",
+                yard_b4_title: "Kutoa Gari Kirahisi:",
+                yard_b4_desc: "Lipa kodi ukiwa tayari na uchukue gari lako mara moja.",
+                cnt_tag: "Wasiliana Nasi",
+                cnt_title: "Tembelea Ofisi Yetu au Omba Makadirio ya Kodi",
+                cnt_desc: "Tupo tayari kila wakati kujibu maswali yako na kukusaidia na gari lako.",
+                cnt_sub: "Mawasiliano Yetu",
+                cnt_p: "Una swali kuhusu kuagiza gari, makadirio ya kodi ya TRA, au yadi yetu ya In-Bond? Wasiliana moja kwa moja na maafisa wetu wa forodha.",
+                cnt_loc_title: "Mahali Ofisi Ilipo",
+                cnt_loc_desc: "Bandari Road, Karibu na Lango Kuu la Bandari ya Dar es Salaam, Tanzania",
+                cnt_phone_title: "Simu & WhatsApp",
+                cnt_email_title: "Barua Pepe Rasmi",
+                form_title: "Omba Makadirio ya Kodi Bure",
+                form_sub: "Jaza taarifa za gari lako na tutakupigia au kukutumia WhatsApp mchanganuo kamili.",
+                form_lbl_model: "Jina na Modeli ya Gari (mf. Prado 2017)",
+                form_lbl_srv: "Huduma Unayohitaji",
+                opt_1: "Kutoa Gari Mara Moja (Lipa Kodi)",
+                opt_2: "Kuhifadhi Kwenye Yadi ya In-Bond",
+                opt_3: "Kusafirisha Gari Mikoani",
+                form_lbl_phone: "Namba ya Simu / WhatsApp",
+                form_btn: "Tuma Maombi",
+                footer_desc: "Mawakala walioidhinishwa wa forodha kutoa magari na kuhifadhi magari kwenye Yadi ya In-Bond Bandari ya Dar es Salaam, Tanzania.",
+                chip_tra: "Kodi ya TRA",
+                chip_yard: "Yadi ya In-Bond",
+                chip_safety: "Usalama wa Vifaa",
+                chip_office: "Ofisi & Mawasiliano",
+                why_tag: "Kwanini Utuchague Sisi",
+                why_title: "Sababu 6 Zinazofanya Malkia Kuwa Chaguo la Kwanza",
+                why_desc: "Tunaondoa changamoto zote za bandari ili gari lako likufikie kwa amani, usalama na gharama nafuu.",
+                why1_title: "100% Usalama wa Vifaa (Zero Theft)",
+                why1_desc: "Hakuna hofu ya kuibiwa betri, redio, taili ya akiba, au vioo. Tunafanya Physical Verification mara moja meli inaposhusha gari na kutoa ripoti rasmi getini.",
+                why2_title: "Yadi Binafsi ya In-Bond (Zero Demurrage)",
+                why2_desc: "Okoa mamilioni ya tozo za bandari. Tunahamisha gari lako kwenye yadi yetu chini ya bondi ya TRA ili ulipe kodi ukiwa tayari bila faini za kila siku.",
+                why3_title: "Kodi Halisi na Gharama za Uwazi",
+                why3_desc: "Hesabu kamili ya kodi ya TRA na ada za bandari zinatolewa mapema na GePG Control Number kabla meli haijatua. Hakuna tozo zilizofichika.",
+                why4_title: "Utoaji wa Haraka (Ndani ya Siku 3–5)",
+                why4_desc: "Timu yetu yenye uzoefu inafanya kazi bandarini kila siku kushughulikia nyaraka, ukaguzi wa TBS, na kutoa gari kabla muda wa bure haujaisha.",
+                why5_title: "Usafirishaji Salama Mikoani & Nje",
+                why5_desc: "Magari yetu maalum (car carriers) na madereva wazoefu wanakabidhi gari mlangoni kwako Arusha, Mwanza, Dodoma au Rwanda, Burundi, DRC na Zambia.",
+                why6_title: "Ufuatiliaji wa Moja kwa Moja & AI",
+                why6_desc: "Fuatilia gari lako kwa namba ya B/L au Chassis wakati wowote kwenye mfumo wetu, ukisaidiwa na msaidizi wa AI masaa 24 kujibu maswali yako yote.",
+                faq_tag: "Maswali Yanayoulizwa",
+                faq_title: "Maswali Yanayoulizwa Mara kwa Mara (FAQ)",
+                faq_desc: "Kila kitu unachopaswa kufahamu kabla na baada ya gari lako kufika Bandari ya Dar es Salaam.",
+                faq_q1: "Inachukua muda gani kutoa gari Bandari ya Dar es Salaam?",
+                faq_a1: "Kawaida inachukua <strong>siku 3 hadi 5 za kazi</strong> kuanzia siku nyaraka zote zinapopokelewa na kodi ya TRA kulipwa. Lengo letu kuu ni kutoa gari kabla muda wa bure wa bandari haujaisha ili mteja asilipe faini yoyote ya uhifadhi (demurrage).",
+                faq_q2: "Yadi ya In-Bond inanisaidiaje kama sina pesa ya kodi ya TRA kwa sasa?",
+                faq_a2: "Kama bado hujakamilisha fedha za kodi ya TRA, tunalihamisha gari lako kihalali kutoka bandarini hadi kwenye <strong>Yadi yetu ya In-Bond</strong> chini ya dhamana ya forodha (TRA Customs Bond). Hii inazuia faini kubwa za bandari (port demurrage) na kukuwezesha kulipa kodi taratibu ukiwa tayari.",
+                faq_q3: "Mnahakikisha vipi kwamba betri, redio na taili ya akiba havitaibiwa?",
+                faq_a3: "Maafisa wetu wapo getini wakati gari linashushwa kutoka kwenye meli ya RORO. Tunafanya <strong>Physical Verification</strong> mara moja na kuweka rekodi ya picha ya: Redio, Betri, Taili ya Akiba, Vioo vya pembeni na vifaa vya gari. Gari linafungwa muhuri na kulindwa 24/7 hadi mikononi mwako.",
+                faq_q4: "Ninahitaji nyaraka zipi ili kuanza mchakato wa kutoa gari langu?",
+                faq_a4: "Unahitaji nyaraka tano kuu: (1) <strong>Bill of Lading (B/L)</strong>, (2) <strong>Export Certificate</strong> kutoka nchi uliyoagiza (Japan, UK au Dubai), (3) <strong>Commercial Invoice</strong> ya ununuzi, (4) Cheti cha ukaguzi wa <strong>TBS</strong> (kama kipo), na (5) Kitambulisho chako cha NIDA au TIN ya biashara.",
+                faq_q5: "Nawezaje kupata makadirio halisi ya kodi ya TRA kabla gari halijafika?",
+                faq_a5: "Ni rahisi sana! Tutumie picha au nakala ya Export Certificate na Invoice yako kupitia WhatsApp namba <strong>+255 787 367 474</strong> au fomu hapo chini. Wataalamu wetu watakukokotolea kodi halisi ya TRA kulingana na mwaka, CC, na thamani ya gari lako bure bila malipo yoyote.",
+                faq_q6: "Je, mnasafirisha gari hadi mikoani baada ya kutoka bandarini?",
+                faq_a6: "Ndiyo! Tuna madereva waaminifu na magari maalum ya kubeba magari (car carrier) yanayosafirisha magari salama kwenda mikoa yote ya Tanzania (Arusha, Dodoma, Mwanza, Mbeya, Morogoro n.k.) na nchi jirani (Rwanda, Burundi, DRC, na Zambia) yakiwa na bima kamili ya usafirishaji.",
+                ai_pill: "Malkia AI • Uliza Chochote" 
+            },
+            en: {
+                top_license: "TRA Licensed Customs Broker • Port of Dar es Salaam",
+                top_portal_btn: "Portal Login",
+                hero_sub: "Dar es Salaam Port Motor Vehicle Clearance • Private In-Bond Yard • Nationwide Delivery",
+                pill_safe: "100% Accessory Safety (Radio/Battery)",
+                pill_demurrage: "In-Bond Yard (Zero Demurrage)",
+                pill_tra: "Transparent TRA Duty",
+                pill_delivery: "Nationwide Transport",
+                car1_badge: "Inspected & Discharged from Port (Direct Clearance)",
+                car1_origin: "Origin: Yokohama, Japan • Vessel: MSC Laura • Status: Delivered",
+                car2_badge: "In-Bond Yard Storage (Duty Suspended)",
+                car2_origin: "Origin: Nagoya, Japan • Secured: Malkia Bonded Yard",
+                car3_badge: "100% Vehicle Safety • Physical Verification Passed",
+                car3_origin: "Origin: Southampton, UK • TRA Assessed • Ready for Transit",
+                car4_badge: "Upcountry Transit (Arusha / Mwanza Delivery)",
+                car4_origin: "Origin: Dubai, UAE • Car Carrier Transit • Doorstep Handover",
+                track_ph: "Enter B/L or Chassis number to track vehicle (e.g. JILI-KEI, GDJ150...)",
+                track_btn_label: "Track Vehicle",
+                about_tag: "Who We Are",
+                about_title: "Built to Give Car Importers Peace of Mind.",
+                about_p1: "Malkia Cargo Wave Limited is a fully registered, TRA-licensed customs clearing and freight forwarding company headquartered at Dar es Salaam Port, Tanzania.",
+                about_story: '"We established Malkia Cargo Wave after seeing how many everyday individuals and business owners struggled with port demurrage, hidden clearance fees, and damaged vehicle accessories at the port. Our mission is simple: to make vehicle clearance completely transparent, fast, and secure."',
+                about_p2: "From single personal cars imported from Japan, the United Kingdom, or Dubai, to commercial corporate fleet consignments, we stand beside you through every step until the keys are safely in your hand.",
+                val1_title: "100% Vehicle Safety",
+                val1_desc: "Every vehicle undergoes an immediate inspection for battery, spare tire, radio, and mirrors.",
+                val2_title: "Transparent Pricing",
+                val2_desc: "No surprise costs. We calculate exact TRA taxes and port fees upfront before you commit.",
+                val3_title: "Fast Port Clearance",
+                val3_desc: "Swift handling to ensure your car leaves Dar Port without incurring costly demurrage fees.",
+                val4_title: "Private Bonded Yard",
+                val4_desc: "Hold your vehicle securely under customs bond if you need time to organize your tax payments.",
+                rec_tag: "Our Track Record",
+                rec_title: "Trusted by Hundreds of Car Owners Across Tanzania",
+                rec_stat1_title: "Safe Delivery Rate:",
+                rec_stat1_desc: "Zero reports of missing vehicle parts or accessories under our custody.",
+                rec_stat2_title: "Demurrage Guarantee:",
+                rec_stat2_desc: "Fast-track lodgement to avoid port penalties.",
+                rec_stat3_title: "CCTV Bonded Security:",
+                rec_stat3_desc: "Monitored yard facilities for duty-suspended vehicles.",
+                rec_brela: "Fully registered by BRELA and accredited with the Tanzania Revenue Authority (TRA).",
+                srv_tag: "What We Do For You",
+                srv_title: "Clear, Reliable Services Designed for Real People",
+                srv_desc: "We simplify the entire vehicle clearing journey into four straightforward, dependable services.",
+                srv1_title: "Vehicle Port Clearance",
+                srv1_desc: "Imported a car from Japan, the UK, or Dubai? We handle all customs bureaucracy at Dar es Salaam Port, pay wharfage, verify paperwork, and drive your car out safely.",
+                srv1_b1: "TRA duty valuation & prompt lodgement",
+                srv1_b2: "TBS vehicle inspection compliance",
+                srv1_b3: "Fast release without port demurrage",
+                srv2_title: "In-Bond Vehicle Yard",
+                srv2_desc: "Not ready to pay full TRA import taxes right now? Avoid exorbitant port storage charges by moving your vehicle to our secure bonded yard while you organize your finances.",
+                srv2_b1: "24/7 CCTV & guarded parking bays",
+                srv2_b2: "Duty suspended legally under TRA bond",
+                srv2_b3: "Pay taxes only when ready to register",
+                srv3_title: "Tax & Duty Calculation",
+                srv3_desc: "Know your costs before your ship docks. Send us your vehicle invoice or export certificate, and our customs specialists will provide an exact breakdown of TRA import duty.",
+                srv3_b1: "Accurate GePG control number quotes",
+                srv3_b2: "No hidden port or broker surcharges",
+                srv3_b3: "Free consultation on vehicle age regulations",
+                srv4_title: "Doorstep & Transit Delivery",
+                srv4_desc: "Whether you want your car delivered directly to your home in Dar es Salaam, driven to upcountry regions (Arusha, Mwanza, Dodoma), or escorted to cross-border destinations.",
+                srv4_b1: "Safe car carrier & professional drivers",
+                srv4_b2: "Deliveries across all Tanzania regions",
+                srv4_b3: "Cross-border transit to Rwanda, Burundi, DRC & Zambia",
+                yard_badge: "Private Bonded Facility",
+                yard_title: "Don't let port storage fees consume your budget.",
+                yard_desc: "Holding a car at the port past the free period leads to massive daily demurrage penalties. At Malkia Cargo Wave Limited, we legally transfer your vehicle into our private bonded yard under customs bond, giving you peace of mind and breathing room to settle duty at your own pace.",
+                yard_btn: "Inquire About In-Bond Parking",
+                yard_box_title: "The Malkia Yard Advantage:",
+                yard_b1_title: "Zero Port Demurrage:",
+                yard_b1_desc: "Stop high terminal storage costs immediately.",
+                yard_b2_title: "Full Security:",
+                yard_b2_desc: "24-hour physical guards and monitored security cameras.",
+                yard_b3_title: "Vehicle Care:",
+                yard_b3_desc: "Regular battery maintenance while in storage.",
+                yard_b4_title: "Easy Release:",
+                yard_b4_desc: "Pay duty when you are ready and drive away smoothly.",
+                cnt_tag: "Reach Out To Us",
+                cnt_title: "Visit Our Office or Request an Estimate",
+                cnt_desc: "We are always ready to answer your questions and assist with your shipment.",
+                cnt_sub: "Get in Touch",
+                cnt_p: "Have questions about importing a vehicle, TRA duty valuation, or our bonded storage? Contact our dedicated customs operations team directly.",
+                cnt_loc_title: "Office Location",
+                cnt_loc_desc: "Bandari Road, Port Main Gate Vicinity, Dar es Salaam, Tanzania",
+                cnt_phone_title: "Phone & WhatsApp",
+                cnt_email_title: "Official Email",
+                form_title: "Request Free Duty Estimation",
+                form_sub: "Fill out vehicle details and we will call or WhatsApp you with exact costs.",
+                form_lbl_model: "Vehicle Name / Model (e.g. Prado 2017)",
+                form_lbl_srv: "Service Needed",
+                opt_1: "Immediate Port Clearance (Direct Duty)",
+                opt_2: "In-Bond Storage (Hold in Bonded Yard)",
+                opt_3: "Upcountry Doorstep Transport",
+                form_lbl_phone: "Phone / WhatsApp Number",
+                form_btn: "Send Inquiry",
+                footer_desc: "Licensed Motor Vehicle Customs Clearing & Forwarding Agents with private bonded yard facilities at Dar es Salaam Port, Tanzania.",
+                chip_tra: "TRA Duty Quote",
+                chip_yard: "In-Bond Yard",
+                chip_safety: "Accessory Safety",
+                chip_office: "Office & Contact",
+                why_tag: "Why Choose Us",
+                why_title: "6 Reasons Why Malkia is the #1 Choice for Importers",
+                why_desc: "We eliminate all port clearing headaches so your vehicle reaches you safely, transparently, and affordably.",
+                why1_title: "100% Vehicle Accessory Safety (Zero Theft)",
+                why1_desc: "No fear of stolen batteries, radios, spare tires, or side mirrors. We conduct immediate Physical Verification at the port gate and sign an official inspection report.",
+                why2_title: "Private In-Bond Yard (Zero Port Demurrage)",
+                why2_desc: "Save millions in port storage fines. We transfer your vehicle to our secure bonded yard under TRA bond, allowing you to pay duty when ready without daily penalties.",
+                why3_title: "Exact Upfront Taxes & Transparent Pricing",
+                why3_desc: "Exact TRA duty calculations and GePG Control Numbers provided before your ship docks. No hidden broker fees or unexpected port surcharges.",
+                why4_title: "Fast-Track Clearance (Within 3–5 Days)",
+                why4_desc: "Our experienced on-site port officers handle document lodgements, TBS inspections, and release orders daily to beat port free-time deadlines.",
+                why5_title: "Nationwide & Cross-Border Delivery",
+                why5_desc: "Dedicated car carriers and seasoned drivers deliver vehicles directly to your doorstep in Arusha, Mwanza, Dodoma, or across borders to Rwanda, Burundi, DRC, and Zambia.",
+                why6_title: "Live Shipment Tracking & 24/7 AI Support",
+                why6_desc: "Track your shipment live anytime using your B/L or Chassis number on our system, supported by our intelligent AI assistant 24/7.",
+                faq_tag: "Frequently Asked Questions",
+                faq_title: "Frequently Asked Questions (FAQ)",
+                faq_desc: "Everything you need to know about clearing your vehicle at the Port of Dar es Salaam.",
+                faq_q1: "How long does it take to clear a vehicle at Dar es Salaam Port?",
+                faq_a1: "It typically takes <strong>3 to 5 working days</strong> from the date complete documents are received and TRA duty is paid. Our primary goal is to release your vehicle well before port free storage expires to avoid demurrage fines.",
+                faq_q2: "How does the In-Bond Yard help if I don't have full tax money right now?",
+                faq_a2: "If you need time to organize your tax funds, we legally transfer your vehicle from the port terminal into our <strong>In-Bond Yard</strong> under TRA customs bond. This stops terminal demurrage immediately, allowing you to pay duty at your pace.",
+                faq_q3: "How do you guarantee vehicle accessories (battery, radio, spare tire) are safe?",
+                faq_a3: "Our officers attend discharge as soon as your car leaves the RORO vessel. We conduct <strong>Physical Verification</strong> immediately, photographing and documenting: Radio, Battery, Spare Wheel, Side Mirrors, and Tools. The vehicle is sealed and guarded 24/7.",
+                faq_q4: "Which documents are required to begin the vehicle clearance process?",
+                faq_a4: "You need 5 primary documents: (1) <strong>Bill of Lading (B/L)</strong>, (2) <strong>Export Certificate</strong> (from Japan, UK, or Dubai), (3) <strong>Commercial Invoice</strong>, (4) <strong>TBS Inspection Certificate</strong> (if inspected overseas), and (5) Your NIDA ID or TIN certificate.",
+                faq_q5: "How can I obtain an accurate TRA duty estimate before my vehicle arrives?",
+                faq_a5: "It's simple! Send a photo or PDF of your Export Certificate and Invoice to our WhatsApp number <strong>+255 787 367 474</strong> or fill out the form below. Our customs specialists will calculate the exact TRA duty and provide a GePG Control Number free of charge.",
+                faq_q6: "Do you deliver vehicles to upcountry regions after port release?",
+                faq_a6: "Yes! We operate dedicated vehicle carrier trucks and experienced professional drivers delivering vehicles safely across Tanzania (Arusha, Dodoma, Mwanza, Mbeya, etc.) and cross-border to Rwanda, Burundi, DRC, and Zambia with comprehensive transit insurance.",
+                ai_pill: "Malkia AI • Ask Anything" 
+            }
+        };
+
+        let currentLang = localStorage.getItem('malkia_lang') || 'sw';
+
+        function switchLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('malkia_lang', lang);
+
+            document.getElementById('langSw').classList.toggle('active', lang === 'sw');
+            document.getElementById('langEn').classList.toggle('active', lang === 'en');
+            document.documentElement.lang = lang;
+
+            const t = translations[lang];
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.innerHTML = t[key];
+            });
+
+            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+                const key = el.getAttribute('data-i18n-ph');
+                if (t[key]) el.placeholder = t[key];
+            });
+
+            const aiPill = document.getElementById('aiPillText');
+            if (aiPill && t['ai_pill']) aiPill.innerText = t['ai_pill'];
+
+            const aiInput = document.getElementById('malkiaAiInput');
+            if (aiInput) {
+                aiInput.placeholder = lang === 'sw' 
+                    ? 'Andika swali lako hapa... (Swahili au Kiingereza)' 
+                    : 'Type your question here... (English or Swahili)';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            switchLanguage(currentLang);
+        });
+
+        // ── FLOATING AI ASSISTANT FUNCTIONS ──
+
+        function toggleFaq(el) {
+            const item = el.parentElement;
+            const isActive = item.classList.contains('active');
+            
+            document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+            
+            if (!isActive) {
+                item.classList.add('active');
+            }
+        }
+
+        let isMalkiaAiOpen = false;
+
+        function toggleMalkiaAi() {
+            const panel = document.getElementById('malkiaAiPanel');
+            const fab = document.getElementById('malkiaAiFab');
+            const icon = document.getElementById('malkiaAiFabIcon');
+            const pill = document.getElementById('malkiaAiPill');
+
+            isMalkiaAiOpen = !isMalkiaAiOpen;
+            if (isMalkiaAiOpen) {
+                panel.classList.add('open');
+                fab.classList.add('active');
+                icon.className = 'fa-solid fa-xmark';
+                if (pill) pill.style.display = 'none';
+                setTimeout(() => document.getElementById('malkiaAiInput').focus(), 300);
+            } else {
+                panel.classList.remove('open');
+                fab.classList.remove('active');
+                icon.className = 'fa-solid fa-robot';
+                if (pill) pill.style.display = 'flex';
+            }
+        }
+
+        function resetMalkiaAiChat() {
+            const body = document.getElementById('malkiaAiBody');
+            body.innerHTML = `
+                <div class="malkia-ai-msg bot">
+                    <div class="malkia-ai-msg-bubble">
+                        <strong>Mazungumzo yameanza upya! 👋</strong><br><br>
+                        Tafadhali uliza swali lolote kuhusu kodi ya TRA, Yadi ya In-Bond, ulinzi wa vipuri, au kufuatilia gari lako kwa namba ya B/L au Chassis.
+                    </div>
+                </div>
+            `;
+            document.getElementById('malkiaAiChips').style.display = 'flex';
+        }
+
+        function sendMalkiaAiChip(text) {
+            document.getElementById('malkiaAiInput').value = text;
+            submitMalkiaAiChat();
+        }
+
+        function formatBotResponse(text) {
+            let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formatted = formatted.replace(/^•\s*(.*)$/gm, '<li style="margin-bottom:3px;">$1</li>');
+            formatted = formatted.replace(/^- \s*(.*)$/gm, '<li style="margin-bottom:3px;">$1</li>');
+            formatted = formatted.replace(/\n/g, '<br>');
+            formatted = formatted.replace(/\+255\s*787\s*367\s*474/g, '<a href="https://wa.me/255787367474" target="_blank" style="color:#2563EB;font-weight:700;text-decoration:underline;">+255 787 367 474 (WhatsApp)</a>');
+            return formatted;
+        }
+
+        async function submitMalkiaAiChat() {
+            const input = document.getElementById('malkiaAiInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            input.value = '';
+            const body = document.getElementById('malkiaAiBody');
+            document.getElementById('malkiaAiChips').style.display = 'none';
+
+            const userMsgEl = document.createElement('div');
+            userMsgEl.className = 'malkia-ai-msg user';
+            userMsgEl.innerHTML = `<div class="malkia-ai-msg-bubble">${escapeHtml(message)}</div>`;
+            body.appendChild(userMsgEl);
+            body.scrollTop = body.scrollHeight;
+
+            let reply = '';
+            try {
+                const res = await fetch('/api/website-ai/chat/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.status === 'success' && data.reply) reply = data.reply;
+                }
+            } catch (err) {
+                console.warn(err);
+            }
+
+            if (!reply) {
+                reply = currentLang === 'sw'
+                    ? "Malkia Cargo Wave Limited inakusaidia kutoa gari lako bandarini Dar es Salaam kwa haraka na usalama 100%. Piga au WhatsApp **+255 787 367 474** kwa msaada wa haraka!"
+                    : "Malkia Cargo Wave Limited assists you with fast and 100% safe vehicle port clearance in Dar es Salaam. Call or WhatsApp **+255 787 367 474** for instant assistance!";
+            }
+
+            const botMsgEl = document.createElement('div');
+            botMsgEl.className = 'malkia-ai-msg bot';
+            botMsgEl.innerHTML = `<div class="malkia-ai-msg-bubble">${formatBotResponse(reply)}</div>`;
+            body.appendChild(botMsgEl);
+            body.scrollTop = body.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

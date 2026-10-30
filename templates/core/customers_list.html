@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}Clients Directory | Malkia C&amp;F{% endblock %}
+
+{% block content %}
+<div style="max-width:1040px;margin:0 auto;padding-bottom:3rem;">
+
+    <!-- TOP HEADER -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
+        <div>
+            <h2 style="font-family:var(--font-heading);font-size:1.45rem;font-weight:800;color:var(--brand-navy-900);letter-spacing:-0.02em;margin:0;">
+                <i class="fa-solid fa-users" style="color:#0D9488;margin-right:0.35rem;"></i> Clients Directory
+            </h2>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin:0.25rem 0 0 0;">
+                Registered client profiles, direct contacts, TIN, NIDA identification, and active dossiers.
+            </p>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+            {% if not is_ceo %}
+            <button type="button" class="btn-header-action btn-primary" onclick="openModal('addCustomerModal')" style="padding:0.55rem 1.15rem;font-weight:800;font-size:0.85rem;">
+                <i class="fa-solid fa-user-plus"></i> Add New Client
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- SEARCH & METRICS BAR -->
+    <div class="card-panel" style="padding:0.85rem 1.15rem;margin-bottom:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+            
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.78rem;font-weight:800;color:#0F766E;background:#CCFBF1;padding:0.25rem 0.65rem;border-radius:999px;">
+                    <i class="fa-solid fa-address-book"></i> {{ total_clients_count|default:customers|length }} Registered Client{% if total_clients_count != 1 %}s{% endif %}
+                </span>
+            </div>
+
+            <!-- SEARCH BAR -->
+            <form method="GET" action="{% url 'customers_list' %}" style="display:flex;gap:0.4rem;align-items:center;flex-grow:1;max-width:360px;">
+                <input type="text" name="q" value="{{ search_q }}" class="form-control" placeholder="Search Client Name, Phone, TIN, ID..." style="padding:0.45rem 0.85rem;font-size:0.82rem;">
+                <button type="submit" class="btn-header-action btn-outline" style="padding:0.45rem 0.85rem;font-size:0.82rem;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+                {% if search_q %}
+                <a href="{% url 'customers_list' %}" class="btn-header-action btn-outline" style="padding:0.45rem 0.65rem;font-size:0.82rem;" title="Clear Search">
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
+                {% endif %}
+            </form>
+
+        </div>
+    </div>
+
+    <!-- CLIENTS TABLE (COMPACT & PROPORTIONED) -->
+    <div class="card-panel" style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
+        
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
+                <thead>
+                    <tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;color:#64748B;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:32%;">Client / Company Name</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:28%;">Phone &amp; Email</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:22%;">Tax &amp; Identity (TIN / ID)</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:10%;text-align:center;">Files</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:8%;text-align:right;">Registered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in customers %}
+                    <tr style="border-bottom:1px solid #F1F5F9;transition:background 0.15s ease;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#fff'">
+                        
+                        <!-- 1. CLIENT NAME & CONTACT PERSON -->
+                        <td style="padding:0.8rem 1rem;vertical-align:middle;">
+                            <div style="font-weight:800;color:#0F172A;font-size:0.92rem;white-space:nowrap;">
+                                {{ c.company_name }}
+                            </div>
+                            {% if c.contact_person and c.contact_person != c.company_name %}
+                            <div style="font-size:0.75rem;color:#64748B;margin-top:0.15rem;white-space:nowrap;">
+                                Contact: <strong style="color:#334155;">{{ c.contact_person }}</strong>
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- 2. PHONE & EMAIL -->
+                        <td style="padding:0.8rem 1rem;vertical-align:middle;">
+                            <div style="font-weight:700;color:#0F172A;white-space:nowrap;font-size:0.82rem;">
+                                <i class="fa-solid fa-phone" style="font-size:0.7rem;color:#059669;margin-right:0.35rem;"></i>
+                                {{ c.phone }}
+                            </div>
+                            {% if c.email %}
+                            <div style="font-size:0.75rem;color:#475569;margin-top:0.15rem;white-space:nowrap;">
+                                <i class="fa-regular fa-envelope" style="font-size:0.7rem;color:#3B82F6;margin-right:0.35rem;"></i>
+                                <a href="mailto:{{ c.email }}" style="color:#475569;text-decoration:none;">{{ c.email }}</a>
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- 3. TIN & ID NUMBER -->
+                        <td style="padding:0.8rem 1rem;vertical-align:middle;">
+                            {% if c.tin_number %}
+                            <div style="font-family:monospace;font-size:0.82rem;font-weight:800;color:#0F172A;white-space:nowrap;">
+                                TIN: <span style="background:#F1F5F9;padding:0.1rem 0.4rem;border-radius:3px;">{{ c.tin_number }}</span>
+                            </div>
+                            {% endif %}
+                            {% if c.id_number %}
+                            <div style="font-family:monospace;font-size:0.75rem;color:#475569;margin-top:0.15rem;white-space:nowrap;">
+                                ID: <span style="background:#F8FAFC;padding:0.05rem 0.35rem;border-radius:3px;border:1px solid #E2E8F0;">{{ c.id_number }}</span>
+                            </div>
+                            {% endif %}
+                            {% if not c.tin_number and not c.id_number %}
+                            <span style="color:#94A3B8;font-size:0.78rem;">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- 4. ACTIVE FILES COUNT -->
+                        <td style="padding:0.8rem 1rem;vertical-align:middle;text-align:center;white-space:nowrap;">
+                            <a href="{% url 'jobs_list' %}?client={{ c.id }}" style="text-decoration:none;">
+                                <span style="display:inline-flex;align-items:center;gap:0.3rem;font-size:0.75rem;font-weight:800;color:#1E40AF;background:#EFF6FF;padding:0.25rem 0.65rem;border-radius:999px;border:1px solid #DBEAFE;transition:all 0.15s;" onmouseover="this.style.background='#DBEAFE'" onmouseout="this.style.background='#EFF6FF'">
+                                    <i class="fa-solid fa-folder-open"></i> {{ c.total_shipments_count }} File{% if c.total_shipments_count != 1 %}s{% endif %}
+                                </span>
+                            </a>
+                        </td>
+
+                        <!-- 5. REGISTERED DATE -->
+                        <td style="padding:0.8rem 1rem;vertical-align:middle;text-align:right;white-space:nowrap;">
+                            <span style="font-size:0.78rem;color:#64748B;font-weight:600;">
+                                {{ c.created_at|date:"d M Y" }}
+                            </span>
+                        </td>
+
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="padding:3rem 1.5rem;text-align:center;color:#94A3B8;">
+                            <i class="fa-solid fa-users-slash" style="font-size:2.2rem;color:#CBD5E1;margin-bottom:0.75rem;display:block;"></i>
+                            <strong style="color:#64748B;font-size:0.95rem;">No clients found</strong>
+                            <p style="font-size:0.82rem;margin:0.25rem 0 0 0;">
+                                {% if search_q %}
+                                No client matches your search "{{ search_q }}".
+                                {% else %}
+                                Click 'Add New Client' to register your first customer.
+                                {% endif %}
+                            </p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ADD CUSTOMER MODAL -->
+<div id="addCustomerModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:520px;">
+        <form action="{% url 'customer_create' %}" method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Client Registration</h3>
+                    <p style="font-size:0.78rem;color:var(--text-muted);">Enter the core client particulars</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('addCustomerModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom:0.85rem;">
+                    <label style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;display:block;">Client / Company Name *</label>
+                    <input type="text" name="company_name" class="form-control" placeholder="e.g. Serengeti Agro &amp; Logistics Ltd" required style="font-size:0.9rem;padding:0.55rem 0.75rem;">
+                </div>
+                <div class="form-group" style="margin-bottom:0.85rem;">
+                    <label style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;display:block;">Contact Person</label>
+                    <input type="text" name="contact_person" class="form-control" placeholder="e.g. Hassan Mwinyi" style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                </div>
+                <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.85rem;">
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;display:block;">Phone No *</label>
+                        <input type="text" name="phone" class="form-control" placeholder="e.g. +255 754 000 111" required style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;display:block;">Email Address</label>
+                        <input type="email" name="email" class="form-control" placeholder="e.g. info@client.co.tz" style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;display:block;">TIN Number</label>
+                        <input type="text" name="tin_number" class="form-control" placeholder="e.g. 105-334-921" style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;display:block;">ID (NIDA / Passport)</label>
+                        <input type="text" name="id_number" class="form-control" placeholder="e.g. 19900101-11101-00001" style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding:0.85rem 1.25rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;gap:0.5rem;justify-content:flex-end;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('addCustomerModal')" style="padding:0.5rem 1rem;">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.5rem 1.25rem;font-weight:800;">
+                    <i class="fa-solid fa-check"></i> Save Client
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

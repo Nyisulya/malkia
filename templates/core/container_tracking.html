@@ -1,0 +1,1129 @@
+{% extends 'base.html' %}
+
+{% block title %}Container Tracking & Demurrage Monitor | Malkia Operations{% endblock %}
+
+{% block content %}
+<div style="max-width:1250px;margin:0 auto;">
+
+    <!-- TOP EXECUTIVE HEADER BANNER -->
+    <div style="background:linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0369A1 100%);color:#fff;border-radius:var(--radius-xl);padding:1.5rem;margin-bottom:1.5rem;box-shadow:var(--shadow-md);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;background:rgba(255,255,255,0.15);padding:0.25rem 0.75rem;border-radius:999px;font-weight:700;">
+                    <i class="fa-solid fa-boxes-stacked"></i> Container Intelligence & Demurrage Control
+                </span>
+                {% if overdue_count > 0 %}
+                <span style="background:#EF4444;color:#fff;font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:999px;font-weight:700;animation:pulse 2s infinite;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> {{ overdue_count }} Overdue Demurrage Risk
+                </span>
+                {% else %}
+                <span style="background:rgba(16,185,129,0.25);color:#6EE7B7;font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:999px;font-weight:600;">
+                    <i class="fa-solid fa-circle-check"></i> All Return Timers Safe
+                </span>
+                {% endif %}
+            </div>
+            <div style="font-size:0.8rem;color:#BAE6FD;">
+                <i class="fa-regular fa-calendar-check"></i> {{ today|date:"l, d M Y" }} &bull; Port of Dar es Salaam
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <div>
+                <h2 style="font-family:var(--font-heading);font-size:1.45rem;font-weight:800;letter-spacing:-0.02em;margin:0;">
+                    Container Fleet, EIR & Demurrage Monitor
+                </h2>
+                <p style="font-size:0.85rem;color:#E0F2FE;margin-top:0.25rem;">
+                    Comprehensive container lifecycle tracking: port arrival, haulage allocation, weight verification (VGM), empty return (EIR), and shipping line deposit refunds.
+                </p>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <a href="{% url 'export_daily_report_excel' %}" class="btn-header-action" style="background:#10B981;color:#fff;font-weight:700;padding:0.55rem 1.1rem;border-radius:var(--radius-md);text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;box-shadow:var(--shadow-sm);">
+                    <i class="fa-solid fa-file-excel"></i> Export Excel Report
+                </a>
+                <a href="{% url 'logistics_jobs' %}" class="btn-header-action" style="background:rgba(255,255,255,0.15);color:#fff;font-weight:700;padding:0.55rem 1.1rem;border-radius:var(--radius-md);text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;border:1px solid rgba(255,255,255,0.25);">
+                    <i class="fa-solid fa-truck-ramp-box"></i> Dispatch Allocation
+                </a>
+            </div>
+        </div>
+    </div>
+
+<style>
+/* CONTAINER TRACKING ENHANCED STYLES */
+.kpi-container-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.kpi-metric-card {
+    background: #FFFFFF;
+    border-radius: var(--radius-lg);
+    padding: 1.1rem 1.25rem;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.kpi-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+}
+.kpi-metric-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+.kpi-metric-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.kpi-metric-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+.kpi-metric-val {
+    font-size: 1.65rem;
+    font-weight: 800;
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+.kpi-metric-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+}
+
+/* FILTER TOOLBAR */
+.filter-toolbar {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: var(--radius-xl);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.segmented-filters {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding: 0.2rem;
+    background: #F1F5F9;
+    border-radius: var(--radius-lg);
+    border: 1px solid #E2E8F0;
+}
+.filter-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: var(--radius-md);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+.filter-tab-btn:hover {
+    color: #0F172A;
+    background: rgba(255, 255, 255, 0.7);
+}
+.filter-tab-btn.active {
+    background: #FFFFFF;
+    color: #0284C7;
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.filter-count {
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: #E2E8F0;
+    color: #475569;
+}
+.filter-tab-btn.active .filter-count {
+    background: #E0F2FE;
+    color: #0369A1;
+}
+.filter-tab-btn.danger-tab.active {
+    color: #DC2626;
+}
+.filter-tab-btn.danger-tab.active .filter-count {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.search-box-wrap {
+    display: flex;
+    align-items: center;
+    background: #F8FAFC;
+    border: 1px solid #CBD5E1;
+    border-radius: var(--radius-md);
+    padding: 0.35rem 0.65rem;
+    gap: 0.5rem;
+    flex: 1;
+    max-width: 360px;
+    min-width: 250px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+.search-box-wrap:focus-within {
+    background: #FFFFFF;
+    border-color: #0284C7;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+.search-box-wrap input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.82rem;
+    width: 100%;
+    color: #0F172A;
+}
+.search-clear-btn {
+    background: none;
+    border: none;
+    color: #94A3B8;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0.1rem;
+}
+.search-clear-btn:hover {
+    color: #0F172A;
+}
+
+/* DATA TABLE CONTAINER */
+.containers-card {
+    background: #FFFFFF;
+    border-radius: var(--radius-xl);
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+.containers-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    text-align: left;
+}
+.containers-table thead tr {
+    background: #F8FAFC;
+    border-bottom: 2px solid #E2E8F0;
+}
+.containers-table th {
+    padding: 0.9rem 1rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+.containers-table tbody tr {
+    border-bottom: 1px solid #F1F5F9;
+    transition: background 0.15s ease;
+}
+.containers-table tbody tr:hover {
+    background: #F8FAFC;
+}
+.containers-table td {
+    padding: 0.9rem 1rem;
+    vertical-align: middle;
+}
+
+/* CELL CONTENT TYPOGRAPHY & PILLS */
+.cont-num {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #0F172A;
+    letter-spacing: 0.02em;
+    display: block;
+}
+.cont-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+    flex-wrap: wrap;
+}
+.badge-size {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    background: #E2E8F0;
+    color: #334155;
+    letter-spacing: 0.02em;
+}
+.seal-tag {
+    font-size: 0.7rem;
+    color: #0284C7;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: #F0F9FF;
+    border: 1px solid #BAE6FD;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+}
+.vgm-tag {
+    font-size: 0.68rem;
+    color: #64748B;
+    margin-top: 0.2rem;
+}
+
+.job-link {
+    font-weight: 700;
+    color: #2563EB;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.86rem;
+}
+.job-link:hover {
+    text-decoration: underline;
+}
+.client-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #1E293B;
+    margin-top: 0.15rem;
+    max-width: 175px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.bl-tag {
+    font-size: 0.7rem;
+    color: #64748B;
+}
+
+.haulage-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.truck-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 700;
+    color: #0F172A;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+.chassis-tag {
+    font-size: 0.68rem;
+    background: #F1F5F9;
+    color: #475569;
+    padding: 0.05rem 0.35rem;
+    border-radius: 3px;
+    font-weight: 600;
+}
+.driver-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.74rem;
+    color: #0F766E;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.unassigned-haulage {
+    color: #94A3B8;
+    font-style: italic;
+    font-size: 0.75rem;
+    background: #F8FAFC;
+    padding: 0.25rem 0.55rem;
+    border-radius: 4px;
+    border: 1px dashed #CBD5E1;
+    display: inline-block;
+}
+
+.gatepass-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #F0FDF4;
+    color: #166534;
+    border: 1px solid #BBF7D0;
+    padding: 0.22rem 0.6rem;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    white-space: nowrap;
+}
+.date-meta {
+    font-size: 0.7rem;
+    color: #64748B;
+    margin-top: 0.25rem;
+    white-space: nowrap;
+}
+
+.timer-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.73rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.timer-pill.safe {
+    background: #ECFDF5;
+    color: #065F46;
+    border: 1px solid #A7F3D0;
+}
+.timer-pill.expiring {
+    background: #FFFBEB;
+    color: #92400E;
+    border: 1px solid #FCD34D;
+}
+.timer-pill.overdue {
+    background: #FEF2F2;
+    color: #991B1B;
+    border: 1px solid #F87171;
+    animation: pulse 2s infinite;
+}
+.timer-pill.returned {
+    background: #F0FDF4;
+    color: #166534;
+    border: 1px solid #BBF7D0;
+}
+.timer-sub {
+    font-size: 0.7rem;
+    color: #64748B;
+    margin-top: 0.25rem;
+    white-space: nowrap;
+}
+
+.depot-name {
+    font-weight: 700;
+    color: #0F172A;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+.eir-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #0F766E;
+    background: #F0FDFA;
+    border: 1px solid #CCFBF1;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin-top: 0.25rem;
+    white-space: nowrap;
+}
+.pending-return-tag {
+    font-size: 0.72rem;
+    color: #94A3B8;
+    font-style: italic;
+    background: #F8FAFC;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.deposit-val {
+    font-weight: 800;
+    font-size: 0.84rem;
+    color: #0F172A;
+    white-space: nowrap;
+}
+.deposit-status-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    margin-top: 0.2rem;
+    white-space: nowrap;
+}
+.deposit-status-tag.refunded {
+    background: #ECFDF5;
+    color: #065F46;
+    border: 1px solid #A7F3D0;
+}
+.deposit-status-tag.held {
+    background: #FFFBEB;
+    color: #B45309;
+    border: 1px solid #FDE68A;
+}
+
+.actions-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    justify-content: flex-end;
+}
+.btn-action-update {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    background: #0284C7;
+    color: #FFFFFF;
+    border: 1px solid #0284C7;
+    border-radius: var(--radius-md);
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+.btn-action-update:hover {
+    background: #0369A1;
+    border-color: #0369A1;
+}
+.btn-action-view {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 29px;
+    height: 29px;
+    border: 1px solid #CBD5E1;
+    border-radius: var(--radius-md);
+    color: #475569;
+    background: #FFFFFF;
+    text-decoration: none;
+    font-size: 0.78rem;
+    transition: all 0.15s ease;
+}
+.btn-action-view:hover {
+    color: #0F172A;
+    background: #F1F5F9;
+    border-color: #94A3B8;
+}
+
+/* Demurrage alert & card status classes */
+.card-demurrage-alert {
+    border-left: 4px solid #EF4444 !important;
+    background: #FEF2F2 !important;
+}
+.card-demurrage-safe {
+    border-left: 4px solid #10B981 !important;
+    background: #FFFFFF !important;
+}
+.kpi-title-danger {
+    color: #DC2626 !important;
+}
+.kpi-icon-danger {
+    background: #FEE2E2 !important;
+    color: #DC2626 !important;
+}
+.kpi-icon-safe {
+    background: #ECFDF5 !important;
+    color: #059669 !important;
+}
+.kpi-val-danger {
+    color: #DC2626 !important;
+}
+.kpi-val-safe {
+    color: #059669 !important;
+}
+.kpi-sub-danger {
+    color: #B91C1C !important;
+    font-weight: 700 !important;
+}
+.filter-tab-btn.has-overdue .filter-count {
+    background: #FEE2E2 !important;
+    color: #991B1B !important;
+}
+.row-overdue {
+    background: #FFF5F5 !important;
+}
+.row-expiring {
+    background: #FFFBEB !important;
+}
+</style>
+
+    <!-- 6 KPI METRICS OVERVIEW -->
+    <div class="kpi-container-grid">
+        <div class="kpi-metric-card" style="border-left:4px solid #0284C7;">
+            <div class="kpi-metric-header">
+                <span class="kpi-metric-title">Tracked Containers</span>
+                <div class="kpi-metric-icon" style="background:#EFF6FF;color:#0284C7;">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                </div>
+            </div>
+            <div class="kpi-metric-val" style="color:#0369A1;">{{ total_tracked }}</div>
+            <div class="kpi-metric-sub">Active consignments</div>
+        </div>
+
+        <div class="kpi-metric-card" style="border-left:4px solid #F59E0B;">
+            <div class="kpi-metric-header">
+                <span class="kpi-metric-title">At Port / ICD Yard</span>
+                <div class="kpi-metric-icon" style="background:#FFFBEB;color:#D97706;">
+                    <i class="fa-solid fa-anchor"></i>
+                </div>
+            </div>
+            <div class="kpi-metric-val" style="color:#D97706;">{{ at_port_count }}</div>
+            <div class="kpi-metric-sub">Awaiting haulage loading</div>
+        </div>
+
+        <div class="kpi-metric-card" style="border-left:4px solid #8B5CF6;">
+            <div class="kpi-metric-header">
+                <span class="kpi-metric-title">In Transit / Road</span>
+                <div class="kpi-metric-icon" style="background:#F5F3FF;color:#7C3AED;">
+                    <i class="fa-solid fa-truck-fast"></i>
+                </div>
+            </div>
+            <div class="kpi-metric-val" style="color:#6D28D9;">{{ in_transit_count }}</div>
+            <div class="kpi-metric-sub">Haulage to customer</div>
+        </div>
+
+        <div class="kpi-metric-card" style="border-left:4px solid #4F46E5;">
+            <div class="kpi-metric-header">
+                <span class="kpi-metric-title">Delivered / Return Due</span>
+                <div class="kpi-metric-icon" style="background:#EEF2FF;color:#4F46E5;">
+                    <i class="fa-solid fa-box-open"></i>
+                </div>
+            </div>
+            <div class="kpi-metric-val" style="color:#3730A3;">{{ delivered_awaiting_return_count }}</div>
+            <div class="kpi-metric-sub">Offloaded, return pending</div>
+        </div>
+
+        <div class="kpi-metric-card" style="border-left:4px solid #10B981;">
+            <div class="kpi-metric-header">
+                <span class="kpi-metric-title">Empty Returned (EIR)</span>
+                <div class="kpi-metric-icon" style="background:#ECFDF5;color:#059669;">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+            <div class="kpi-metric-val" style="color:#059669;">{{ empty_returned_count }}</div>
+            <div class="kpi-metric-sub">Returned to depot</div>
+        </div>
+
+        <div class="kpi-metric-card {% if overdue_count > 0 %}card-demurrage-alert{% else %}card-demurrage-safe{% endif %}">
+            <div class="kpi-metric-header">
+                <span class="kpi-metric-title {% if overdue_count > 0 %}kpi-title-danger{% endif %}">Demurrage Overdue</span>
+                <div class="kpi-metric-icon {% if overdue_count > 0 %}kpi-icon-danger{% else %}kpi-icon-safe{% endif %}">
+                    <i class="fa-solid {% if overdue_count > 0 %}fa-triangle-exclamation{% else %}fa-shield-halved{% endif %}"></i>
+                </div>
+            </div>
+            <div class="kpi-metric-val {% if overdue_count > 0 %}kpi-val-danger{% else %}kpi-val-safe{% endif %}">
+                {{ overdue_count }} <span style="font-size:0.8rem;font-weight:600;color:var(--text-muted);">({% if expiring_soon_count %}{{ expiring_soon_count }} soon{% else %}0 soon{% endif %})</span>
+            </div>
+            <div class="kpi-metric-sub {% if overdue_count > 0 %}kpi-sub-danger{% endif %}">
+                {% if overdue_count > 0 %}Immediate action required{% else %}All timers safe{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER TOOLBAR (SEGMENTED TABS + LIVE SEARCH) -->
+    <div class="filter-toolbar">
+        <!-- TABS -->
+        <div class="segmented-filters" id="containerFilterTabs">
+            <button type="button" onclick="filterContainers('all', this)" class="filter-tab-btn active">
+                All <span class="filter-count">{{ total_tracked }}</span>
+            </button>
+            <button type="button" onclick="filterContainers('AT_PORT', this)" class="filter-tab-btn">
+                <i class="fa-solid fa-anchor"></i> Port <span class="filter-count">{{ at_port_count }}</span>
+            </button>
+            <button type="button" onclick="filterContainers('IN_TRANSIT', this)" class="filter-tab-btn">
+                <i class="fa-solid fa-truck-fast"></i> Transit <span class="filter-count">{{ in_transit_count }}</span>
+            </button>
+            <button type="button" onclick="filterContainers('DELIVERED', this)" class="filter-tab-btn">
+                <i class="fa-solid fa-box-open"></i> Return Due <span class="filter-count">{{ delivered_awaiting_return_count }}</span>
+            </button>
+            <button type="button" onclick="filterContainers('EMPTY_RETURNED', this)" class="filter-tab-btn">
+                <i class="fa-solid fa-circle-check"></i> Returned <span class="filter-count">{{ empty_returned_count }}</span>
+            </button>
+            <button type="button" onclick="filterContainers('overdue', this)" class="filter-tab-btn danger-tab {% if overdue_count > 0 %}active has-overdue{% endif %}">
+                <i class="fa-solid fa-triangle-exclamation"></i> Demurrage Alert <span class="filter-count">{{ overdue_count }}</span>
+            </button>
+        </div>
+
+        <!-- LIVE SEARCH -->
+        <div class="search-box-wrap">
+            <i class="fa-solid fa-magnifying-glass" style="color:#94A3B8;font-size:0.85rem;"></i>
+            <input type="text" id="containerSearchInput" oninput="filterContainers()" placeholder="Search Container, BL, Truck, EIR..." value="{{ search_q }}">
+            <button type="button" onclick="document.getElementById('containerSearchInput').value=''; filterContainers();" class="search-clear-btn" title="Clear">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- CONTAINERS MODERN DATA TABLE -->
+    <div class="containers-card">
+        <div class="table-responsive">
+            <table class="containers-table" id="containersTable" data-page-size="10">
+                <thead>
+                    <tr>
+                        <th style="min-width:170px;">Container & Type</th>
+                        <th style="min-width:180px;">Job Ref & Client</th>
+                        <th style="min-width:170px;">Assigned Haulage</th>
+                        <th style="min-width:160px;">Gate Pass & Exit</th>
+                        <th style="min-width:180px;">Free Days & Demurrage</th>
+                        <th style="min-width:160px;">Depot Return & EIR</th>
+                        <th style="min-width:140px;">Deposit Refund</th>
+                        <th style="min-width:120px;text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in containers %}
+                    <tr class="container-row {% if c.is_detention_overdue %}row-overdue{% elif c.is_detention_expiring_soon %}row-expiring{% endif %}" 
+                        data-status="{{ c.status }}" 
+                        data-overdue="{% if c.is_detention_overdue %}1{% else %}0{% endif %}"
+                        data-search="{{ c.container_number|lower }} {{ c.job.job_number|lower }} {{ c.job.customer.company_name|lower }} {{ c.job.bl_number|lower }} {{ c.assigned_truck|lower }} {{ c.assigned_driver.get_full_name|lower }} {{ c.eir_number|lower }} {{ c.gate_pass_number|lower }}">
+
+                        <!-- CONTAINER NO & TYPE -->
+                        <td>
+                            <span class="cont-num">{{ c.container_number }}</span>
+                            <div class="cont-meta">
+                                <span class="badge-size">{{ c.size_type }}</span>
+                                {% if c.seal_number %}
+                                <span class="seal-tag" title="Seal Number"><i class="fa-solid fa-lock"></i> {{ c.seal_number }}</span>
+                                {% endif %}
+                            </div>
+                            {% if c.gross_weight_kg %}
+                            <div class="vgm-tag"><i class="fa-solid fa-weight-hanging"></i> VGM: {{ c.gross_weight_kg|floatformat:0 }} kg</div>
+                            {% endif %}
+                        </td>
+
+                        <!-- JOB & CLIENT -->
+                        <td>
+                            <a href="{% url 'job_detail' c.job.id %}" class="job-link">
+                                <i class="fa-solid fa-folder-open" style="font-size:0.8rem;"></i> {{ c.job.job_number }}
+                            </a>
+                            <div class="client-name" title="{{ c.job.customer.company_name }}">{{ c.job.customer.company_name }}</div>
+                            <div class="bl-tag">B/L: {{ c.job.bl_number }}</div>
+                        </td>
+
+                        <!-- ASSIGNED HAULAGE -->
+                        <td>
+                            {% if c.assigned_truck %}
+                            <div class="haulage-box">
+                                <div class="truck-pill">
+                                    <i class="fa-solid fa-truck" style="color:#D97706;font-size:0.8rem;"></i>
+                                    <span>{{ c.assigned_truck }}</span>
+                                    {% if c.assigned_trailer %}
+                                    <span class="chassis-tag">{{ c.assigned_trailer }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if c.assigned_driver %}
+                                <div class="driver-pill">
+                                    <i class="fa-solid fa-id-badge" style="font-size:0.75rem;"></i>
+                                    <span>{{ c.assigned_driver.get_full_name|default:c.assigned_driver.username }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="unassigned-haulage">
+                                <i class="fa-solid fa-clock"></i> Unallocated Haulage
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- GATE PASS & EXIT -->
+                        <td>
+                            {% if c.gate_pass_number %}
+                            <div class="gatepass-pill">
+                                <i class="fa-solid fa-ticket"></i> GP: {{ c.gate_pass_number }}
+                            </div>
+                            {% endif %}
+                            {% if c.gate_out_at %}
+                            <div class="date-meta">
+                                <i class="fa-regular fa-clock"></i> {{ c.gate_out_at|date:"d M Y, H:i" }}
+                            </div>
+                            {% elif c.effective_gate_out %}
+                            <div class="date-meta">
+                                <i class="fa-regular fa-calendar"></i> Dispatched: {{ c.effective_gate_out|date:"d M Y" }}
+                            </div>
+                            {% else %}
+                            <div class="date-meta" style="color:#64748B;">
+                                <i class="fa-solid fa-anchor"></i> Yard / Haijatoka
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- FREE DAYS & DEMURRAGE TIMER -->
+                        <td>
+                            {% if c.status == 'EMPTY_RETURNED' %}
+                            <span class="timer-pill returned">
+                                <i class="fa-solid fa-circle-check"></i> Returned Safely
+                            </span>
+                            <div class="timer-sub" style="color:#059669;font-weight:600;">
+                                {{ c.empty_returned_date|date:"d M Y"|default:"Cleared" }}
+                            </div>
+                            {% elif c.is_detention_overdue %}
+                            <span class="timer-pill overdue">
+                                <i class="fa-solid fa-triangle-exclamation"></i> OVERDUE ({{ c.detention_overdue_days }}d)
+                            </span>
+                            <div class="timer-sub" style="color:#DC2626;font-weight:700;">
+                                Demurrage Inaanza!
+                            </div>
+                            {% elif c.is_detention_expiring_soon %}
+                            <span class="timer-pill expiring">
+                                <i class="fa-solid fa-clock"></i> Zimebaki {{ c.free_days_remaining }}d
+                            </span>
+                            <div class="timer-sub" style="color:#B45309;font-weight:600;">
+                                {{ c.days_since_gate_out }} of {{ c.empty_free_days }}d used
+                            </div>
+                            {% else %}
+                            <span class="timer-pill safe">
+                                <i class="fa-solid fa-shield-halved"></i> {{ c.free_days_remaining }} Days Safe
+                            </span>
+                            <div class="timer-sub">
+                                Allowance: {{ c.empty_free_days }} days
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- DEPOT RETURN & EIR -->
+                        <td>
+                            {% if c.empty_return_depot %}
+                            <div class="depot-name">
+                                <i class="fa-solid fa-warehouse" style="color:#0284C7;font-size:0.8rem;"></i> {{ c.empty_return_depot }}
+                            </div>
+                            {% endif %}
+                            {% if c.eir_number %}
+                            <div class="eir-code">
+                                <i class="fa-solid fa-receipt"></i> EIR: {{ c.eir_number }}
+                            </div>
+                            {% else %}
+                            <div class="pending-return-tag">
+                                {% if c.status == 'DELIVERED' %}Pending EIR{% else %}Pending Return{% endif %}
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- DEPOSIT REFUND -->
+                        <td>
+                            <div class="deposit-val">
+                                TZS {{ c.container_deposit_amount|floatformat:0 }}
+                            </div>
+                            {% if c.is_deposit_refunded %}
+                            <span class="deposit-status-tag refunded">
+                                <i class="fa-solid fa-check"></i> Refunded
+                            </span>
+                            {% else %}
+                            <span class="deposit-status-tag held">
+                                <i class="fa-solid fa-lock"></i> Line Held
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- ACTIONS -->
+                        <td style="text-align:right;">
+                            <div class="actions-wrap">
+                                {% if not is_ceo %}
+                                <button type="button" 
+                                    class="btn-action-update"
+                                    data-id="{{ c.id }}"
+                                    data-container="{{ c.container_number|escapejs }}"
+                                    data-size="{{ c.size_type|escapejs }}"
+                                    data-seal="{{ c.seal_number|default:''|escapejs }}"
+                                    data-truck="{{ c.assigned_truck|default:''|escapejs }}"
+                                    data-trailer="{{ c.assigned_trailer|default:''|escapejs }}"
+                                    data-driver="{{ c.assigned_driver_id|default:'' }}"
+                                    data-status="{{ c.status|escapejs }}"
+                                    data-gatepass="{{ c.gate_pass_number|default:''|escapejs }}"
+                                    data-freedays="{{ c.empty_free_days }}"
+                                    data-depot="{{ c.empty_return_depot|default:''|escapejs }}"
+                                    data-eir="{{ c.eir_number|default:''|escapejs }}"
+                                    data-returndate="{% if c.empty_returned_date %}{{ c.empty_returned_date|date:'Y-m-d' }}{% endif %}"
+                                    data-deposit="{{ c.container_deposit_amount|default:'0' }}"
+                                    data-refunded="{% if c.is_deposit_refunded %}1{% else %}0{% endif %}"
+                                    data-gross="{{ c.gross_weight_kg|default:'' }}"
+                                    onclick="openEditContainerModal(this)">
+                                    <i class="fa-solid fa-pen-to-square"></i> {% if c.status == 'DELIVERED' %}Return EIR{% else %}Update{% endif %}
+                                </button>
+                                {% endif %}
+                                <a href="{% url 'job_detail' c.job.id %}" class="btn-action-view" title="View Shipment">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr id="noResultsRow">
+                        <td colspan="8" style="text-align:center;padding:3rem 1.5rem;color:var(--text-muted);">
+                            <div style="font-size:1.1rem;font-weight:700;color:var(--brand-navy-900);margin-bottom:0.25rem;">No Containers Found</div>
+                            No containers matching the specified criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- EDIT / RETURN EMPTY CONTAINER MODAL -->
+<div id="editContainerModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:var(--radius-xl);max-width:620px;width:100%;padding:1.75rem;box-shadow:var(--shadow-xl);max-height:92vh;overflow-y:auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;border-bottom:1px solid #E2E8F0;padding-bottom:0.75rem;">
+            <div>
+                <h4 style="font-family:var(--font-heading);font-size:1.2rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
+                    <i class="fa-solid fa-box-archive" style="color:#0284C7;"></i> Update Container & EIR Return
+                </h4>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;" id="modalContainerHeader">
+                    MSCU9482110
+                </div>
+            </div>
+            <button type="button" onclick="closeEditContainerModal()" style="background:none;border:none;color:var(--text-muted);font-size:1.25rem;cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form id="editContainerForm" method="POST" action="">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="container_tracking">
+
+            <!-- ROW 1: STATUS & GATE PASS -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                <div class="form-group">
+                    <label style="font-weight:700;font-size:0.8rem;">Container Status *</label>
+                    <select name="status" id="modalStatusSelect" class="form-control" required>
+                        {% for code, label in status_choices %}
+                        <option value="{{ code }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:700;font-size:0.8rem;">Gate Pass Number</label>
+                    <input type="text" name="gate_pass_number" id="modalGatePassInput" class="form-control" placeholder="e.g. GP-2026-9912">
+                </div>
+            </div>
+
+            <!-- ROW 2: HAULAGE (TRUCK & DRIVER) -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                <div class="form-group">
+                    <label style="font-weight:700;font-size:0.8rem;">Assigned Truck Plate #</label>
+                    <input type="text" name="assigned_truck" id="modalTruckInput" class="form-control" placeholder="e.g. MCW 101 or T 412 DXE">
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:700;font-size:0.8rem;">Trailer / Chassis #</label>
+                    <input type="text" name="assigned_trailer" id="modalTrailerInput" class="form-control" placeholder="e.g. T 881 AYM / Chassis 40ft">
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                <div class="form-group">
+                    <label style="font-weight:700;font-size:0.8rem;">Assigned Driver</label>
+                    <select name="driver_id" id="modalDriverSelect" class="form-control">
+                        <option value="">-- No Driver Assigned --</option>
+                        {% for d in drivers %}
+                        <option value="{{ d.id }}">{{ d.get_full_name|default:d.username }} ({{ d.profile.phone_number }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:700;font-size:0.8rem;">Seal Number</label>
+                    <input type="text" name="seal_number" id="modalSealInput" class="form-control" placeholder="e.g. SL-MSC-00921">
+                </div>
+            </div>
+
+            <!-- SECTION: EMPTY CONTAINER RETURN & EIR -->
+            <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
+                <div style="font-size:0.8rem;font-weight:800;color:#0F172A;text-transform:uppercase;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem;">
+                    <i class="fa-solid fa-warehouse" style="color:#0284C7;"></i> Empty Container Return & EIR Control
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+                    <div class="form-group">
+                        <label style="font-weight:700;font-size:0.78rem;">Empty Return Depot</label>
+                        <input type="text" name="empty_return_depot" id="modalDepotInput" class="form-control" placeholder="e.g. AMI Depot, Bravo Yard, Kurasini">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:700;font-size:0.78rem;">EIR Receipt Number</label>
+                        <input type="text" name="eir_number" id="modalEirInput" class="form-control" placeholder="e.g. EIR-MSC-2026-8812">
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                    <div class="form-group">
+                        <label style="font-weight:700;font-size:0.78rem;">Return Date</label>
+                        <input type="date" name="empty_returned_date" id="modalReturnDateInput" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:700;font-size:0.78rem;">Free Days Allowed</label>
+                        <input type="number" name="empty_free_days" id="modalFreeDaysInput" class="form-control" min="1" max="90" placeholder="7">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: DEPOSIT & WEIGHTS -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+                <div class="form-group">
+                    <label style="font-weight:700;font-size:0.8rem;">Container Deposit Amount (TZS)</label>
+                    <input type="number" name="container_deposit_amount" id="modalDepositInput" class="form-control" placeholder="e.g. 2500000">
+                    <label style="display:flex;align-items:center;gap:0.4rem;margin-top:0.4rem;font-size:0.78rem;cursor:pointer;">
+                        <input type="checkbox" name="is_deposit_refunded" value="1" id="modalDepositRefundedCheck">
+                        <span>Deposit Refunded by Shipping Line</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:700;font-size:0.8rem;">Gross VGM Weight (kg)</label>
+                    <input type="number" step="0.01" name="gross_weight_kg" id="modalGrossWeightInput" class="form-control" placeholder="e.g. 28400">
+                </div>
+            </div>
+
+            <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                <button type="button" onclick="closeEditContainerModal()" class="btn-header-action btn-outline">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#0284C7;border-color:#0284C7;font-weight:700;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Container Details
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentContainerFilter = 'all';
+
+function filterContainers(status, btnElement) {
+    if (status !== undefined) {
+        currentContainerFilter = status;
+        // Update button active state
+        document.querySelectorAll('.filter-tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        if (btnElement) {
+            btnElement.classList.add('active');
+        }
+    }
+
+    const searchQuery = (document.getElementById('containerSearchInput')?.value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('.container-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const rowStatus = row.getAttribute('data-status') || '';
+        const isOverdue = row.getAttribute('data-overdue') === '1';
+        const searchData = row.getAttribute('data-search') || '';
+
+        let matchesTab = false;
+        if (currentContainerFilter === 'all') {
+            matchesTab = true;
+        } else if (currentContainerFilter === 'overdue') {
+            matchesTab = isOverdue;
+        } else {
+            matchesTab = (rowStatus === currentContainerFilter);
+        }
+
+        let matchesSearch = (!searchQuery || searchData.includes(searchQuery));
+
+        if (matchesTab && matchesSearch) {
+            row.dataset.hiddenByFilter = 'false';
+            visibleCount++;
+        } else {
+            row.dataset.hiddenByFilter = 'true';
+            row.style.display = 'none';
+        }
+    });
+
+    const noResultsRow = document.getElementById('noResultsRow');
+    if (noResultsRow) {
+        noResultsRow.style.display = (visibleCount === 0) ? '' : 'none';
+    }
+
+    const table = document.getElementById('containersTable');
+    if (table && window.repaginateTable) {
+        window.repaginateTable(table, 1);
+    }
+}
+
+function openEditContainerModal(btnOrId, cNum, size, seal, truck, trailer, driverId, status, gp, freeDays, depot, eir, returnDate, deposit, isRefunded, tare, gross) {
+    var modal = document.getElementById('editContainerModal');
+    var form = document.getElementById('editContainerForm');
+    var header = document.getElementById('modalContainerHeader');
+
+    var d = {};
+    if (typeof btnOrId === 'object' && btnOrId !== null && btnOrId.dataset) {
+        d = btnOrId.dataset;
+    } else {
+        d = {
+            id: btnOrId,
+            container: cNum,
+            size: size,
+            seal: seal,
+            truck: truck,
+            trailer: trailer,
+            driver: driverId,
+            status: status,
+            gatepass: gp,
+            freedays: freeDays,
+            depot: depot,
+            eir: eir,
+            returndate: returnDate,
+            deposit: deposit,
+            refunded: (isRefunded === '1' || isRefunded === 1 || isRefunded === true) ? '1' : '0',
+            gross: gross
+        };
+    }
+
+    form.action = '/containers/' + d.id + '/update/';
+    header.innerHTML = '<strong>' + (d.container || '') + '</strong> &bull; ' + (d.size || '');
+
+    document.getElementById('modalStatusSelect').value = d.status || 'AT_PORT';
+    document.getElementById('modalGatePassInput').value = d.gatepass || '';
+    document.getElementById('modalTruckInput').value = d.truck || '';
+    document.getElementById('modalTrailerInput').value = d.trailer || '';
+    document.getElementById('modalDriverSelect').value = d.driver || '';
+    document.getElementById('modalSealInput').value = d.seal || '';
+    document.getElementById('modalDepotInput').value = d.depot || '';
+    document.getElementById('modalEirInput').value = d.eir || '';
+    document.getElementById('modalReturnDateInput').value = d.returndate || '';
+    document.getElementById('modalFreeDaysInput').value = d.freedays || '7';
+    document.getElementById('modalDepositInput').value = d.deposit ? parseFloat(d.deposit) : '0';
+    document.getElementById('modalDepositRefundedCheck').checked = (d.refunded === '1');
+    document.getElementById('modalGrossWeightInput').value = d.gross || '';
+
+    modal.style.display = 'flex';
+}
+
+function closeEditContainerModal() {
+    document.getElementById('editContainerModal').style.display = 'none';
+}
+
+// Close when clicking background outside modal
+window.addEventListener('click', function(e) {
+    var modal = document.getElementById('editContainerModal');
+    if (e.target === modal) {
+        closeEditContainerModal();
+    }
+});
+</script>
+{% endblock %}
+

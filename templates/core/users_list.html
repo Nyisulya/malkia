@@ -1,0 +1,535 @@
+{% extends 'base.html' %}
+
+{% block title %}Staff Management & Dossiers | Malkia Cargo Wave{% endblock %}
+
+{% block content %}
+<div class="page-header-box">
+    <div>
+        <h2 class="page-title">
+            <i class="fa-solid fa-users-gear" style="color:var(--brand-primary);margin-right:0.4rem;"></i>
+            Staff Management & Dossiers
+        </h2>
+        <p class="page-subtitle">
+            Manage all Malkia Cargo Wave personnel, official profiles, credentials (NIDA, TIN, Driving License), duty workstations, and daily attendance.
+        </p>
+    </div>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <a href="{% url 'staff_attendance' %}" class="btn-header-action btn-outline">
+            <i class="fa-solid fa-user-clock"></i> Attendance Records
+        </a>
+        {% if can_manage_users %}
+        <button type="button" class="btn-header-action btn-primary" onclick="openModal('addUserModal')">
+            <i class="fa-solid fa-user-plus"></i> Register New Staff
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- KPI SUMMARY STATS -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));margin-bottom:1.5rem;">
+    <div class="kpi-card kpi-blue">
+        <div class="kpi-header">
+            <span class="kpi-title">Total Staff</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-users"></i></div>
+        </div>
+        <div class="kpi-value">{{ total_staff }}</div>
+        <div class="kpi-meta">
+            <span>All registered system employees</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-emerald">
+        <div class="kpi-header">
+            <span class="kpi-title">Present Today</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-user-check"></i></div>
+        </div>
+        <div class="kpi-value">{{ today_present_count }}</div>
+        <div class="kpi-meta">
+            <span style="color:#059669;font-weight:700;">Clocked In today</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-purple">
+        <div class="kpi-header">
+            <span class="kpi-title">Active Duty</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-briefcase"></i></div>
+        </div>
+        <div class="kpi-value">{{ active_staff }}</div>
+        <div class="kpi-meta">
+            <span>Active employment contracts</span>
+        </div>
+    </div>
+
+    <div class="kpi-card kpi-amber">
+        <div class="kpi-header">
+            <span class="kpi-title">On Leave / Holiday</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-umbrella-beach"></i></div>
+        </div>
+        <div class="kpi-value">{{ on_leave_staff }}</div>
+        <div class="kpi-meta">
+            <span>Personnel on statutory or approved leave</span>
+        </div>
+    </div>
+</div>
+
+<!-- SEARCH & FILTER CONSOLE -->
+<div class="card-panel" style="padding:1.25rem;margin-bottom:1.5rem;background:#FFFFFF;">
+    <form method="GET" action="{% url 'users_list' %}" style="display:flex;flex-direction:column;gap:1rem;">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:1rem;">
+            <div style="flex:2;min-width:260px;">
+                <input type="text" name="q" class="form-control" placeholder="Search by Name, Employee ID (MC-001), NIDA, TIN, or Phone..." value="{{ search_query }}">
+            </div>
+
+            <div style="flex:1;min-width:180px;">
+                <select name="department" class="form-control">
+                    <option value="ALL">-- All Departments --</option>
+                    {% for dept_code, dept_name in departments %}
+                    <option value="{{ dept_code }}" {% if dept_filter == dept_code %}selected{% endif %}>{{ dept_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="flex:1;min-width:180px;">
+                <select name="role" class="form-control">
+                    <option value="ALL">-- All Roles --</option>
+                    {% for role_code, role_name in roles %}
+                    <option value="{{ role_code }}" {% if role_filter == role_code %}selected{% endif %}>{{ role_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="flex:1;min-width:150px;">
+                <select name="status" class="form-control">
+                    <option value="ALL">-- All Statuses --</option>
+                    {% for st_code, st_name in statuses %}
+                    <option value="{{ st_code }}" {% if status_filter == st_code %}selected{% endif %}>{{ st_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display:flex;gap:0.5rem;">
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.6rem 1rem;">
+                    <i class="fa-solid fa-magnifying-glass"></i> Filter
+                </button>
+                {% if search_query or dept_filter != 'ALL' or role_filter != 'ALL' or status_filter != 'ALL' %}
+                <a href="{% url 'users_list' %}" class="btn-header-action btn-outline" style="padding:0.6rem 0.9rem;">
+                    Reset
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- STAFF DIRECTORY TABLE -->
+<div class="card-panel">
+    <div class="card-panel-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+            <h3 class="panel-title">
+                <i class="fa-solid fa-address-book" style="color:var(--brand-primary);margin-right:0.4rem;"></i>
+                Staff Directory & Dossiers
+            </h3>
+            <p class="panel-description">Click "View Dossier" to inspect full personnel profile, operational assignments, contract, and activity logs.</p>
+        </div>
+        <span class="badge-pill" style="background:#F1F5F9;color:#475569;font-weight:700;">
+            {{ staff_list|length }} Staff Members
+        </span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>Employee & ID</th>
+                    <th>Role & Department</th>
+                    <th>Contact & Workstation</th>
+                    <th>Official Credentials</th>
+                    <th>Today's Attendance</th>
+                    <th>Status</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for staff in staff_list %}
+                <tr class="staff-user-row" 
+                    data-dept="{{ staff.profile.department }}" 
+                    data-role="{{ staff.profile.role }}" 
+                    data-status="{{ staff.profile.employment_status }}" 
+                    data-search="{{ staff.get_full_name|lower }} {{ staff.username|lower }} {{ staff.profile.employee_id|lower }} {{ staff.profile.phone_number|lower }} {{ staff.profile.national_id|lower }} {{ staff.profile.tin_number|lower }}">
+                    <!-- Staff Name & Employee ID -->
+                    <td>
+                        <div style="display:flex;align-items:center;gap:0.85rem;">
+                            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg, #1E3A8A, #3B82F6);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,0.1);overflow:hidden;">
+                                {% if staff.profile.avatar %}
+                                <img src="{{ staff.profile.avatar.url }}" alt="{{ staff.get_full_name }}" style="width:100%;height:100%;object-fit:cover;">
+                                {% else %}
+                                {{ staff.first_name|default:staff.username|slice:":1"|upper }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                <a href="{% url 'user_profile' staff.id %}" style="font-weight:700;color:var(--brand-navy-900);text-decoration:none;font-size:0.95rem;">
+                                    {{ staff.get_full_name|default:staff.username }}
+                                </a>
+                                <div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.2rem;">
+                                    <span class="badge-pill" style="background:#EEF2FF;color:#4338CA;font-weight:800;font-family:monospace;font-size:0.75rem;padding:0.15rem 0.45rem;">
+                                        {{ staff.profile.employee_id|default:"MC-NEW" }}
+                                    </span>
+                                    <span style="font-size:0.75rem;color:var(--text-muted);">@{{ staff.username }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Role & Department -->
+                    <td>
+                        <div style="font-weight:700;color:var(--text-main);font-size:0.88rem;">
+                            {{ staff.profile.title|default:staff.profile.get_role_display }}
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.25rem;">
+                            <span class="badge-pill" style="background:#F1F5F9;color:#334155;font-size:0.72rem;font-weight:600;">
+                                <i class="fa-solid fa-building-user"></i> {{ staff.profile.get_department_display }}
+                            </span>
+                        </div>
+                    </td>
+
+                    <!-- Contact & Work Station -->
+                    <td>
+                        <div>
+                            {% if staff.profile.phone_number %}
+                            <a href="tel:{{ staff.profile.phone_number }}" style="color:var(--brand-primary);text-decoration:none;font-weight:600;font-size:0.85rem;">
+                                <i class="fa-solid fa-phone" style="font-size:0.75rem;margin-right:0.2rem;"></i> {{ staff.profile.phone_number }}
+                            </a>
+                            {% else %}
+                            <span style="color:var(--text-muted);font-size:0.8rem;">No phone</span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.2rem;">
+                            <i class="fa-solid fa-location-dot" style="font-size:0.72rem;margin-right:0.2rem;"></i>
+                            {{ staff.profile.work_station|default:"Dar HQ" }}
+                        </div>
+                    </td>
+
+                    <!-- Official IDs (NIDA / TIN / License) -->
+                    <td>
+                        <div style="font-size:0.78rem;">
+                            {% if staff.profile.national_id %}
+                            <div><strong style="color:var(--text-muted);">NIDA:</strong> <span style="font-family:monospace;font-weight:600;">{{ staff.profile.national_id }}</span></div>
+                            {% endif %}
+                            {% if staff.profile.tin_number %}
+                            <div><strong style="color:var(--text-muted);">TIN:</strong> <span style="font-family:monospace;font-weight:600;">{{ staff.profile.tin_number }}</span></div>
+                            {% endif %}
+                            {% if staff.profile.driving_license_number %}
+                            <div><strong style="color:var(--text-muted);">License:</strong> <span style="font-family:monospace;font-weight:600;">{{ staff.profile.driving_license_number }} (Class {{ staff.profile.license_class|default:"--" }})</span></div>
+                            {% endif %}
+                            {% if not staff.profile.national_id and not staff.profile.tin_number and not staff.profile.driving_license_number %}
+                            <span style="color:var(--text-muted);font-style:italic;">Not uploaded</span>
+                            {% endif %}
+                        </div>
+                    </td>
+
+                    <!-- Today's Attendance -->
+                    <td>
+                        {% if staff.id in today_present_user_ids %}
+                        <span class="badge-pill badge-completed" style="font-weight:700;">
+                            <i class="fa-solid fa-circle-check"></i> Present
+                        </span>
+                        {% else %}
+                        <span class="badge-pill" style="background:#F1F5F9;color:#64748B;font-weight:600;">
+                            <i class="fa-solid fa-clock"></i> Not Clocked In
+                        </span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Employment Status -->
+                    <td>
+                        {% if staff.profile.employment_status == 'ACTIVE' %}
+                        <span class="badge-pill" style="background:#DCFCE7;color:#15803D;font-weight:700;">
+                            <i class="fa-solid fa-circle" style="font-size:0.5rem;margin-right:0.25rem;"></i> Active Duty
+                        </span>
+                        {% elif staff.profile.employment_status == 'ON_LEAVE' %}
+                        <span class="badge-pill badge-delayed" style="font-weight:700;">
+                            <i class="fa-solid fa-umbrella-beach"></i> On Leave
+                        </span>
+                        {% elif staff.profile.employment_status == 'SUSPENDED' %}
+                        <span class="badge-pill badge-rose" style="font-weight:700;">
+                            <i class="fa-solid fa-ban"></i> Suspended
+                        </span>
+                        {% else %}
+                        <span class="badge-pill badge-closed" style="font-weight:700;">
+                            {{ staff.profile.get_employment_status_display }}
+                        </span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Actions -->
+                    <td style="text-align:right;">
+                        <div style="display:inline-flex;gap:0.35rem;justify-content:flex-end;">
+                            <a href="{% url 'user_id_card' staff.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.78rem;text-decoration:none;color:#15803D;border-color:#86EFAC;background:#F0FDF4;" title="Staff ID Card">
+                                <i class="fa-solid fa-id-card-clip"></i> ID Card
+                            </a>
+                            <a href="{% url 'user_profile' staff.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.75rem;font-size:0.8rem;text-decoration:none;">
+                                <i class="fa-solid fa-id-card"></i> Dossier
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align:center;padding:3rem;color:var(--text-muted);">
+                        <i class="fa-solid fa-user-slash" style="font-size:2.5rem;color:#94A3B8;margin-bottom:0.75rem;display:block;"></i>
+                        No staff members found matching the search criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- =========================================================================
+     ADD NEW EMPLOYEE MODAL (REGISTRATION CONSOLE)
+     ========================================================================= -->
+{% if can_manage_users %}
+<div id="addUserModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:850px;width:95%;">
+        <form action="{% url 'user_create' %}" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header" style="background:#F8FAFC;border-bottom:1px solid #E2E8F0;padding:1.25rem 1.5rem;">
+                <div>
+                    <h3 class="modal-title" style="color:var(--brand-navy-900);font-size:1.15rem;">
+                        <i class="fa-solid fa-user-plus" style="color:var(--brand-primary);margin-right:0.4rem;"></i>
+                        Register New Staff (Employee Dossier)
+                    </h3>
+                    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">
+                        Enter official employee details. The system will automatically generate their staff ID card and profile dossier.
+                    </p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('addUserModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="padding:1.5rem;max-height:75vh;overflow-y:auto;">
+                <!-- SECTION 1: SYSTEM LOGIN & CREDENTIALS -->
+                <div style="margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid #F1F5F9;">
+                    <h4 style="font-size:0.92rem;color:var(--brand-primary);font-weight:700;margin-bottom:0.75rem;">
+                        <i class="fa-solid fa-key"></i> 1. System Account & Login Credentials
+                    </h4>
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label>Username *</label>
+                            <input type="text" name="username" class="form-control" placeholder="e.g. salim.k" required>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label>Default Initial Password *</label>
+                            <input type="text" name="password" class="form-control" value="Malkia@2026" required>
+                            <small style="color:var(--text-muted);font-size:0.72rem;">The employee can change this later from their profile.</small>
+                        </div>
+                    </div>
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.75rem;">
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label>First Name *</label>
+                            <input type="text" name="first_name" class="form-control" placeholder="Juma" required>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label>Last Name *</label>
+                            <input type="text" name="last_name" class="form-control" placeholder="Mwinyi" required>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label>Email Address</label>
+                            <input type="email" name="email" class="form-control" placeholder="e.g. juma@malkiacargo.co.tz">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: WORK & ROLE ASSIGNMENT -->
+                <div style="margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid #F1F5F9;">
+                    <h4 style="font-size:0.92rem;color:var(--brand-primary);font-weight:700;margin-bottom:0.75rem;">
+                        <i class="fa-solid fa-briefcase"></i> 2. Employment & Role Assignment
+                    </h4>
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1;min-width:200px;">
+                            <label>Employee ID *</label>
+                            <input type="text" name="employee_id" class="form-control" value="{{ next_emp_id }}" style="font-family:monospace;font-weight:700;" required>
+                            <small style="color:var(--text-muted);font-size:0.72rem;">System auto-generated identifier.</small>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:200px;">
+                            <label>System Role *</label>
+                            <select name="role" class="form-control" required>
+                                {% for r_code, r_name in roles %}
+                                <option value="{{ r_code }}">{{ r_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:200px;">
+                            <label>Department *</label>
+                            <select name="department" class="form-control" required>
+                                {% for d_code, d_name in departments %}
+                                <option value="{{ d_code }}">{{ d_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.75rem;">
+                        <div class="form-group" style="flex:1;min-width:200px;">
+                            <label>Official Job Title</label>
+                            <input type="text" name="title" class="form-control" placeholder="e.g. Senior Customs Declarer">
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:200px;">
+                            <label>Work Station *</label>
+                            <input type="text" name="work_station" class="form-control" value="Dar HQ (Posta)" required>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:200px;">
+                            <label>Employment Type</label>
+                            <select name="employment_type" class="form-control">
+                                {% for et_code, et_name in employment_types %}
+                                <option value="{{ et_code }}">{{ et_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:200px;">
+                            <label>Date Joined</label>
+                            <input type="date" name="date_joined" class="form-control" value="{{ today|date:'Y-m-d' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: CONTACT & RESIDENCE -->
+                <div style="margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid #F1F5F9;">
+                    <h4 style="font-size:0.92rem;color:var(--brand-primary);font-weight:700;margin-bottom:0.75rem;">
+                        <i class="fa-solid fa-address-card"></i> 3. Contact Details & Residential Address
+                    </h4>
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label>Primary Phone Number *</label>
+                            <input type="tel" name="phone_number" class="form-control" placeholder="+255 7XX XXX XXX" required>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label>Secondary Phone Number</label>
+                            <input type="tel" name="secondary_phone" class="form-control" placeholder="+255 6XX XXX XXX">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top:0.75rem;">
+                        <label>Residential Address</label>
+                        <input type="text" name="residential_address" class="form-control" placeholder="e.g. Samora Avenue, City Centre, Dar es Salaam">
+                    </div>
+                </div>
+
+                <!-- SECTION 4: OFFICIAL IDS & LICENSES -->
+                <div style="margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid #F1F5F9;">
+                    <h4 style="font-size:0.92rem;color:var(--brand-primary);font-weight:700;margin-bottom:0.75rem;">
+                        <i class="fa-solid fa-id-card"></i> 4. Official Credentials (NIDA, TIN, Driving License)
+                    </h4>
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label>National ID Number (NIDA)</label>
+                            <input type="text" name="national_id" class="form-control" placeholder="199XXXXXXXXXXXXXXX" maxlength="24">
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label>TIN Number</label>
+                            <input type="text" name="tin_number" class="form-control" placeholder="1XX-XXX-XXX" maxlength="15">
+                        </div>
+                    </div>
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.75rem;">
+                        <div class="form-group" style="flex:1;min-width:200px;">
+                            <label>Driving License Number</label>
+                            <input type="text" name="driving_license_number" class="form-control" placeholder="TZA-DL-XXXXX">
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:180px;">
+                            <label>License Class</label>
+                            <input type="text" name="license_class" class="form-control" placeholder="e.g. C, C1, E, B">
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:200px;">
+                            <label>License Expiry Date</label>
+                            <input type="date" name="license_expiry" class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 5: EMERGENCY CONTACT / NEXT OF KIN -->
+                <div style="margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid #F1F5F9;">
+                    <h4 style="font-size:0.92rem;color:var(--brand-primary);font-weight:700;margin-bottom:0.75rem;">
+                        <i class="fa-solid fa-heart-pulse"></i> 5. Emergency Contact / Next of Kin
+                    </h4>
+                    <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label>Next of Kin Full Name</label>
+                            <input type="text" name="emergency_contact_name" class="form-control" placeholder="Spouse, Parent, or Guardian Name">
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:220px;">
+                            <label>Emergency Phone Number</label>
+                            <input type="tel" name="emergency_contact_phone" class="form-control" placeholder="+255 7XX XXX XXX">
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:180px;">
+                            <label>Relationship</label>
+                            <input type="text" name="emergency_contact_relation" class="form-control" placeholder="e.g. Spouse, Brother, Parent">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 6: BIO & AVATAR -->
+                <div>
+                    <h4 style="font-size:0.92rem;color:var(--brand-primary);font-weight:700;margin-bottom:0.75rem;">
+                        <i class="fa-solid fa-image"></i> 6. Professional Bio & Passport Photo
+                    </h4>
+                    <div class="form-group">
+                        <label>Professional Bio / Summary</label>
+                        <textarea name="bio" class="form-control" rows="2" placeholder="Brief notes on background, skills, or operational experience..."></textarea>
+                    </div>
+                    <div class="form-group" style="margin-top:0.75rem;">
+                        <label>Passport Photo / Avatar</label>
+                        <input type="file" name="avatar" class="form-control" accept="image/*">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="background:#F8FAFC;border-top:1px solid #E2E8F0;padding:1rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('addUserModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-check"></i> Save & Register Staff
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% block extra_js %}
+<script>
+function filterStaffUsers() {
+    const q = (document.querySelector('input[name="q"]')?.value || '').toLowerCase().trim();
+    const dept = document.querySelector('select[name="department"]')?.value || 'ALL';
+    const role = document.querySelector('select[name="role"]')?.value || 'ALL';
+    const status = document.querySelector('select[name="status"]')?.value || 'ALL';
+
+    document.querySelectorAll('.staff-user-row').forEach(row => {
+        const rowDept = row.getAttribute('data-dept') || '';
+        const rowRole = row.getAttribute('data-role') || '';
+        const rowStatus = row.getAttribute('data-status') || '';
+        const rowSearch = row.getAttribute('data-search') || '';
+
+        const matchDept = (dept === 'ALL' || rowDept === dept);
+        const matchRole = (role === 'ALL' || rowRole === role);
+        const matchStatus = (status === 'ALL' || rowStatus === status);
+        const matchSearch = (!q || rowSearch.includes(q));
+
+        if (matchDept && matchRole && matchStatus && matchSearch) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const qInput = document.querySelector('input[name="q"]');
+    if (qInput) qInput.addEventListener('input', filterStaffUsers);
+
+    document.querySelectorAll('select[name="department"], select[name="role"], select[name="status"]').forEach(sel => {
+        sel.addEventListener('change', filterStaffUsers);
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %}
+

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Malkia Cargo Wave Operations Portal</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #070D1E 0%, #0F172A 50%, #1E3A8A 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.25rem;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.12) 0%, transparent 50%),
+                        radial-gradient(circle at 20% 80%, rgba(37, 99, 235, 0.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 440px;
+            background: #FFFFFF;
+            border-radius: 20px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            position: relative;
+            z-index: 2;
+        }
+
+        .login-card-header {
+            background: linear-gradient(135deg, #0B1329 0%, #1E3A8A 100%);
+            padding: 2.25rem 2rem 1.85rem;
+            text-align: center;
+            color: #FFFFFF;
+            border-bottom: 2px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .brand-logo-icon {
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 0.85rem;
+            background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 1.6rem;
+            box-shadow: 0 4px 16px rgba(37,99,235,0.4);
+        }
+
+        .brand-title {
+            font-size: 1.3rem;
+            font-weight: 900;
+            letter-spacing: -0.01em;
+            color: #FFFFFF;
+            margin-bottom: 0.25rem;
+        }
+
+        .brand-title span {
+            color: #38BDF8;
+        }
+
+        .brand-subtitle {
+            font-size: 0.78rem;
+            color: #94A3B8;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .login-card-body {
+            padding: 2.25rem 2rem;
+        }
+
+        .login-intro {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .login-intro h3 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #0F172A;
+            margin-bottom: 0.35rem;
+        }
+
+        .login-intro p {
+            font-size: 0.85rem;
+            color: #64748B;
+        }
+
+        .alert-toast {
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .alert-toast.error {
+            background: #FEF2F2;
+            color: #DC2626;
+            border: 1px solid #FECACA;
+        }
+
+        .alert-toast.success {
+            background: #ECFDF5;
+            color: #059669;
+            border: 1px solid #A7F3D0;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 0.45rem;
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrap i.field-icon {
+            position: absolute;
+            left: 1rem;
+            color: #94A3B8;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.65rem;
+            border: 1.5px solid #CBD5E1;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            color: #0F172A;
+            outline: none;
+            transition: all 0.2s;
+            background: #F8FAFC;
+        }
+
+        .input-field:focus {
+            background: #FFFFFF;
+            border-color: #2563EB;
+            box-shadow: 0 0 0 3.5px rgba(37,99,235,0.15);
+        }
+
+        .input-wrap:focus-within i.field-icon {
+            color: #2563EB;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 0.85rem;
+            background: none;
+            border: none;
+            color: #94A3B8;
+            cursor: pointer;
+            padding: 0.35rem;
+            font-size: 0.9rem;
+        }
+
+        .toggle-password:hover {
+            color: #334155;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.82rem;
+            background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+            transition: all 0.2s;
+            margin-top: 1.5rem;
+        }
+
+        .btn-submit:hover {
+            background: #1D4ED8;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(37,99,235,0.4);
+        }
+
+        .login-card-footer {
+            padding: 1.25rem 2rem;
+            background: #F8FAFC;
+            border-top: 1px solid #E2E8F0;
+            text-align: center;
+            font-size: 0.78rem;
+            color: #64748B;
+        }
+
+        .login-card-footer a {
+            color: #2563EB;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .login-card-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <!-- Brand Header -->
+        <div class="login-card-header">
+            <div class="brand-logo-icon">
+                <i class="fa-solid fa-ship"></i>
+            </div>
+            <h1 class="brand-title">MALKIA CARGO WAVE <span>LTD</span></h1>
+            <div class="brand-subtitle">Operations &amp; Logistics Portal</div>
+        </div>
+
+        <!-- Form Body -->
+        <div class="login-card-body">
+            <div class="login-intro">
+                <h3>Sign In to Portal</h3>
+                <p>Enter your staff credentials to access the system</p>
+            </div>
+
+            {% if messages %}
+            <div>
+                {% for message in messages %}
+                <div class="alert-toast {% if message.tags %}{{ message.tags }}{% else %}error{% endif %}">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form action="{% url 'login' %}" method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-user field-icon"></i>
+                        <input type="text" id="username" name="username" class="input-field" placeholder="Enter username" required autofocus autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-lock field-icon"></i>
+                        <input type="password" id="password" name="password" class="input-field" placeholder="Enter password" required autocomplete="current-password">
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility()" title="Show/Hide Password">
+                            <i class="fa-solid fa-eye" id="passwordEyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In to Portal
+                </button>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="login-card-footer">
+            &copy; 2026 Malkia Cargo Wave Limited. All rights reserved.<br>
+            <span style="font-size:0.74rem;color:#94A3B8;">Dar es Salaam Port &bull; Tanzania</span>
+        </div>
+    </div>
+
+    <script>
+        function togglePasswordVisibility() {
+            const pwd = document.getElementById('password');
+            const icon = document.getElementById('passwordEyeIcon');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                pwd.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+    </script>
+</body>
+</html>
