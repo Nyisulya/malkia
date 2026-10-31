@@ -75,3 +75,4 @@ echo "====================================================="
 echo "[SUCCESS] Mfumo wa Malkia unakimbia kwenye Port 3444!"
 echo "Unaweza kuangalia status kwa: sudo systemctl status malkia_portal"
 echo "====================================================="
+
