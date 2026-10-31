@@ -1321,12 +1321,72 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 /* ── Responsive ── */
-@media (max-width: 520px) {
+@media (max-width: 640px) {
     .exec-ai-panel {
-        width: calc(100vw - 24px);
-        right: 12px;
-        bottom: 90px;
-        max-height: 70vh;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100% !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        transform: translateY(100%) !important;
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease !important;
+        box-shadow: none !important;
+        z-index: 999999 !important;
+        background: #0F172A !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    .exec-ai-panel.open {
+        transform: translateY(0) !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+    .exec-ai-header {
+        position: sticky !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        flex-shrink: 0 !important;
+        z-index: 100 !important;
+        padding: 10px 14px !important;
+        padding-top: max(10px, env(safe-area-inset-top)) !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
+    }
+    .exec-ai-messages {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 12px 14px !important;
+    }
+    .exec-ai-suggestions {
+        flex-shrink: 0 !important;
+        padding: 6px 14px !important;
+    }
+    .exec-ai-typing {
+        flex-shrink: 0 !important;
+    }
+    .exec-ai-input-wrap {
+        position: sticky !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        flex-shrink: 0 !important;
+        background: rgba(15, 23, 42, 0.98) !important;
+        padding: 10px 14px !important;
+        padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+        border-top: 1px solid rgba(148, 163, 184, 0.15) !important;
+        z-index: 100 !important;
+    }
+    .exec-ai-input-wrap input {
+        font-size: 16px !important; /* Prevents mobile browser auto-zoom jump */
     }
     .exec-ai-fab { bottom: 18px; right: 18px; width: 54px; height: 54px; }
 }
@@ -1398,6 +1458,8 @@ document.addEventListener('DOMContentLoaded', function() {
         panel.classList.remove('open');
         fab.classList.remove('active');
         if (fabIcon) fabIcon.className = 'fa-solid fa-robot';
+        document.body.style.overflow = '';
+        panel.style.height = '';
     }
 
     function openPanel() {
@@ -1407,11 +1469,37 @@ document.addEventListener('DOMContentLoaded', function() {
         if (fabIcon) fabIcon.className = 'fa-solid fa-xmark';
         const dot = fab.querySelector('.notif-dot');
         if (dot) dot.style.display = 'none';
+        if (window.innerWidth <= 640) {
+            document.body.style.overflow = 'hidden';
+        }
         if (isFirstOpen) {
             isFirstOpen = false;
             appendBotMsg('Hello! 👋 I am Malkia AI Executive, your executive intelligence assistant. How can I assist you with operations today?');
         }
-        setTimeout(function() { input.focus(); }, 350);
+        setTimeout(function() { 
+            input.focus(); 
+            if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+        }, 300);
+    }
+
+    // Mobile keyboard and visualViewport handling
+    input.addEventListener('focus', function() {
+        if (window.innerWidth <= 640) {
+            window.scrollTo(0, 0);
+            document.body.scrollTop = 0;
+            setTimeout(function() {
+                if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+            }, 120);
+        }
+    });
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function() {
+            if (isOpen && window.innerWidth <= 640 && panel) {
+                panel.style.height = `${window.visualViewport.height}px`;
+                if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+            }
+        });
     }
 
     fab.addEventListener('click', function() {
