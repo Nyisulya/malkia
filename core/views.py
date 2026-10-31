@@ -562,7 +562,7 @@ def job_detail_view(request, job_id):
         },
         {
             'category': 'TRANSPORT',
-            'title': 'Transport & Trucking (Lori / Driver)',
+            'title': 'Transport & Haulage (Trucking & Driver)',
             'icon': 'fa-truck',
             'color': '#D97706',
             'billed': primary_invoice.amount_transport if primary_invoice else Decimal('0.00'),
@@ -570,7 +570,7 @@ def job_detail_view(request, job_id):
         },
         {
             'category': 'FUEL',
-            'title': 'Mafuta & Field Fuel Top-up (Port Extra)',
+            'title': 'Fuel & Port Extras (Vehicle Fuel Top-up)',
             'icon': 'fa-gas-pump',
             'color': '#EA580C',
             'billed': Decimal('0.00'),
@@ -578,7 +578,7 @@ def job_detail_view(request, job_id):
         },
         {
             'category': 'AGENCY_FEE',
-            'title': 'Clearing Agency Fee (Ada ya Uwakala)',
+            'title': 'Clearing Agency Fee (Malkia Agency)',
             'icon': 'fa-handshake',
             'color': '#16A34A',
             'billed': primary_invoice.amount_clearing_agency_fee if primary_invoice else (job.contracted_revenue or Decimal('0.00')),
