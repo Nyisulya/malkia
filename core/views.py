@@ -5621,6 +5621,20 @@ def print_job_invoice_view(request, job_id):
     return redirect('print_invoice', invoice_id=invoice.id)
 
 
+def root_entry_view(request):
+    """
+    Smart Domain Router for Unified Malkia System:
+    - If accessed via 'portal.malkiacargowave.com' -> Directs to Staff Portal (Dashboard if logged in, else Login)
+    - If accessed via 'malkiacargowave.com' (or other domain/IP) -> Serves Corporate Website
+    """
+    host = request.get_host().lower()
+    if 'portal' in host:
+        if request.user.is_authenticated:
+            return dashboard_view(request)
+        return redirect('login')
+    return public_website_view(request)
+
+
 def public_website_view(request):
     """
     Serves the standalone official corporate website for Malkia Cargo Wave Limited.

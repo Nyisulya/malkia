@@ -5,7 +5,8 @@ from . import chat_views
 urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-    path('', views.dashboard_view, name='dashboard'),
+    path('', views.root_entry_view, name='root_entry'),
+    path('dashboard/', views.dashboard_view, name='dashboard'),
     path('jobs/', views.jobs_list_view, name='jobs_list'),
     path('jobs/create/', views.job_create_view, name='job_create'),
     path('jobs/<int:job_id>/', views.job_detail_view, name='job_detail'),
