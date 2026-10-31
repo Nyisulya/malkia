@@ -397,6 +397,26 @@ class JobShipment(models.Model):
         return self.stages.filter(stage_number=self.current_stage_number).first()
 
     @property
+    def current_stage_display_name(self):
+        st = self.stages.filter(stage_number=self.current_stage_number).first()
+        if st and st.name_en:
+            return st.name_en
+        stage_names = {
+            1: "Document Receipt & Opening",
+            2: "TRA Declaration (TANCIS)",
+            3: "Assessment & Duty Notice",
+            4: "Customs Duty Payment",
+            5: "Physical Verification",
+            6: "Delivery Order (D/O)",
+            7: "Shipping Line Release",
+            8: "Port Invoice & Assessment",
+            9: "Port Charges Payment",
+            10: "In-Bond Yard Transfer",
+            11: "Gate Pass & Handover"
+        }
+        return stage_names.get(self.current_stage_number, f"Stage {self.current_stage_number}")
+
+    @property
     def received_docs_checklist(self):
         return [
             ('BL Document', self.doc_bl_received),

@@ -761,107 +761,104 @@
         <table class="modern-table" data-page-size="8">
             <thead>
                 <tr>
-                    <th>{% if is_ceo or is_admin %}File No (MF/Year/#) &amp; BL{% else %}File Name (BL Number){% endif %}</th>
-                    <th>Client / Consignee</th>
-                    <th>Chassis &amp; Vehicle</th>
-                    <th>Current Stage</th>
-                    <th>Client Docs</th>
+                    <th style="min-width:160px;">File No &amp; BL</th>
+                    <th style="min-width:200px;">Client &amp; Cargo</th>
+                    <th style="min-width:220px;">Current Location &amp; Stage</th>
+                    <th style="min-width:130px;">Status</th>
                     {% if can_view_financials %}
-                    <th>Direct Costs</th>
-                    <th>Gross Margin</th>
-                    {% else %}
-                    <th>Assigned Officers</th>
-                    <th>Cargo / Vehicle</th>
+                    <th style="min-width:150px;">Profit &amp; Margin</th>
                     {% endif %}
-                    <th>Action</th>
+                    <th style="text-align:right;min-width:150px;">Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for job in jobs %}
                 <tr>
+                    <!-- 1. FILE NO & BL -->
                     <td>
-                        {% if is_ceo or is_admin %}
                         <strong style="font-family:var(--font-heading);font-size:0.95rem;color:var(--brand-navy-900);">
                             <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;">
                                 {{ job.job_number }}
                             </a>
                         </strong>
-                        <div style="font-size:0.78rem;font-weight:700;color:#0F172A;font-family:monospace;">BL: {{ job.bl_number|default:"—" }}</div>
-                        {% else %}
-                        <strong style="font-family:monospace;font-size:0.95rem;color:var(--brand-navy-900);">
-                            <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;">
-                                {{ job.staff_file_name }}
-                            </a>
+                        <div style="font-size:0.78rem;font-weight:700;color:#0F172A;font-family:monospace;margin-top:2px;">
+                            BL: {{ job.bl_number|default:"—" }}
+                        </div>
+                    </td>
+
+                    <!-- 2. CLIENT & CARGO -->
+                    <td>
+                        <strong style="color:var(--brand-navy-900);font-size:0.92rem;display:block;">
+                            {{ job.customer.company_name }}
                         </strong>
-                        {% endif %}
+                        <div style="font-size:0.78rem;color:#475569;margin-top:2px;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">
+                            <span style="display:inline-flex;align-items:center;gap:0.25rem;color:#0369A1;font-weight:600;">
+                                <i class="fa-solid fa-car" style="font-size:0.72rem;"></i>
+                                {{ job.cargo_description|default:"1 Motor Vehicle"|truncatechars:26 }}
+                            </span>
+                            {% if job.chassis_number and job.chassis_number != "—" and job.chassis_number != "-" %}
+                            <span style="color:#CBD5E1;">&bull;</span>
+                            <span style="font-family:monospace;font-size:0.72rem;color:#64748B;">Chassis: {{ job.chassis_number|truncatechars:10 }}</span>
+                            {% endif %}
+                        </div>
                     </td>
+
+                    <!-- 3. CURRENT LOCATION & STAGE -->
                     <td>
-                        <strong style="color:var(--text-main);">{{ job.customer.company_name }}</strong>
-                        <div style="font-size:0.75rem;color:var(--text-muted);">{{ job.customer.phone }}</div>
-                    </td>
-                    <td>
-                        <div><span style="font-weight:600;color:#0F172A;font-family:monospace;">{{ job.chassis_number|default:"—" }}</span></div>
-                        <div style="font-size:0.75rem;color:var(--text-muted);"><i class="fa-solid fa-car"></i> {{ job.cargo_description|default:"1 Motor Vehicle"|truncatechars:24 }}</div>
-                    </td>
-                    <td>
-                        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:nowrap;">
-                            <span class="badge-pill {% if job.status == 'DELAYED' %}badge-delayed{% elif job.status == 'COMPLETED' %}badge-completed{% else %}badge-active{% endif %}" style="flex-shrink:0;">
-                                <span class="badge-dot"></span>
+                        <div style="display:inline-flex;align-items:center;gap:0.45rem;background:#F8FAFC;padding:4px 8px;border-radius:6px;border:1px solid #E2E8F0;">
+                            <span style="font-size:0.72rem;font-weight:800;background:var(--brand-primary);color:#FFF;padding:2px 6px;border-radius:4px;white-space:nowrap;">
                                 Step {{ job.current_stage_number }}
                             </span>
-                            <span style="font-size:0.8rem;font-weight:700;color:var(--brand-navy-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                {{ job.current_stage_obj.name_en|default:"1. DOCUMENT RECEIVE" }}
+                            <span style="font-size:0.82rem;font-weight:700;color:var(--brand-navy-900);white-space:nowrap;">
+                                {{ job.current_stage_display_name }}
                             </span>
                         </div>
                     </td>
+
+                    <!-- 4. STATUS -->
                     <td>
-                        <span class="badge-pill badge-active">{{ job.received_docs_count }} / 5 Docs</span>
+                        {% if job.status == 'DELAYED' %}
+                        <span class="badge-pill badge-delayed" style="font-weight:700;">
+                            <span class="badge-dot"></span> Delayed
+                        </span>
+                        {% elif job.status == 'COMPLETED' or job.status == 'CLOSED' %}
+                        <span class="badge-pill badge-completed" style="font-weight:700;">
+                            <span class="badge-dot"></span> Completed
+                        </span>
+                        {% else %}
+                        <span class="badge-pill badge-active" style="font-weight:700;">
+                            <span class="badge-dot"></span> On Track
+                        </span>
+                        {% endif %}
                     </td>
+
+                    <!-- 5. PROFIT & MARGIN -->
                     {% if can_view_financials %}
                     <td>
-                        <span style="font-weight:600;color:var(--text-muted);">
-                            TSh {{ job.total_expenses|floatformat:0 }}
-                        </span>
-                    </td>
-                    <td>
-                        <strong class="{% if job.gross_margin > 0 %}text-profit-positive{% else %}text-profit-negative{% endif %}">
+                        <strong class="{% if job.gross_margin > 0 %}text-profit-positive{% else %}text-profit-negative{% endif %}" style="font-size:0.92rem;display:block;">
                             TSh {{ job.gross_margin|floatformat:0 }}
                         </strong>
-                        <div style="font-size:0.72rem;color:var(--text-muted);">
+                        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:1px;">
                             {{ job.gross_margin_percentage }}% margin
                         </div>
                     </td>
-                    {% else %}
-                    <td>
-                        <div style="font-size:0.8rem;font-weight:600;color:var(--brand-navy-900);">
-                            <i class="fa-solid fa-user-check" style="font-size:0.7rem;color:var(--brand-primary);"></i>
-                            {{ job.documentation_officer.get_full_name|default:"Docs Dept" }}
-                        </div>
-                        <div style="font-size:0.72rem;color:var(--text-muted);">
-                            Clear: {{ job.clearing_officer.first_name|default:"-" }} &bull; Port: {{ job.port_officer.first_name|default:"-" }}
-                        </div>
-                    </td>
-                    <td>
-                        <div style="font-size:0.8rem;color:var(--text-main);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ job.cargo_description }}">
-                            {{ job.cargo_description|default:"General Cargo" }}
-                        </div>
-                        <div style="font-size:0.72rem;color:var(--text-muted);">{{ job.container_size_type }}</div>
-                    </td>
                     {% endif %}
-                    <td style="white-space:nowrap;">
-                        <div style="display:flex;gap:0.4rem;align-items:center;">
-                            <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="padding:0.35rem 0.7rem;font-size:0.78rem;background:#16A34A;color:#FFFFFF;border:none;font-weight:800;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:0.35rem;box-shadow:0 1px 2px rgba(22,163,74,0.3);" title="Track 9 Clearance Milestones">
+
+                    <!-- 6. ACTION (BOTH BUTTONS PRESERVED) -->
+                    <td style="text-align:right;white-space:nowrap;">
+                        <div style="display:inline-flex;gap:0.4rem;align-items:center;">
+                            <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="padding:0.35rem 0.72rem;font-size:0.78rem;background:#16A34A;color:#FFFFFF;border:none;font-weight:800;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:0.32rem;box-shadow:0 1px 2px rgba(22,163,74,0.3);" title="Track 9 Clearance Milestones">
                                 <i class="fa-solid fa-route"></i> Track
                             </a>
-                            <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.78rem;border-radius:6px;">
-                                File <i class="fa-solid fa-chevron-right"></i>
+                            <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.78rem;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:0.25rem;">
+                                File <i class="fa-solid fa-chevron-right" style="font-size:0.7rem;"></i>
                             </a>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">
+                    <td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">
                         {% if can_view_all_stages %}
                         No active shipments currently recorded. Click 'Open New File' to register a shipment.
                         {% else %}
