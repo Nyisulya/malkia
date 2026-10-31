@@ -10,7 +10,7 @@ set -e
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "====================================================="
-echo "   Setting up Malkia Portal on aaPanel Server        "
+echo "   Setting up Malkia Unified System on aaPanel       "
 echo "   Directory: $APP_DIR"
 echo "   Internal Port: 3444"
 echo "====================================================="
@@ -39,9 +39,10 @@ pip install --upgrade pip
 pip install -r requirements.txt
 pip install gunicorn
 
-# 4. Database Migrations & Static Files
-echo "[4/5] Running migrations & collecting static files..."
+# 4. Database Migrations, Initial Seed & Static Files
+echo "[4/5] Running migrations, seeding initial stages & collecting static files..."
 python manage.py migrate
+python seed_data.py || true
 python manage.py collectstatic --noinput
 
 # 5. Systemd Service (Port 3444)
@@ -74,5 +75,7 @@ sudo systemctl restart malkia_portal
 echo "====================================================="
 echo "[SUCCESS] Mfumo wa Malkia unakimbia kwenye Port 3444!"
 echo "Unaweza kuangalia status kwa: sudo systemctl status malkia_portal"
+echo "Akaunti ya kuingilia:"
+echo "   Username: admin  |  Password: admin123"
+echo "   Username: ceo    |  Password: ceo123"
 echo "====================================================="
-
