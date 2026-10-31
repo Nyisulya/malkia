@@ -132,15 +132,16 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Cloudflare R2 Cloud Object Storage (S3-Compatible, Zero Egress Fees)
-R2_ACCOUNT_ID = os.getenv('CLOUDFLARE_R2_ACCOUNT_ID', os.getenv('R2_ACCOUNT_ID', '68c5deb39a5c3ce4f9356d95eab0e469'))
-R2_ACCESS_KEY_ID = os.getenv('CLOUDFLARE_R2_ACCESS_KEY_ID', os.getenv('R2_ACCESS_KEY_ID', '34f61ba698e36a899e15ad626f18b5e7'))
-R2_SECRET_ACCESS_KEY = os.getenv('CLOUDFLARE_R2_SECRET_ACCESS_KEY', os.getenv('R2_SECRET_ACCESS_KEY', '5192b58d0be6be93dbc8f255ee39d57427507b8cff272c5a9f66872d533b1398'))
-R2_BUCKET_NAME = os.getenv('CLOUDFLARE_R2_BUCKET_NAME', os.getenv('R2_BUCKET_NAME', 'pichasnap-photos'))
+R2_ACCOUNT_ID = os.getenv('CLOUDFLARE_R2_ACCOUNT_ID', os.getenv('R2_ACCOUNT_ID', ''))
+R2_ACCESS_KEY_ID = os.getenv('CLOUDFLARE_R2_ACCESS_KEY_ID', os.getenv('R2_ACCESS_KEY_ID', ''))
+R2_SECRET_ACCESS_KEY = os.getenv('CLOUDFLARE_R2_SECRET_ACCESS_KEY', os.getenv('R2_SECRET_ACCESS_KEY', ''))
+R2_BUCKET_NAME = os.getenv('CLOUDFLARE_R2_BUCKET_NAME', os.getenv('R2_BUCKET_NAME', ''))
 R2_PUBLIC_DOMAIN = os.getenv('CLOUDFLARE_R2_PUBLIC_DOMAIN', os.getenv('R2_PUBLIC_DOMAIN', ''))
 
 STORAGES = {
