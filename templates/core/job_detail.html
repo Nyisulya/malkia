@@ -4,78 +4,70 @@
 
 {% block content %}
 <!-- =========================================================================
-     1. EXECUTIVE HERO HEADER
+     1. EXECUTIVE HEADER (CLEAN & MINIMALIST)
      ========================================================================= -->
-<div class="page-header-box" style="margin-bottom:1.25rem;background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1.25rem 1.5rem;box-shadow:var(--shadow-sm);">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;width:100%;">
+<div class="page-header-box" style="margin-bottom:1.15rem;background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1.1rem 1.35rem;box-shadow:var(--shadow-sm);">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.85rem;width:100%;">
         <div>
-            <!-- Breadcrumbs -->
-            <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.4rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.3rem;display:flex;align-items:center;gap:0.45rem;">
                 <a href="{% url 'jobs_list' %}" style="color:var(--text-muted);text-decoration:none;font-weight:600;">
-                    <i class="fa-solid fa-arrow-left"></i> All Shipments
+                    <i class="fa-solid fa-arrow-left"></i> Shipments
                 </a>
                 <span>&bull;</span>
                 <span style="font-weight:700;color:var(--brand-navy-900);">{{ job.customer.company_name }}</span>
             </div>
 
-            <!-- Title & Status Badges -->
-            <div style="display:flex;align-items:center;gap:0.65rem;flex-wrap:wrap;">
-                <h2 style="font-size:1.55rem;font-weight:900;color:var(--brand-navy-900);letter-spacing:-0.02em;margin:0;font-family:monospace;">
+            <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+                <h2 style="font-size:1.5rem;font-weight:900;color:var(--brand-navy-900);letter-spacing:-0.02em;margin:0;font-family:monospace;">
                     {% if is_ceo or is_admin %}{{ job.job_number }}{% else %}BL: {{ job.staff_file_name }}{% endif %}
                 </h2>
 
                 {% if job.bl_number %}
-                <span style="font-size:0.85rem;background:#EFF6FF;color:#1D4ED8;padding:0.25rem 0.65rem;border-radius:6px;font-family:monospace;font-weight:800;border:1px solid #BFDBFE;">
+                <span style="font-size:0.84rem;background:#EFF6FF;color:#1D4ED8;padding:0.2rem 0.55rem;border-radius:6px;font-family:monospace;font-weight:800;border:1px solid #BFDBFE;">
                     B/L: {{ job.bl_number }}
                 </span>
                 {% endif %}
 
                 {% if job.clearance_mode == 'BOND' %}
-                <span class="badge-pill" style="background:#FEF3C7;color:#92400E;border:1.5px solid #F59E0B;font-weight:800;font-size:0.78rem;">
+                <span class="badge-pill" style="background:#FEF3C7;color:#92400E;border:1.5px solid #F59E0B;font-weight:800;font-size:0.76rem;">
                     <i class="fa-solid fa-warehouse"></i> TRA: IN-BOND
                 </span>
                 {% elif job.clearance_mode == 'EX_BOND' %}
-                <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;border:1.5px solid #60A5FA;font-weight:800;font-size:0.78rem;">
+                <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;border:1.5px solid #60A5FA;font-weight:800;font-size:0.76rem;">
                     <i class="fa-solid fa-unlock-keyhole"></i> TRA: EX-BOND
                 </span>
                 {% else %}
-                <span class="badge-pill" style="background:#ECFDF5;color:#065F46;border:1.5px solid #10B981;font-weight:800;font-size:0.78rem;">
+                <span class="badge-pill" style="background:#ECFDF5;color:#065F46;border:1.5px solid #10B981;font-weight:800;font-size:0.76rem;">
                     <i class="fa-solid fa-money-bill-transfer"></i> TRA: DIRECT PAYMENT
                 </span>
                 {% endif %}
 
-                <span class="badge-pill {% if job.status == 'DELAYED' %}badge-delayed{% elif job.status == 'COMPLETED' %}badge-completed{% else %}badge-active{% endif %}" style="font-size:0.78rem;font-weight:700;">
+                <span class="badge-pill {% if job.status == 'DELAYED' %}badge-delayed{% elif job.status == 'COMPLETED' %}badge-completed{% else %}badge-active{% endif %}" style="font-size:0.76rem;font-weight:700;">
                     <span class="badge-dot"></span> {{ job.get_status_display }}
                 </span>
 
-                <span class="badge-pill" style="background:#F1F5F9;color:#334155;border:1px solid #CBD5E1;font-weight:700;font-size:0.78rem;">
+                <span class="badge-pill" style="background:#F1F5F9;color:#334155;border:1px solid #CBD5E1;font-weight:700;font-size:0.76rem;">
                     <i class="fa-solid fa-location-dot" style="color:var(--brand-primary);"></i> Step {{ completed_milestones_count }}/9: {{ job.current_stage_display_name }}
                 </span>
-
-                {% if job.box_number %}
-                <span class="badge-pill" style="background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;font-weight:700;font-size:0.78rem;">
-                    <i class="fa-solid fa-box-archive"></i> Box: {{ job.box_number }}
-                </span>
-                {% endif %}
             </div>
         </div>
 
         <!-- Executive Quick Actions -->
-        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-            <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.45rem;font-weight:800;padding:0.5rem 0.95rem;border-radius:8px;box-shadow:0 2px 4px rgba(22,163,74,0.3);font-size:0.84rem;">
-                <i class="fa-solid fa-route"></i> Track Clearance (9 Steps)
+        <div style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
+            <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:800;padding:0.45rem 0.85rem;border-radius:8px;font-size:0.82rem;box-shadow:0 2px 4px rgba(22,163,74,0.25);">
+                <i class="fa-solid fa-route"></i> Track (9 Steps)
             </a>
-            <a href="{% url 'print_combined_pack' job.id %}" target="_blank" class="btn-header-action" style="background:#0F172A;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.45rem;font-weight:700;padding:0.5rem 0.85rem;border-radius:8px;font-size:0.84rem;" title="Print C41, TBS and Scanned Documents">
+            <a href="{% url 'print_combined_pack' job.id %}" target="_blank" class="btn-header-action" style="background:#0F172A;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:700;padding:0.45rem 0.8rem;border-radius:8px;font-size:0.82rem;">
                 <i class="fa-solid fa-file-pdf" style="color:#38BDF8;"></i> File Pack
             </a>
-            <a href="{% url 'print_job_invoice' job.id %}" target="_blank" class="btn-header-action" style="background:#FFFFFF;color:#1E293B;border:1px solid #CBD5E1;text-decoration:none;display:inline-flex;align-items:center;gap:0.45rem;font-weight:700;padding:0.5rem 0.85rem;border-radius:8px;font-size:0.84rem;" title="Print Official Job Invoice">
+            <a href="{% url 'print_job_invoice' job.id %}" target="_blank" class="btn-header-action" style="background:#FFFFFF;color:#1E293B;border:1px solid #CBD5E1;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:700;padding:0.45rem 0.8rem;border-radius:8px;font-size:0.82rem;">
                 <i class="fa-solid fa-print" style="color:#64748B;"></i> Invoice
             </a>
-            <a href="{% url 'send_job_stage_email' job.id %}" class="btn-header-action" style="background:#2563EB;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:700;padding:0.5rem 0.85rem;border-radius:8px;font-size:0.84rem;" title="Send SMS / Email notification to client">
-                <i class="fa-solid fa-paper-plane"></i> Notify Client
-            </a>
+            <button type="button" class="btn-header-action" onclick="openModal('requestExpenseModal')" style="background:#0284C7;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:800;padding:0.45rem 0.85rem;border-radius:8px;font-size:0.82rem;cursor:pointer;" title="Weka vocha au gharama ya uwanjani">
+                <i class="fa-solid fa-plus-circle"></i> + Weka Matumizi
+            </button>
             {% if user_can_advance_current and job.status != 'COMPLETED' %}
-            <button type="button" class="btn-header-action" onclick="openModal('advanceStageModal')" style="background:#F59E0B;color:#78350F;border:none;font-weight:800;padding:0.5rem 0.85rem;border-radius:8px;display:inline-flex;align-items:center;gap:0.4rem;font-size:0.84rem;cursor:pointer;">
+            <button type="button" class="btn-header-action" onclick="openModal('advanceStageModal')" style="background:#F59E0B;color:#78350F;border:none;font-weight:800;padding:0.45rem 0.8rem;border-radius:8px;display:inline-flex;align-items:center;gap:0.35rem;font-size:0.82rem;cursor:pointer;">
                 <i class="fa-solid fa-forward-step"></i> Advance Stage
             </button>
             {% endif %}
@@ -84,172 +76,322 @@
 </div>
 
 <!-- =========================================================================
-     2. EXECUTIVE FINANCIAL COMMAND STRIP (FOR CEO, ADMIN & FINANCE)
+     2. EXECUTIVE FINANCIAL COMMAND STRIP (4 HIGH-IMPACT KPI CARDS)
      ========================================================================= -->
 {% if can_view_financials or is_ceo or is_admin %}
-<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:0.85rem;margin-bottom:1.25rem;">
-    <!-- KPI 1: Invoiced Revenue -->
-    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1rem 1.15rem;box-shadow:var(--shadow-sm);border-left:4px solid #2563EB;display:flex;align-items:center;gap:0.85rem;">
-        <div style="width:42px;height:42px;border-radius:10px;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:0.75rem;margin-bottom:1.15rem;">
+    <!-- Invoiced -->
+    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:0.9rem 1.15rem;box-shadow:var(--shadow-sm);border-left:4px solid #2563EB;display:flex;align-items:center;gap:0.85rem;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0;">
             <i class="fa-solid fa-file-invoice-dollar"></i>
         </div>
         <div style="overflow:hidden;">
-            <div style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">Total Invoiced</div>
-            <div style="font-size:1.18rem;font-weight:900;color:var(--brand-navy-900);line-height:1.2;margin:0.15rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">Tulichomdai Mteja</div>
+            <div style="font-size:1.18rem;font-weight:900;color:var(--brand-navy-900);line-height:1.2;margin:0.1rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                 TSh {{ job.client_billed_revenue|floatformat:2 }}
             </div>
-            <div style="font-size:0.72rem;color:#64748B;">Client billing total</div>
+            <div style="font-size:0.7rem;color:#64748B;">Total Invoiced</div>
         </div>
     </div>
 
-    <!-- KPI 2: Direct Costs & Expenses -->
-    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1rem 1.15rem;box-shadow:var(--shadow-sm);border-left:4px solid #DC2626;display:flex;align-items:center;gap:0.85rem;">
-        <div style="width:42px;height:42px;border-radius:10px;background:#FEF2F2;color:#DC2626;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">
+    <!-- Direct Costs -->
+    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:0.9rem 1.15rem;box-shadow:var(--shadow-sm);border-left:4px solid #DC2626;display:flex;align-items:center;gap:0.85rem;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#FEF2F2;color:#DC2626;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0;">
             <i class="fa-solid fa-receipt"></i>
         </div>
         <div style="overflow:hidden;">
-            <div style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">Direct Costs</div>
-            <div style="font-size:1.18rem;font-weight:900;color:#DC2626;line-height:1.2;margin:0.15rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">Gharama za Uwanjani</div>
+            <div style="font-size:1.18rem;font-weight:900;color:#DC2626;line-height:1.2;margin:0.1rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                 TSh {{ job.total_expenses|floatformat:2 }}
             </div>
-            <div style="font-size:0.72rem;color:#64748B;">Port &amp; operational expenses</div>
+            <div style="font-size:0.7rem;color:#64748B;">Port &amp; Field Costs</div>
         </div>
     </div>
 
-    <!-- KPI 3: Gross Profit Margin -->
-    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1rem 1.15rem;box-shadow:var(--shadow-sm);border-left:4px solid #16A34A;display:flex;align-items:center;gap:0.85rem;">
-        <div style="width:42px;height:42px;border-radius:10px;background:#F0FDF4;color:#16A34A;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">
+    <!-- Gross Margin -->
+    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:0.9rem 1.15rem;box-shadow:var(--shadow-sm);border-left:4px solid #16A34A;display:flex;align-items:center;gap:0.85rem;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#F0FDF4;color:#16A34A;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0;">
             <i class="fa-solid fa-chart-line"></i>
         </div>
         <div style="overflow:hidden;">
-            <div style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">Gross Profit</div>
-            <div style="font-size:1.18rem;font-weight:900;color:{% if job.gross_margin > 0 %}#16A34A{% else %}#DC2626{% endif %};line-height:1.2;margin:0.15rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">Faida Halisi (Profit)</div>
+            <div style="font-size:1.18rem;font-weight:900;color:{% if job.gross_margin > 0 %}#16A34A{% else %}#DC2626{% endif %};line-height:1.2;margin:0.1rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                 TSh {{ job.gross_margin|floatformat:2 }}
             </div>
-            <div style="font-size:0.72rem;color:#059669;font-weight:700;">
-                <i class="fa-solid fa-arrow-trend-up"></i> {{ job.gross_margin_percentage }}% Profit Margin
+            <div style="font-size:0.7rem;color:#059669;font-weight:700;">
+                <i class="fa-solid fa-arrow-trend-up"></i> {{ job.gross_margin_percentage }}% Margin
             </div>
         </div>
     </div>
 
-    <!-- KPI 4: Client Outstanding Balance -->
-    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1rem 1.15rem;box-shadow:var(--shadow-sm);border-left:4px solid {% if job.client_outstanding_balance > 0 %}#D97706{% else %}#10B981{% endif %};display:flex;align-items:center;gap:0.85rem;">
-        <div style="width:42px;height:42px;border-radius:10px;background:{% if job.client_outstanding_balance > 0 %}#FFFBEB{% else %}#ECFDF5{% endif %};color:{% if job.client_outstanding_balance > 0 %}#D97706{% else %}#10B981{% endif %};display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">
+    <!-- Balance Due -->
+    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:0.9rem 1.15rem;box-shadow:var(--shadow-sm);border-left:4px solid {% if job.client_outstanding_balance > 0 %}#D97706{% else %}#10B981{% endif %};display:flex;align-items:center;gap:0.85rem;">
+        <div style="width:40px;height:40px;border-radius:10px;background:{% if job.client_outstanding_balance > 0 %}#FFFBEB{% else %}#ECFDF5{% endif %};color:{% if job.client_outstanding_balance > 0 %}#D97706{% else %}#10B981{% endif %};display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0;">
             <i class="fa-solid fa-wallet"></i>
         </div>
         <div style="overflow:hidden;">
-            <div style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">Client Balance Due</div>
-            <div style="font-size:1.18rem;font-weight:900;color:{% if job.client_outstanding_balance > 0 %}#D97706{% else %}#059669{% endif %};line-height:1.2;margin:0.15rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">Baki ya Mteja</div>
+            <div style="font-size:1.18rem;font-weight:900;color:{% if job.client_outstanding_balance > 0 %}#D97706{% else %}#059669{% endif %};line-height:1.2;margin:0.1rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                 TSh {{ job.client_outstanding_balance|floatformat:2 }}
             </div>
-            <div style="font-size:0.72rem;color:#64748B;">Paid: TSh {{ job.total_client_paid|floatformat:2 }}</div>
+            <div style="font-size:0.7rem;color:#64748B;">Alishalipa: TSh {{ job.total_client_paid|floatformat:2 }}</div>
         </div>
     </div>
 </div>
 {% endif %}
 
 <!-- =========================================================================
-     3. CONSIGNMENT & CUSTOMS OVERVIEW (2 CLEAN CARDS)
+     3. ITEMIZED FINANCIAL COSTING LEDGER (KILA GHARAMA MOJA KWA MOJA KWA BOSS)
      ========================================================================= -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:1rem;margin-bottom:1.25rem;">
-    <!-- Card 1: Consignee & Vehicle Profile -->
-    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1.15rem 1.25rem;box-shadow:var(--shadow-sm);">
-        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.85rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.55rem;">
-            <div style="width:28px;height:28px;border-radius:6px;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:0.85rem;">
+{% if can_view_financials or is_ceo or is_admin %}
+<div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.15rem;box-shadow:var(--shadow-sm);">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.75rem;">
+        <div>
+            <h3 style="margin:0;font-size:1rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.5rem;">
+                <i class="fa-solid fa-scale-balanced" style="color:var(--brand-primary);"></i>
+                Mchanganuo wa Gharama za Faili: Tulichomdai Mteja vs Kilichotumika Uwanjani
+            </h3>
+            <p style="margin:0.2rem 0 0 0;font-size:0.78rem;color:var(--text-muted);">
+                Ulinganisho wa kina wa mapato na matumizi halisi ya kila huduma (D/O, Port Charges, Lori, Mafuta, na Uwakala).
+            </p>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+            <button type="button" class="btn-header-action btn-primary" onclick="openModal('requestExpenseModal')" style="font-size:0.78rem;padding:0.4rem 0.8rem;background:#16A34A;border-color:#16A34A;cursor:pointer;">
+                <i class="fa-solid fa-plus-circle"></i> + Weka Matumizi / Vocha
+            </button>
+        </div>
+    </div>
+
+    <!-- Itemized Ledger Table -->
+    <div class="table-responsive" style="margin-bottom:1.25rem;">
+        <table class="modern-table" style="font-size:0.84rem;">
+            <thead>
+                <tr style="background:#F8FAFC;">
+                    <th style="font-weight:800;color:#0F172A;">Huduma / Kipengele (Service Item)</th>
+                    <th style="font-weight:800;color:#1E40AF;text-align:right;">Tulichomdai Mteja (Invoiced)</th>
+                    <th style="font-weight:800;color:#DC2626;text-align:right;">Matumizi ya Uwanjani (Field Cost)</th>
+                    <th style="font-weight:800;color:#166534;text-align:right;">Faida / Salio (Net Margin)</th>
+                    <th style="font-weight:800;text-align:center;">Hali (Status)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in costing_items %}
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:0.6rem;">
+                            <div style="width:28px;height:28px;border-radius:6px;background:#F1F5F9;color:{{ item.color }};display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;">
+                                <i class="fa-solid {{ item.icon }}"></i>
+                            </div>
+                            <div>
+                                <strong style="color:var(--brand-navy-900);display:block;">{{ item.title }}</strong>
+                                {% if item.category == 'FUEL' %}
+                                <span style="font-size:0.72rem;color:#EA580C;font-weight:600;"><i class="fa-solid fa-circle-exclamation"></i> Matumizi ya mafuta yaliyoingizwa na Port Officer</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td style="text-align:right;font-weight:700;color:#1E40AF;font-family:monospace;font-size:0.88rem;">
+                        TSh {{ item.billed|floatformat:2 }}
+                    </td>
+                    <td style="text-align:right;font-weight:700;color:#DC2626;font-family:monospace;font-size:0.88rem;">
+                        TSh {{ item.actual|floatformat:2 }}
+                    </td>
+                    <td style="text-align:right;font-weight:800;font-family:monospace;font-size:0.9rem;color:{% if item.margin >= 0 %}#16A34A{% else %}#DC2626{% endif %};">
+                        {% if item.margin > 0 %}+{% endif %}TSh {{ item.margin|floatformat:2 }}
+                    </td>
+                    <td style="text-align:center;">
+                        {% if item.actual > 0 and item.billed == 0 %}
+                        <span class="badge-pill" style="background:#FEF2F2;color:#DC2626;font-size:0.7rem;font-weight:700;">Gharama ya Ziada</span>
+                        {% elif item.margin > 0 %}
+                        <span class="badge-pill" style="background:#ECFDF5;color:#065F46;font-size:0.7rem;font-weight:700;"><i class="fa-solid fa-circle-check"></i> Faida</span>
+                        {% elif item.margin == 0 and item.billed > 0 %}
+                        <span class="badge-pill" style="background:#EFF6FF;color:#1D4ED8;font-size:0.7rem;font-weight:700;">Imelipwa Kamili</span>
+                        {% else %}
+                        <span class="badge-pill" style="background:#F1F5F9;color:#64748B;font-size:0.7rem;">Inasubiri</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+
+                <!-- Totals Row -->
+                <tr style="background:#F8FAFC;border-top:2px solid #CBD5E1;font-weight:900;">
+                    <td>
+                        <strong style="font-size:0.92rem;color:var(--brand-navy-900);text-transform:uppercase;">
+                            <i class="fa-solid fa-calculator" style="margin-right:0.35rem;color:var(--brand-primary);"></i>
+                            JUMLA KUU YA FAIL HILI (TOTALS)
+                        </strong>
+                    </td>
+                    <td style="text-align:right;font-size:0.98rem;color:#1E40AF;font-family:monospace;">
+                        TSh {{ total_itemized_billed|floatformat:2 }}
+                    </td>
+                    <td style="text-align:right;font-size:0.98rem;color:#DC2626;font-family:monospace;">
+                        TSh {{ total_itemized_actual|floatformat:2 }}
+                    </td>
+                    <td style="text-align:right;font-size:1.05rem;color:{% if total_itemized_margin >= 0 %}#16A34A{% else %}#DC2626{% endif %};font-family:monospace;">
+                        {% if total_itemized_margin > 0 %}+{% endif %}TSh {{ total_itemized_margin|floatformat:2 }}
+                    </td>
+                    <td style="text-align:center;">
+                        <span class="badge-pill" style="background:{% if total_itemized_margin >= 0 %}#DCFCE7;color:#166534{% else %}#FEE2E2;color:#991B1B{% endif %};font-weight:800;font-size:0.74rem;">
+                            {% if total_itemized_margin >= 0 %}FAIDA YA FAILI{% else %}HASARA{% endif %}
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Live Port Disbursements Activity (Matumizi Halisi Yaliyoingizwa na Port Officer / Team) -->
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+            <div style="font-weight:800;font-size:0.88rem;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
+                <i class="fa-solid fa-gas-pump" style="color:#EA580C;"></i>
+                Matumizi Halisi ya Uwanjani Yaliyoingizwa na Maafisa (Port / Field Disbursements Log)
+            </div>
+            <span style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">
+                Vocha {{ expenses|length }} zilizorekodiwa
+            </span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+            {% for exp in expenses %}
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:0.75rem 1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+                <div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                        <span class="badge-pill" style="font-size:0.68rem;background:#F1F5F9;color:#334155;font-weight:800;font-family:monospace;">
+                            {{ exp.voucher_number }}
+                        </span>
+                        <strong style="color:var(--brand-navy-900);font-size:0.86rem;">{{ exp.get_category_display }}</strong>
+                        <span class="badge-pill {% if exp.approval_status == 'APPROVED' or exp.approval_status == 'PAID' %}badge-completed{% elif exp.approval_status == 'REQUESTED' %}badge-delayed{% else %}badge-closed{% endif %}" style="font-size:0.68rem;">
+                            {{ exp.get_approval_status_display }}
+                        </span>
+                    </div>
+                    <div style="font-size:0.8rem;color:#475569;margin-top:0.25rem;">
+                        <strong>Maelezo:</strong> {{ exp.description }}
+                    </div>
+                    <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.15rem;">
+                        Aliyeingiza: <strong style="color:#0F172A;">{{ exp.requester.get_full_name|default:exp.requester.username }}</strong> &bull; {{ exp.requested_at|date:"d M Y H:i" }}
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <div style="text-align:right;">
+                        <span style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;display:block;">Kiasi</span>
+                        <strong style="font-size:1.02rem;color:#DC2626;font-family:monospace;">TSh {{ exp.amount|floatformat:2 }}</strong>
+                    </div>
+                    {% if exp.supporting_document %}
+                    <a href="{{ exp.supporting_document.url }}" target="_blank" class="btn-header-action btn-outline" style="font-size:0.74rem;padding:0.3rem 0.6rem;" title="Tazama Risiti">
+                        <i class="fa-solid fa-receipt"></i> Risiti
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align:center;padding:1.25rem;color:var(--text-muted);font-size:0.82rem;">
+                <i class="fa-solid fa-receipt" style="font-size:1.5rem;color:#CBD5E1;display:block;margin-bottom:0.35rem;"></i>
+                Hakuna vocha au matumizi ya uwanjani yaliyoongezwa bado kwenye faili hili. Port officer akiongeza mafuta au malipo yoyote yatatokea hapa moja kwa moja.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- =========================================================================
+     4. CONSIGNMENT & CUSTOMS PROFILE (2 CLEAN CARDS)
+     ========================================================================= -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(310px, 1fr));gap:0.85rem;margin-bottom:1.15rem;">
+    <!-- Consignee Profile -->
+    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1rem 1.15rem;box-shadow:var(--shadow-sm);">
+        <div style="display:flex;align-items:center;gap:0.45rem;margin-bottom:0.75rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.45rem;">
+            <div style="width:26px;height:26px;border-radius:6px;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:0.8rem;">
                 <i class="fa-solid fa-user-tie"></i>
             </div>
-            <h4 style="margin:0;font-size:0.92rem;font-weight:800;color:var(--brand-navy-900);">Consignee &amp; Consignment Profile</h4>
+            <h4 style="margin:0;font-size:0.88rem;font-weight:800;color:var(--brand-navy-900);">Taarifa za Mteja &amp; Gari</h4>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.84rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;font-size:0.82rem;">
             <div>
-                <span style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;font-weight:700;display:block;">Client / Consignee</span>
-                <strong style="color:var(--brand-navy-900);font-size:0.9rem;">{{ job.customer.company_name }}</strong>
+                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Mteja</span>
+                <strong style="color:var(--brand-navy-900);font-size:0.88rem;">{{ job.customer.company_name }}</strong>
                 {% if job.customer.phone %}
-                <div style="margin-top:0.15rem;">
-                    <a href="tel:{{ job.customer.phone }}" style="color:#059669;text-decoration:none;font-weight:700;font-size:0.78rem;">
+                <div style="margin-top:0.1rem;">
+                    <a href="tel:{{ job.customer.phone }}" style="color:#059669;text-decoration:none;font-weight:700;font-size:0.76rem;">
                         <i class="fa-solid fa-phone"></i> {{ job.customer.phone }}
                     </a>
                 </div>
                 {% endif %}
             </div>
             <div>
-                <span style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;font-weight:700;display:block;">TIN &amp; National ID</span>
-                <div style="font-family:monospace;font-weight:700;color:#0F172A;">TIN: {{ job.customer.tin_number|default:"—" }}</div>
-                <div style="font-family:monospace;font-size:0.76rem;color:#64748B;">ID: {{ job.customer.id_number|default:"—" }}</div>
+                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">TIN ya Mteja</span>
+                <div style="font-family:monospace;font-weight:700;color:#0F172A;">{{ job.customer.tin_number|default:"—" }}</div>
+                <div style="font-family:monospace;font-size:0.74rem;color:#64748B;">ID: {{ job.customer.id_number|default:"—" }}</div>
             </div>
             <div>
-                <span style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;font-weight:700;display:block;">Cargo / Vehicle</span>
+                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Gari / Mzigo</span>
                 <strong style="color:var(--brand-navy-900);">{{ job.cargo_description|default:"1 Motor Vehicle" }}</strong>
             </div>
             <div>
-                <span style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;font-weight:700;display:block;">Chassis Number</span>
-                <span style="font-family:monospace;font-weight:800;color:#0F172A;background:#F8FAFC;padding:0.15rem 0.45rem;border-radius:4px;border:1px solid #E2E8F0;font-size:0.8rem;">
+                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Chassis Number</span>
+                <span style="font-family:monospace;font-weight:800;color:#0F172A;background:#F8FAFC;padding:0.15rem 0.4rem;border-radius:4px;border:1px solid #E2E8F0;font-size:0.78rem;">
                     {{ job.chassis_number|default:"—" }}
                 </span>
             </div>
             <div>
-                <span style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;font-weight:700;display:block;">Bill of Lading (B/L)</span>
-                <span style="font-family:monospace;font-weight:800;color:var(--brand-primary);font-size:0.86rem;">{{ job.bl_number|default:"—" }}</span>
+                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Bill of Lading (B/L)</span>
+                <span style="font-family:monospace;font-weight:800;color:var(--brand-primary);font-size:0.84rem;">{{ job.bl_number|default:"—" }}</span>
             </div>
             <div>
-                <span style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;font-weight:700;display:block;">Storage Box / Yard Bay</span>
-                <strong style="color:#166534;">{{ job.box_number|default:"Assigned upon completion" }}</strong>
+                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Box No / Yard</span>
+                <strong style="color:#166534;">{{ job.box_number|default:"Inarekodiwa mwishoni" }}</strong>
             </div>
         </div>
     </div>
 
-    <!-- Card 2: Customs & Port Operations Status -->
-    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1.15rem 1.25rem;box-shadow:var(--shadow-sm);">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.55rem;">
-            <div style="display:flex;align-items:center;gap:0.5rem;">
-                <div style="width:28px;height:28px;border-radius:6px;background:#F0FDF4;color:#16A34A;display:flex;align-items:center;justify-content:center;font-size:0.85rem;">
+    <!-- Customs Summary -->
+    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1rem 1.15rem;box-shadow:var(--shadow-sm);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.45rem;">
+            <div style="display:flex;align-items:center;gap:0.45rem;">
+                <div style="width:26px;height:26px;border-radius:6px;background:#F0FDF4;color:#16A34A;display:flex;align-items:center;justify-content:center;font-size:0.8rem;">
                     <i class="fa-solid fa-stamp"></i>
                 </div>
-                <h4 style="margin:0;font-size:0.92rem;font-weight:800;color:var(--brand-navy-900);">Customs &amp; Port Clearance Status</h4>
+                <h4 style="margin:0;font-size:0.88rem;font-weight:800;color:var(--brand-navy-900);">Hali ya Forodha (TRA &amp; TBS)</h4>
             </div>
-            <span class="badge-pill" style="font-size:0.72rem;background:#F1F5F9;color:#475569;font-weight:700;">
+            <span class="badge-pill" style="font-size:0.7rem;background:#F1F5F9;color:#475569;font-weight:700;">
                 {{ job.get_clearance_mode_display }}
             </span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.84rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;font-size:0.82rem;">
             <div>
-                <span style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;font-weight:700;display:block;">TANSAD Entry #</span>
-                <strong style="font-family:monospace;font-size:0.9rem;color:#0F172A;">{{ job.declaration_number|default:"Pending Lodgement" }}</strong>
-                {% if job.tanesw_lodged_at %}
-                <div style="font-size:0.72rem;color:#64748B;">Lodged: {{ job.tanesw_lodged_at|date:"d M Y H:i" }}</div>
-                {% endif %}
+                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">TANSAD Entry #</span>
+                <strong style="font-family:monospace;font-size:0.88rem;color:#0F172A;">{{ job.declaration_number|default:"Haijawekwa" }}</strong>
             </div>
             <div>
-                <span style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;font-weight:700;display:block;">Customs Assessment</span>
+                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Ushuru / Kodi</span>
                 {% if job.clearance_mode == 'BOND' %}
-                <span class="badge-pill" style="background:#FEF3C7;color:#92400E;font-size:0.72rem;font-weight:800;">
-                    <i class="fa-solid fa-shield-halved"></i> Duty Suspended (C41)
+                <span class="badge-pill" style="background:#FEF3C7;color:#92400E;font-size:0.7rem;font-weight:800;">
+                    <i class="fa-solid fa-shield-halved"></i> Chini ya Bondi (C41)
                 </span>
                 {% elif job.duty_control_number %}
-                <div style="font-family:monospace;font-weight:800;color:#0F172A;font-size:0.82rem;">GePG: {{ job.duty_control_number }}</div>
-                <div style="font-size:0.74rem;color:#059669;font-weight:700;">Duty: TSh {{ job.assessed_duty_amount|floatformat:2 }}</div>
+                <div style="font-family:monospace;font-weight:800;color:#0F172A;font-size:0.8rem;">GePG: {{ job.duty_control_number }}</div>
+                <div style="font-size:0.72rem;color:#059669;font-weight:700;">TSh {{ job.assessed_duty_amount|floatformat:2 }}</div>
                 {% else %}
-                <span style="color:#64748B;font-size:0.78rem;">Awaiting TRA Assessment</span>
+                <span style="color:#64748B;font-size:0.76rem;">Inasubiri makadirio</span>
                 {% endif %}
             </div>
             <div>
-                <span style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;font-weight:700;display:block;">TBS Standards Clearance</span>
-                <strong style="color:{% if job.tbs_status == 'APPROVED' %}#16A34A{% elif job.tbs_status == 'QUERY' %}#DC2626{% else %}#D97706{% endif %};font-size:0.85rem;">
+                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">TBS Standards</span>
+                <strong style="color:{% if job.tbs_status == 'APPROVED' %}#16A34A{% elif job.tbs_status == 'QUERY' %}#DC2626{% else %}#D97706{% endif %};font-size:0.82rem;">
                     {{ job.get_tbs_status_display }}
                 </strong>
-                {% if job.tbs_reference_no %}
-                <div style="font-size:0.72rem;color:#64748B;font-family:monospace;">Ref: {{ job.tbs_reference_no }}</div>
-                {% endif %}
             </div>
             <div>
-                <span style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;font-weight:700;display:block;">Physical Original B/L</span>
+                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">B/L Halisi ya Karatasi</span>
                 {% if job.original_docs_dispatched_to_field %}
-                <span style="color:#059669;font-weight:700;font-size:0.78rem;">
-                    <i class="fa-solid fa-circle-check"></i> Dispatched to {{ job.original_docs_recipient }}
+                <span style="color:#059669;font-weight:700;font-size:0.76rem;">
+                    <i class="fa-solid fa-circle-check"></i> Ipo kwa {{ job.original_docs_recipient }}
                 </span>
                 {% else %}
-                <span style="color:#64748B;font-size:0.78rem;">
-                    <i class="fa-solid fa-clock"></i> Held in Office
+                <span style="color:#64748B;font-size:0.76rem;">
+                    <i class="fa-solid fa-clock"></i> Ipo Ofisini
                 </span>
                 {% endif %}
             </div>
@@ -258,47 +400,35 @@
 </div>
 
 <!-- =========================================================================
-     4. 9-STEP MILESTONE PIPELINE STEPPER
+     5. ULTRA-COMPACT 9-STEP MILESTONE PIPELINE
      ========================================================================= -->
-<div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1.15rem 1.25rem;margin-bottom:1.25rem;box-shadow:var(--shadow-sm);">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.65rem;">
-        <div>
-            <div style="font-weight:800;font-size:0.95rem;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.45rem;">
-                <i class="fa-solid fa-route" style="color:var(--brand-primary);"></i>
-                Clearing &amp; Forwarding Milestones Pipeline
-            </div>
-            <div style="font-size:0.76rem;color:var(--text-muted);margin-top:0.15rem;">
-                <strong>{{ completed_milestones_count }} of 9</strong> milestones completed &bull; Current: <strong style="color:var(--brand-primary);">{{ job.current_stage_display_name }}</strong>
-            </div>
+<div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:0.85rem 1.15rem;margin-bottom:1.15rem;box-shadow:var(--shadow-sm);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.65rem;flex-wrap:wrap;gap:0.5rem;">
+        <div style="font-size:0.84rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
+            <i class="fa-solid fa-route" style="color:var(--brand-primary);"></i>
+            Safari ya Utoaji Gari (Milestones): <span style="color:var(--brand-primary);">{{ completed_milestones_count }}/9 Zimekamilika</span>
         </div>
-        <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="font-size:0.78rem;background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.85rem;border-radius:6px;">
-            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full Interactive Tracking
+        <a href="{% url 'client_shipment_detail' job.id %}" style="font-size:0.76rem;color:#15803D;font-weight:800;text-decoration:none;">
+            Fungua Tracking Kamili &rarr;
         </a>
     </div>
 
-    <!-- Stepper Grid -->
-    <div style="display:grid;grid-template-columns:repeat(9, minmax(85px, 1fr));gap:0.4rem;overflow-x:auto;padding-bottom:0.4rem;">
+    <!-- Stepper Single-Row Grid -->
+    <div style="display:grid;grid-template-columns:repeat(9, minmax(75px, 1fr));gap:0.35rem;overflow-x:auto;">
         {% for m in milestones %}
         <div style="text-align:center;">
-            <div style="width:32px;height:32px;border-radius:50%;margin:0 auto 0.35rem auto;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;
+            <div style="width:26px;height:26px;border-radius:50%;margin:0 auto 0.25rem auto;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;
                 {% if m.done %}
-                background:#16A34A;color:#FFFFFF;box-shadow:0 2px 4px rgba(22,163,74,0.3);
+                background:#16A34A;color:#FFFFFF;
                 {% elif m.current %}
-                background:#2563EB;color:#FFFFFF;box-shadow:0 0 0 4px rgba(37,99,235,0.2);
+                background:#2563EB;color:#FFFFFF;box-shadow:0 0 0 3px rgba(37,99,235,0.2);
                 {% else %}
                 background:#F1F5F9;color:#94A3B8;border:1px solid #CBD5E1;
                 {% endif %}">
-                {% if m.done %}
-                <i class="fa-solid fa-check"></i>
-                {% else %}
-                {{ m.id }}
-                {% endif %}
+                {% if m.done %}<i class="fa-solid fa-check"></i>{% else %}{{ m.id }}{% endif %}
             </div>
-            <div style="font-size:0.72rem;font-weight:700;color:{% if m.done %}#166534{% elif m.current %}#1D4ED8{% else %}#64748B{% endif %};line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ m.name }}">
+            <div style="font-size:0.68rem;font-weight:700;color:{% if m.done %}#166534{% elif m.current %}#1D4ED8{% else %}#64748B{% endif %};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ m.name }}">
                 {{ m.name }}
-            </div>
-            <div style="font-size:0.66rem;color:#94A3B8;margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ m.subtitle }}">
-                {{ m.subtitle }}
             </div>
         </div>
         {% endfor %}
@@ -306,631 +436,209 @@
 </div>
 
 <!-- =========================================================================
-     5. TABBED OPERATIONAL & ARCHIVAL PANELS
+     6. TABBED JUNIOR CLERK PAPERWORK (NEATLY TUCKED AWAY)
      ========================================================================= -->
 <div class="card-panel" style="padding:0;overflow:hidden;background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);margin-bottom:2rem;">
     <!-- Tabs Navigation Bar -->
     <div style="display:flex;border-bottom:1px solid #E2E8F0;background:#F8FAFC;padding:0 0.5rem;gap:0.25rem;overflow-x:auto;">
-        {% if can_view_financials or is_ceo or is_admin %}
-        <button type="button" class="tab-nav-btn active" data-target="tab-financials" onclick="switchJobTab('tab-financials')" style="padding:0.85rem 1.15rem;border:none;background:none;font-weight:800;font-size:0.84rem;color:var(--brand-primary);border-bottom:2px solid var(--brand-primary);cursor:pointer;display:inline-flex;align-items:center;gap:0.45rem;white-space:nowrap;">
-            <i class="fa-solid fa-file-invoice-dollar"></i> Financials &amp; Costs
-        </button>
-        {% endif %}
-
-        <button type="button" class="tab-nav-btn {% if not can_view_financials and not is_ceo and not is_admin %}active{% endif %}" data-target="tab-documents" onclick="switchJobTab('tab-documents')" style="padding:0.85rem 1.15rem;border:none;background:none;font-weight:700;font-size:0.84rem;color:#64748B;cursor:pointer;display:inline-flex;align-items:center;gap:0.45rem;white-space:nowrap;{% if not can_view_financials and not is_ceo and not is_admin %}border-bottom:2px solid var(--brand-primary);color:var(--brand-primary);font-weight:800;{% endif %}">
-            <i class="fa-solid fa-folder-open"></i> File Dossier &amp; Scans ({{ documents|length|add:2 }})
+        <button type="button" class="tab-nav-btn active" data-target="tab-documents" onclick="switchJobTab('tab-documents')" style="padding:0.75rem 1rem;border:none;background:none;font-weight:800;font-size:0.82rem;color:var(--brand-primary);border-bottom:2px solid var(--brand-primary);cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;white-space:nowrap;">
+            <i class="fa-solid fa-folder-open"></i> Nyaraka za Faili &amp; Scans ({{ documents|length|add:2 }})
         </button>
 
-        <button type="button" class="tab-nav-btn" data-target="tab-customs" onclick="switchJobTab('tab-customs')" style="padding:0.85rem 1.15rem;border:none;background:none;font-weight:700;font-size:0.84rem;color:#64748B;cursor:pointer;display:inline-flex;align-items:center;gap:0.45rem;white-space:nowrap;">
-            <i class="fa-solid fa-stamp"></i> Customs &amp; Port Lodgement
+        <button type="button" class="tab-nav-btn" data-target="tab-customs" onclick="switchJobTab('tab-customs')" style="padding:0.75rem 1rem;border:none;background:none;font-weight:700;font-size:0.82rem;color:#64748B;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;white-space:nowrap;">
+            <i class="fa-solid fa-stamp"></i> Lodgement ya Forodha (TRA &amp; TBS)
         </button>
 
         {% if can_track_containers or containers %}
-        <button type="button" class="tab-nav-btn" data-target="tab-containers" onclick="switchJobTab('tab-containers')" style="padding:0.85rem 1.15rem;border:none;background:none;font-weight:700;font-size:0.84rem;color:#64748B;cursor:pointer;display:inline-flex;align-items:center;gap:0.45rem;white-space:nowrap;">
-            <i class="fa-solid fa-boxes-stacked"></i> Containers ({{ containers|length }})
+        <button type="button" class="tab-nav-btn" data-target="tab-containers" onclick="switchJobTab('tab-containers')" style="padding:0.75rem 1rem;border:none;background:none;font-weight:700;font-size:0.82rem;color:#64748B;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;white-space:nowrap;">
+            <i class="fa-solid fa-boxes-stacked"></i> Makontena ({{ containers|length }})
         </button>
         {% endif %}
 
         {% if can_view_audit %}
-        <button type="button" class="tab-nav-btn" data-target="tab-audit" onclick="switchJobTab('tab-audit')" style="padding:0.85rem 1.15rem;border:none;background:none;font-weight:700;font-size:0.84rem;color:#64748B;cursor:pointer;display:inline-flex;align-items:center;gap:0.45rem;white-space:nowrap;">
-            <i class="fa-solid fa-timeline"></i> Activity Audit Log
+        <button type="button" class="tab-nav-btn" data-target="tab-audit" onclick="switchJobTab('tab-audit')" style="padding:0.75rem 1rem;border:none;background:none;font-weight:700;font-size:0.82rem;color:#64748B;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;white-space:nowrap;">
+            <i class="fa-solid fa-timeline"></i> Kumbukumbu (Audit Trail)
         </button>
         {% endif %}
     </div>
 
-    <!-- =========================================================================
-         TAB 1: FINANCIALS & PROFITABILITY
-         ========================================================================= -->
-    {% if can_view_financials or is_ceo or is_admin %}
-    <div id="tab-financials" class="tab-content-panel" style="padding:1.5rem;display:block;">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:1.25rem;margin-bottom:1.5rem;">
-            <!-- Gross Margin Summary -->
-            <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:1.25rem;">
-                <h4 style="font-family:var(--font-heading);color:var(--brand-navy-900);font-size:0.95rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem;">
-                    <i class="fa-solid fa-calculator" style="color:var(--brand-primary);"></i>
-                    Shipment Gross Margin Calculator
-                </h4>
-                <div style="display:flex;flex-direction:column;gap:0.6rem;font-size:0.88rem;">
-                    <div style="display:flex;justify-content:space-between;">
-                        <span>Total Client Billing (Revenue):</span>
-                        <strong style="color:var(--brand-primary);">TSh {{ job.client_billed_revenue|floatformat:2 }}</strong>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;border-bottom:1px solid #CBD5E1;padding-bottom:0.5rem;">
-                        <span>Approved Operational Expenses (Costs):</span>
-                        <strong style="color:#DC2626;">- TSh {{ job.total_expenses|floatformat:2 }}</strong>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;padding-top:0.25rem;font-size:1.02rem;">
-                        <strong>Net Gross Margin:</strong>
-                        <strong class="{% if job.gross_margin > 0 %}text-profit-positive{% else %}text-profit-negative{% endif %}">
-                            TSh {{ job.gross_margin|floatformat:2 }} ({{ job.gross_margin_percentage }}%)
-                        </strong>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Billing & Collection Status -->
-            <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:1.25rem;">
-                <h4 style="font-family:var(--font-heading);color:var(--brand-navy-900);font-size:0.95rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem;">
-                    <i class="fa-solid fa-money-bill-transfer" style="color:#059669;"></i>
-                    Client Billing &amp; Collection Status
-                </h4>
-                <div style="display:flex;flex-direction:column;gap:0.6rem;font-size:0.88rem;">
-                    <div style="display:flex;justify-content:space-between;">
-                        <span>Total Invoiced:</span>
-                        <strong>TSh {{ job.client_billed_revenue|floatformat:2 }}</strong>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;">
-                        <span>Amount Paid by Client:</span>
-                        <strong style="color:#059669;">TSh {{ job.total_client_paid|floatformat:2 }}</strong>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;border-top:1px solid #CBD5E1;padding-top:0.5rem;font-size:1.02rem;">
-                        <strong>Outstanding Balance:</strong>
-                        <strong style="color:#D97706;">TSh {{ job.client_outstanding_balance|floatformat:2 }}</strong>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Official Invoices List -->
-        <div style="margin-bottom:1.75rem;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
-                <h4 style="font-family:var(--font-heading);font-size:0.95rem;color:var(--brand-navy-900);margin:0;display:flex;align-items:center;gap:0.4rem;">
-                    <i class="fa-solid fa-file-invoice" style="color:var(--brand-primary);"></i>
-                    Official Client Invoices
-                </h4>
-                <a href="{% url 'print_job_invoice' job.id %}" target="_blank" class="btn-header-action btn-outline" style="font-size:0.78rem;padding:0.35rem 0.75rem;">
-                    <i class="fa-solid fa-print"></i> Print Unified Invoice
-                </a>
-            </div>
-            <div class="table-responsive">
-                <table class="modern-table">
-                    <thead>
-                        <tr>
-                            <th>Invoice #</th>
-                            <th>Issue Date</th>
-                            <th>Due Date</th>
-                            <th>Total Amount</th>
-                            <th>Paid Amount</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for inv in invoices %}
-                        <tr>
-                            <td><strong style="font-family:monospace;">{{ inv.invoice_number }}</strong></td>
-                            <td>{{ inv.issue_date|date:"d M Y" }}</td>
-                            <td>{{ inv.due_date|date:"d M Y" }}</td>
-                            <td><strong>TSh {{ inv.total_amount|floatformat:2 }}</strong></td>
-                            <td style="color:#059669;">TSh {{ inv.amount_paid|floatformat:2 }}</td>
-                            <td>
-                                <span class="badge-pill {% if inv.status == 'PAID' %}badge-completed{% elif inv.status == 'PARTIAL' %}badge-delayed{% else %}badge-closed{% endif %}" style="font-size:0.72rem;">
-                                    {{ inv.get_status_display }}
-                                </span>
-                            </td>
-                            <td>
-                                <a href="{% url 'print_invoice' inv.id %}" target="_blank" class="btn-header-action btn-outline" style="font-size:0.74rem;padding:0.25rem 0.6rem;">
-                                    <i class="fa-solid fa-print"></i> Print
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" style="text-align:center;color:var(--text-muted);padding:1.25rem;font-size:0.85rem;">
-                                Standard billing applied for this file. Click "Print Unified Invoice" to preview/print the complete invoice breakdown.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Operational Expenses List -->
-        <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
-                <h4 style="font-family:var(--font-heading);font-size:0.95rem;color:var(--brand-navy-900);margin:0;display:flex;align-items:center;gap:0.4rem;">
-                    <i class="fa-solid fa-receipt" style="color:#DC2626;"></i>
-                    Approved Operational Expenses &amp; Disbursements
-                </h4>
-                {% if not is_ceo %}
-                <button type="button" class="btn-header-action btn-primary" onclick="openModal('requestExpenseModal')" style="font-size:0.78rem;padding:0.35rem 0.75rem;">
-                    <i class="fa-solid fa-plus"></i> Add Expense
-                </button>
-                {% endif %}
-            </div>
-            <div class="table-responsive">
-                <table class="modern-table">
-                    <thead>
-                        <tr>
-                            <th>Voucher #</th>
-                            <th>Category</th>
-                            <th>Amount</th>
-                            <th>Description</th>
-                            <th>Status</th>
-                            <th>Approver</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for exp in expenses %}
-                        <tr>
-                            <td><strong style="font-family:monospace;">{{ exp.voucher_number }}</strong></td>
-                            <td>{{ exp.get_category_display }}</td>
-                            <td><strong style="color:#DC2626;">TSh {{ exp.amount|floatformat:2 }}</strong></td>
-                            <td>{{ exp.description }}</td>
-                            <td>
-                                <span class="badge-pill {% if exp.approval_status == 'APPROVED' %}badge-completed{% elif exp.approval_status == 'REQUESTED' %}badge-delayed{% else %}badge-closed{% endif %}" style="font-size:0.72rem;">
-                                    {{ exp.get_approval_status_display }}
-                                </span>
-                            </td>
-                            <td>{{ exp.approver.get_full_name|default:"Pending Approval" }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" style="text-align:center;color:var(--text-muted);padding:1.25rem;font-size:0.85rem;">
-                                No operational expenses recorded yet for this shipment.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- =========================================================================
-         TAB 2: FILE DOSSIER & SCANNED DOCUMENTS
-         ========================================================================= -->
-    <div id="tab-documents" class="tab-content-panel" style="padding:1.5rem;{% if can_view_financials or is_ceo or is_admin %}display:none;{% else %}display:block;{% endif %}">
-        <!-- Top Actions -->
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
+    <!-- TAB: DOCUMENTS -->
+    <div id="tab-documents" class="tab-content-panel" style="padding:1.25rem;display:block;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
             <div>
-                <h4 style="font-family:var(--font-heading);font-size:1.05rem;color:var(--brand-navy-900);margin:0;">
-                    File Dossier &amp; Unified Document Pack
-                </h4>
-                <p style="font-size:0.78rem;color:var(--text-muted);margin:0.2rem 0 0 0;">
-                    Auto-generated Form C41 (TRA), TBS Clearance Letter, and Scanned Client Documents.
-                </p>
+                <h4 style="margin:0;font-size:0.95rem;font-weight:800;color:var(--brand-navy-900);">Nyaraka Zote za Faili Hili</h4>
+                <p style="margin:0.15rem 0 0 0;font-size:0.76rem;color:var(--text-muted);">Form C41 ya TRA, Barua ya TBS, na scanned documents za mteja.</p>
             </div>
-            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                <a href="{% url 'print_combined_pack' job.id %}" target="_blank" class="btn-header-action" style="background:#0F172A;color:#FFFFFF;font-size:0.8rem;padding:0.45rem 0.85rem;border-radius:6px;text-decoration:none;">
-                    <i class="fa-solid fa-print"></i> Print Unified File Pack
+            <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
+                <a href="{% url 'print_combined_pack' job.id %}" target="_blank" class="btn-header-action" style="background:#0F172A;color:#FFFFFF;font-size:0.78rem;padding:0.4rem 0.75rem;border-radius:6px;text-decoration:none;">
+                    <i class="fa-solid fa-print"></i> Print Pack Zote Pamoja
                 </a>
                 {% if not is_ceo %}
-                <button type="button" onclick="var el=document.getElementById('editFileDrawer'); el.style.display=(el.style.display==='none'?'block':'none');" class="btn-header-action btn-outline" style="font-size:0.8rem;padding:0.45rem 0.85rem;">
-                    <i class="fa-solid fa-pen-to-square"></i> Edit Checklist / Add Scans
+                <button type="button" onclick="var el=document.getElementById('editFileDrawer'); el.style.display=(el.style.display==='none'?'block':'none');" class="btn-header-action btn-outline" style="font-size:0.78rem;padding:0.4rem 0.75rem;">
+                    <i class="fa-solid fa-pen-to-square"></i> Hariri Checklist / Ongeza Scan
                 </button>
-                <button type="button" class="btn-header-action btn-primary" onclick="openModal('uploadDocModal')" style="font-size:0.8rem;padding:0.45rem 0.85rem;">
-                    <i class="fa-solid fa-upload"></i> Upload Attachment
+                <button type="button" class="btn-header-action btn-primary" onclick="openModal('uploadDocModal')" style="font-size:0.78rem;padding:0.4rem 0.75rem;">
+                    <i class="fa-solid fa-upload"></i> Pakia Nyaraka
                 </button>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Unified Pack Cards Grid -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:0.85rem;margin-bottom:1.5rem;">
-            <!-- 1. Form C41 (TRA) -->
-            <div style="background:#FFFFFF;border:1.5px solid #BBF7D0;border-radius:10px;padding:0.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:0.75rem;margin-bottom:1rem;">
+            <div style="background:#FFFFFF;border:1.5px solid #BBF7D0;border-radius:8px;padding:0.75rem 0.9rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
                 <div>
-                    <span class="badge-pill" style="background:#DCFCE7;color:#166534;font-size:0.66rem;font-weight:800;margin-bottom:0.2rem;">AUTO-GENERATED BY OFFICE</span>
-                    <div style="font-weight:800;font-size:0.9rem;color:#0F172A;">
-                        <i class="fa-solid fa-stamp" style="color:#059669;margin-right:0.3rem;"></i> 1. Form C41 (TRA)
+                    <span class="badge-pill" style="background:#DCFCE7;color:#166534;font-size:0.64rem;font-weight:800;">OFISINI</span>
+                    <div style="font-weight:800;font-size:0.86rem;color:#0F172A;margin-top:0.15rem;">
+                        <i class="fa-solid fa-stamp" style="color:#059669;margin-right:0.25rem;"></i> 1. Form C41 (TRA)
                     </div>
-                    <div style="font-size:0.74rem;color:#475569;">Ref: <code>{{ job.c41_reference_no|default:job.job_number }}</code></div>
                 </div>
-                <a href="{% url 'print_c41_document' job.id %}" target="_blank" class="btn-header-action btn-primary" style="background:#059669;border-color:#059669;font-size:0.76rem;padding:0.35rem 0.75rem;white-space:nowrap;">
+                <a href="{% url 'print_c41_document' job.id %}" target="_blank" class="btn-header-action btn-primary" style="background:#059669;border-color:#059669;font-size:0.74rem;padding:0.3rem 0.65rem;">
                     <i class="fa-solid fa-print"></i> C41
                 </a>
             </div>
 
-            <!-- 2. TBS Letter -->
-            <div style="background:#FFFFFF;border:1.5px solid #BFDBFE;border-radius:10px;padding:0.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+            <div style="background:#FFFFFF;border:1.5px solid #BFDBFE;border-radius:8px;padding:0.75rem 0.9rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
                 <div>
-                    <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;font-size:0.66rem;font-weight:800;margin-bottom:0.2rem;">AUTO-GENERATED BY OFFICE</span>
-                    <div style="font-weight:800;font-size:0.9rem;color:#0F172A;">
-                        <i class="fa-solid fa-file-lines" style="color:#2563EB;margin-right:0.3rem;"></i> 2. TBS Letter
+                    <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;font-size:0.64rem;font-weight:800;">OFISINI</span>
+                    <div style="font-weight:800;font-size:0.86rem;color:#0F172A;margin-top:0.15rem;">
+                        <i class="fa-solid fa-file-lines" style="color:#2563EB;margin-right:0.25rem;"></i> 2. TBS Letter
                     </div>
-                    <div style="font-size:0.74rem;color:#475569;">Ref: <code>{{ job.tbs_letter_reference_no|default:job.job_number }}</code></div>
                 </div>
-                <a href="{% url 'print_tbs_letter' job.id %}" target="_blank" class="btn-header-action btn-primary" style="background:#2563EB;border-color:#2563EB;font-size:0.76rem;padding:0.35rem 0.75rem;white-space:nowrap;">
-                    <i class="fa-solid fa-print"></i> TBS Letter
+                <a href="{% url 'print_tbs_letter' job.id %}" target="_blank" class="btn-header-action btn-primary" style="background:#2563EB;border-color:#2563EB;font-size:0.74rem;padding:0.3rem 0.65rem;">
+                    <i class="fa-solid fa-print"></i> TBS
                 </a>
             </div>
 
-            <!-- Scanned Client Documents -->
             {% for doc in documents %}
-            <div style="background:#FFFFFF;border:1.5px solid #BAE6FD;border-radius:10px;padding:0.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+            <div style="background:#FFFFFF;border:1.5px solid #BAE6FD;border-radius:8px;padding:0.75rem 0.9rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
                 <div style="overflow:hidden;">
-                    <span class="badge-pill" style="background:#E0F2FE;color:#0369A1;font-size:0.66rem;font-weight:800;margin-bottom:0.2rem;">{{ doc.get_document_type_display }}</span>
-                    <div style="font-weight:800;font-size:0.86rem;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
-                        <i class="fa-solid fa-file-pdf" style="color:#0284C7;margin-right:0.3rem;"></i> {{ doc.title }}
+                    <span class="badge-pill" style="background:#E0F2FE;color:#0369A1;font-size:0.64rem;font-weight:800;">{{ doc.get_document_type_display }}</span>
+                    <div style="font-weight:800;font-size:0.82rem;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:0.15rem;" title="{{ doc.title }}">
+                        {{ doc.title }}
                     </div>
-                    <div style="font-size:0.72rem;color:#64748B;">Uploaded {{ doc.uploaded_at|date:"d M Y H:i" }}</div>
                 </div>
-                <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="font-size:0.74rem;padding:0.3rem 0.65rem;white-space:nowrap;">
+                <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="font-size:0.72rem;padding:0.25rem 0.55rem;">
                     <i class="fa-solid fa-eye"></i> View
                 </a>
-            </div>
-            {% empty %}
-            <div style="background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:10px;padding:1rem;text-align:center;color:var(--text-muted);font-size:0.82rem;display:flex;align-items:center;justify-content:center;">
-                No additional scanned documents uploaded yet.
             </div>
             {% endfor %}
         </div>
 
-        <!-- Staff Edit Checklist Drawer -->
-        <div id="editFileDrawer" style="display:none;background:#F8FAFC;border:1.5px dashed #0284C7;border-radius:12px;padding:1.25rem;margin-top:1rem;">
+        <!-- Checklist Drawer -->
+        <div id="editFileDrawer" style="display:none;background:#F8FAFC;border:1.5px dashed #0284C7;border-radius:10px;padding:1rem;">
             <form action="{% url 'update_doc_checklist' job.id %}" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
-                <div style="font-weight:800;font-size:0.9rem;color:#0F172A;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem;">
-                    <i class="fa-solid fa-file-arrow-up" style="color:#0284C7;"></i>
-                    Update Scanned Documents &amp; Checklists
+                <div style="font-weight:800;font-size:0.86rem;color:#0F172A;margin-bottom:0.6rem;">
+                    <i class="fa-solid fa-file-arrow-up" style="color:#0284C7;"></i> Ongeza Scans &amp; Thibitisha Checklist ya Mteja
                 </div>
-                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;font-size:0.82rem;font-weight:700;">
-                    <span style="color:var(--text-muted);text-transform:uppercase;font-size:0.75rem;">Checklist:</span>
-                    <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_bl_received" value="1" {% if job.doc_bl_received %}checked{% endif %}> 1. BL</label>
-                    <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_invoice_received" value="1" {% if job.doc_invoice_received %}checked{% endif %}> 2. Invoice</label>
-                    <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_packing_list_received" value="1" {% if job.doc_packing_list_received %}checked{% endif %}> 3. Packing List</label>
-                    <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_tbs_cert_received" value="1" {% if job.doc_tbs_cert_received %}checked{% endif %}> 4. TBS Cert</label>
-                    <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_export_cert_received" value="1" {% if job.doc_export_cert_received %}checked{% endif %}> 5. Export Cert</label>
+                <div style="display:flex;align-items:center;gap:0.85rem;flex-wrap:wrap;margin-bottom:0.75rem;font-size:0.8rem;font-weight:700;">
+                    <label style="display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;"><input type="checkbox" name="doc_bl_received" value="1" {% if job.doc_bl_received %}checked{% endif %}> 1. BL</label>
+                    <label style="display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;"><input type="checkbox" name="doc_invoice_received" value="1" {% if job.doc_invoice_received %}checked{% endif %}> 2. Invoice</label>
+                    <label style="display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;"><input type="checkbox" name="doc_packing_list_received" value="1" {% if job.doc_packing_list_received %}checked{% endif %}> 3. Packing List</label>
+                    <label style="display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;"><input type="checkbox" name="doc_tbs_cert_received" value="1" {% if job.doc_tbs_cert_received %}checked{% endif %}> 4. TBS Cert</label>
+                    <label style="display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;"><input type="checkbox" name="doc_export_cert_received" value="1" {% if job.doc_export_cert_received %}checked{% endif %}> 5. Export Cert</label>
                 </div>
-                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.85rem;">
-                    <input type="file" name="scanned_documents" multiple accept=".pdf,image/*" class="form-control" style="max-width:320px;font-size:0.8rem;">
-                    <button type="submit" class="btn-header-action btn-primary" style="font-size:0.82rem;">
-                        <i class="fa-solid fa-check"></i> Save Checklist Changes
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+                    <input type="file" name="scanned_documents" multiple accept=".pdf,image/*" class="form-control" style="max-width:320px;font-size:0.78rem;">
+                    <button type="submit" class="btn-header-action btn-primary" style="font-size:0.8rem;">
+                        <i class="fa-solid fa-check"></i> Hifadhi
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- =========================================================================
-         TAB 3: CUSTOMS & PORT LODGEMENT
-         ========================================================================= -->
-    <div id="tab-customs" class="tab-content-panel" style="padding:1.5rem;display:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.75rem;">
-            <div>
-                <h4 style="font-family:var(--font-heading);font-size:1.05rem;color:var(--brand-navy-900);margin:0;">
-                    <i class="fa-solid fa-stamp" style="color:var(--brand-primary);margin-right:0.35rem;"></i>
-                    TRA TANESW Declaration &amp; Port Dispatch
-                </h4>
-                <p style="font-size:0.78rem;color:var(--text-muted);margin:0.2rem 0 0 0;">
-                    Customs lodgement, 76-hour statutory SLA tracking, and Physical D/O handover.
+    <!-- TAB: CUSTOMS LODGEMENT -->
+    <div id="tab-customs" class="tab-content-panel" style="padding:1.25rem;display:none;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;">
+            <!-- Physical Docs -->
+            <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:1rem;">
+                <div style="font-size:0.82rem;font-weight:800;color:var(--brand-navy-900);margin-bottom:0.5rem;">
+                    1. B/L Halisi ya Karatasi (D/O Dispatch)
+                </div>
+                <p style="font-size:0.78rem;color:#475569;margin-bottom:0.75rem;">
+                    {% if job.original_docs_dispatched_to_field %}
+                    Ilishakabidhiwa kwa <strong>{{ job.original_docs_recipient }}</strong> mnamo {{ job.original_docs_dispatched_at|date:"d M Y" }}.
+                    {% else %}
+                    Nyaraka halisi zipo ofisini bado hazijapelekwa bandarini kwa wakala wa meli.
+                    {% endif %}
                 </p>
+                {% if not is_ceo %}
+                <button type="button" class="btn-header-action btn-outline" onclick="openHandoverDocsModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}')" style="font-size:0.76rem;width:100%;justify-content:center;">
+                    <i class="fa-solid fa-hand-holding-hand"></i> {% if job.original_docs_dispatched_to_field %}Badili Afisa Mpokeaji{% else %}Kabidhi kwa Port Officer{% endif %}
+                </button>
+                {% endif %}
             </div>
-            <a href="{% url 'customs_pending_declarations' %}" class="btn-header-action btn-outline" style="font-size:0.78rem;">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i> Declarations Hub
-            </a>
-        </div>
 
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:1.25rem;">
-            <!-- Card 1: Physical Original Docs -->
-            <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:10px;padding:1.15rem;display:flex;flex-direction:column;justify-content:space-between;">
-                <div>
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-                        <span style="font-size:0.75rem;font-weight:800;color:var(--brand-navy-900);text-transform:uppercase;letter-spacing:0.04em;">
-                            <i class="fa-solid fa-hand-holding-hand" style="color:var(--brand-primary);margin-right:0.3rem;"></i> 1. Physical Original Docs
-                        </span>
-                        {% if job.original_docs_dispatched_to_field %}
-                        <span class="badge-pill badge-green" style="font-size:0.7rem;font-weight:800;">
-                            <i class="fa-solid fa-circle-check"></i> Dispatched to Field
-                        </span>
-                        {% else %}
-                        <span class="badge-pill badge-amber" style="font-size:0.7rem;font-weight:800;">
-                            <i class="fa-solid fa-clock"></i> In Office
-                        </span>
-                        {% endif %}
-                    </div>
-
-                    <div style="font-size:0.84rem;color:#334155;line-height:1.45;">
-                        {% if job.original_docs_dispatched_to_field %}
-                        <div style="margin-bottom:0.4rem;">
-                            Recipient: <strong style="color:#0F172A;">{{ job.original_docs_recipient }}</strong>
-                        </div>
-                        <div style="font-size:0.75rem;color:#64748B;margin-bottom:0.4rem;">
-                            Dispatched: <strong>{{ job.original_docs_dispatched_at|date:"d M Y H:i" }}</strong>
-                        </div>
-                        {% if job.original_docs_dispatch_notes %}
-                        <div style="font-size:0.74rem;background:#F1F5F9;padding:0.4rem 0.6rem;border-radius:6px;border:1px solid #CBD5E1;color:#1E293B;">
-                            {{ job.original_docs_dispatch_notes }}
-                        </div>
-                        {% endif %}
-                        {% else %}
-                        <p style="margin:0;font-size:0.8rem;color:#64748B;">
-                            Original B/L &amp; Commercial Invoices are currently held in office. Dispatch them to the Port Agent to concurrently process the Shipping Line Delivery Order (D/O).
-                        </p>
-                        {% endif %}
-                    </div>
+            <!-- TRA Lodgement -->
+            <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:1rem;">
+                <div style="font-size:0.82rem;font-weight:800;color:var(--brand-navy-900);margin-bottom:0.5rem;">
+                    2. TRA TANESW (76h SLA Review)
                 </div>
-
-                <div style="margin-top:1rem;border-top:1px solid #E2E8F0;padding-top:0.75rem;">
-                    {% if not is_ceo %}
-                    <button type="button" class="btn-header-action btn-outline" onclick="openHandoverDocsModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}')" style="width:100%;font-size:0.78rem;padding:0.45rem;justify-content:center;">
-                        <i class="fa-solid fa-hand-holding-hand"></i> {% if job.original_docs_dispatched_to_field %}Update Handover Record{% else %}Handover Originals to Field{% endif %}
+                <div style="font-size:0.78rem;color:#475569;margin-bottom:0.75rem;">
+                    TANSAD: <strong>{{ job.declaration_number|default:"Haijaingizwa" }}</strong> &bull; Hali: <strong>{{ job.get_tra_status_display }}</strong>
+                </div>
+                {% if not is_ceo %}
+                    {% if job.tra_status == 'LODGED_76H' %}
+                    <button type="button" class="btn-header-action btn-primary" onclick="openRecordOutcomeModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.declaration_number }}')" style="font-size:0.76rem;width:100%;justify-content:center;background:#1E3A8A;">
+                        <i class="fa-solid fa-clipboard-check"></i> Rekodi Matokeo ya TRA
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn-header-action btn-primary" onclick="openLodgeTaneswModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.customer.company_name|escapejs }}', '{{ job.declaration_number|default:'' }}')" style="font-size:0.76rem;width:100%;justify-content:center;">
+                        <i class="fa-solid fa-stamp"></i> Ingiza TANSAD Entry
                     </button>
                     {% endif %}
-                </div>
+                {% endif %}
             </div>
 
-            <!-- Card 2: TRA TANESW Declaration & 76h SLA -->
-            <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:10px;padding:1.15rem;display:flex;flex-direction:column;justify-content:space-between;">
-                <div>
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-                        <span style="font-size:0.75rem;font-weight:800;color:var(--brand-navy-900);text-transform:uppercase;letter-spacing:0.04em;">
-                            <i class="fa-solid fa-stamp" style="color:var(--brand-primary);margin-right:0.3rem;"></i> 2. TRA TANESW Declaration
-                        </span>
-                        {% if job.tra_status == 'ACCEPTED' %}
-                        <span class="badge-pill badge-green" style="font-size:0.7rem;font-weight:800;">
-                            <i class="fa-solid fa-circle-check"></i> Accepted &amp; Assessed
-                        </span>
-                        {% elif job.tra_status == 'OBJECTION' %}
-                        <span class="badge-pill badge-red" style="font-size:0.7rem;font-weight:800;">
-                            <i class="fa-solid fa-triangle-exclamation"></i> TRA Objection
-                        </span>
-                        {% elif job.tra_status == 'LODGED_76H' %}
-                        <span class="badge-pill badge-amber" style="font-size:0.7rem;font-weight:800;">
-                            <i class="fa-solid fa-stopwatch"></i> 76h SLA Running
-                        </span>
-                        {% else %}
-                        <span class="badge-pill badge-gray" style="font-size:0.7rem;font-weight:800;">
-                            Pending Lodgement
-                        </span>
-                        {% endif %}
-                    </div>
-
-                    <div style="font-size:0.84rem;color:#334155;line-height:1.45;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
-                            <span style="font-size:0.75rem;color:#64748B;">TANSAD Entry #:</span>
-                            <strong style="font-family:monospace;font-size:0.88rem;color:#0F172A;">{{ job.declaration_number|default:"Not Yet Lodged" }}</strong>
-                        </div>
-
-                        <!-- 76h SLA or Accepted Details -->
-                        {% if job.tra_status == 'LODGED_76H' %}
-                        <div style="background:{% if job.is_tanesw_overdue %}#FEE2E2{% else %}#FEF3C7{% endif %};border:1px solid {% if job.is_tanesw_overdue %}#FCA5A5{% else %}#FCD34D{% endif %};padding:0.5rem 0.75rem;border-radius:6px;margin-top:0.4rem;">
-                            <div style="font-weight:800;font-size:0.8rem;color:{% if job.is_tanesw_overdue %}#DC2626{% else %}#B45309{% endif %};">
-                                <i class="fa-solid fa-stopwatch"></i> {% if job.is_tanesw_overdue %}OVERDUE by {{ job.tanesw_hours_elapsed|add:"-76" }}h{% else %}{{ job.tanesw_hours_remaining }}h remaining of 76h SLA{% endif %}
-                            </div>
-                            <div style="font-size:0.72rem;color:{% if job.is_tanesw_overdue %}#991B1B{% else %}#92400E{% endif %};margin-top:0.15rem;">
-                                Lodged: {{ job.tanesw_lodged_at|date:"d M Y H:i" }}
-                            </div>
-                        </div>
-                        {% elif job.tra_status == 'ACCEPTED' %}
-                        <div style="background:#F0FDF4;border:1px solid #BBF7D0;padding:0.5rem 0.75rem;border-radius:6px;margin-top:0.4rem;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;">
-                                <span style="font-size:0.74rem;color:#166534;">GePG Control No:</span>
-                                <strong style="font-family:monospace;font-size:0.9rem;color:#0F172A;">{{ job.duty_control_number }}</strong>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.25rem;">
-                                <span style="font-size:0.74rem;color:#166534;">Assessed Duty:</span>
-                                <strong style="font-size:0.9rem;color:#16A34A;">TSh {{ job.assessed_duty_amount|floatformat:2 }}</strong>
-                            </div>
-                        </div>
-                        {% elif job.tra_status == 'OBJECTION' %}
-                        <div style="background:#FEF2F2;border:1px solid #FECACA;padding:0.5rem 0.75rem;border-radius:6px;margin-top:0.4rem;">
-                            <div style="font-weight:800;font-size:0.78rem;color:#DC2626;">
-                                <i class="fa-solid fa-triangle-exclamation"></i> TRA Objection:
-                            </div>
-                            <div style="font-size:0.74rem;color:#991B1B;margin-top:0.15rem;">
-                                {{ job.tra_objection_notes }}
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
+            <!-- TBS Clearance -->
+            <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:1rem;">
+                <div style="font-size:0.82rem;font-weight:800;color:var(--brand-navy-900);margin-bottom:0.5rem;">
+                    3. TBS Standards Clearance
                 </div>
-
-                <div style="margin-top:1rem;border-top:1px solid #E2E8F0;padding-top:0.75rem;display:flex;gap:0.5rem;">
-                    {% if not is_ceo %}
-                        {% if job.tra_status == 'LODGED_76H' %}
-                        <button type="button" class="btn-header-action btn-primary" onclick="openRecordOutcomeModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.declaration_number }}')" style="width:100%;font-size:0.78rem;padding:0.45rem;justify-content:center;background:#1E3A8A;border-color:#1E3A8A;">
-                            <i class="fa-solid fa-clipboard-check"></i> Record TRA Outcome
-                        </button>
-                        {% elif job.tra_status == 'OBJECTION' %}
-                        <button type="button" class="btn-header-action btn-primary" onclick="openLodgeTaneswModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.customer.company_name|escapejs }}', '{{ job.declaration_number }}')" style="width:100%;font-size:0.78rem;padding:0.45rem;justify-content:center;background:#DC2626;border-color:#DC2626;">
-                            <i class="fa-solid fa-rotate"></i> Amend &amp; Re-lodge
-                        </button>
-                        {% elif job.tra_status == 'ACCEPTED' and job.duty_control_number %}
-                        <a href="{% url 'print_assessment_notice' job.id %}" target="_blank" class="btn-header-action btn-outline" style="flex:1;font-size:0.78rem;padding:0.45rem;justify-content:center;">
-                            <i class="fa-solid fa-print"></i> Assessment Notice
-                        </a>
-                        {% else %}
-                        <button type="button" class="btn-header-action btn-primary" onclick="openLodgeTaneswModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.customer.company_name|escapejs }}', '{{ job.declaration_number|default:'' }}')" style="width:100%;font-size:0.78rem;padding:0.45rem;justify-content:center;">
-                            <i class="fa-solid fa-stamp"></i> Lodge TANESW Entry
-                        </button>
-                        {% endif %}
-                    {% endif %}
+                <div style="font-size:0.78rem;color:#475569;margin-bottom:0.75rem;">
+                    Ref: <strong>{{ job.tbs_reference_no|default:"Pending" }}</strong> &bull; Hali: <strong>{{ job.get_tbs_status_display }}</strong>
                 </div>
-            </div>
-
-            <!-- Card 3: TBS Standards Clearance -->
-            <div style="background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:10px;padding:1.15rem;display:flex;flex-direction:column;justify-content:space-between;">
-                <div>
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-                        <span style="font-size:0.75rem;font-weight:800;color:var(--brand-navy-900);text-transform:uppercase;letter-spacing:0.04em;">
-                            <i class="fa-solid fa-vial-circle-check" style="color:var(--brand-primary);margin-right:0.3rem;"></i> 3. TBS Standards Clearance
-                        </span>
-                        {% if job.tbs_status == 'APPROVED' %}
-                        <span class="badge-pill badge-green" style="font-size:0.7rem;font-weight:800;">
-                            <i class="fa-solid fa-circle-check"></i> Released
-                        </span>
-                        {% elif job.tbs_status == 'QUERY' %}
-                        <span class="badge-pill badge-red" style="font-size:0.7rem;font-weight:800;">
-                            <i class="fa-solid fa-circle-question"></i> Query Raised
-                        </span>
-                        {% elif job.tbs_status == 'PENDING_APPROVAL' %}
-                        <span class="badge-pill badge-amber" style="font-size:0.7rem;font-weight:800;">
-                            <i class="fa-solid fa-clock"></i> Pending Approval
-                        </span>
-                        {% else %}
-                        <span class="badge-pill badge-gray" style="font-size:0.7rem;font-weight:800;">
-                            Not Lodged
-                        </span>
-                        {% endif %}
-                    </div>
-
-                    <div style="font-size:0.84rem;color:#334155;line-height:1.45;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
-                            <span style="font-size:0.75rem;color:#64748B;">TBS Reference No:</span>
-                            <strong style="font-family:monospace;font-size:0.88rem;color:#0F172A;">{{ job.tbs_reference_no|default:"Pending" }}</strong>
-                        </div>
-                        {% if job.tbs_approved_at %}
-                        <div style="font-size:0.74rem;color:#059669;margin-bottom:0.35rem;">
-                            <i class="fa-solid fa-check"></i> Approved: <strong>{{ job.tbs_approved_at|date:"d M Y H:i" }}</strong>
-                        </div>
-                        {% elif job.tbs_submitted_at %}
-                        <div style="font-size:0.74rem;color:#D97706;margin-bottom:0.35rem;">
-                            <i class="fa-solid fa-clock"></i> Submitted: <strong>{{ job.tbs_submitted_at|date:"d M Y H:i" }}</strong>
-                        </div>
-                        {% endif %}
-                        {% if job.tbs_notes %}
-                        <div style="font-size:0.74rem;background:#F1F5F9;padding:0.4rem 0.6rem;border-radius:6px;border:1px solid #CBD5E1;color:#1E293B;margin-top:0.3rem;">
-                            {{ job.tbs_notes }}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div style="margin-top:1rem;border-top:1px solid #E2E8F0;padding-top:0.75rem;display:flex;gap:0.5rem;">
-                    <a href="{% url 'print_tbs_letter' job.id %}" target="_blank" class="btn-header-action btn-outline" style="flex:1;font-size:0.78rem;padding:0.45rem;justify-content:center;">
-                        <i class="fa-solid fa-print"></i> TBS Letter
-                    </a>
-                    {% if not is_ceo %}
-                    <button type="button" class="btn-header-action btn-primary" onclick="openUpdateTbsModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.tbs_status }}', '{{ job.tbs_reference_no|default:''|escapejs }}', '{{ job.tbs_notes|default:''|escapejs }}')" style="flex:1;font-size:0.78rem;padding:0.45rem;justify-content:center;">
-                        <i class="fa-solid fa-pen-to-square"></i> Update TBS
-                    </button>
-                    {% endif %}
-                </div>
+                {% if not is_ceo %}
+                <button type="button" class="btn-header-action btn-primary" onclick="openUpdateTbsModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.tbs_status }}', '{{ job.tbs_reference_no|default:''|escapejs }}', '{{ job.tbs_notes|default:''|escapejs }}')" style="font-size:0.76rem;width:100%;justify-content:center;">
+                    <i class="fa-solid fa-pen-to-square"></i> Sasisha TBS
+                </button>
+                {% endif %}
             </div>
         </div>
     </div>
 
-    <!-- =========================================================================
-         TAB 4: CONTAINERS & FLEET TRACKING
-         ========================================================================= -->
+    <!-- TAB: CONTAINERS -->
     {% if can_track_containers or containers %}
-    <div id="tab-containers" class="tab-content-panel" style="padding:1.5rem;display:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem;">
-            <div>
-                <h4 style="font-family:var(--font-heading);font-size:1.05rem;color:var(--brand-navy-900);font-weight:700;">
-                    <i class="fa-solid fa-boxes-stacked" style="color:var(--brand-primary);margin-right:0.4rem;"></i>
-                    Individual Container Fleet &amp; Detention Tracking
-                </h4>
-                <p style="font-size:0.78rem;color:var(--text-muted);margin:0.2rem 0 0 0;">Manage truck &amp; driver allocation per container, gate pass, and empty return control.</p>
-            </div>
+    <div id="tab-containers" class="tab-content-panel" style="padding:1.25rem;display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+            <div style="font-weight:800;font-size:0.9rem;color:var(--brand-navy-900);">Usimamizi wa Makontena &amp; Demurrage</div>
             {% if not is_ceo %}
-            <button type="button" class="btn-header-action btn-primary" onclick="openModal('addContainerModal')" style="font-size:0.78rem;">
-                <i class="fa-solid fa-plus"></i> Add Container
+            <button type="button" class="btn-header-action btn-primary" onclick="openModal('addContainerModal')" style="font-size:0.76rem;">
+                <i class="fa-solid fa-plus"></i> Ongeza Kontena
             </button>
             {% endif %}
         </div>
-
         <div class="table-responsive">
-            <table class="modern-table">
+            <table class="modern-table" style="font-size:0.8rem;">
                 <thead>
                     <tr>
-                        <th>Container No &amp; Type</th>
-                        <th>Seal Number</th>
-                        <th>Truck &amp; Driver</th>
+                        <th>Namba ya Kontena</th>
+                        <th>Lori &amp; Dereva</th>
                         <th>Gate Pass</th>
-                        <th>Status</th>
-                        <th>Demurrage / Free Time</th>
-                        <th>Action</th>
+                        <th>Hali</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for c in containers %}
                     <tr>
-                        <td>
-                            <strong style="font-family:monospace;font-size:0.92rem;color:var(--brand-navy-900);">
-                                {{ c.container_number }}
-                            </strong>
-                            <div style="font-size:0.74rem;color:var(--text-muted);">{{ c.get_size_type_display }}</div>
-                        </td>
-                        <td>
-                            <span style="font-family:monospace;font-size:0.82rem;color:#334155;background:#F1F5F9;padding:0.2rem 0.5rem;border-radius:var(--radius-sm);">
-                                {{ c.seal_number|default:"Not sealed yet" }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if c.assigned_truck %}
-                            <div style="font-weight:700;font-size:0.85rem;color:var(--brand-navy-900);">
-                                <i class="fa-solid fa-truck" style="color:var(--brand-primary);"></i> {{ c.assigned_truck }}
-                            </div>
-                            <div style="font-size:0.74rem;color:var(--text-muted);">
-                                {{ c.assigned_driver.get_full_name|default:c.assigned_driver.username|default:"Unassigned driver" }}
-                            </div>
-                            {% else %}
-                            <span style="color:#DC2626;font-size:0.78rem;font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> No Truck Allocated</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div style="font-size:0.84rem;color:var(--text-main);">
-                                Pass: <strong>{{ c.gate_pass_number|default:"Pending" }}</strong>
-                            </div>
-                            <div style="font-size:0.74rem;color:var(--text-muted);">
-                                Out: {{ c.gate_out_at|date:"d M Y H:i"|default:"At Yard" }}
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge-pill {% if c.status == 'EMPTY_RETURNED' %}badge-completed{% elif c.status == 'DELIVERED' %}badge-completed{% elif c.status == 'IN_TRANSIT' %}badge-active{% elif c.status == 'LOADED' %}badge-delayed{% else %}badge-active{% endif %}" style="font-size:0.72rem;">
-                                {{ c.get_status_display }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if c.status == 'EMPTY_RETURNED' %}
-                            <span style="color:#059669;font-weight:700;font-size:0.76rem;">
-                                <i class="fa-solid fa-circle-check"></i> Returned (Safe)
-                            </span>
-                            {% elif c.gate_out_at %}
-                                {% if c.is_detention_overdue %}
-                                <div style="background:#FEE2E2;color:#991B1B;padding:0.25rem 0.5rem;border-radius:var(--radius-sm);font-weight:700;font-size:0.74rem;">
-                                    <i class="fa-solid fa-triangle-exclamation"></i> OVERDUE
-                                </div>
-                                {% else %}
-                                <div style="background:#FEF3C7;color:#92400E;padding:0.25rem 0.5rem;border-radius:var(--radius-sm);font-weight:600;font-size:0.74rem;">
-                                    <i class="fa-regular fa-clock"></i> {{ c.free_days_remaining }} days free left
-                                </div>
-                                {% endif %}
-                            {% else %}
-                            <span style="font-size:0.74rem;color:var(--text-muted);">Awaiting Gate Out</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if not is_ceo %}
-                            <button type="button" class="btn-header-action btn-outline" style="padding:0.3rem 0.6rem;font-size:0.74rem;" onclick="openUpdateContainerModal('{{ c.id }}', '{{ c.container_number }}', '{{ c.seal_number }}', '{{ c.assigned_truck }}', '{{ c.assigned_trailer }}', '{{ c.assigned_driver_id|default:"" }}', '{{ c.status }}', '{{ c.gate_pass_number }}', '{{ c.empty_return_depot }}', '{{ c.eir_number }}', '{{ c.empty_returned_date|date:"Y-m-d"|default:"" }}', '{% if c.is_deposit_refunded %}1{% else %}0{% endif %}')">
-                                <i class="fa-solid fa-pen-to-square"></i> Update
-                            </button>
-                            {% else %}
-                            <span class="badge-pill" style="background:#F1F5F9;color:#64748B;font-size:0.72rem;">Tracked</span>
-                            {% endif %}
-                        </td>
+                        <td><strong>{{ c.container_number }}</strong></td>
+                        <td>{{ c.assigned_truck|default:"Hajapangiwa" }}</td>
+                        <td>{{ c.gate_pass_number|default:"Pending" }}</td>
+                        <td><span class="badge-pill badge-active" style="font-size:0.7rem;">{{ c.get_status_display }}</span></td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="7" style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:0.85rem;">
-                            No container fleet records assigned to this job.
-                        </td>
-                    </tr>
+                    <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:1rem;">Hakuna makontena yaliyorekodiwa kwenye faili hili.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -938,30 +646,22 @@
     </div>
     {% endif %}
 
-    <!-- =========================================================================
-         TAB 5: ACTIVITY AUDIT TRAIL
-         ========================================================================= -->
+    <!-- TAB: AUDIT -->
     {% if can_view_audit %}
-    <div id="tab-audit" class="tab-content-panel" style="padding:1.5rem;display:none;">
-        <h4 style="font-family:var(--font-heading);font-size:1.05rem;color:var(--brand-navy-900);margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem;">
-            <i class="fa-solid fa-timeline" style="color:var(--brand-primary);"></i>
-            Complete Audit Trail (WHO - WHAT - WHEN)
-        </h4>
-        <div style="display:flex;flex-direction:column;gap:0.65rem;">
+    <div id="tab-audit" class="tab-content-panel" style="padding:1.25rem;display:none;">
+        <div style="font-weight:800;font-size:0.9rem;color:var(--brand-navy-900);margin-bottom:0.75rem;">
+            Kumbukumbu ya Mfumo (Audit Trail)
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.45rem;">
             {% for log in audit_logs %}
-            <div style="display:flex;align-items:flex-start;gap:1rem;padding:0.75rem 1rem;border-radius:8px;background:#F8FAFC;border-left:3px solid var(--brand-primary);">
-                <div style="font-size:0.8rem;color:var(--brand-primary);font-weight:700;width:125px;flex-shrink:0;">
-                    {{ log.timestamp|date:"d M Y H:i" }}
-                </div>
+            <div style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.6rem 0.85rem;border-radius:6px;background:#F8FAFC;border-left:3px solid var(--brand-primary);font-size:0.8rem;">
+                <div style="color:var(--brand-primary);font-weight:700;width:115px;flex-shrink:0;">{{ log.timestamp|date:"d M Y H:i" }}</div>
                 <div style="flex:1;">
-                    <div style="font-size:0.84rem;font-weight:700;color:var(--brand-navy-900);">
-                        {{ log.user.get_full_name|default:log.user.username|default:"System" }} &bull; <span style="color:var(--text-muted);font-weight:normal;">{{ log.action }}</span>
-                    </div>
-                    <div style="font-size:0.78rem;color:var(--text-main);margin-top:0.15rem;">{{ log.details }}</div>
+                    <strong>{{ log.user.get_full_name|default:log.user.username|default:"System" }}</strong>: {{ log.action }} - <span style="color:#64748B;">{{ log.details }}</span>
                 </div>
             </div>
             {% empty %}
-            <div style="text-align:center;color:var(--text-muted);padding:1.5rem;font-size:0.85rem;">No audit records logged yet.</div>
+            <div style="text-align:center;color:var(--text-muted);padding:1rem;">Hakuna kumbukumbu bado.</div>
             {% endfor %}
         </div>
     </div>

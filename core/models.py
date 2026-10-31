@@ -749,6 +749,7 @@ class ExpenseCategory(models.TextChoices):
     PORT_CHARGES = 'PORT_CHARGES', 'Port Charges (TPA / TICTS Wharfage & Stevedoring)'
     SHIPPING_LINE = 'SHIPPING_LINE', 'Shipping Line DO & Demurrage Charges'
     TRANSPORT = 'TRANSPORT', 'Transport, Trucking & Offloading'
+    FUEL = 'FUEL', 'Mafuta & Fuel Top-up (Petrol / Diesel / Field Run)'
     CUSTOMS_DUTY = 'CUSTOMS_DUTY', 'TRA Customs Duty & Taxes'
     DOCUMENTATION = 'DOCUMENTATION', 'Documentation, Permits & Inspection'
     PORT_HANDLING = 'PORT_HANDLING', 'Port Handling, Tally & Sundry'

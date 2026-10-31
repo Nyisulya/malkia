@@ -533,6 +533,74 @@ def job_detail_view(request, job_id):
     milestones = get_vehicle_tracking_milestones(job)
     completed_milestones_count = sum(1 for m in milestones if m['done'])
 
+    # Itemized Financial Costing Ledger (Billed vs Field Spending)
+    primary_invoice = invoices.first()
+    exp_by_cat = {}
+    for exp in expenses:
+        cat = exp.category
+        desc_lower = (exp.description or '').lower()
+        if 'mafuta' in desc_lower or 'fuel' in desc_lower or cat == 'FUEL':
+            cat = 'FUEL'
+        exp_by_cat[cat] = exp_by_cat.get(cat, Decimal('0.00')) + exp.amount
+
+    costing_items = [
+        {
+            'category': 'SHIPPING_LINE',
+            'title': 'Shipping Line D/O (Delivery Order)',
+            'icon': 'fa-ship',
+            'color': '#2563EB',
+            'billed': primary_invoice.amount_shipping_line_do if primary_invoice else Decimal('0.00'),
+            'actual': exp_by_cat.get('SHIPPING_LINE', Decimal('0.00')),
+        },
+        {
+            'category': 'PORT_CHARGES',
+            'title': 'Port, Wharfage & ICD Charges',
+            'icon': 'fa-anchor',
+            'color': '#0284C7',
+            'billed': primary_invoice.amount_port_charges if primary_invoice else Decimal('0.00'),
+            'actual': exp_by_cat.get('PORT_CHARGES', Decimal('0.00')),
+        },
+        {
+            'category': 'TRANSPORT',
+            'title': 'Transport & Trucking (Lori / Driver)',
+            'icon': 'fa-truck',
+            'color': '#D97706',
+            'billed': primary_invoice.amount_transport if primary_invoice else Decimal('0.00'),
+            'actual': exp_by_cat.get('TRANSPORT', Decimal('0.00')),
+        },
+        {
+            'category': 'FUEL',
+            'title': 'Mafuta & Field Fuel Top-up (Port Extra)',
+            'icon': 'fa-gas-pump',
+            'color': '#EA580C',
+            'billed': Decimal('0.00'),
+            'actual': exp_by_cat.get('FUEL', Decimal('0.00')),
+        },
+        {
+            'category': 'AGENCY_FEE',
+            'title': 'Clearing Agency Fee (Ada ya Uwakala)',
+            'icon': 'fa-handshake',
+            'color': '#16A34A',
+            'billed': primary_invoice.amount_clearing_agency_fee if primary_invoice else (job.contracted_revenue or Decimal('0.00')),
+            'actual': Decimal('0.00'),
+        },
+        {
+            'category': 'SUNDRY',
+            'title': 'Sundry, Tally & Port Handling',
+            'icon': 'fa-receipt',
+            'color': '#7C3AED',
+            'billed': primary_invoice.amount_sundry_charges if primary_invoice else Decimal('0.00'),
+            'actual': exp_by_cat.get('PORT_HANDLING', Decimal('0.00')) + exp_by_cat.get('DOCUMENTATION', Decimal('0.00')) + exp_by_cat.get('OTHER', Decimal('0.00')),
+        },
+    ]
+
+    for item in costing_items:
+        item['margin'] = item['billed'] - item['actual']
+
+    total_itemized_billed = sum(i['billed'] for i in costing_items)
+    total_itemized_actual = sum(i['actual'] for i in costing_items)
+    total_itemized_margin = total_itemized_billed - total_itemized_actual
+
     context = {
         'job': job,
         'milestones': milestones,
@@ -554,6 +622,11 @@ def job_detail_view(request, job_id):
         'user_can_advance_current': user_can_advance_current,
         'can_track_containers': can_track_containers,
         'client_duty_receipt': job.documents.filter(document_type='DUTY_PAYMENT_RECEIPT').order_by('-uploaded_at').first(),
+        'costing_items': costing_items,
+        'total_itemized_billed': total_itemized_billed,
+        'total_itemized_actual': total_itemized_actual,
+        'total_itemized_margin': total_itemized_margin,
+        'primary_invoice': primary_invoice,
     }
     return render(request, 'core/job_detail.html', context)
 
