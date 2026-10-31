@@ -1,29 +1,29 @@
 {% extends 'base.html' %}
 
-{% block title %}Client Files | Malkia C&F{% endblock %}
+{% block title %}Shipments Tracking | Malkia C&amp;F{% endblock %}
 
 {% block content %}
 <div class="page-header-box">
     <div>
-        <h2 class="page-title"><i class="fa-solid fa-folder-open" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Client Files</h2>
-        <p class="page-subtitle">Manage opened client files, received documents, and generated company forms (C41 &amp; TBS Letter).</p>
+        <h2 class="page-title"><i class="fa-solid fa-boxes-stacked" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Shipments Tracking</h2>
+        <p class="page-subtitle">Real-time consignment tracking across customs clearance, port logistics, and client deliveries.</p>
     </div>
     <div>
         {% if not is_ceo %}
         <a href="{% url 'job_create' %}" class="btn-header-action btn-primary">
-            <i class="fa-solid fa-plus"></i> 1. Receive Documents &amp; Open File
+            <i class="fa-solid fa-plus"></i> Open New File
         </a>
         {% endif %}
     </div>
 </div>
 
 <!-- FILTER CONTROLS BAR -->
-<div class="card-panel" style="padding:1.25rem;margin-bottom:1.5rem;background:#FFFFFF;">
-    <form method="GET" action="{% url 'jobs_list' %}" style="display:flex;align-items:center;flex-wrap:wrap;gap:1rem;">
-        <div style="flex:1;min-width:240px;">
-            <input type="text" name="q" class="form-control" placeholder="Search by File #, BL #, Chassis #, or Client Name..." value="{{ search_query }}">
+<div class="card-panel" style="padding:1rem 1.25rem;margin-bottom:1.5rem;background:#FFFFFF;">
+    <form method="GET" action="{% url 'jobs_list' %}" style="display:flex;align-items:center;flex-wrap:wrap;gap:0.85rem;">
+        <div style="flex:1;min-width:260px;">
+            <input type="text" name="q" class="form-control" placeholder="Search File #, BL #, Chassis #, or Client..." value="{{ search_query }}">
         </div>
-        <div style="width:200px;">
+        <div style="width:220px;">
             <select name="customer" class="form-control" onchange="this.form.submit()">
                 <option value="">All Clients</option>
                 {% for c in customers %}
@@ -31,12 +31,12 @@
                 {% endfor %}
             </select>
         </div>
-        <div>
-            <button type="submit" class="btn-header-action btn-primary" style="padding:0.65rem 1.25rem;">
+        <div style="display:flex;gap:0.5rem;">
+            <button type="submit" class="btn-header-action btn-primary" style="padding:0.6rem 1.2rem;">
                 <i class="fa-solid fa-filter"></i> Filter
             </button>
             {% if search_query or selected_status or selected_customer %}
-            <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline" style="padding:0.65rem 1rem;">
+            <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline" style="padding:0.6rem 1rem;">
                 Reset
             </a>
             {% endif %}
@@ -44,101 +44,132 @@
     </form>
 </div>
 
-<!-- FILES TABLE -->
-<div class="card-panel">
+<!-- SHIPMENTS TABLE (MATCHING DASHBOARD EXECUTIVE QUALITY) -->
+<div class="card-panel" style="padding:0;overflow:hidden;background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);">
     <div class="table-responsive">
         <table class="modern-table" data-page-size="10">
             <thead>
                 <tr>
-                    <th>{% if is_ceo or is_admin %}File No (MF/Year/#) &amp; BL{% else %}File Name (BL Number){% endif %}</th>
-                    <th>Client</th>
-                    <th>Chassis &amp; Vehicle</th>
-                    <th>TRA Mode (Duty / Bond)</th>
-                    <th>Client Docs</th>
-                    <th>Unified Pack (C41 + TBS + Scans)</th>
-                    <th>Box No</th>
-                    <th>Actions</th>
+                    <th style="min-width:160px;">File No &amp; BL</th>
+                    <th style="min-width:200px;">Client &amp; Cargo</th>
+                    <th style="min-width:220px;">Current Location &amp; Stage</th>
+                    <th style="min-width:130px;">Status</th>
+                    {% if can_view_financials %}
+                    <th style="min-width:150px;">Profit &amp; Margin</th>
+                    {% endif %}
+                    <th style="text-align:right;min-width:160px;">Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for job in jobs %}
                 <tr>
+                    <!-- 1. FILE NO & BL -->
                     <td>
-                        {% if is_ceo or is_admin %}
-                        <strong style="font-size:0.95rem;color:var(--brand-navy-900);">
+                        <strong style="font-family:var(--font-heading);font-size:0.95rem;color:var(--brand-navy-900);">
                             <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;">
                                 {{ job.job_number }}
                             </a>
                         </strong>
-                        <div style="font-size:0.8rem;font-weight:700;color:#0F172A;font-family:monospace;">BL: {{ job.bl_number|default:"—" }}</div>
-                        {% else %}
-                        <strong style="font-size:0.95rem;font-family:monospace;color:var(--brand-navy-900);">
-                            <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;">
-                                {{ job.staff_file_name }}
-                            </a>
-                        </strong>
-                        {% endif %}
-                        <div style="font-size:0.74rem;color:var(--text-muted);">{{ job.created_at|date:"d M Y" }}</div>
-                    </td>
-                    <td>
-                        <strong style="color:var(--text-main);">{{ job.customer.company_name }}</strong>
-                        <div style="font-size:0.75rem;color:var(--text-muted);">{{ job.customer.phone }} | TIN: {{ job.customer.tin_number|default:"—" }}</div>
-                    </td>
-                    <td>
-                        {% if job.chassis_number %}<div><strong>Chassis:</strong> <span style="font-family:monospace;">{{ job.chassis_number }}</span></div>{% endif %}
-                        <div style="font-size:0.75rem;color:var(--text-muted);">{{ job.cargo_description|default:"1 Motor Vehicle" }}</div>
-                    </td>
-                    <td>
-                        {% if job.clearance_mode == 'BOND' %}
-                        <span class="badge-pill" style="background:#FEF3C7;color:#92400E;border:1px solid #F59E0B;font-size:0.75rem;font-weight:800;">
-                            <i class="fa-solid fa-warehouse"></i> In-Bond
-                        </span>
-                        {% elif job.clearance_mode == 'EX_BOND' %}
-                        <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;font-size:0.75rem;font-weight:800;">
-                            <i class="fa-solid fa-unlock-keyhole"></i> Ex-Bond
-                        </span>
-                        {% else %}
-                        <span class="badge-pill" style="background:#ECFDF5;color:#065F46;border:1px solid #10B981;font-size:0.75rem;font-weight:800;">
-                            <i class="fa-solid fa-money-bill-transfer"></i> Direct Duty
-                        </span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <span class="badge-pill {% if job.received_docs_count == 5 %}badge-completed{% else %}badge-active{% endif %}">
-                            {{ job.received_docs_count }} / 5 Docs
-                        </span>
-                    </td>
-                    <td>
-                        <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
-                            <a href="{% url 'print_combined_pack' job.id %}" target="_blank" class="badge-pill" style="background:#0F172A;color:#FFFFFF;text-decoration:none;font-weight:800;font-size:0.73rem;">
-                                <i class="fa-solid fa-layer-group" style="color:#38BDF8;"></i> Full Pack
-                            </a>
-                            <a href="{% url 'print_c41_document' job.id %}" target="_blank" class="badge-pill" style="background:#DCFCE7;color:#166534;text-decoration:none;font-weight:700;font-size:0.73rem;">
-                                C41
-                            </a>
-                            <a href="{% url 'print_tbs_letter' job.id %}" target="_blank" class="badge-pill" style="background:#DBEAFE;color:#1D4ED8;text-decoration:none;font-weight:700;font-size:0.73rem;">
-                                TBS
-                            </a>
+                        <div style="font-size:0.78rem;font-weight:700;color:#0F172A;font-family:monospace;margin-top:2px;">
+                            BL: {{ job.bl_number|default:"—" }}
+                        </div>
+                        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">
+                            {{ job.created_at|date:"d M Y" }}
                         </div>
                     </td>
+
+                    <!-- 2. CLIENT & CARGO -->
                     <td>
-                        <span style="font-family:monospace;font-size:0.82rem;color:var(--text-muted);">{{ job.box_number|default:"—" }}</span>
+                        <strong style="color:var(--brand-navy-900);font-size:0.92rem;display:block;">
+                            {{ job.customer.company_name }}
+                        </strong>
+                        <div style="font-size:0.78rem;color:#475569;margin-top:3px;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">
+                            <span style="display:inline-flex;align-items:center;gap:0.25rem;color:#0369A1;font-weight:600;">
+                                <i class="fa-solid fa-car" style="font-size:0.72rem;"></i>
+                                {{ job.cargo_description|default:"1 Motor Vehicle"|truncatechars:26 }}
+                            </span>
+                            {% if job.chassis_number and job.chassis_number != "—" and job.chassis_number != "-" %}
+                            <span style="color:#CBD5E1;">&bull;</span>
+                            <span style="font-family:monospace;font-size:0.74rem;color:#475569;background:#F1F5F9;padding:1px 5px;border-radius:3px;">
+                                Chassis: {{ job.chassis_number }}
+                            </span>
+                            {% endif %}
+                        </div>
                     </td>
-                    <td style="white-space:nowrap;">
-                        <div style="display:flex;gap:0.4rem;align-items:center;">
-                            <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="padding:0.35rem 0.7rem;font-size:0.78rem;background:#16A34A;color:#FFFFFF;border:none;font-weight:800;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:0.35rem;box-shadow:0 1px 2px rgba(22,163,74,0.3);" title="Track 9 Clearance Milestones">
+
+                    <!-- 3. CURRENT LOCATION & STAGE -->
+                    <td>
+                        <div style="display:inline-flex;align-items:center;gap:0.45rem;background:#F8FAFC;padding:4px 8px;border-radius:6px;border:1px solid #E2E8F0;margin-bottom:4px;">
+                            <span style="font-size:0.72rem;font-weight:800;background:var(--brand-primary);color:#FFF;padding:2px 6px;border-radius:4px;white-space:nowrap;">
+                                Step {{ job.current_stage_number }}
+                            </span>
+                            <span style="font-size:0.82rem;font-weight:700;color:var(--brand-navy-900);white-space:nowrap;">
+                                {{ job.current_stage_display_name }}
+                            </span>
+                        </div>
+                        <div>
+                            {% if job.clearance_mode == 'BOND' %}
+                            <span class="badge-pill" style="background:#FEF3C7;color:#92400E;font-size:0.68rem;font-weight:800;">
+                                <i class="fa-solid fa-warehouse"></i> In-Bond
+                            </span>
+                            {% elif job.clearance_mode == 'EX_BOND' %}
+                            <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;font-size:0.68rem;font-weight:800;">
+                                <i class="fa-solid fa-unlock-keyhole"></i> Ex-Bond
+                            </span>
+                            {% else %}
+                            <span class="badge-pill" style="background:#ECFDF5;color:#065F46;font-size:0.68rem;font-weight:800;">
+                                <i class="fa-solid fa-money-bill-transfer"></i> Direct Duty
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+
+                    <!-- 4. STATUS -->
+                    <td>
+                        {% if job.status == 'DELAYED' %}
+                        <span class="badge-pill badge-delayed" style="font-weight:700;">
+                            <span class="badge-dot"></span> Delayed
+                        </span>
+                        {% elif job.status == 'COMPLETED' or job.status == 'CLOSED' %}
+                        <span class="badge-pill badge-completed" style="font-weight:700;">
+                            <span class="badge-dot"></span> Completed
+                        </span>
+                        {% else %}
+                        <span class="badge-pill badge-active" style="font-weight:700;">
+                            <span class="badge-dot"></span> On Track
+                        </span>
+                        {% endif %}
+                    </td>
+
+                    <!-- 5. PROFIT & MARGIN -->
+                    {% if can_view_financials %}
+                    <td>
+                        <strong class="{% if job.gross_margin > 0 %}text-profit-positive{% elif job.gross_margin < 0 %}text-profit-negative{% else %}text-muted{% endif %}" style="font-size:0.92rem;display:block;">
+                            TSh {{ job.gross_margin|floatformat:0 }}
+                        </strong>
+                        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:1px;">
+                            {{ job.gross_margin_percentage }}% margin
+                        </div>
+                    </td>
+                    {% endif %}
+
+                    <!-- 6. ACTIONS -->
+                    <td style="text-align:right;white-space:nowrap;">
+                        <div style="display:inline-flex;gap:0.4rem;align-items:center;">
+                            <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="padding:0.35rem 0.72rem;font-size:0.78rem;background:#16A34A;color:#FFFFFF;border:none;font-weight:800;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:0.32rem;box-shadow:0 1px 2px rgba(22,163,74,0.3);" title="Track 9 Clearance Milestones">
                                 <i class="fa-solid fa-route"></i> Track
                             </a>
-                            <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.78rem;border-radius:6px;">
-                                Open <i class="fa-solid fa-chevron-right"></i>
+                            <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.78rem;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:0.25rem;">
+                                File <i class="fa-solid fa-chevron-right" style="font-size:0.7rem;"></i>
                             </a>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" style="text-align:center;padding:2.5rem;color:var(--text-muted);">
-                        No files registered yet. Click <strong>'1. Receive Documents &amp; Open File'</strong> to begin.
+                    <td colspan="{% if can_view_financials %}6{% else %}5{% endif %}" style="text-align:center;padding:2.5rem;color:var(--text-muted);">
+                        <i class="fa-solid fa-boxes-stacked" style="font-size:2rem;color:#CBD5E1;display:block;margin-bottom:0.5rem;"></i>
+                        No shipments found matching the criteria.
                     </td>
                 </tr>
                 {% endfor %}
