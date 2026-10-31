@@ -7,3 +7,5 @@ openpyxl>=3.1.2
 
 Pillow>=10.0.0
 gunicorn>=21.2.0
+
+whitenoise>=6.6.0
