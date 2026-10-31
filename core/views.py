@@ -5005,8 +5005,9 @@ def client_track_api(request):
 def get_vehicle_tracking_milestones(job):
     """
     Computes the 9 simplified real-world vehicle clearing & forwarding milestones
-    enriched with exact duration/time taken, completed timestamps, and assigned officers.
-    Handles date vs datetime and timezone normalization safely.
+    strictly enforcing causal forward pipeline progression:
+    If a vehicle has reached Step N (e.g. Yard Arrival), all previous steps
+    (1 to N-1, including Gate Exit) are logically and physically COMPLETED.
     """
     import datetime
     from django.utils import timezone
@@ -5063,74 +5064,86 @@ def get_vehicle_tracking_milestones(job):
     log_users = {l.action: (l.user.get_full_name() or l.user.username) for l in logs}
     log_times = {l.action: l.timestamp for l in logs}
 
-    # Step 1: File Opening
+    # Determine maximum step reached based on physical milestones
+    max_step_reached = 1
+    if job.declaration_number or job.tanesw_lodged_at or log_times.get('TANESW_LODGED'):
+        max_step_reached = max(max_step_reached, 2)
+    if job.duty_paid or job.duty_payment_reference or (job.tra_status in ['ACCEPTED', 'OBJECTION']) or log_times.get('TRA_BOND_RELEASE_ACCEPTED') or log_times.get('DUTY_PAID'):
+        max_step_reached = max(max_step_reached, 3)
+    if job.delivery_order_number or log_times.get('DELIVERY_ORDER_RECORDED'):
+        max_step_reached = max(max_step_reached, 4)
+    if job.vehicle_inspection_done or job.stages.filter(stage_number=5, status='COMPLETED').exists() or log_times.get('PHYSICAL_VERIFICATION_PASSED'):
+        max_step_reached = max(max_step_reached, 5)
+    if job.port_invoice_number or log_times.get('PORT_INVOICE_PAID'):
+        max_step_reached = max(max_step_reached, 6)
+    if job.gate_pass_number or job.vehicle_dispatched_to_office or log_times.get('GATE_EXIT_RECORDED'):
+        max_step_reached = max(max_step_reached, 7)
+    if job.vehicle_arrived_at_office or job.box_number or log_times.get('YARD_ARRIVAL_RECORDED'):
+        max_step_reached = max(max_step_reached, 8)
+    if is_completed or job.delivered_date or job.proof_of_delivery_image:
+        max_step_reached = max(max_step_reached, 9)
+
+    # Effective current active stage
+    curr_stage = job.current_stage_number or 1
+    effective_stage = max(curr_stage, max_step_reached)
+
+    # CAUSAL INHERITANCE: If step K is reached or completed, all previous steps are done!
     s1_done = True
+    s2_done = bool(effective_stage >= 2 or max_step_reached >= 2 or is_completed)
+    s3_done = bool(effective_stage >= 3 or max_step_reached >= 3 or is_completed)
+    s4_done = bool(effective_stage >= 4 or max_step_reached >= 4 or is_completed)
+    s5_done = bool(effective_stage >= 5 or max_step_reached >= 5 or is_completed)
+    s6_done = bool(effective_stage >= 6 or max_step_reached >= 6 or is_completed)
+    s7_done = bool(effective_stage >= 7 or max_step_reached >= 7 or is_completed)
+    s8_done = bool(effective_stage >= 8 or max_step_reached >= 8 or is_completed)
+    s9_done = bool(is_completed or max_step_reached >= 9)
+
+    # Subtitles
     s1_sub = f"File Opened ({job.job_number})"
-    s1_officer = getattr(job.documentation_officer, 'get_full_name', lambda: None)() or log_users.get('OPEN_FILE_AND_SCAN_DOCS') or 'Amani Bakari (Doc Officer)'
-    s1_time = job.file_opened_at or (logs[0].timestamp if logs else job.created_at)
-    s1_duration = "Instant (Setup)"
-
-    # Step 2: Customs Declaration (TANSAD)
-    s2_done = bool(job.declaration_number or job.tanesw_lodged_at or job.tra_status in ['LODGED_76H', 'ACCEPTED', 'OBJECTION'] or is_completed)
     s2_sub = f"TANSAD #{job.declaration_number}" if job.declaration_number else ("Lodged in TANESW" if s2_done else "Pending Lodgement")
-    s2_officer = getattr(job.clearing_officer, 'get_full_name', lambda: None)() or log_users.get('TANESW_LODGED') or 'Rashid Nassor (Customs Declarer)'
-    s2_time = job.tanesw_lodged_at or log_times.get('TANESW_LODGED')
-    s2_duration = _calc_duration(s2_time, s1_time, default="2 mins")
-
-    # Step 3: TRA Duty Payment or In-Bond Clearance
     if is_bond:
         s3_title = "In-Bond Clearance"
-        s3_done = bool(job.tra_status == 'ACCEPTED' or job.duty_payment_reference or is_completed)
         s3_sub = f"In-Bond Approved ({job.duty_payment_reference or 'RO Approved'})" if s3_done else "Under Customs Bond"
     else:
         s3_title = "TRA Duty Payment"
-        s3_done = bool(job.duty_paid or job.duty_payment_date or is_completed)
         s3_sub = f"Duty Settled ({job.duty_payment_reference or 'Paid'})" if s3_done else "Pending Payment"
-    s3_officer = getattr(job.clearing_officer, 'get_full_name', lambda: None)() or log_users.get('TRA_BOND_RELEASE_ACCEPTED') or log_users.get('DUTY_PAID') or 'Rashid Nassor (Clearing Officer)'
-    s3_time = log_times.get('TRA_BOND_RELEASE_ACCEPTED') or log_times.get('DUTY_PAID') or job.duty_payment_date
-    s3_duration = _calc_duration(s3_time, s2_time, default=("57 mins" if s3_done else None))
-
-    # Step 4: Delivery Order (D/O)
-    s4_done = bool(job.delivery_order_number or is_completed)
-    s4_sub = f"D/O #{job.delivery_order_number}" if job.delivery_order_number else "Awaiting D/O"
-    s4_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Operations Officer'
-    s4_time = log_times.get('DELIVERY_ORDER_RECORDED')
-    s4_duration = _calc_duration(s4_time, s3_time, default=("1h 20m" if s4_done else None))
-
-    # Step 5: Physical Verification
-    has_verif = job.stages.filter(stage_number=5, status='COMPLETED').exists()
-    s5_done = bool(has_verif or job.vehicle_inspection_done or is_completed)
+    s4_sub = f"D/O #{job.delivery_order_number}" if job.delivery_order_number else ("D/O Released" if s4_done else "Awaiting D/O")
     s5_sub = "Customs Verified" if s5_done else "Awaiting Inspection"
-    s5_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Verification Inspector'
-    s5_time = log_times.get('PHYSICAL_VERIFICATION_PASSED')
-    s5_duration = _calc_duration(s5_time, s4_time, default=("3 hrs" if s5_done else None))
-
-    # Step 6: Port & ICD Charges
-    s6_done = bool(job.port_invoice_number or is_completed)
-    s6_sub = f"Invoice #{job.port_invoice_number}" if job.port_invoice_number else "Pending Port Invoice"
-    s6_officer = 'Port Finance & Accounts'
-    s6_time = log_times.get('PORT_INVOICE_PAID')
-    s6_duration = _calc_duration(s6_time, s5_time, default=("1.5 hrs" if s6_done else None))
-
-    # Step 7: Gate Exit & Inspection
-    s7_done = bool(job.gate_pass_number or job.vehicle_inspection_done or job.vehicle_dispatched_to_office or is_completed)
-    s7_sub = f"Gate Pass #{job.gate_pass_number}" if job.gate_pass_number else ("Gate Exited & Inspected" if s7_done else "At Port / ICD")
-    s7_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Gate Inspector'
-    s7_time = log_times.get('GATE_EXIT_RECORDED')
-    s7_duration = _calc_duration(s7_time, s6_time, default=("45 mins" if s7_done else None))
-
-    # Step 8: Malkia Yard Arrival
-    s8_done = bool(job.vehicle_arrived_at_office or is_completed)
+    s6_sub = f"Invoice #{job.port_invoice_number}" if job.port_invoice_number else ("Port Charges Settled" if s6_done else "Pending Port Invoice")
+    s7_sub = f"Gate Pass #{job.gate_pass_number}" if job.gate_pass_number else ("Gate Exited & Released" if s7_done else "At Port / ICD")
     s8_sub = f"At Malkia Yard ({job.box_number or 'Bay Parked'})" if s8_done else "In Transit to Yard"
-    s8_officer = getattr(job.driver, 'get_full_name', lambda: None)() or 'Transport Driver & Yard Master'
-    s8_time = log_times.get('YARD_ARRIVAL_RECORDED')
-    s8_duration = _calc_duration(s8_time, s7_time, default=("1 hr" if s8_done else None))
-
-    # Step 9: Customer Handover
-    s9_done = bool(is_completed or job.delivered_date or job.proof_of_delivery_image)
     s9_sub = f"Delivered ({job.received_by_name or 'POD Signed'})" if s9_done else "Pending Handover"
-    s9_officer = getattr(job.documentation_officer, 'get_full_name', lambda: None)() or 'Customer Delivery Officer'
+
+    # Officers
+    s1_officer = getattr(job.documentation_officer, 'get_full_name', lambda: None)() or log_users.get('OPEN_FILE_AND_SCAN_DOCS') or 'Amani Bakari (Doc Officer)'
+    s2_officer = getattr(job.clearing_officer, 'get_full_name', lambda: None)() or log_users.get('TANESW_LODGED') or 'Rashid Nassor (Customs Declarer)'
+    s3_officer = getattr(job.clearing_officer, 'get_full_name', lambda: None)() or log_users.get('TRA_BOND_RELEASE_ACCEPTED') or log_users.get('DUTY_PAID') or 'Rashid Nassor (Clearing Officer)'
+    s4_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Operations Officer'
+    s5_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Verification Inspector'
+    s6_officer = 'Port Finance & Accounts'
+    s7_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Gate Inspector'
+    s8_officer = getattr(job.driver, 'get_full_name', lambda: None)() or 'Transport Driver & Yard Master'
+    s9_officer = getattr(job.documentation_officer, 'get_full_name', lambda: None)() or 'Customer Service Officer'
+
+    # Timestamps & Durations
+    s1_time = job.file_opened_at or (logs[0].timestamp if logs else job.created_at)
+    s2_time = job.tanesw_lodged_at or log_times.get('TANESW_LODGED')
+    s3_time = log_times.get('TRA_BOND_RELEASE_ACCEPTED') or log_times.get('DUTY_PAID') or job.duty_payment_date
+    s4_time = log_times.get('DELIVERY_ORDER_RECORDED')
+    s5_time = log_times.get('PHYSICAL_VERIFICATION_PASSED')
+    s6_time = log_times.get('PORT_INVOICE_PAID')
+    s7_time = log_times.get('GATE_EXIT_RECORDED')
+    s8_time = log_times.get('YARD_ARRIVAL_RECORDED')
     s9_time = job.delivered_date
+
+    s1_duration = "Instant (Setup)"
+    s2_duration = _calc_duration(s2_time, s1_time, default=("2 mins" if s2_done else None))
+    s3_duration = _calc_duration(s3_time, s2_time, default=("57 mins" if s3_done else None))
+    s4_duration = _calc_duration(s4_time, s3_time, default=("1h 20m" if s4_done else None))
+    s5_duration = _calc_duration(s5_time, s4_time, default=("3 hrs" if s5_done else None))
+    s6_duration = _calc_duration(s6_time, s5_time, default=("1.5 hrs" if s6_done else None))
+    s7_duration = _calc_duration(s7_time, s6_time, default=("45 mins" if s7_done else None))
+    s8_duration = _calc_duration(s8_time, s7_time, default=("1 hr" if s8_done else None))
     s9_duration = _calc_duration(s9_time, s8_time, default=("Same Day" if s9_done else None))
 
     milestones = [
@@ -5145,7 +5158,7 @@ def get_vehicle_tracking_milestones(job):
         {'id': 9, 'name': 'Customer Handover', 'subtitle': s9_sub, 'done': s9_done, 'assigned_officer': s9_officer, 'completed_at': s9_time, 'time_taken': s9_duration, 'target_sla': 'Upon Request'},
     ]
 
-    # Automatic reactive status computation
+    # Assign active/current flag
     if is_completed:
         for m in milestones:
             m['done'] = True
