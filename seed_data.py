@@ -40,6 +40,7 @@ def seed_data():
     print("\n--- 2. Seeding Users & Roles ---")
     users_info = [
         ('admin', 'admin@malkiafreight.com', 'admin123', 'Super', 'Administrator', UserRole.ADMIN, 'System Administrator'),
+        ('nyisulya', 'nyisulya@gmail.com', 'admin123', 'System', 'Administrator', UserRole.ADMIN, 'IT Lead & DevOps Engineer'),
         ('ceo', 'ceo@malkiafreight.com', 'ceo123', 'Hashim', 'Mkwawa', UserRole.CEO, 'Managing Director & CEO'),
         ('operations_mgr', 'operations@malkiafreight.com', 'ops123', 'Grace', 'Mushi', UserRole.OPERATIONS_MGR, 'Operations Director'),
         ('doc_officer', 'docs@malkiafreight.com', 'doc123', 'Amani', 'Bakari', UserRole.DOC_OFFICER, 'Senior Documentation Officer'),
