@@ -1,5 +1,5 @@
 // Malkia Freight & Logistics - Global Seamless Async Interactivity Engine
-// Zero Full-Page Reload Architecture for Internal Actions, Modals & Tabs
+// Zero Full-Page Reload Architecture for Internal Actions, Modals, Tabs & Inner Buttons
 
 document.addEventListener('DOMContentLoaded', () => {
     initGlobalEngine();
@@ -13,7 +13,6 @@ function initGlobalEngine() {
             modal.classList.add('open');
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
-            // Auto focus first input if present
             setTimeout(() => {
                 const firstInput = modal.querySelector('input:not([type="hidden"]), select, textarea');
                 if (firstInput) firstInput.focus();
@@ -57,47 +56,46 @@ function initGlobalEngine() {
     });
 
     // 2. FLOATING TOAST NOTIFICATION SYSTEM
-    window.showToast = function(message, type = 'success', duration = 5000) {
+    window.showToast = function(message, type = 'success', duration = 4500) {
         let container = document.getElementById('globalToastContainer');
         if (!container) {
             container = document.createElement('div');
             container.id = 'globalToastContainer';
             container.className = 'global-toast-container';
+            container.style.cssText = 'position:fixed;top:1.25rem;right:1.25rem;z-index:999999;display:flex;flex-direction:column;gap:0.5rem;max-width:380px;pointer-events:none;';
             document.body.appendChild(container);
         }
 
         const toast = document.createElement('div');
         toast.className = `alert-toast floating-toast ${type}`;
-        
-        let iconHtml = '<i class="fa-solid fa-circle-check"></i>';
+        toast.style.cssText = 'pointer-events:auto;background:#FFFFFF;border-radius:10px;padding:0.85rem 1.15rem;box-shadow:0 10px 25px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:space-between;border-left:4px solid ' + 
+            (type === 'error' || type === 'danger' ? '#DC2626' : (type === 'warning' ? '#D97706' : (type === 'info' ? '#2563EB' : '#16A34A'))) + ';margin-bottom:0.4rem;animation:slideInRight 0.3s ease forwards;';
+
+        let iconColor = type === 'error' || type === 'danger' ? '#DC2626' : (type === 'warning' ? '#D97706' : (type === 'info' ? '#2563EB' : '#16A34A'));
+        let iconHtml = `<i class="fa-solid fa-circle-check" style="color:${iconColor};"></i>`;
         if (type === 'error' || type === 'danger') {
-            iconHtml = '<i class="fa-solid fa-circle-exclamation"></i>';
+            iconHtml = `<i class="fa-solid fa-circle-exclamation" style="color:${iconColor};"></i>`;
         } else if (type === 'warning') {
-            iconHtml = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            iconHtml = `<i class="fa-solid fa-triangle-exclamation" style="color:${iconColor};"></i>`;
         } else if (type === 'info') {
-            iconHtml = '<i class="fa-solid fa-circle-info"></i>';
+            iconHtml = `<i class="fa-solid fa-circle-info" style="color:${iconColor};"></i>`;
         }
 
         toast.innerHTML = `
-            <div style="display:flex;align-items:center;gap:0.6rem;">
-                <span style="font-size:1.1rem;">${iconHtml}</span>
-                <span style="font-weight:600;font-size:0.88rem;">${message}</span>
+            <div style="display:flex;align-items:center;gap:0.65rem;">
+                <span style="font-size:1.15rem;display:flex;">${iconHtml}</span>
+                <span style="font-weight:700;font-size:0.85rem;color:#0F172A;">${message}</span>
             </div>
-            <button type="button" style="background:none;border:none;cursor:pointer;color:inherit;font-size:1.2rem;padding:0 0.3rem;margin-left:0.75rem;opacity:0.75;" onclick="this.closest('.alert-toast').remove()">&times;</button>
+            <button type="button" style="background:none;border:none;cursor:pointer;color:#94A3B8;font-size:1.25rem;padding:0 0.35rem;margin-left:0.75rem;line-height:1;" onclick="this.closest('.alert-toast').remove()">&times;</button>
         `;
 
         container.appendChild(toast);
 
-        // Slide in animation
-        requestAnimationFrame(() => {
-            toast.classList.add('toast-visible');
-        });
-
-        // Auto dismiss after duration
         setTimeout(() => {
-            toast.classList.remove('toast-visible');
-            toast.classList.add('toast-hiding');
-            setTimeout(() => toast.remove(), 400);
+            toast.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(20px)';
+            setTimeout(() => toast.remove(), 350);
         }, duration);
     };
 
@@ -113,12 +111,10 @@ function initGlobalEngine() {
 
     // 3. TAB SWITCHING ENGINE (ZERO RELOAD)
     window.switchTab = function(tabId, groupClass = 'tab-content-panel', navClass = 'tab-nav-btn') {
-        // Hide all panels in this group
         document.querySelectorAll('.' + groupClass).forEach(el => {
             el.style.display = 'none';
         });
 
-        // Deactivate all nav buttons in this group
         document.querySelectorAll('.' + navClass).forEach(btn => {
             btn.classList.remove('active');
             if (btn.classList.contains('profile-tab-btn')) {
@@ -127,13 +123,11 @@ function initGlobalEngine() {
             }
         });
 
-        // Show target panel
         const activeTab = document.getElementById(tabId);
         if (activeTab) {
             activeTab.style.display = 'block';
         }
 
-        // Activate button
         const activeBtn = document.querySelector(`[data-target="${tabId}"]`);
         if (activeBtn) {
             activeBtn.classList.add('active');
@@ -161,7 +155,6 @@ function initGlobalEngine() {
         }
     };
 
-    // Close sidebar drawer on link click on mobile
     document.querySelectorAll('.app-sidebar .nav-item a').forEach(link => {
         link.addEventListener('click', () => {
             if (window.innerWidth <= 900) {
@@ -184,10 +177,13 @@ function initGlobalEngine() {
         });
     }
 
-    // 7. GLOBAL ASYNC FORM SUBMISSION INTERCEPTOR
+    // 7. GLOBAL ASYNC FORM SUBMISSION INTERCEPTOR (POST & GET)
     setupGlobalFormInterceptor();
 
-    // 8. ZERO-RELOAD TABLE PAGINATION ENGINE
+    // 8. INNER LINK SPA NAVIGATOR (ZERO PAGE RELOAD FOR INNER BUTTONS)
+    setupInnerLinkInterceptor();
+
+    // 9. TABLE PAGINATION ENGINE
     window.initTablePagination();
 }
 
@@ -197,20 +193,326 @@ function rebindDynamicElements() {
         el.style.width = el.getAttribute('data-width') + '%';
     });
 
-    // Close buttons on toasts
     document.querySelectorAll('.alert-toast button').forEach(btn => {
         btn.onclick = function() {
             this.closest('.alert-toast').remove();
         };
     });
 
-    // Re-initialize table pagination after dynamic updates
     if (window.initTablePagination) {
         window.initTablePagination();
     }
 }
 
-// 8. ZERO-RELOAD UNIVERSAL TABLE PAGINATION ENGINE
+// Top visual progress bar
+function showTopProgressBar() {
+    let bar = document.getElementById('globalTopProgressBar');
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'globalTopProgressBar';
+        bar.style.cssText = 'position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#2563EB,#10B981,#38BDF8);z-index:9999999;transition:width 0.25s ease;width:0%;box-shadow:0 0 10px rgba(37,99,235,0.7);';
+        document.body.appendChild(bar);
+    }
+    bar.style.opacity = '1';
+    bar.style.width = '35%';
+    setTimeout(() => { if (bar && bar.style.width === '35%') bar.style.width = '75%'; }, 120);
+}
+
+function hideTopProgressBar() {
+    const bar = document.getElementById('globalTopProgressBar');
+    if (bar) {
+        bar.style.width = '100%';
+        setTimeout(() => {
+            bar.style.opacity = '0';
+            setTimeout(() => {
+                bar.style.width = '0%';
+            }, 300);
+        }, 150);
+    }
+}
+
+// Execute inline scripts within dynamically loaded DOM elements
+function executeScripts(container) {
+    if (!container) return;
+    const scripts = container.querySelectorAll('script');
+    scripts.forEach(oldScript => {
+        const newScript = document.createElement('script');
+        Array.from(oldScript.attributes).forEach(attr => {
+            newScript.setAttribute(attr.name, attr.value);
+        });
+        newScript.textContent = oldScript.textContent;
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+    });
+}
+
+// Update sidebar active link state dynamically
+function updateActiveSidebarNav(url) {
+    try {
+        const pathname = new URL(url, window.location.origin).pathname;
+        document.querySelectorAll('.app-sidebar .nav-item').forEach(item => {
+            const link = item.querySelector('a');
+            if (!link) return;
+            const linkPath = new URL(link.href, window.location.origin).pathname;
+            if (linkPath === pathname || (pathname.startsWith('/jobs/') && linkPath === '/jobs/')) {
+                item.classList.add('active');
+            } else if (pathname === linkPath) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    } catch(e) {}
+}
+
+// Seamless Page Loader Engine (No full-page reload)
+let isNavigating = false;
+window.loadPageSeamlessly = async function(url, pushState = true) {
+    if (isNavigating) return;
+    isNavigating = true;
+    showTopProgressBar();
+
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (!response.ok) {
+            window.location.href = url;
+            return;
+        }
+
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        if (doc.title) {
+            document.title = doc.title;
+        }
+
+        const newContent = doc.querySelector('.page-content');
+        const currentContent = document.querySelector('.page-content');
+
+        if (newContent && currentContent) {
+            currentContent.style.opacity = '0.35';
+            currentContent.style.transition = 'opacity 0.12s ease';
+
+            setTimeout(() => {
+                currentContent.innerHTML = newContent.innerHTML;
+                executeScripts(currentContent);
+                currentContent.style.opacity = '1';
+
+                rebindDynamicElements();
+                window.closeAllModals();
+
+                window.scrollTo({ top: 0, behavior: 'instant' });
+            }, 80);
+        } else {
+            window.location.href = url;
+            return;
+        }
+
+        updateActiveSidebarNav(url);
+
+        if (pushState) {
+            window.history.pushState({ url: url }, doc.title || '', url);
+        }
+
+    } catch (err) {
+        console.error('Seamless Navigation Error:', err);
+        window.location.href = url;
+    } finally {
+        isNavigating = false;
+        hideTopProgressBar();
+    }
+};
+
+// 8. INNER LINK SPA NAVIGATOR
+function setupInnerLinkInterceptor() {
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (!link) return;
+
+        // Skip sidebar links (allow normal navigation as user requested: "labda kama sidebar")
+        if (link.closest('.app-sidebar')) return;
+
+        // Skip target="_blank", print preview links, downloads
+        if (link.target === '_blank' || link.hasAttribute('download')) return;
+        if (link.getAttribute('data-no-ajax') === 'true' || link.getAttribute('data-native') === 'true') return;
+
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('tel:') || href.startsWith('mailto:')) return;
+        if (href.includes('/logout/') || href.includes('/static/') || href.includes('/media/')) return;
+
+        // Same origin only
+        if (link.origin !== window.location.origin) return;
+
+        // Intercept inner link and load without page refresh!
+        e.preventDefault();
+        window.loadPageSeamlessly(link.href, true);
+    });
+
+    // Handle Browser Back & Forward buttons
+    window.addEventListener('popstate', (e) => {
+        const targetUrl = (e.state && e.state.url) ? e.state.url : window.location.href;
+        window.loadPageSeamlessly(targetUrl, false);
+    });
+}
+
+// 7. GLOBAL ASYNC FORM SUBMISSION INTERCEPTOR
+function setupGlobalFormInterceptor() {
+    let lastSubmitter = null;
+
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[type="submit"], input[type="submit"]');
+        if (btn) {
+            lastSubmitter = btn;
+        }
+    }, true);
+
+    document.addEventListener('submit', async (e) => {
+        const form = e.target;
+        if (!form || form.tagName !== 'FORM') return;
+
+        if (form.getAttribute('data-no-ajax') === 'true') return;
+
+        const action = form.getAttribute('action') || window.location.href;
+        if (action.includes('/login/') || action.includes('/logout/')) return;
+
+        const method = (form.getAttribute('method') || 'GET').toUpperCase();
+
+        // Handle GET search/filter forms seamlessly without full page refresh!
+        if (method === 'GET') {
+            e.preventDefault();
+            const url = new URL(action, window.location.origin);
+            const formData = new FormData(form);
+            for (const [key, val] of formData.entries()) {
+                if (val) {
+                    url.searchParams.set(key, val);
+                } else {
+                    url.searchParams.delete(key);
+                }
+            }
+            window.loadPageSeamlessly(url.toString(), true);
+            return;
+        }
+
+        // Handle POST action & modal forms seamlessly!
+        e.preventDefault();
+
+        const submitBtn = lastSubmitter || form.querySelector('button[type="submit"]');
+        let originalBtnHtml = '';
+        if (submitBtn) {
+            originalBtnHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        }
+
+        showTopProgressBar();
+
+        try {
+            const formData = new FormData(form);
+
+            if (lastSubmitter && lastSubmitter.name && lastSubmitter.value) {
+                formData.append(lastSubmitter.name, lastSubmitter.value);
+            }
+
+            const response = await fetch(action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const contentType = response.headers.get('content-type') || '';
+            
+            if (contentType.includes('application/json')) {
+                const data = await response.json();
+                if (data.success) {
+                    window.showToast(data.message || 'Action completed successfully!', 'success');
+                    window.closeAllModals();
+                    form.reset();
+                } else {
+                    window.showToast(data.error || 'An error occurred, please try again.', 'error');
+                }
+            } else {
+                const responseHtml = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(responseHtml, 'text/html');
+
+                // Extract Flash Messages and show them as floating toasts
+                const messages = doc.querySelectorAll('.toast-messages-container .alert-toast');
+                let foundMessage = false;
+                messages.forEach(msg => {
+                    const text = msg.querySelector('span') ? msg.querySelector('span').textContent.trim() : msg.textContent.trim();
+                    let type = 'success';
+                    if (msg.classList.contains('error') || msg.classList.contains('danger')) type = 'error';
+                    else if (msg.classList.contains('warning')) type = 'warning';
+                    else if (msg.classList.contains('info')) type = 'info';
+
+                    window.showToast(text, type);
+                    foundMessage = true;
+                });
+
+                if (!foundMessage && response.ok) {
+                    window.showToast('Action completed successfully!', 'success');
+                }
+
+                // Close all open modals immediately
+                window.closeAllModals();
+
+                // Seamlessly update .page-content without page refresh!
+                const newContent = doc.querySelector('.page-content');
+                const currentContent = document.querySelector('.page-content');
+                if (newContent && currentContent) {
+                    const newMessages = newContent.querySelector('.toast-messages-container');
+                    if (newMessages) newMessages.remove();
+
+                    currentContent.innerHTML = newContent.innerHTML;
+                    executeScripts(currentContent);
+                }
+
+                if (doc.title) {
+                    document.title = doc.title;
+                }
+
+                // Update URL history without page reload
+                if (response.url && response.url !== window.location.href) {
+                    window.history.pushState({ url: response.url }, doc.title || '', response.url);
+                    updateActiveSidebarNav(response.url);
+                }
+
+                // Update sidebar badges from response HTML
+                const newBadges = doc.querySelectorAll('.app-sidebar .nav-badge');
+                newBadges.forEach(badge => {
+                    const parentHref = badge.closest('a')?.getAttribute('href');
+                    if (parentHref) {
+                        const currentBadge = document.querySelector(`.app-sidebar a[href="${parentHref}"] .nav-badge`);
+                        if (currentBadge) {
+                            currentBadge.textContent = badge.textContent;
+                        }
+                    }
+                });
+
+                rebindDynamicElements();
+            }
+        } catch (error) {
+            console.error('AJAX Action Error:', error);
+            window.showToast('Unable to connect to system: ' + error.message, 'error');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+            }
+            lastSubmitter = null;
+            hideTopProgressBar();
+        }
+    });
+}
+
+// 9. ZERO-RELOAD UNIVERSAL TABLE PAGINATION ENGINE
 window.initTablePagination = function() {
     const tables = document.querySelectorAll('table.modern-table, table.containers-table, table.data-table, table[data-paginate="true"]');
     
@@ -218,7 +520,6 @@ window.initTablePagination = function() {
         const tbody = table.querySelector('tbody');
         if (!tbody) return;
 
-        // Determine page size (default from data-page-size or 10)
         let pageSize = parseInt(table.getAttribute('data-page-size') || '10', 10);
         if (isNaN(pageSize) || pageSize < 1) pageSize = 10;
 
@@ -228,7 +529,6 @@ window.initTablePagination = function() {
         }
         table.dataset.pageSize = pageSize.toString();
 
-        // Create or locate pagination toolbar directly beneath table container
         const parentWrap = table.closest('.table-responsive') || table.parentElement;
         let toolbar = parentWrap.nextElementSibling;
         if (!toolbar || !toolbar.classList.contains('table-pagination-toolbar')) {
@@ -238,7 +538,6 @@ window.initTablePagination = function() {
         }
         table._paginationToolbar = toolbar;
 
-        // Perform initial pagination
         window.repaginateTable(table);
     });
 };
@@ -251,12 +550,10 @@ window.repaginateTable = function(table, targetPage) {
     const toolbar = table._paginationToolbar || (table.closest('.table-responsive') || table.parentElement)?.nextElementSibling;
     if (!toolbar || !toolbar.classList.contains('table-pagination-toolbar')) return;
 
-    // Get all content rows (exclude empty state placeholders)
     const allRows = Array.from(tbody.querySelectorAll('tr')).filter(row => {
         return !row.querySelector('td[colspan]') && row.id !== 'noResultsRow';
     });
 
-    // Active rows are those not marked as hidden by an active filter/search
     const activeRows = allRows.filter(row => {
         return row.dataset.hiddenByFilter !== 'true' && row.getAttribute('data-filter-hidden') !== 'true';
     });
@@ -270,7 +567,6 @@ window.repaginateTable = function(table, targetPage) {
     if (currentPage > totalPages) currentPage = totalPages;
     table.dataset.currentPage = currentPage.toString();
 
-    // Show/hide rows for the current page
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = Math.min(startIndex + pageSize, totalItems);
 
@@ -282,7 +578,6 @@ window.repaginateTable = function(table, targetPage) {
         }
     });
 
-    // Toggle empty row visibility
     const emptyRow = tbody.querySelector('tr td[colspan]')?.parentElement || tbody.querySelector('#noResultsRow');
     if (emptyRow) {
         emptyRow.style.display = (totalItems === 0) ? '' : 'none';
@@ -298,7 +593,6 @@ window.repaginateTable = function(table, targetPage) {
         return;
     }
 
-    // Build pagination controls HTML
     let numbersHtml = '';
     const maxVisiblePages = 5;
     let startPage = Math.max(1, currentPage - 2);
@@ -342,7 +636,6 @@ window.repaginateTable = function(table, targetPage) {
         </div>
     `;
 
-    // Attach listeners
     toolbar.querySelector('.pg-prev')?.addEventListener('click', (e) => {
         e.preventDefault();
         if (currentPage > 1) {
@@ -367,141 +660,3 @@ window.repaginateTable = function(table, targetPage) {
         });
     });
 };
-
-// Global AJAX Form Interceptor: prevents full-page reloads on all internal action forms
-function setupGlobalFormInterceptor() {
-    let lastSubmitter = null;
-
-    // Track which submit button was clicked (to get name/value e.g. decision="APPROVE")
-    document.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[type="submit"], input[type="submit"]');
-        if (btn) {
-            lastSubmitter = btn;
-        }
-    }, true);
-
-    document.addEventListener('submit', async (e) => {
-        const form = e.target;
-        if (!form || form.tagName !== 'FORM') return;
-
-        // Check if form should bypass AJAX (e.g. login, logout, explicit data-no-ajax)
-        if (form.getAttribute('data-no-ajax') === 'true') return;
-        
-        const method = (form.getAttribute('method') || 'GET').toUpperCase();
-        if (method !== 'POST') return; // Let GET search forms work or handle separately
-
-        const action = form.getAttribute('action') || window.location.href;
-        if (action.includes('/login/') || action.includes('/logout/')) return;
-
-        // Intercept form submission!
-        e.preventDefault();
-
-        // Get submit button and show loading state
-        const submitBtn = lastSubmitter || form.querySelector('button[type="submit"]');
-        let originalBtnHtml = '';
-        if (submitBtn) {
-            originalBtnHtml = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
-        }
-
-        try {
-            const formData = new FormData(form);
-
-            // Include the clicked button's name & value if applicable (e.g. name="decision" value="APPROVE")
-            if (lastSubmitter && lastSubmitter.name && lastSubmitter.value) {
-                formData.append(lastSubmitter.name, lastSubmitter.value);
-            }
-
-            const response = await fetch(action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            // Check if response is redirected to another page (e.g., job creation redirecting to job detail)
-            if (response.redirected && response.url && !response.url.endsWith(window.location.pathname)) {
-                // If it redirected to a completely different URL, navigate cleanly
-                window.location.href = response.url;
-                return;
-            }
-
-            const contentType = response.headers.get('content-type') || '';
-            
-            if (contentType.includes('application/json')) {
-                const data = await response.json();
-                if (data.success) {
-                    window.showToast(data.message || 'Action completed successfully!', 'success');
-                    window.closeAllModals();
-                    form.reset();
-                } else {
-                    window.showToast(data.error || 'An error occurred, please try again.', 'error');
-                }
-            } else {
-                // HTML Response from Django view (rendered page after redirect/render)
-                const responseHtml = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(responseHtml, 'text/html');
-
-                // 1. Extract Flash Messages and show them as floating toasts
-                const messages = doc.querySelectorAll('.toast-messages-container .alert-toast');
-                let foundMessage = false;
-                messages.forEach(msg => {
-                    const text = msg.querySelector('span') ? msg.querySelector('span').textContent.trim() : msg.textContent.trim();
-                    let type = 'success';
-                    if (msg.classList.contains('error') || msg.classList.contains('danger')) type = 'error';
-                    else if (msg.classList.contains('warning')) type = 'warning';
-                    else if (msg.classList.contains('info')) type = 'info';
-
-                    window.showToast(text, type);
-                    foundMessage = true;
-                });
-
-                // Default success toast if no message container in response
-                if (!foundMessage && response.ok) {
-                    window.showToast('Information updated successfully!', 'success');
-                }
-
-                // 2. Close any open modals
-                window.closeAllModals();
-
-                // 3. Seamlessly update .page-content with new state without page refresh
-                const newContent = doc.querySelector('.page-content');
-                const currentContent = document.querySelector('.page-content');
-                if (newContent && currentContent) {
-                    // Remove old messages from newly inserted content to avoid duplication (since toasts are showing)
-                    const newMessages = newContent.querySelector('.toast-messages-container');
-                    if (newMessages) newMessages.remove();
-
-                    currentContent.innerHTML = newContent.innerHTML;
-                }
-
-                // 4. Update sidebar badges from response HTML
-                const newBadges = doc.querySelectorAll('.app-sidebar .nav-badge');
-                newBadges.forEach(badge => {
-                    const parentHref = badge.closest('a')?.getAttribute('href');
-                    if (parentHref) {
-                        const currentBadge = document.querySelector(`.app-sidebar a[href="${parentHref}"] .nav-badge`);
-                        if (currentBadge) {
-                            currentBadge.textContent = badge.textContent;
-                        }
-                    }
-                });
-
-                // 5. Rebind dynamic elements (progress bars, tabs, listeners)
-                rebindDynamicElements();
-            }
-        } catch (error) {
-            console.error('AJAX Action Error:', error);
-            window.showToast('Unable to connect to system: ' + error.message, 'error');
-        } finally {
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnHtml;
-            }
-            lastSubmitter = null;
-        }
-    });
-}
