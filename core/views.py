@@ -11499,44 +11499,42 @@ def robots_txt_view(request):
 
 def sitemap_xml_view(request):
     """
-    Serves /sitemap.xml with multilingual hreflang annotations for Google Search Console & Bing Webmaster Tools.
+    Serves /sitemap.xml and /sitemap-main.xml with strict Sitemaps 0.9 schema
+    (matching the exact domain host so Google Search Console URL-prefix properties validate 100%).
     """
-    canonical_domain = SystemConfig.get_value('SEO_CANONICAL_DOMAIN', 'https://malkiacargowave.com').rstrip('/')
-    portal_domain = SystemConfig.get_value('SEO_PORTAL_DOMAIN', 'https://portal.malkiacargowave.com').rstrip('/')
+    host = request.get_host().lower()
+    if 'portal.malkiacargowave.com' in host:
+        base_domain = 'https://portal.malkiacargowave.com'
+    else:
+        base_domain = SystemConfig.get_value('SEO_CANONICAL_DOMAIN', 'https://malkiacargowave.com').rstrip('/')
+
     today_iso = timezone.now().strftime('%Y-%m-%d')
 
     xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
-    <url>
-        <loc>{canonical_domain}/</loc>
-        <lastmod>{today_iso}</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>1.0</priority>
-        <xhtml:link rel="alternate" hreflang="sw" href="{canonical_domain}/"/>
-        <xhtml:link rel="alternate" hreflang="en" href="{canonical_domain}/?lang=en"/>
-        <xhtml:link rel="alternate" hreflang="x-default" href="{canonical_domain}/"/>
-    </url>
-    <url>
-        <loc>{canonical_domain}/website/</loc>
-        <lastmod>{today_iso}</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc>{canonical_domain}/portal/</loc>
-        <lastmod>{today_iso}</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc>{portal_domain}/portal/</loc>
-        <lastmod>{today_iso}</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.8</priority>
-    </url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{base_domain}/</loc>
+    <lastmod>{today_iso}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>{base_domain}/website/</loc>
+    <lastmod>{today_iso}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>{base_domain}/portal/</loc>
+    <lastmod>{today_iso}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>"""
-    return HttpResponse(xml_content, content_type="application/xml; charset=utf-8")
+    resp = HttpResponse(xml_content.strip(), content_type="application/xml; charset=utf-8")
+    resp["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    resp["X-Robots-Tag"] = "noindex"
+    return resp
 
 
 def bing_site_auth_xml_view(request):

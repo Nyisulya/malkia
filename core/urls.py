@@ -99,6 +99,7 @@ urlpatterns = [
     path('website/', views.public_website_view, name='public_website'),
     path('robots.txt', views.robots_txt_view, name='robots_txt'),
     path('sitemap.xml', views.sitemap_xml_view, name='sitemap_xml'),
+    path('sitemap-main.xml', views.sitemap_xml_view, name='sitemap_main_xml'),
     path('BingSiteAuth.xml', views.bing_site_auth_xml_view, name='bing_site_auth_xml'),
     path('google<str:token>.html', views.google_verification_file_view, name='google_verification_file'),
     path('indexnow-key.txt', views.indexnow_key_txt_view, name='indexnow_key_txt'),
