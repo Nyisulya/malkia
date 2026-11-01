@@ -1,1608 +1,3162 @@
-{% extends 'base.html' %}
-
-{% block title %}Executive Live Dashboard | Malkia C&F{% endblock %}
-
-{% block content %}
-<div class="page-header-box">
-    <div>
-        {% if is_doc %}
-        <h2 class="page-title"><i class="fa-solid fa-folder-open" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Documentation & Intake Command Center</h2>
-        <p class="page-subtitle">Real-time status of cargo documents intake, digital file opening, and customs handover.</p>
-        {% elif is_ops %}
-        <h2 class="page-title"><i class="fa-solid fa-clipboard-check" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Operations Command Center</h2>
-        <p class="page-subtitle">Active shipments monitoring, incoming intake approvals, port operations, and SLA control.</p>
-        {% elif is_clearing %}
-        <h2 class="page-title"><i class="fa-solid fa-stamp" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Customs Clearing & TANCIS Command Center</h2>
-        <p class="page-subtitle">Declaration lodgement, duty payment verification, and port release orders.</p>
-        {% elif is_port %}
-        <h2 class="page-title"><i class="fa-solid fa-anchor" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Port Operations & Field Command Center</h2>
-        <p class="page-subtitle">Vessel arrivals, physical verification, port wharfage invoices, and gate release.</p>
-        {% elif is_finance %}
-        <h2 class="page-title"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Finance & Accounts Command Center</h2>
-        <p class="page-subtitle">Disbursements, client invoicing, port fees reconciliation, and collections.</p>
-        {% else %}
-        <h2 class="page-title">CEO Operations & Financial Command Center</h2>
-        <p class="page-subtitle">Real-time status of shipments, port clearance, logistics pipeline, and profitability.</p>
-        {% endif %}
-    </div>
-    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-        {% if is_ceo or is_admin or is_finance or is_ops %}
-        <a href="{% url 'export_daily_report_excel' %}" class="btn-header-action btn-outline" style="background:#F0FDF4;border-color:#86EFAC;color:#166534;" title="Download Daily Excel Report (Daily Finance, Operations & CEO Summary)">
-            <i class="fa-solid fa-file-excel" style="color:#16A34A;"></i> Export Daily Excel
-        </a>
-
-        {% endif %}
-        {% if is_clearing %}
-        <a href="{% url 'customs_assessments' %}?filter=awaiting" class="btn-header-action btn-outline">
-            <i class="fa-solid fa-stamp"></i> Assessments ({{ awaiting_assessment_count }})
-        </a>
-        <a href="{% url 'customs_pending_declarations' %}" class="btn-header-action btn-primary">
-            <i class="fa-solid fa-file-contract"></i> Pending Declarations
-        </a>
-        {% elif is_finance %}
-        <a href="{% url 'finance_pending_payments' %}" class="btn-header-action btn-outline">
-            <i class="fa-solid fa-clock-rotate-left"></i> Pending Payments ({{ pending_expenses|length }})
-        </a>
-        <a href="{% url 'finance_billing' %}" class="btn-header-action btn-primary">
-            <i class="fa-solid fa-file-invoice"></i> Billing & Invoices
-        </a>
-        {% else %}
-        <a href="{% url 'jobs_list' %}?status=DELAYED" class="btn-header-action btn-outline" style="border-color:#FCA5A5;color:#DC2626;">
-            <i class="fa-solid fa-triangle-exclamation"></i> Delayed ({{ delayed_jobs_count }})
-        </a>
-        {% if is_doc %}
-        <a href="{% url 'job_create' %}" class="btn-header-action btn-primary">
-            <i class="fa-solid fa-plus"></i> Open New File
-        </a>
-        {% endif %}
-        {% endif %}
-    </div>
-</div>
-
-<!-- ==============================================================================
-     EXECUTIVE DATE FILTER TOOLBAR (Defaults to Today, Quick Presets & Custom Range)
-     ============================================================================== -->
-<div class="card-panel" style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:0.9rem 1.25rem;margin-bottom:1.5rem;box-shadow:var(--shadow-sm);">
-    <form method="GET" action="{% url 'dashboard' %}" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-        
-        <!-- Left: Quick Preset Buttons -->
-        <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
-            <span style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);margin-right:0.35rem;">
-                <i class="fa-solid fa-calendar-days" style="color:var(--brand-primary);"></i> Filter Period:
-            </span>
-            <a href="{% url 'dashboard' %}?preset=today" class="btn-header-action {% if preset == 'today' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
-                Today (Default)
-            </a>
-            <a href="{% url 'dashboard' %}?preset=this_year" class="btn-header-action {% if preset == 'this_year' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
-                This Year
-            </a>
-            <a href="{% url 'dashboard' %}?preset=last_year" class="btn-header-action {% if preset == 'last_year' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
-                Last Year
-            </a>
-            <a href="{% url 'dashboard' %}?preset=all" class="btn-header-action {% if preset == 'all' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
-                All Time
-            </a>
-        </div>
-
-        <!-- Right: Custom Date Range Form (From - To) -->
-        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;">
-                <label style="font-size:0.75rem;font-weight:700;color:var(--text-muted);">From:</label>
-                <input type="date" name="date_from" value="{{ date_from }}" required style="padding:0.35rem 0.55rem;border:1px solid #CBD5E1;border-radius:6px;font-size:0.8rem;background:#F8FAFC;">
-            </div>
-            <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;">
-                <label style="font-size:0.75rem;font-weight:700;color:var(--text-muted);">To:</label>
-                <input type="date" name="date_to" value="{{ date_to }}" required style="padding:0.35rem 0.55rem;border:1px solid #CBD5E1;border-radius:6px;font-size:0.8rem;background:#F8FAFC;">
-            </div>
-            <button type="submit" class="btn-header-action btn-primary" style="padding:0.4rem 0.9rem;font-size:0.78rem;border-radius:6px;font-weight:800;border:none;">
-                <i class="fa-solid fa-filter"></i> Apply
-            </button>
-            {% if preset != 'today' %}
-            <a href="{% url 'dashboard' %}" class="btn-header-action btn-outline" style="padding:0.4rem 0.65rem;font-size:0.76rem;border-radius:6px;color:#DC2626;border-color:#FECACA;text-decoration:none;" title="Reset to Today">
-                <i class="fa-solid fa-rotate-left"></i> Reset
-            </a>
-            {% endif %}
-        </div>
-
-    </form>
-    
-    <!-- Active Filter Indicator Banner -->
-    <div style="margin-top:0.65rem;padding-top:0.55rem;border-top:1px solid #F1F5F9;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;font-size:0.76rem;">
-        <div>
-            <span style="color:var(--text-muted);">Showing data for:</span>
-            <strong style="color:var(--brand-primary);margin-left:0.25rem;">
-                <i class="fa-solid fa-clock"></i> {{ filter_label }}
-            </strong>
-        </div>
-        <div style="color:var(--text-muted);">
-            Default view is set to <strong>Today</strong>. Use the buttons or custom date range above to view past years or other periods.
-        </div>
-    </div>
-</div>
-
-{% if is_ceo or is_admin %}
-<!-- ==============================================================================
-     EXECUTIVE KPIS (PERFECT BALANCED 3x3 GRID - 9 METRICS)
-     Row 1: Operational Status (Active, Completed, Delayed)
-     Row 2: Pipeline Locations (Port, TRA, In-Bond Storage)
-     Row 3: Financial Health (Total Revenue, Direct Expenses, Net Profit Margin)
-     ============================================================================== -->
-<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1.15rem;margin-bottom:1.5rem;">
-    <!-- 1. Active Jobs -->
-    <div class="kpi-card kpi-blue">
-        <div class="kpi-header">
-            <span class="kpi-title">Active Jobs</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-boxes-stacked"></i></div>
-        </div>
-        <div class="kpi-value">{{ active_jobs_count }}</div>
-        <div class="kpi-meta">
-            <span>Current operations pipeline</span>
-        </div>
-    </div>
-
-    <!-- 2. Completed Jobs -->
-    <div class="kpi-card kpi-emerald">
-        <div class="kpi-header">
-            <span class="kpi-title">Completed Jobs</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
-        </div>
-        <div class="kpi-value">{{ completed_jobs_count }}</div>
-        <div class="kpi-meta">
-            <span class="trend-positive"><i class="fa-solid fa-award"></i> Successfully delivered</span>
-        </div>
-    </div>
-
-    <!-- 3. Delayed Jobs -->
-    <div class="kpi-card kpi-rose">
-        <div class="kpi-header">
-            <span class="kpi-title">Delayed Jobs</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        </div>
-        <div class="kpi-value">{{ delayed_jobs_count }}</div>
-        <div class="kpi-meta">
-            <span style="color:#DC2626;font-weight:700;">Attention &amp; SLA breaches</span>
-        </div>
-    </div>
-
-    <!-- 4. Jobs at Port -->
-    <div class="kpi-card kpi-cyan">
-        <div class="kpi-header">
-            <span class="kpi-title">Jobs at Port</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-anchor"></i></div>
-        </div>
-        <div class="kpi-value">{{ jobs_at_port }}</div>
-        <div class="kpi-meta">
-            <span>TPA / TICTS / ICD operations</span>
-        </div>
-    </div>
-
-    <!-- 5. Jobs at TRA -->
-    <div class="kpi-card kpi-purple" style="border-left:4px solid #8B5CF6;">
-        <div class="kpi-header">
-            <span class="kpi-title">Jobs at TRA</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp" style="color:#8B5CF6;"></i></div>
-        </div>
-        <div class="kpi-value" style="color:#6D28D9;">{{ jobs_at_tra }}</div>
-        <div class="kpi-meta">
-            <span>TANCIS customs clearance</span>
-        </div>
-    </div>
-
-    <!-- 6. In-Bond Storage (Customs Locked / Yard) -->
-    <div class="kpi-card" style="border-left:4px solid #D97706;background:#FFFBEB;">
-        <div class="kpi-header">
-            <span class="kpi-title" style="color:#B45309;">In-Bond Storage</span>
-            <div class="kpi-icon-wrap" style="color:#D97706;background:#FEF3C7;"><i class="fa-solid fa-shield-halved"></i></div>
-        </div>
-        <div class="kpi-value" style="color:#92400E;">{{ in_bond_count }}</div>
-        <div class="kpi-meta" style="color:#B45309;">
-            <a href="{% url 'yard_operations' %}" style="text-decoration:none;color:#B45309;font-weight:700;">
-                <i class="fa-solid fa-warehouse"></i> Customs Locked &bull; Yard
-            </a>
-        </div>
-    </div>
-
-    <!-- 7. Total Revenue -->
-    <div class="kpi-card kpi-emerald">
-        <div class="kpi-header">
-            <span class="kpi-title">Total Revenue</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-money-bill-wave"></i></div>
-        </div>
-        <div class="kpi-value">TSh {{ total_revenue|floatformat:0 }}</div>
-        <div class="kpi-meta">
-            <span>Contracted billing amount</span>
-        </div>
-    </div>
-
-    <!-- 8. Expenses -->
-    <div class="kpi-card kpi-rose">
-        <div class="kpi-header">
-            <span class="kpi-title">Expenses</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-receipt"></i></div>
-        </div>
-        <div class="kpi-value">TSh {{ total_expenses|floatformat:0 }}</div>
-        <div class="kpi-meta">
-            <span>Approved operational disbursements</span>
-        </div>
-    </div>
-
-    <!-- 9. Net Position -->
-    <div class="kpi-card kpi-blue">
-        <div class="kpi-header">
-            <span class="kpi-title">Net Position</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-chart-line"></i></div>
-        </div>
-        <div class="kpi-value">TSh {{ gross_margin|floatformat:0 }}</div>
-        <div class="kpi-meta">
-            <span class="trend-positive"><i class="fa-solid fa-arrow-trend-up"></i> {{ gross_margin_pct }}% Operating Margin</span>
-        </div>
-    </div>
-</div>
-{% elif is_ops %}
-<!-- 6 KPIS FOR OPERATIONS OFFICER (ACCORDING TO SPEC) -->
-<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));margin-bottom:1.5rem;">
-    <div class="kpi-card kpi-blue">
-        <div class="kpi-header">
-            <span class="kpi-title">Active Jobs</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-boxes-stacked"></i></div>
-        </div>
-        <div class="kpi-value">{{ active_jobs_count }}</div>
-        <div class="kpi-meta">
-            <span class="trend-positive"><i class="fa-solid fa-circle-check"></i> {{ completed_jobs_count }} Delivered</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-emerald">
-        <div class="kpi-header">
-            <span class="kpi-title">New Files</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-inbox"></i></div>
-        </div>
-        <div class="kpi-value">{{ new_files_count }}</div>
-        <div class="kpi-meta">
-            <span>Incoming intakes awaiting review</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-cyan">
-        <div class="kpi-header">
-            <span class="kpi-title">Pending Files</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-folder-open"></i></div>
-        </div>
-        <div class="kpi-value">{{ pending_files_count }}</div>
-        <div class="kpi-meta">
-            <span>Stage 2 digital file opening</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-amber">
-        <div class="kpi-header">
-            <span class="kpi-title">Jobs at TRA</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp"></i></div>
-        </div>
-        <div class="kpi-value">{{ jobs_at_tra }}</div>
-        <div class="kpi-meta">
-            <span>TANCIS declaration & duty</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-blue">
-        <div class="kpi-header">
-            <span class="kpi-title">Jobs at Port</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-anchor"></i></div>
-        </div>
-        <div class="kpi-value">{{ jobs_at_port }}</div>
-        <div class="kpi-meta">
-            <span>Verification, DO & release</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-rose">
-        <div class="kpi-header">
-            <span class="kpi-title">Delayed Jobs</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        </div>
-        <div class="kpi-value">{{ delayed_jobs_count }}</div>
-        <div class="kpi-meta">
-            <span style="color:#DC2626;font-weight:700;">Exceeded SLA targets</span>
-        </div>
-    </div>
-</div>
-{% elif is_clearing %}
-<!-- 4 KPIS FOR CUSTOMS DECLARER (ACCORDING TO SPEC) -->
-<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));margin-bottom:1.5rem;">
-    <div class="kpi-card kpi-amber">
-        <div class="kpi-header">
-            <span class="kpi-title">Pending Declarations</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-file-contract"></i></div>
-        </div>
-        <div class="kpi-value">{{ pending_declarations_count }}</div>
-        <div class="kpi-meta">
-            <span>Awaiting TANCIS lodgement</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-blue">
-        <div class="kpi-header">
-            <span class="kpi-title">Awaiting Assessment</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-hourglass-half"></i></div>
-        </div>
-        <div class="kpi-value">{{ awaiting_assessment_count }}</div>
-        <div class="kpi-meta">
-            <span>Lodged in TANCIS, awaiting TRA</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-emerald">
-        <div class="kpi-header">
-            <span class="kpi-title">Assessed</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp"></i></div>
-        </div>
-        <div class="kpi-value">{{ assessed_declarations_count }}</div>
-        <div class="kpi-meta">
-            <span class="trend-positive"><i class="fa-solid fa-circle-check"></i> Duty notices issued</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-rose">
-        <div class="kpi-header">
-            <span class="kpi-title">Jobs Requiring Attention</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        </div>
-        <div class="kpi-value">{{ customs_attention_count }}</div>
-        <div class="kpi-meta">
-            <span style="color:#DC2626;font-weight:700;">Customs bottlenecks / delayed</span>
-        </div>
-    </div>
-</div>
-{% elif is_finance %}
-<!-- 5 KPIS FOR FINANCE OFFICER (ACCORDING TO SPEC) -->
-<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));margin-bottom:1.5rem;">
-    <div class="kpi-card kpi-emerald">
-        <div class="kpi-header">
-            <span class="kpi-title">Daily Income</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-arrow-down-left"></i></div>
-        </div>
-        <div class="kpi-value">TSh {{ daily_income|floatformat:0 }}</div>
-        <div class="kpi-meta">
-            <span>Collected / billed today</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-rose">
-        <div class="kpi-header">
-            <span class="kpi-title">Daily Expenses</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-arrow-up-right"></i></div>
-        </div>
-        <div class="kpi-value">TSh {{ daily_expenses|floatformat:0 }}</div>
-        <div class="kpi-meta">
-            <span>Disbursed & approved today</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-blue">
-        <div class="kpi-header">
-            <span class="kpi-title">Net Position</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-sack-dollar"></i></div>
-        </div>
-        <div class="kpi-value">TSh {{ gross_margin|floatformat:0 }}</div>
-        <div class="kpi-meta">
-            <span class="trend-positive"><i class="fa-solid fa-chart-line"></i> {{ gross_margin_pct }}% Operating Margin</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-amber">
-        <div class="kpi-header">
-            <span class="kpi-title">Pending Payments</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-clock-rotate-left"></i></div>
-        </div>
-        <div class="kpi-value">{{ pending_expenses|length }}</div>
-        <div class="kpi-meta">
-            <span>Vouchers awaiting payout</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-cyan">
-        <div class="kpi-header">
-            <span class="kpi-title">Outstanding Client Balances</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-        </div>
-        <div class="kpi-value">TSh {{ outstanding_receivables|floatformat:0 }}</div>
-        <div class="kpi-meta">
-            <span>Pending collection from clients</span>
-        </div>
-    </div>
-</div>
-{% else %}
-<!-- TOP KPI CARDS (Role-Based Pulse) -->
-<div class="kpi-grid">
-    <div class="kpi-card kpi-blue">
-        <div class="kpi-header">
-            <span class="kpi-title">Active Shipments</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-ship"></i></div>
-        </div>
-        <div class="kpi-value">{{ active_jobs_count }}</div>
-        <div class="kpi-meta">
-            <span class="trend-positive"><i class="fa-solid fa-circle-check"></i> {{ completed_jobs_count }} Delivered</span> &bull; <span>Total {{ active_jobs_count|add:completed_jobs_count }}</span>
-        </div>
-    </div>
-
-    {% if can_view_financials %}
-    <div class="kpi-card kpi-emerald">
-        <div class="kpi-header">
-            <span class="kpi-title">Gross Profit Margin</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-sack-dollar"></i></div>
-        </div>
-        <div class="kpi-value">TSh {{ gross_margin|floatformat:0 }}</div>
-        <div class="kpi-meta">
-            <span class="trend-positive"><i class="fa-solid fa-arrow-trend-up"></i> {{ gross_margin_pct }}% Margin</span> on TSh {{ total_revenue|floatformat:0 }}
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-amber">
-        <div class="kpi-header">
-            <span class="kpi-title">Client Receivables</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-        </div>
-        <div class="kpi-value">TSh {{ outstanding_receivables|floatformat:0 }}</div>
-        <div class="kpi-meta">
-            <span>Pending collection across active accounts</span>
-        </div>
-    </div>
-    {% elif is_doc %}
-    <!-- 4 KPIS FOR DOCUMENTATION OFFICER SPEC -->
-    <div class="kpi-card kpi-emerald">
-        <div class="kpi-header">
-            <span class="kpi-title">Nyaraka Zilizopokelewa Leo</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-calendar-day"></i></div>
-        </div>
-        <div class="kpi-value">{{ docs_received_today }}</div>
-        <div class="kpi-meta">
-            <span>Documents received today</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-amber">
-        <div class="kpi-header">
-            <span class="kpi-title">Handed to Customs</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-folder-open"></i></div>
-        </div>
-        <div class="kpi-value">{{ pending_file_opening }}</div>
-        <div class="kpi-meta">
-            <span>Stage 2 files awaiting TANESW/TBS declaration</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-cyan">
-        <div class="kpi-header">
-            <span class="kpi-title">Processed Documents</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-file-circle-check"></i></div>
-        </div>
-        <div class="kpi-value">{{ completed_documents_count }}</div>
-        <div class="kpi-meta">
-            <span>Completed / stored in digital vault</span>
-        </div>
-    </div>
-    {% else %}
-    <!-- Operational Metrics for Field / Port Staff -->
-    <div class="kpi-card kpi-emerald">
-        <div class="kpi-header">
-            <span class="kpi-title">Documents Intake (Stage 1)</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-inbox"></i></div>
-        </div>
-        <div class="kpi-value">{{ stage_1_count }}</div>
-        <div class="kpi-meta">
-            <span>Shipments in document intake & verification</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-amber">
-        <div class="kpi-header">
-            <span class="kpi-title">Declaration (Stage 2)</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-folder-plus"></i></div>
-        </div>
-        <div class="kpi-value">{{ stage_2_count }}</div>
-        <div class="kpi-meta">
-            <span>Files awaiting TANESW/TBS declaration</span>
-        </div>
-    </div>
-
-    <div class="kpi-card kpi-cyan">
-        <div class="kpi-header">
-            <span class="kpi-title">Port & Haulage</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-truck-ramp-box"></i></div>
-        </div>
-        <div class="kpi-value">{{ containers_at_port }} Port / {{ in_transit_count }} Transit</div>
-        <div class="kpi-meta">
-            <span>Dar es Salaam Port & ICD facilities</span>
-        </div>
-    </div>
-    {% endif %}
-</div>
-{% endif %}
-
-<!-- BOTTLENECKS & OVERDUE ALERT WIDGET -->
-{% if flagged_delayed_list %}
-<div class="alert-card-danger">
-    <div class="alert-badge-icon">
-        <i class="fa-solid fa-bell"></i>
-    </div>
-    <div class="alert-content-box" style="flex:1;">
-        <h4>Attention Required: {{ flagged_delayed_list|length }} Shipment(s) Exceeding Target SLA</h4>
-        <p>Stages highlighted below have exceeded allocated operational days. Immediate intervention needed to prevent demurrage and storage penalties.</p>
-        
-        <div class="alert-list-items">
-            {% for delayed in flagged_delayed_list %}
-            <div class="alert-item-row">
-                <div>
-                    <strong><a href="{% url 'job_detail' delayed.job.id %}" style="color:#B91C1C;text-decoration:none;">
-                        {% if is_ceo or is_admin %}{{ delayed.job.job_number }}{% else %}B/L: {{ delayed.job.bl_number|default:delayed.job.job_number }}{% endif %}
-                    </a></strong>: 
-                    {{ delayed.job.customer.company_name }} &bull; Stage {{ delayed.stage_number }} ({{ delayed.name_en }})
-                </div>
-                <div>
-                    <span style="background:#FEE2E2;color:#991B1B;padding:0.2rem 0.5rem;border-radius:4px;font-weight:700;">
-                        Target: {{ delayed.target_days }}d | Spent: {{ delayed.duration_days }}d
-                    </span>
-                    <a href="{% url 'job_detail' delayed.job.id %}" class="btn-header-action btn-outline" style="padding:0.2rem 0.6rem;font-size:0.75rem;margin-left:0.5rem;">
-                        Resolve <i class="fa-solid fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-{% endif %}
-
-
-
-{% if is_clearing and customs_pending_queue %}
-<!-- PENDING TANCIS LODGEMENTS (FOR CUSTOMS DECLARER SPEC) -->
-<div class="card-panel" style="margin-bottom:1.5rem;">
-    <div class="card-panel-header" style="background:#FFFBEB;">
-        <div>
-            <h3 class="panel-title" style="color:#B45309;"><i class="fa-solid fa-file-contract"></i> Pending TANCIS Lodgements</h3>
-            <p class="panel-description" style="color:#92400E;">Jobs opened by Operations awaiting declaration & entry submission</p>
-        </div>
-        <a href="{% url 'customs_pending_declarations' %}" class="btn-header-action btn-primary" style="font-size:0.75rem;padding:0.3rem 0.75rem;">
-            View All Pending ({{ pending_declarations_count }}) <i class="fa-solid fa-arrow-right"></i>
-        </a>
-    </div>
-    <div class="table-responsive">
-        <table class="modern-table">
-            <thead>
-                <tr>
-                    <th>{% if is_ceo or is_admin %}Job Reference{% else %}B/L &amp; Chassis No{% endif %}</th>
-                    <th>Client</th>
-                    <th>Vessel & Origin</th>
-                    <th>Current Stage</th>
-                    <th>Doc Officer</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for pjob in customs_pending_queue %}
-                <tr>
-                    <td>
-                        {% if is_ceo or is_admin %}
-                        <strong style="color:var(--brand-navy-900);"><a href="{% url 'job_detail' pjob.id %}" style="color:var(--brand-primary);text-decoration:none;">{{ pjob.job_number }}</a></strong>
-                        <div style="font-size:0.75rem;color:var(--text-muted);">B/L: {{ pjob.bl_number }}</div>
-                        {% else %}
-                        <strong style="color:var(--brand-navy-900);font-family:monospace;font-size:0.95rem;">
-                            <a href="{% url 'job_detail' pjob.id %}" style="color:var(--brand-primary);text-decoration:none;">{{ pjob.bl_number|default:pjob.job_number }}</a>
-                        </strong>
-                        {% if pjob.chassis_number %}
-                        <div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">Chassis: {{ pjob.chassis_number }}</div>
-                        {% endif %}
-                        {% endif %}
-                    </td>
-                    <td><strong>{{ pjob.customer.company_name }}</strong></td>
-                    <td>{{ pjob.vessel_name }} ({{ pjob.port_of_origin }})</td>
-                    <td>
-                        <span class="badge-pill badge-active">Stage {{ pjob.current_stage_number }}: {{ pjob.current_stage_obj.name_en }}</span>
-                    </td>
-                    <td>
-                        <span style="font-size:0.8rem;color:var(--text-muted);">{% if pjob.documentation_officer %}{{ pjob.documentation_officer.get_full_name|default:pjob.documentation_officer.username }}{% else %}Unassigned{% endif %}</span>
-                    </td>
-                    <td>
-                        <a href="{% url 'customs_pending_declarations' %}?q={{ pjob.bl_number|default:pjob.job_number }}" class="btn-header-action btn-primary" style="padding:0.3rem 0.65rem;font-size:0.75rem;">
-                            <i class="fa-solid fa-pen-to-square"></i> Prepare Declaration
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
-
-{% if is_doc and recent_doc_activities %}
-<!-- RECENT ACTIVITIES (FOR DOCUMENTATION OFFICER SPEC) -->
-<div class="card-panel" style="margin-bottom:1.5rem;">
-    <div class="card-panel-header" style="background:#F0FDF4;">
-        <div>
-            <h3 class="panel-title" style="color:#166534;"><i class="fa-solid fa-clock-rotate-left"></i> Recent Documentation Activities</h3>
-            <p class="panel-description" style="color:#15803D;">Latest received intake documents and file uploads</p>
-        </div>
-        <a href="{% url 'document_register' %}" class="btn-header-action btn-outline" style="font-size:0.75rem;padding:0.3rem 0.65rem;">
-            Full Register <i class="fa-solid fa-arrow-right"></i>
-        </a>
-    </div>
-    <div style="padding:1rem;">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:0.75rem;">
-            {% for act in recent_doc_activities %}
-            <div style="display:flex;align-items:center;justify-content:space-between;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:var(--radius-sm);padding:0.75rem;">
-                <div style="display:flex;align-items:center;gap:0.6rem;overflow:hidden;">
-                    <div style="width:32px;height:32px;border-radius:var(--radius-sm);background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;">
-                        <i class="fa-solid fa-file-lines"></i>
-                    </div>
-                    <div style="overflow:hidden;">
-                        <strong style="font-size:0.82rem;color:var(--brand-navy-900);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ act.title }}">{{ act.title }}</strong>
-                        <span style="font-size:0.7rem;color:var(--text-muted);">{% if is_ceo or is_admin %}{{ act.job.job_number }} &bull; {% else %}B/L: {{ act.job.bl_number|default:act.job.job_number }} &bull; {% endif %}{{ act.job.customer.company_name|truncatechars:18 }}</span>
-                    </div>
-                </div>
-                {% if act.file %}
-                <a href="{{ act.file.url }}" target="_blank" class="btn-header-action btn-outline" style="padding:0.25rem 0.5rem;font-size:0.7rem;flex-shrink:0;">
-                    View
-                </a>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-{% endif %}
-
-{% if is_finance and pending_expenses %}
-<!-- PENDING DISBURSEMENTS QUEUE (FOR FINANCE OFFICER SPEC) -->
-<div class="card-panel" style="margin-bottom:1.5rem;">
-    <div class="card-panel-header" style="background:#FFF1F2;">
-        <div>
-            <h3 class="panel-title" style="color:#BE123C;"><i class="fa-solid fa-clock-rotate-left"></i> Urgent Operational Payments Awaiting Action</h3>
-            <p class="panel-description" style="color:#9F1239;">Requested vouchers for TRA duty, shipping line D/O, and port charges</p>
-        </div>
-        <a href="{% url 'finance_pending_payments' %}" class="btn-header-action btn-primary" style="font-size:0.75rem;padding:0.3rem 0.75rem;">
-            View All Pending ({{ pending_expenses|length }}) <i class="fa-solid fa-arrow-right"></i>
-        </a>
-    </div>
-    <div class="table-responsive">
-        <table class="modern-table">
-            <thead>
-                <tr>
-                    <th>Voucher #</th>
-                    <th>{% if is_ceo or is_admin %}Shipment Job{% else %}B/L &amp; Chassis No{% endif %}</th>
-                    <th>Category</th>
-                    <th>Amount (TSh)</th>
-                    <th>Required Authority</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for exp in pending_expenses %}
-                <tr>
-                    <td><strong>{{ exp.voucher_number }}</strong></td>
-                    <td>
-                        {% if is_ceo or is_admin %}
-                        <a href="{% url 'job_detail' exp.job.id %}" style="color:var(--brand-primary);text-decoration:none;font-weight:600;">
-                            {{ exp.job.job_number }}
-                        </a>
-                        <div style="font-size:0.75rem;color:var(--text-muted);">{{ exp.job.customer.company_name|truncatechars:20 }}</div>
-                        {% else %}
-                        <a href="{% url 'job_detail' exp.job.id %}" style="color:var(--brand-primary);text-decoration:none;font-weight:700;font-family:monospace;">
-                            {{ exp.job.bl_number|default:exp.job.job_number }}
-                        </a>
-                        <div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">Chassis: {{ exp.job.chassis_number|default:"—" }}</div>
-                        {% endif %}
-                    </td>
-                    <td><span class="badge-pill" style="background:#F1F5F9;color:#334155;">{{ exp.get_category_display }}</span></td>
-                    <td><strong style="color:var(--brand-navy-900);">TSh {{ exp.amount|floatformat:0 }}</strong></td>
-                    <td><span class="badge-pill" style="background:#FEF3C7;color:#B45309;font-weight:700;">{{ exp.get_required_role_display }}</span></td>
-                    <td><span class="badge-pill badge-delayed">{{ exp.get_approval_status_display }}</span></td>
-                    <td>
-                        <a href="{% url 'finance_pending_payments' %}?q={{ exp.voucher_number }}" class="btn-header-action btn-primary" style="padding:0.25rem 0.6rem;font-size:0.75rem;">
-                            Review & Pay
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
-
-<!-- LIVE ACTIVE SHIPMENTS TABLE -->
-<div class="card-panel">
-    <div class="card-panel-header">
-        <div>
-            <h3 class="panel-title"><i class="fa-solid fa-clock-rotate-left"></i> {% if can_view_all_stages %}Active Shipments Tracking Pulse{% else %}Your Operational Shipments Pulse{% endif %}</h3>
-            <p class="panel-description">{% if can_view_all_stages %}Live end-to-end status of all jobs from document receipt to delivery{% else %}Active shipments requiring action or tracking in your designated workflow stages{% endif %}</p>
-        </div>
-        <div>
-            <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline" style="font-size:0.8rem;">
-                View All Shipments ({{ visible_jobs_count }}) <i class="fa-solid fa-chevron-right"></i>
-            </a>
-        </div>
-    </div>
-
-    <div class="table-responsive">
-        <table class="modern-table" data-page-size="8">
-            <thead>
-                <tr>
-                    <th style="min-width:160px;">File No &amp; BL</th>
-                    <th style="min-width:200px;">Client &amp; Cargo</th>
-                    <th style="min-width:220px;">Current Location &amp; Stage</th>
-                    <th style="min-width:130px;">Status</th>
-                    {% if can_view_financials %}
-                    <th style="min-width:150px;">Profit &amp; Margin</th>
-                    {% endif %}
-                    <th style="text-align:right;min-width:150px;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for job in jobs %}
-                <tr>
-                    <!-- 1. FILE NO & BL -->
-                    <td>
-                        <strong style="font-family:var(--font-heading);font-size:0.95rem;color:var(--brand-navy-900);">
-                            <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;">
-                                {{ job.job_number }}
-                            </a>
-                        </strong>
-                        <div style="font-size:0.78rem;font-weight:700;color:#0F172A;font-family:monospace;margin-top:2px;">
-                            BL: {{ job.bl_number|default:"—" }}
-                        </div>
-                    </td>
-
-                    <!-- 2. CLIENT & CARGO -->
-                    <td>
-                        <strong style="color:var(--brand-navy-900);font-size:0.92rem;display:block;">
-                            {{ job.customer.company_name }}
-                        </strong>
-                        <div style="font-size:0.78rem;color:#475569;margin-top:2px;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">
-                            <span style="display:inline-flex;align-items:center;gap:0.25rem;color:#0369A1;font-weight:600;">
-                                <i class="fa-solid fa-car" style="font-size:0.72rem;"></i>
-                                {{ job.cargo_description|default:"1 Motor Vehicle"|truncatechars:26 }}
-                            </span>
-                            {% if job.chassis_number and job.chassis_number != "—" and job.chassis_number != "-" %}
-                            <span style="color:#CBD5E1;">&bull;</span>
-                            <span style="font-family:monospace;font-size:0.72rem;color:#64748B;">Chassis: {{ job.chassis_number|truncatechars:10 }}</span>
-                            {% endif %}
-                        </div>
-                    </td>
-
-                    <!-- 3. CURRENT LOCATION & STAGE -->
-                    <td>
-                        <div style="display:inline-flex;align-items:center;gap:0.45rem;background:#F8FAFC;padding:4px 8px;border-radius:6px;border:1px solid #E2E8F0;">
-                            <span style="font-size:0.72rem;font-weight:800;background:var(--brand-primary);color:#FFF;padding:2px 6px;border-radius:4px;white-space:nowrap;">
-                                Step {{ job.current_stage_number }}
-                            </span>
-                            <span style="font-size:0.82rem;font-weight:700;color:var(--brand-navy-900);white-space:nowrap;">
-                                {{ job.current_stage_display_name }}
-                            </span>
-                        </div>
-                    </td>
-
-                    <!-- 4. STATUS -->
-                    <td>
-                        {% if job.status == 'DELAYED' %}
-                        <span class="badge-pill badge-delayed" style="font-weight:700;">
-                            <span class="badge-dot"></span> Delayed
-                        </span>
-                        {% elif job.status == 'COMPLETED' or job.status == 'CLOSED' %}
-                        <span class="badge-pill badge-completed" style="font-weight:700;">
-                            <span class="badge-dot"></span> Completed
-                        </span>
-                        {% else %}
-                        <span class="badge-pill badge-active" style="font-weight:700;">
-                            <span class="badge-dot"></span> On Track
-                        </span>
-                        {% endif %}
-                    </td>
-
-                    <!-- 5. PROFIT & MARGIN -->
-                    {% if can_view_financials %}
-                    <td>
-                        <strong class="{% if job.gross_margin > 0 %}text-profit-positive{% else %}text-profit-negative{% endif %}" style="font-size:0.92rem;display:block;">
-                            TSh {{ job.gross_margin|floatformat:0 }}
-                        </strong>
-                        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:1px;">
-                            {{ job.gross_margin_percentage }}% margin
-                        </div>
-                    </td>
-                    {% endif %}
-
-                    <!-- 6. ACTION (BOTH BUTTONS PRESERVED) -->
-                    <td style="text-align:right;white-space:nowrap;">
-                        <div style="display:inline-flex;gap:0.4rem;align-items:center;">
-                            <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="padding:0.35rem 0.72rem;font-size:0.78rem;background:#16A34A;color:#FFFFFF;border:none;font-weight:800;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:0.32rem;box-shadow:0 1px 2px rgba(22,163,74,0.3);" title="Track 9 Clearance Milestones">
-                                <i class="fa-solid fa-route"></i> Track
-                            </a>
-                            <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.78rem;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:0.25rem;">
-                                File <i class="fa-solid fa-chevron-right" style="font-size:0.7rem;"></i>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">
-                        {% if can_view_all_stages %}
-                        No active shipments currently recorded. Click 'Open New File' to register a shipment.
-                        {% else %}
-                        No active shipments currently requiring action in your assigned workflow stages.
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- PENDING EXPENSE APPROVALS MODAL / QUICK ACTION BAR (Finance & Operations Only) -->
-{% if pending_expenses and can_manage_finance or pending_expenses and is_ops %}
-<div class="card-panel">
-    <div class="card-panel-header" style="background:#FFFBEB;">
-        <div>
-            <h3 class="panel-title" style="color:#92400E;">
-                <i class="fa-solid fa-hand-holding-dollar"></i> Pending Expense Approvals (Approval Matrix)
-            </h3>
-            <p class="panel-description" style="color:#B45309;">
-                The following operational disbursements require supervisory / CEO sign-off
-            </p>
-        </div>
-        <span class="badge-pill badge-delayed">{{ pending_expenses|length }} Pending Action</span>
-    </div>
-    <div class="table-responsive">
-        <table class="modern-table">
-            <thead>
-                <tr>
-                    <th>Voucher #</th>
-                    <th>{% if is_ceo or is_admin %}Job Reference{% else %}B/L &amp; Chassis No{% endif %}</th>
-                    <th>Category</th>
-                    <th>Amount (TSh)</th>
-                    <th>Required Approver</th>
-                    <th>Requested By</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for exp in pending_expenses %}
-                <tr>
-                    <td><strong>{{ exp.voucher_number }}</strong></td>
-                    <td>
-                        {% if is_ceo or is_admin %}
-                        <a href="{% url 'job_detail' exp.job.id %}" style="color:var(--brand-primary);font-weight:600;">{{ exp.job.job_number }}</a>
-                        {% else %}
-                        <a href="{% url 'job_detail' exp.job.id %}" style="color:var(--brand-primary);font-weight:700;font-family:monospace;">{{ exp.job.bl_number|default:exp.job.job_number }}</a>
-                        <div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">Chassis: {{ exp.job.chassis_number|default:"—" }}</div>
-                        {% endif %}
-                    </td>
-                    <td><span class="badge-pill" style="background:#F1F5F9;color:#334155;">{{ exp.get_category_display }}</span></td>
-                    <td><strong style="font-size:1rem;color:var(--brand-navy-900);">TSh {{ exp.amount|floatformat:2 }}</strong></td>
-                    <td>
-                        <span class="badge-pill" style="background:#FEF3C7;color:#B45309;font-weight:700;">
-                            {{ exp.get_required_role_display }}
-                        </span>
-                    </td>
-                    <td>{{ exp.requester.get_full_name|default:exp.requester.username }}</td>
-                    <td>
-                        <form action="{% url 'expense_approval' exp.id %}" method="POST" style="display:inline-flex;gap:0.35rem;">
-                            {% csrf_token %}
-                            <button type="submit" name="decision" value="APPROVE" class="btn-header-action btn-primary" style="background:#059669;padding:0.3rem 0.7rem;font-size:0.75rem;">
-                                <i class="fa-solid fa-check"></i> Approve
-                            </button>
-                            <button type="submit" name="decision" value="REJECT" class="btn-header-action btn-outline" style="color:#DC2626;border-color:#FCA5A5;padding:0.3rem 0.7rem;font-size:0.75rem;">
-                                <i class="fa-solid fa-xmark"></i> Reject
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
-
-{% endblock %}
-
-{% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Financials Chart
-    const ctxFin = document.getElementById('financialsChart');
-    if (ctxFin) {
-        const rev = parseFloat(ctxFin.getAttribute('data-revenue') || '0');
-        const exp = parseFloat(ctxFin.getAttribute('data-expenses') || '0');
-        const mar = parseFloat(ctxFin.getAttribute('data-margin') || '0');
-
-        new Chart(ctxFin, {
-            type: 'bar',
-            data: {
-                labels: ['Billed Revenue', 'Direct Port & Ops Costs', 'Gross Margin'],
-                datasets: [{
-                    label: 'Amount in TSh',
-                    data: [rev, exp, mar],
-                    backgroundColor: [
-                        'rgba(37, 99, 235, 0.85)',
-                        'rgba(245, 158, 11, 0.85)',
-                        'rgba(16, 185, 129, 0.85)'
-                    ],
-                    borderRadius: 8,
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(val) {
-                                return 'TSh ' + (val / 1000000) + 'M';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Pipeline Stages Chart
-    const ctxStages = document.getElementById('stagesChart');
-    const stagesJsonElem = document.getElementById('stagesDataJson');
-    if (ctxStages && stagesJsonElem) {
-        const stagesData = JSON.parse(stagesJsonElem.textContent);
-        const stageLabels = stagesData.map(function(s) {
-            return s.name.length > 18 ? s.name.substring(0, 18) + '...' : s.name;
-        });
-        const stageData = stagesData.map(function(s) {
-            return s.count;
-        });
-
-        new Chart(ctxStages, {
-            type: 'doughnut',
-            data: {
-                labels: stageLabels,
-                datasets: [{
-                    data: stageData,
-                    backgroundColor: [
-                        '#3B82F6', '#60A5FA', '#93C5FD', '#F59E0B', '#EF4444',
-                        '#10B981', '#059669', '#06B6D4', '#6366F1', '#8B5CF6', '#14B8A6'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#FFFFFF'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: { boxWidth: 10, font: { size: 10 } }
-                    }
-                },
-                cutout: '65%'
-            }
-        });
-    }
-});
-</script>
-
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- MALKIA AI EXECUTIVE — FLOATING CHAT WIDGET (CEO ONLY)   -->
-<!-- ═══════════════════════════════════════════════════════ -->
-{% if is_ceo %}
-<style>
-/* ── Floating AI Toggle Button ── */
-.exec-ai-fab {
-    position: fixed;
-    bottom: 28px;
-    right: 28px;
-    z-index: 9999;
-    width: 62px;
-    height: 62px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A855F7 100%);
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.45), 0 0 0 0 rgba(139, 92, 246, 0.3);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: exec-ai-pulse 2.5s ease-in-out infinite;
-}
-.exec-ai-fab:hover {
-    transform: scale(1.1) translateY(-2px);
-    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.6);
-}
-.exec-ai-fab i {
-    font-size: 1.5rem;
-    color: #fff;
-    transition: transform 0.3s ease;
-}
-.exec-ai-fab.active i { transform: rotate(90deg); }
-@keyframes exec-ai-pulse {
-    0%, 100% { box-shadow: 0 8px 32px rgba(99, 102, 241, 0.45), 0 0 0 0 rgba(139, 92, 246, 0.3); }
-    50% { box-shadow: 0 8px 32px rgba(99, 102, 241, 0.45), 0 0 0 12px rgba(139, 92, 246, 0); }
-}
-.exec-ai-fab .notif-dot {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: #EF4444;
-    border: 2px solid #fff;
-    animation: notif-blink 1.5s ease-in-out infinite;
-}
-@keyframes notif-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-}
-
-/* ── Chat Panel ── */
-.exec-ai-panel {
-    position: fixed;
-    bottom: 92px;
-    right: 24px;
-    z-index: 9998;
-    width: 420px;
-    max-height: calc(100vh - 110px);
-    height: 560px;
-    border-radius: 20px;
-    background: linear-gradient(165deg, #0F172A 0%, #1E293B 100%);
-    border: 1px solid rgba(148, 163, 184, 0.15);
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 0 60px rgba(99, 102, 241, 0.08);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-    pointer-events: none;
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.exec-ai-panel.open {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: all;
-}
-
-/* ── Header ── */
-.exec-ai-header {
-    padding: 12px 18px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
-}
-.exec-ai-avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #6366F1, #A855F7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    color: #fff;
-    flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-}
-.exec-ai-header-info h4 {
-    margin: 0;
-    font-size: 0.92rem;
-    font-weight: 700;
-    color: #F8FAFC;
-    letter-spacing: -0.02em;
-}
-.exec-ai-header-info p {
-    margin: 2px 0 0;
-    font-size: 0.7rem;
-    color: #94A3B8;
-}
-.exec-ai-header-info p .online-dot {
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #22C55E;
-    margin-right: 4px;
-    box-shadow: 0 0 6px #22C55E;
-}
-
-/* ── Messages ── */
-.exec-ai-messages {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
-}
-.exec-ai-messages::-webkit-scrollbar { width: 4px; }
-.exec-ai-messages::-webkit-scrollbar-track { background: transparent; }
-.exec-ai-messages::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 10px; }
-
-.exec-ai-msg {
-    max-width: 92%;
-    padding: 12px 16px;
-    border-radius: 16px;
-    font-size: 0.82rem;
-    line-height: 1.6;
-    animation: exec-msg-in 0.3s ease-out;
-}
-@keyframes exec-msg-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.exec-ai-msg.bot {
-    background: rgba(30, 41, 59, 0.9);
-    border: 1px solid rgba(148, 163, 184, 0.1);
-    color: #E2E8F0;
-    align-self: flex-start;
-    border-bottom-left-radius: 4px;
-}
-.exec-ai-msg.bot strong { color: #A5B4FC; }
-.exec-ai-msg.bot p { margin: 4px 0; }
-
-.exec-ai-msg.user {
-    background: linear-gradient(135deg, #4F46E5, #6366F1);
-    color: #F8FAFC;
-    align-self: flex-end;
-    border-bottom-right-radius: 4px;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-}
-.exec-ai-msg .msg-time {
-    font-size: 0.65rem;
-    color: rgba(148, 163, 184, 0.6);
-    margin-top: 6px;
-    display: block;
-    text-align: right;
-}
-.exec-ai-msg.user .msg-time { color: rgba(255,255,255,0.5); }
-
-/* ── Typing Indicator ── */
-.exec-ai-typing {
-    display: none;
-    align-self: flex-start;
-    padding: 10px 16px;
-    background: rgba(30, 41, 59, 0.8);
-    border: 1px solid rgba(148, 163, 184, 0.08);
-    border-radius: 16px;
-    border-bottom-left-radius: 4px;
-    gap: 4px;
-    align-items: center;
-}
-.exec-ai-typing.show { display: flex; }
-.exec-ai-typing span {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #6366F1;
-    animation: exec-typing-bounce 1.4s infinite ease-in-out;
-}
-.exec-ai-typing span:nth-child(2) { animation-delay: 0.2s; }
-.exec-ai-typing span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes exec-typing-bounce {
-    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-    40% { transform: translateY(-8px); opacity: 1; }
-}
-
-/* ── Suggestions ── */
-.exec-ai-suggestions {
-    padding: 8px 16px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    border-top: 1px solid rgba(148, 163, 184, 0.08);
-    background: rgba(15, 23, 42, 0.6);
-}
-.exec-ai-suggestions:empty { display: none; padding: 0; border: none; }
-.exec-ai-chip {
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    background: rgba(99, 102, 241, 0.1);
-    border: 1px solid rgba(99, 102, 241, 0.25);
-    color: #A5B4FC;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-.exec-ai-chip:hover {
-    background: rgba(99, 102, 241, 0.25);
-    border-color: #6366F1;
-    color: #E0E7FF;
-    transform: translateY(-1px);
-}
-
-/* ── Input ── */
-.exec-ai-input-wrap {
-    padding: 12px 16px;
-    background: rgba(15, 23, 42, 0.8);
-    border-top: 1px solid rgba(148, 163, 184, 0.1);
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-.exec-ai-input-wrap input {
-    flex: 1;
-    padding: 10px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(148, 163, 184, 0.15);
-    background: rgba(30, 41, 59, 0.7);
-    color: #F1F5F9;
-    font-size: 0.82rem;
-    outline: none;
-    transition: border-color 0.2s;
-}
-.exec-ai-input-wrap input:focus {
-    border-color: #6366F1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-}
-.exec-ai-input-wrap input::placeholder {
-    color: #64748B;
-}
-.exec-ai-send-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    border: none;
-    background: linear-gradient(135deg, #6366F1, #8B5CF6);
-    color: #fff;
-    font-size: 0.95rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-.exec-ai-send-btn:hover {
-    transform: scale(1.08);
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
-}
-.exec-ai-send-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
-/* ── Responsive ── */
-@media (max-width: 640px) {
-    .exec-ai-panel {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100vw !important;
-        max-width: 100vw !important;
-        height: 100% !important;
-        height: 100dvh !important;
-        max-height: 100dvh !important;
-        border-radius: 0 !important;
-        margin: 0 !important;
-        transform: translateY(100%) !important;
-        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease !important;
-        box-shadow: none !important;
-        z-index: 999999 !important;
-        background: #0F172A !important;
-        display: flex !important;
-        flex-direction: column !important;
-    }
-    .exec-ai-panel.open {
-        transform: translateY(0) !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-    }
-    .exec-ai-header {
-        position: sticky !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        flex-shrink: 0 !important;
-        z-index: 100 !important;
-        padding: 10px 14px !important;
-        padding-top: max(10px, env(safe-area-inset-top)) !important;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
-    }
-    .exec-ai-messages {
-        flex: 1 1 auto !important;
-        min-height: 0 !important;
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        padding: 12px 14px !important;
-    }
-    .exec-ai-suggestions {
-        flex-shrink: 0 !important;
-        padding: 6px 14px !important;
-    }
-    .exec-ai-typing {
-        flex-shrink: 0 !important;
-    }
-    .exec-ai-input-wrap {
-        position: sticky !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        flex-shrink: 0 !important;
-        background: rgba(15, 23, 42, 0.98) !important;
-        padding: 10px 14px !important;
-        padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
-        border-top: 1px solid rgba(148, 163, 184, 0.15) !important;
-        z-index: 100 !important;
-    }
-    .exec-ai-input-wrap input {
-        font-size: 16px !important; /* Prevents mobile browser auto-zoom jump */
-    }
-    .exec-ai-fab { bottom: 18px; right: 18px; width: 54px; height: 54px; }
-}
-</style>
-
-<!-- FAB Button -->
-<button class="exec-ai-fab" id="execAiFab" title="Malkia AI Executive Assistant">
-    <span class="notif-dot"></span>
-    <i class="fa-solid fa-robot"></i>
-</button>
-
-<!-- Chat Panel -->
-<div class="exec-ai-panel" id="execAiPanel">
-    <div class="exec-ai-header">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div class="exec-ai-avatar">
-                <i class="fa-solid fa-brain"></i>
-            </div>
-            <div class="exec-ai-header-info">
-                <h4>Malkia AI Executive</h4>
-                <p><span class="online-dot"></span>DeepSeek AI • Active Intelligence</p>
-            </div>
-        </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-            <button id="execAiResetBtn" title="Reset Chat" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#94A3B8; cursor:pointer; font-size:0.85rem; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
-                <i class="fa-solid fa-rotate-right"></i>
-            </button>
-            <button id="execAiCloseBtn" title="Close Chat" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#FCA5A5; cursor:pointer; font-size:1.1rem; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-    </div>
-
-    <div class="exec-ai-messages" id="execAiMessages">
-        <!-- Messages render here -->
-    </div>
-
-    <div class="exec-ai-typing" id="execAiTyping">
-        <span></span><span></span><span></span>
-    </div>
-
-    <div class="exec-ai-suggestions" id="execAiSuggestions">
-        <!-- Dynamic suggestion chips -->
-    </div>
-
-    <div class="exec-ai-input-wrap">
-        <input type="text" id="execAiInput" placeholder="Ask any executive or business query..." autocomplete="off">
-        <button class="exec-ai-send-btn" id="execAiSendBtn" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
-    </div>
-</div>
-
-<script>
-(function() {
-    const fab = document.getElementById('execAiFab');
-    const panel = document.getElementById('execAiPanel');
-    const msgContainer = document.getElementById('execAiMessages');
-    const typingIndicator = document.getElementById('execAiTyping');
-    const suggestionsWrap = document.getElementById('execAiSuggestions');
-    const input = document.getElementById('execAiInput');
-    const sendBtn = document.getElementById('execAiSendBtn');
-    const closeBtn = document.getElementById('execAiCloseBtn');
-    const fabIcon = fab ? fab.querySelector('i') : null;
-    const API_URL = '{% url "executive_ai_chat_api" %}';
-    let isOpen = false;
-    let isFirstOpen = true;
-
-    function closePanel() {
-        isOpen = false;
-        panel.classList.remove('open');
-        fab.classList.remove('active');
-        if (fabIcon) fabIcon.className = 'fa-solid fa-robot';
-        document.body.style.overflow = '';
-        panel.style.height = '';
-    }
-
-    function openPanel() {
-        isOpen = true;
-        panel.classList.add('open');
-        fab.classList.add('active');
-        if (fabIcon) fabIcon.className = 'fa-solid fa-xmark';
-        const dot = fab.querySelector('.notif-dot');
-        if (dot) dot.style.display = 'none';
-        if (window.innerWidth <= 640) {
-            document.body.style.overflow = 'hidden';
-        }
-        if (isFirstOpen) {
-            isFirstOpen = false;
-            appendBotMsg('Hello! 👋 I am Malkia AI Executive, your executive intelligence assistant. How can I assist you with operations today?');
-        }
-        setTimeout(function() { 
-            input.focus(); 
-            if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
-        }, 300);
-    }
-
-    // Mobile keyboard and visualViewport handling
-    input.addEventListener('focus', function() {
-        if (window.innerWidth <= 640) {
-            window.scrollTo(0, 0);
-            document.body.scrollTop = 0;
-            setTimeout(function() {
-                if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
-            }, 120);
-        }
-    });
-
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', function() {
-            if (isOpen && window.innerWidth <= 640 && panel) {
-                panel.style.height = `${window.visualViewport.height}px`;
-                if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
-            }
-        });
-    }
-
-    fab.addEventListener('click', function() {
-        if (isOpen) closePanel();
-        else openPanel();
-    });
-
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closePanel);
-    }
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && isOpen) closePanel();
-    });
-
-    // Send message
-    function sendMessage() {
-        const text = input.value.trim();
-        if (!text) return;
-        appendUserMsg(text);
-        input.value = '';
-        sendBtn.disabled = true;
-        sendToAI(text);
-    }
-
-    sendBtn.addEventListener('click', sendMessage);
-    input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') sendMessage();
-    });
-
-    const resetBtn = document.getElementById('execAiResetBtn');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', function() {
-            fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRF() },
-                body: JSON.stringify({ action: 'clear' })
-            });
-            msgContainer.innerHTML = '';
-            appendBotMsg('Conversation reset. How can I assist you today?');
-        });
-    }
-
-    function appendUserMsg(text) {
-        const now = new Date();
-        const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-        const div = document.createElement('div');
-        div.className = 'exec-ai-msg user';
-        div.innerHTML = escapeHtml(text) + '<span class="msg-time">' + timeStr + '</span>';
-        msgContainer.appendChild(div);
-        scrollBottom();
-    }
-
-    function appendBotMsg(html, time) {
-        const div = document.createElement('div');
-        div.className = 'exec-ai-msg bot';
-        div.innerHTML = renderMarkdown(html) + '<span class="msg-time">' + (time || '') + '</span>';
-        msgContainer.appendChild(div);
-        scrollBottom();
-    }
-
-    function showTyping() { typingIndicator.classList.add('show'); scrollBottom(); }
-    function hideTyping() { typingIndicator.classList.remove('show'); }
-
-    function renderSuggestions(suggestions) {
-        suggestionsWrap.innerHTML = '';
-        if (!suggestions || !suggestions.length) return;
-        suggestions.forEach(function(s) {
-            const chip = document.createElement('span');
-            chip.className = 'exec-ai-chip';
-            chip.textContent = s;
-            chip.addEventListener('click', function() {
-                input.value = s;
-                sendMessage();
-            });
-            suggestionsWrap.appendChild(chip);
-        });
-    }
-
-    function sendToAI(text) {
-        showTyping();
-        fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRF()
-            },
-            body: JSON.stringify({ message: text })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            hideTyping();
-            sendBtn.disabled = false;
-            if (data.status === 'success') {
-                appendBotMsg(data.reply, data.timestamp);
-                renderSuggestions(data.suggestions || []);
-            } else {
-                appendBotMsg('⚠️ ' + (data.message || 'An error occurred.'), '');
-            }
-        })
-        .catch(function(err) {
-            hideTyping();
-            sendBtn.disabled = false;
-            appendBotMsg('⚠️ Network connectivity error. Please try again.', '');
-        });
-    }
-
-    function scrollBottom() {
-        setTimeout(function() { msgContainer.scrollTop = msgContainer.scrollHeight; }, 60);
-    }
-
-    function getCSRF() {
-        const c = document.cookie.split(';').find(function(c) { return c.trim().startsWith('csrftoken='); });
-        return c ? c.split('=')[1] : '';
-    }
-
-    function escapeHtml(t) {
-        const d = document.createElement('div');
-        d.textContent = t;
-        return d.innerHTML;
-    }
-
-    function renderMarkdown(text) {
-        if (!text) return '';
-        // Bold: **text**
-        let html = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-        // Italic: *text*
-        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-        // Inline code: `text`
-        html = html.replace(/`(.+?)`/g, '<code style="background:rgba(99,102,241,0.15);padding:1px 5px;border-radius:4px;font-size:0.78rem;color:#A5B4FC;">$1</code>');
-        // Newlines
-        html = html.replace(/\n/g, '<br>');
-        return html;
-    }
-})();
-</script>
-{% endif %}
-
-{% endblock %}
+{% extends 'base.html' %}
+
+
+
+{% block title %}Executive Live Dashboard | Malkia C&F{% endblock %}
+
+
+
+{% block content %}
+
+<div class="page-header-box">
+
+    <div>
+
+        {% if is_doc %}
+
+        <h2 class="page-title"><i class="fa-solid fa-folder-open" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Documentation & Intake Command Center</h2>
+
+        <p class="page-subtitle">Real-time status of cargo documents intake, digital file opening, and customs handover.</p>
+
+        {% elif is_ops %}
+
+        <h2 class="page-title"><i class="fa-solid fa-clipboard-check" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Operations Command Center</h2>
+
+        <p class="page-subtitle">Active shipments monitoring, incoming intake approvals, port operations, and SLA control.</p>
+
+        {% elif is_clearing %}
+
+        <h2 class="page-title"><i class="fa-solid fa-stamp" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Customs Clearing & TANCIS Command Center</h2>
+
+        <p class="page-subtitle">Declaration lodgement, duty payment verification, and port release orders.</p>
+
+        {% elif is_port %}
+
+        <h2 class="page-title"><i class="fa-solid fa-anchor" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Port Operations & Field Command Center</h2>
+
+        <p class="page-subtitle">Vessel arrivals, physical verification, port wharfage invoices, and gate release.</p>
+
+        {% elif is_finance %}
+
+        <h2 class="page-title"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Finance & Accounts Command Center</h2>
+
+        <p class="page-subtitle">Disbursements, client invoicing, port fees reconciliation, and collections.</p>
+
+        {% else %}
+
+        <h2 class="page-title">CEO Operations & Financial Command Center</h2>
+
+        <p class="page-subtitle">Real-time status of shipments, port clearance, logistics pipeline, and profitability.</p>
+
+        {% endif %}
+
+    </div>
+
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+
+        {% if is_ceo or is_admin or is_finance or is_ops %}
+
+        <a href="{% url 'export_daily_report_excel' %}" class="btn-header-action btn-outline" style="background:#F0FDF4;border-color:#86EFAC;color:#166534;" title="Download Daily Excel Report (Daily Finance, Operations & CEO Summary)">
+
+            <i class="fa-solid fa-file-excel" style="color:#16A34A;"></i> Export Daily Excel
+
+        </a>
+
+
+
+        {% endif %}
+
+        {% if is_clearing %}
+
+        <a href="{% url 'customs_assessments' %}?filter=awaiting" class="btn-header-action btn-outline">
+
+            <i class="fa-solid fa-stamp"></i> Assessments ({{ awaiting_assessment_count }})
+
+        </a>
+
+        <a href="{% url 'customs_pending_declarations' %}" class="btn-header-action btn-primary">
+
+            <i class="fa-solid fa-file-contract"></i> Pending Declarations
+
+        </a>
+
+        {% elif is_finance %}
+
+        <a href="{% url 'finance_pending_payments' %}" class="btn-header-action btn-outline">
+
+            <i class="fa-solid fa-clock-rotate-left"></i> Pending Payments ({{ pending_expenses|length }})
+
+        </a>
+
+        <a href="{% url 'finance_billing' %}" class="btn-header-action btn-primary">
+
+            <i class="fa-solid fa-file-invoice"></i> Billing & Invoices
+
+        </a>
+
+        {% else %}
+
+        <a href="{% url 'jobs_list' %}?status=DELAYED" class="btn-header-action btn-outline" style="border-color:#FCA5A5;color:#DC2626;">
+
+            <i class="fa-solid fa-triangle-exclamation"></i> Delayed ({{ delayed_jobs_count }})
+
+        </a>
+
+        {% if is_doc %}
+
+        <a href="{% url 'job_create' %}" class="btn-header-action btn-primary">
+
+            <i class="fa-solid fa-plus"></i> Open New File
+
+        </a>
+
+        {% endif %}
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+
+<!-- ==============================================================================
+
+     EXECUTIVE DATE FILTER TOOLBAR (Defaults to Today, Quick Presets & Custom Range)
+
+     ============================================================================== -->
+
+<div class="card-panel" style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:0.9rem 1.25rem;margin-bottom:1.5rem;box-shadow:var(--shadow-sm);">
+
+    <form method="GET" action="{% url 'dashboard' %}" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+
+        
+
+        <!-- Left: Quick Preset Buttons -->
+
+        <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+
+            <span style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);margin-right:0.35rem;">
+
+                <i class="fa-solid fa-calendar-days" style="color:var(--brand-primary);"></i> Filter Period:
+
+            </span>
+
+            <a href="{% url 'dashboard' %}?preset=today" class="btn-header-action {% if preset == 'today' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
+
+                Today (Default)
+
+            </a>
+
+            <a href="{% url 'dashboard' %}?preset=this_year" class="btn-header-action {% if preset == 'this_year' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
+
+                This Year
+
+            </a>
+
+            <a href="{% url 'dashboard' %}?preset=last_year" class="btn-header-action {% if preset == 'last_year' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
+
+                Last Year
+
+            </a>
+
+            <a href="{% url 'dashboard' %}?preset=all" class="btn-header-action {% if preset == 'all' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
+
+                All Time
+
+            </a>
+
+        </div>
+
+
+
+        <!-- Right: Custom Date Range Form (From - To) -->
+
+        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+
+            <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;">
+
+                <label style="font-size:0.75rem;font-weight:700;color:var(--text-muted);">From:</label>
+
+                <input type="date" name="date_from" value="{{ date_from }}" required style="padding:0.35rem 0.55rem;border:1px solid #CBD5E1;border-radius:6px;font-size:0.8rem;background:#F8FAFC;">
+
+            </div>
+
+            <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;">
+
+                <label style="font-size:0.75rem;font-weight:700;color:var(--text-muted);">To:</label>
+
+                <input type="date" name="date_to" value="{{ date_to }}" required style="padding:0.35rem 0.55rem;border:1px solid #CBD5E1;border-radius:6px;font-size:0.8rem;background:#F8FAFC;">
+
+            </div>
+
+            <button type="submit" class="btn-header-action btn-primary" style="padding:0.4rem 0.9rem;font-size:0.78rem;border-radius:6px;font-weight:800;border:none;">
+
+                <i class="fa-solid fa-filter"></i> Apply
+
+            </button>
+
+            {% if preset != 'today' %}
+
+            <a href="{% url 'dashboard' %}" class="btn-header-action btn-outline" style="padding:0.4rem 0.65rem;font-size:0.76rem;border-radius:6px;color:#DC2626;border-color:#FECACA;text-decoration:none;" title="Reset to Today">
+
+                <i class="fa-solid fa-rotate-left"></i> Reset
+
+            </a>
+
+            {% endif %}
+
+        </div>
+
+
+
+    </form>
+
+    
+
+    <!-- Active Filter Indicator Banner -->
+
+    <div style="margin-top:0.65rem;padding-top:0.55rem;border-top:1px solid #F1F5F9;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;font-size:0.76rem;">
+
+        <div>
+
+            <span style="color:var(--text-muted);">Showing data for:</span>
+
+            <strong style="color:var(--brand-primary);margin-left:0.25rem;">
+
+                <i class="fa-solid fa-clock"></i> {{ filter_label }}
+
+            </strong>
+
+        </div>
+
+        <div style="color:var(--text-muted);">
+
+            Default view is set to <strong>Today</strong>. Use the buttons or custom date range above to view past years or other periods.
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+{% if is_ceo or is_admin %}
+
+<!-- ==============================================================================
+
+     EXECUTIVE KPIS (PERFECT BALANCED 3x3 GRID - 9 METRICS)
+
+     Row 1: Operational Status (Active, Completed, Delayed)
+
+     Row 2: Pipeline Locations (Port, TRA, In-Bond Storage)
+
+     Row 3: Financial Health (Total Revenue, Direct Expenses, Net Profit Margin)
+
+     ============================================================================== -->
+
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1.15rem;margin-bottom:1.5rem;">
+
+    <!-- 1. Active Jobs -->
+    <div class="kpi-card kpi-blue" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('ACTIVE');" style="cursor:pointer;" title="Click to filter Active Shipments below">
+        <div class="kpi-header">
+            <span class="kpi-title">Active Jobs</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-boxes-stacked"></i></div>
+        </div>
+        <div class="kpi-value">{{ active_jobs_count }}</div>
+        <div class="kpi-meta">
+            <span>Current operations pipeline &bull; <u style="font-size:0.7rem;">Filter below</u></span>
+        </div>
+    </div>
+
+    <!-- 2. Completed Jobs -->
+    <div class="kpi-card kpi-emerald" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('COMPLETED');" style="cursor:pointer;" title="Click to filter Completed Shipments below">
+        <div class="kpi-header">
+            <span class="kpi-title">Completed Jobs</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+        <div class="kpi-value">{{ completed_jobs_count }}</div>
+        <div class="kpi-meta">
+            <span class="trend-positive"><i class="fa-solid fa-award"></i> Successfully delivered &bull; <u style="font-size:0.7rem;">View below</u></span>
+        </div>
+    </div>
+
+    <!-- 3. Delayed Jobs -->
+    <div class="kpi-card kpi-rose" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('DELAYED');" style="cursor:pointer;" title="Click to filter Delayed Shipments below">
+        <div class="kpi-header">
+            <span class="kpi-title">Delayed Jobs</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        </div>
+        <div class="kpi-value">{{ delayed_jobs_count }}</div>
+        <div class="kpi-meta">
+            <span style="color:#DC2626;font-weight:700;">Attention &amp; SLA breaches &bull; <u style="font-size:0.7rem;">Filter</u></span>
+        </div>
+    </div>
+
+    <!-- 4. Jobs at Port -->
+    <div class="kpi-card kpi-cyan" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('PORT');" style="cursor:pointer;" title="Click to filter Jobs at Port below">
+        <div class="kpi-header">
+            <span class="kpi-title">Jobs at Port</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-anchor"></i></div>
+        </div>
+        <div class="kpi-value">{{ jobs_at_port }}</div>
+        <div class="kpi-meta">
+            <span>TPA / TICTS / ICD operations</span>
+        </div>
+    </div>
+
+    <!-- 5. Jobs at TRA -->
+    <div class="kpi-card kpi-purple" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('TRA');" style="border-left:4px solid #8B5CF6;cursor:pointer;" title="Click to filter Jobs at TRA below">
+        <div class="kpi-header">
+            <span class="kpi-title">Jobs at TRA</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp" style="color:#8B5CF6;"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#6D28D9;">{{ jobs_at_tra }}</div>
+        <div class="kpi-meta">
+            <span>TANCIS customs clearance</span>
+        </div>
+    </div>
+
+    <!-- 6. In-Bond Storage (Customs Locked / Yard) -->
+    <div class="kpi-card" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('BOND');" style="border-left:4px solid #D97706;background:#FFFBEB;cursor:pointer;" title="Click to filter In-Bond Yard Shipments below">
+        <div class="kpi-header">
+            <span class="kpi-title" style="color:#B45309;">In-Bond Storage</span>
+            <div class="kpi-icon-wrap" style="color:#D97706;background:#FEF3C7;"><i class="fa-solid fa-shield-halved"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#92400E;">{{ in_bond_count }}</div>
+        <div class="kpi-meta" style="color:#B45309;">
+            <a href="{% url 'yard_operations' %}" onclick="event.stopPropagation();" style="text-decoration:none;color:#B45309;font-weight:700;">
+                <i class="fa-solid fa-warehouse"></i> Customs Locked &bull; Yard
+            </a>
+        </div>
+    </div>
+
+    <!-- 7. Total Revenue -->
+
+    <div class="kpi-card kpi-emerald">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Total Revenue</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-money-bill-wave"></i></div>
+
+        </div>
+
+        <div class="kpi-value">TSh {{ total_revenue|floatformat:0 }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Contracted billing amount</span>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- 8. Expenses -->
+
+    <div class="kpi-card kpi-rose">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Expenses</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-receipt"></i></div>
+
+        </div>
+
+        <div class="kpi-value">TSh {{ total_expenses|floatformat:0 }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Approved operational disbursements</span>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- 9. Net Position -->
+
+    <div class="kpi-card kpi-blue">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Net Position</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-chart-line"></i></div>
+
+        </div>
+
+        <div class="kpi-value">TSh {{ gross_margin|floatformat:0 }}</div>
+
+        <div class="kpi-meta">
+
+            <span class="trend-positive"><i class="fa-solid fa-arrow-trend-up"></i> {{ gross_margin_pct }}% Operating Margin</span>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% elif is_ops %}
+
+<!-- 6 KPIS FOR OPERATIONS OFFICER (ACCORDING TO SPEC) -->
+
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));margin-bottom:1.5rem;">
+
+    <div class="kpi-card kpi-blue">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Active Jobs</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-boxes-stacked"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ active_jobs_count }}</div>
+
+        <div class="kpi-meta">
+
+            <span class="trend-positive"><i class="fa-solid fa-circle-check"></i> {{ completed_jobs_count }} Delivered</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-emerald">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">New Files</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-inbox"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ new_files_count }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Incoming intakes awaiting review</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-cyan">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Pending Files</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-folder-open"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ pending_files_count }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Stage 2 digital file opening</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-amber">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Jobs at TRA</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ jobs_at_tra }}</div>
+
+        <div class="kpi-meta">
+
+            <span>TANCIS declaration & duty</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-blue">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Jobs at Port</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-anchor"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ jobs_at_port }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Verification, DO & release</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-rose">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Delayed Jobs</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ delayed_jobs_count }}</div>
+
+        <div class="kpi-meta">
+
+            <span style="color:#DC2626;font-weight:700;">Exceeded SLA targets</span>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% elif is_clearing %}
+
+<!-- 4 KPIS FOR CUSTOMS DECLARER (ACCORDING TO SPEC) -->
+
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));margin-bottom:1.5rem;">
+
+    <div class="kpi-card kpi-amber">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Pending Declarations</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-file-contract"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ pending_declarations_count }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Awaiting TANCIS lodgement</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-blue">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Awaiting Assessment</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-hourglass-half"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ awaiting_assessment_count }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Lodged in TANCIS, awaiting TRA</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-emerald">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Assessed</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ assessed_declarations_count }}</div>
+
+        <div class="kpi-meta">
+
+            <span class="trend-positive"><i class="fa-solid fa-circle-check"></i> Duty notices issued</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-rose">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Jobs Requiring Attention</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ customs_attention_count }}</div>
+
+        <div class="kpi-meta">
+
+            <span style="color:#DC2626;font-weight:700;">Customs bottlenecks / delayed</span>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% elif is_finance %}
+
+<!-- 5 KPIS FOR FINANCE OFFICER (ACCORDING TO SPEC) -->
+
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));margin-bottom:1.5rem;">
+
+    <div class="kpi-card kpi-emerald">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Daily Income</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-arrow-down-left"></i></div>
+
+        </div>
+
+        <div class="kpi-value">TSh {{ daily_income|floatformat:0 }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Collected / billed today</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-rose">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Daily Expenses</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-arrow-up-right"></i></div>
+
+        </div>
+
+        <div class="kpi-value">TSh {{ daily_expenses|floatformat:0 }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Disbursed & approved today</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-blue">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Net Position</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-sack-dollar"></i></div>
+
+        </div>
+
+        <div class="kpi-value">TSh {{ gross_margin|floatformat:0 }}</div>
+
+        <div class="kpi-meta">
+
+            <span class="trend-positive"><i class="fa-solid fa-chart-line"></i> {{ gross_margin_pct }}% Operating Margin</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-amber">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Pending Payments</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-clock-rotate-left"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ pending_expenses|length }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Vouchers awaiting payout</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-cyan">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Outstanding Client Balances</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+
+        </div>
+
+        <div class="kpi-value">TSh {{ outstanding_receivables|floatformat:0 }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Pending collection from clients</span>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% else %}
+
+<!-- TOP KPI CARDS (Role-Based Pulse) -->
+
+<div class="kpi-grid">
+
+    <div class="kpi-card kpi-blue">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Active Shipments</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-ship"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ active_jobs_count }}</div>
+
+        <div class="kpi-meta">
+
+            <span class="trend-positive"><i class="fa-solid fa-circle-check"></i> {{ completed_jobs_count }} Delivered</span> &bull; <span>Total {{ active_jobs_count|add:completed_jobs_count }}</span>
+
+        </div>
+
+    </div>
+
+
+
+    {% if can_view_financials %}
+
+    <div class="kpi-card kpi-emerald">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Gross Profit Margin</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-sack-dollar"></i></div>
+
+        </div>
+
+        <div class="kpi-value">TSh {{ gross_margin|floatformat:0 }}</div>
+
+        <div class="kpi-meta">
+
+            <span class="trend-positive"><i class="fa-solid fa-arrow-trend-up"></i> {{ gross_margin_pct }}% Margin</span> on TSh {{ total_revenue|floatformat:0 }}
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-amber">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Client Receivables</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+
+        </div>
+
+        <div class="kpi-value">TSh {{ outstanding_receivables|floatformat:0 }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Pending collection across active accounts</span>
+
+        </div>
+
+    </div>
+
+    {% elif is_doc %}
+
+    <!-- 4 KPIS FOR DOCUMENTATION OFFICER SPEC -->
+
+    <div class="kpi-card kpi-emerald">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Nyaraka Zilizopokelewa Leo</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-calendar-day"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ docs_received_today }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Documents received today</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-amber">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Handed to Customs</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-folder-open"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ pending_file_opening }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Stage 2 files awaiting TANESW/TBS declaration</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-cyan">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Processed Documents</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-file-circle-check"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ completed_documents_count }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Completed / stored in digital vault</span>
+
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <!-- Operational Metrics for Field / Port Staff -->
+
+    <div class="kpi-card kpi-emerald">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Documents Intake (Stage 1)</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-inbox"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ stage_1_count }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Shipments in document intake & verification</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-amber">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Declaration (Stage 2)</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-folder-plus"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ stage_2_count }}</div>
+
+        <div class="kpi-meta">
+
+            <span>Files awaiting TANESW/TBS declaration</span>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="kpi-card kpi-cyan">
+
+        <div class="kpi-header">
+
+            <span class="kpi-title">Port & Haulage</span>
+
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-truck-ramp-box"></i></div>
+
+        </div>
+
+        <div class="kpi-value">{{ containers_at_port }} Port / {{ in_transit_count }} Transit</div>
+
+        <div class="kpi-meta">
+
+            <span>Dar es Salaam Port & ICD facilities</span>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endif %}
+
+
+
+<!-- BOTTLENECKS & OVERDUE ALERT WIDGET -->
+
+{% if flagged_delayed_list %}
+
+<div class="alert-card-danger">
+
+    <div class="alert-badge-icon">
+
+        <i class="fa-solid fa-bell"></i>
+
+    </div>
+
+    <div class="alert-content-box" style="flex:1;">
+
+        <h4>Attention Required: {{ flagged_delayed_list|length }} Shipment(s) Exceeding Target SLA</h4>
+
+        <p>Stages highlighted below have exceeded allocated operational days. Immediate intervention needed to prevent demurrage and storage penalties.</p>
+
+        
+
+        <div class="alert-list-items">
+
+            {% for delayed in flagged_delayed_list %}
+
+            <div class="alert-item-row">
+
+                <div>
+
+                    <strong><a href="{% url 'job_detail' delayed.job.id %}" style="color:#B91C1C;text-decoration:none;">
+
+                        {% if is_ceo or is_admin %}{{ delayed.job.job_number }}{% else %}B/L: {{ delayed.job.bl_number|default:delayed.job.job_number }}{% endif %}
+
+                    </a></strong>: 
+
+                    {{ delayed.job.customer.company_name }} &bull; Stage {{ delayed.stage_number }} ({{ delayed.name_en }})
+
+                </div>
+
+                <div>
+
+                    <span style="background:#FEE2E2;color:#991B1B;padding:0.2rem 0.5rem;border-radius:4px;font-weight:700;">
+
+                        Target: {{ delayed.target_days }}d | Spent: {{ delayed.duration_days }}d
+
+                    </span>
+
+                    <a href="{% url 'job_detail' delayed.job.id %}" class="btn-header-action btn-outline" style="padding:0.2rem 0.6rem;font-size:0.75rem;margin-left:0.5rem;">
+
+                        Resolve <i class="fa-solid fa-arrow-right"></i>
+
+                    </a>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+
+
+
+
+
+{% if is_clearing and customs_pending_queue %}
+
+<!-- PENDING TANCIS LODGEMENTS (FOR CUSTOMS DECLARER SPEC) -->
+
+<div class="card-panel" style="margin-bottom:1.5rem;">
+
+    <div class="card-panel-header" style="background:#FFFBEB;">
+
+        <div>
+
+            <h3 class="panel-title" style="color:#B45309;"><i class="fa-solid fa-file-contract"></i> Pending TANCIS Lodgements</h3>
+
+            <p class="panel-description" style="color:#92400E;">Jobs opened by Operations awaiting declaration & entry submission</p>
+
+        </div>
+
+        <a href="{% url 'customs_pending_declarations' %}" class="btn-header-action btn-primary" style="font-size:0.75rem;padding:0.3rem 0.75rem;">
+
+            View All Pending ({{ pending_declarations_count }}) <i class="fa-solid fa-arrow-right"></i>
+
+        </a>
+
+    </div>
+
+    <div class="table-responsive">
+
+        <table class="modern-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>{% if is_ceo or is_admin %}Job Reference{% else %}B/L &amp; Chassis No{% endif %}</th>
+
+                    <th>Client</th>
+
+                    <th>Vessel & Origin</th>
+
+                    <th>Current Stage</th>
+
+                    <th>Doc Officer</th>
+
+                    <th>Action</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for pjob in customs_pending_queue %}
+
+                <tr>
+
+                    <td>
+
+                        {% if is_ceo or is_admin %}
+
+                        <strong style="color:var(--brand-navy-900);"><a href="{% url 'job_detail' pjob.id %}" style="color:var(--brand-primary);text-decoration:none;">{{ pjob.job_number }}</a></strong>
+
+                        <div style="font-size:0.75rem;color:var(--text-muted);">B/L: {{ pjob.bl_number }}</div>
+
+                        {% else %}
+
+                        <strong style="color:var(--brand-navy-900);font-family:monospace;font-size:0.95rem;">
+
+                            <a href="{% url 'job_detail' pjob.id %}" style="color:var(--brand-primary);text-decoration:none;">{{ pjob.bl_number|default:pjob.job_number }}</a>
+
+                        </strong>
+
+                        {% if pjob.chassis_number %}
+
+                        <div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">Chassis: {{ pjob.chassis_number }}</div>
+
+                        {% endif %}
+
+                        {% endif %}
+
+                    </td>
+
+                    <td><strong>{{ pjob.customer.company_name }}</strong></td>
+
+                    <td>{{ pjob.vessel_name }} ({{ pjob.port_of_origin }})</td>
+
+                    <td>
+
+                        <span class="badge-pill badge-active">Stage {{ pjob.current_stage_number }}: {{ pjob.current_stage_obj.name_en }}</span>
+
+                    </td>
+
+                    <td>
+
+                        <span style="font-size:0.8rem;color:var(--text-muted);">{% if pjob.documentation_officer %}{{ pjob.documentation_officer.get_full_name|default:pjob.documentation_officer.username }}{% else %}Unassigned{% endif %}</span>
+
+                    </td>
+
+                    <td>
+
+                        <a href="{% url 'customs_pending_declarations' %}?q={{ pjob.bl_number|default:pjob.job_number }}" class="btn-header-action btn-primary" style="padding:0.3rem 0.65rem;font-size:0.75rem;">
+
+                            <i class="fa-solid fa-pen-to-square"></i> Prepare Declaration
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+
+{% if is_doc and recent_doc_activities %}
+
+<!-- RECENT ACTIVITIES (FOR DOCUMENTATION OFFICER SPEC) -->
+
+<div class="card-panel" style="margin-bottom:1.5rem;">
+
+    <div class="card-panel-header" style="background:#F0FDF4;">
+
+        <div>
+
+            <h3 class="panel-title" style="color:#166534;"><i class="fa-solid fa-clock-rotate-left"></i> Recent Documentation Activities</h3>
+
+            <p class="panel-description" style="color:#15803D;">Latest received intake documents and file uploads</p>
+
+        </div>
+
+        <a href="{% url 'document_register' %}" class="btn-header-action btn-outline" style="font-size:0.75rem;padding:0.3rem 0.65rem;">
+
+            Full Register <i class="fa-solid fa-arrow-right"></i>
+
+        </a>
+
+    </div>
+
+    <div style="padding:1rem;">
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:0.75rem;">
+
+            {% for act in recent_doc_activities %}
+
+            <div style="display:flex;align-items:center;justify-content:space-between;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:var(--radius-sm);padding:0.75rem;">
+
+                <div style="display:flex;align-items:center;gap:0.6rem;overflow:hidden;">
+
+                    <div style="width:32px;height:32px;border-radius:var(--radius-sm);background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;">
+
+                        <i class="fa-solid fa-file-lines"></i>
+
+                    </div>
+
+                    <div style="overflow:hidden;">
+
+                        <strong style="font-size:0.82rem;color:var(--brand-navy-900);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ act.title }}">{{ act.title }}</strong>
+
+                        <span style="font-size:0.7rem;color:var(--text-muted);">{% if is_ceo or is_admin %}{{ act.job.job_number }} &bull; {% else %}B/L: {{ act.job.bl_number|default:act.job.job_number }} &bull; {% endif %}{{ act.job.customer.company_name|truncatechars:18 }}</span>
+
+                    </div>
+
+                </div>
+
+                {% if act.file %}
+
+                <a href="{{ act.file.url }}" target="_blank" class="btn-header-action btn-outline" style="padding:0.25rem 0.5rem;font-size:0.7rem;flex-shrink:0;">
+
+                    View
+
+                </a>
+
+                {% endif %}
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+
+{% if is_finance and pending_expenses %}
+
+<!-- PENDING DISBURSEMENTS QUEUE (FOR FINANCE OFFICER SPEC) -->
+
+<div class="card-panel" style="margin-bottom:1.5rem;">
+
+    <div class="card-panel-header" style="background:#FFF1F2;">
+
+        <div>
+
+            <h3 class="panel-title" style="color:#BE123C;"><i class="fa-solid fa-clock-rotate-left"></i> Urgent Operational Payments Awaiting Action</h3>
+
+            <p class="panel-description" style="color:#9F1239;">Requested vouchers for TRA duty, shipping line D/O, and port charges</p>
+
+        </div>
+
+        <a href="{% url 'finance_pending_payments' %}" class="btn-header-action btn-primary" style="font-size:0.75rem;padding:0.3rem 0.75rem;">
+
+            View All Pending ({{ pending_expenses|length }}) <i class="fa-solid fa-arrow-right"></i>
+
+        </a>
+
+    </div>
+
+    <div class="table-responsive">
+
+        <table class="modern-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>Voucher #</th>
+
+                    <th>{% if is_ceo or is_admin %}Shipment Job{% else %}B/L &amp; Chassis No{% endif %}</th>
+
+                    <th>Category</th>
+
+                    <th>Amount (TSh)</th>
+
+                    <th>Required Authority</th>
+
+                    <th>Status</th>
+
+                    <th>Action</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for exp in pending_expenses %}
+
+                <tr>
+
+                    <td><strong>{{ exp.voucher_number }}</strong></td>
+
+                    <td>
+
+                        {% if is_ceo or is_admin %}
+
+                        <a href="{% url 'job_detail' exp.job.id %}" style="color:var(--brand-primary);text-decoration:none;font-weight:600;">
+
+                            {{ exp.job.job_number }}
+
+                        </a>
+
+                        <div style="font-size:0.75rem;color:var(--text-muted);">{{ exp.job.customer.company_name|truncatechars:20 }}</div>
+
+                        {% else %}
+
+                        <a href="{% url 'job_detail' exp.job.id %}" style="color:var(--brand-primary);text-decoration:none;font-weight:700;font-family:monospace;">
+
+                            {{ exp.job.bl_number|default:exp.job.job_number }}
+
+                        </a>
+
+                        <div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">Chassis: {{ exp.job.chassis_number|default:"—" }}</div>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td><span class="badge-pill" style="background:#F1F5F9;color:#334155;">{{ exp.get_category_display }}</span></td>
+
+                    <td><strong style="color:var(--brand-navy-900);">TSh {{ exp.amount|floatformat:0 }}</strong></td>
+
+                    <td><span class="badge-pill" style="background:#FEF3C7;color:#B45309;font-weight:700;">{{ exp.get_required_role_display }}</span></td>
+
+                    <td><span class="badge-pill badge-delayed">{{ exp.get_approval_status_display }}</span></td>
+
+                    <td>
+
+                        <a href="{% url 'finance_pending_payments' %}?q={{ exp.voucher_number }}" class="btn-header-action btn-primary" style="padding:0.25rem 0.6rem;font-size:0.75rem;">
+
+                            Review & Pay
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+
+<!-- LIVE SHIPMENTS TRACKING PULSE TABLE WITH QUICK FILTER TABS -->
+<div class="card-panel" id="trackingPulsePanel">
+    <div class="card-panel-header" style="flex-wrap:wrap;gap:0.85rem;">
+        <div>
+            <h3 class="panel-title"><i class="fa-solid fa-clock-rotate-left"></i> {% if can_view_all_stages %}Shipments Tracking Pulse{% else %}Your Operational Shipments Pulse{% endif %}</h3>
+            <p class="panel-description">{% if can_view_all_stages %}Live end-to-end tracking of all shipments — filter easily by Active, Completed, In-Bond, Port, TRA, or Delayed{% else %}Active shipments requiring action or tracking in your designated workflow stages{% endif %}</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+            <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline" style="font-size:0.8rem;">
+                View All Shipments ({{ pulse_all_count|default:visible_jobs_count }}) <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- TRACKING PULSE FILTER & SEARCH BAR -->
+    <div style="padding:0.85rem 1.25rem;background:#F8FAFC;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+        <div id="trackingPulseFilterBtns" style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;">
+            <span style="font-size:0.74rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-right:0.2rem;">
+                <i class="fa-solid fa-filter" style="color:var(--brand-primary);"></i> Filter:
+            </span>
+            <button type="button" data-pulse-filter="ALL" onclick="window.filterTrackingPulse('ALL')" class="pulse-filter-btn active" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:800;border:1.5px solid #2563EB;background:#2563EB;color:#FFFFFF;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:all 0.15s;">
+                <i class="fa-solid fa-layer-group"></i> All
+                <span style="background:rgba(255,255,255,0.22);color:#FFF;padding:1px 7px;border-radius:999px;font-size:0.72rem;">{{ pulse_all_count|default:visible_jobs_count }}</span>
+            </button>
+            <button type="button" data-pulse-filter="ACTIVE" onclick="window.filterTrackingPulse('ACTIVE')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:all 0.15s;">
+                <span style="width:8px;height:8px;border-radius:50%;background:#2563EB;display:inline-block;"></span> Active
+                <span style="background:#EFF6FF;color:#1D4ED8;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_active_count|default:active_jobs_count }}</span>
+            </button>
+            <button type="button" data-pulse-filter="COMPLETED" onclick="window.filterTrackingPulse('COMPLETED')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:all 0.15s;">
+                <span style="width:8px;height:8px;border-radius:50%;background:#16A34A;display:inline-block;"></span> Completed
+                <span style="background:#DCFCE7;color:#15803D;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_completed_count|default:completed_jobs_count }}</span>
+            </button>
+            {% if can_view_all_stages %}
+            <button type="button" data-pulse-filter="TRA" onclick="window.filterTrackingPulse('TRA')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:all 0.15s;">
+                <i class="fa-solid fa-stamp" style="color:#7C3AED;font-size:0.72rem;"></i> At TRA
+                <span style="background:#F3E8FF;color:#6D28D9;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_tra_count|default:jobs_at_tra }}</span>
+            </button>
+            <button type="button" data-pulse-filter="PORT" onclick="window.filterTrackingPulse('PORT')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:all 0.15s;">
+                <i class="fa-solid fa-anchor" style="color:#0284C7;font-size:0.72rem;"></i> At Port
+                <span style="background:#E0F2FE;color:#0369A1;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_port_count|default:jobs_at_port }}</span>
+            </button>
+            <button type="button" data-pulse-filter="BOND" onclick="window.filterTrackingPulse('BOND')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:all 0.15s;">
+                <i class="fa-solid fa-warehouse" style="color:#D97706;font-size:0.72rem;"></i> In-Bond / Yard
+                <span style="background:#FEF3C7;color:#B45309;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_bond_count|default:in_bond_count }}</span>
+            </button>
+            {% endif %}
+            <button type="button" data-pulse-filter="DELAYED" onclick="window.filterTrackingPulse('DELAYED')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:all 0.15s;">
+                <span style="width:8px;height:8px;border-radius:50%;background:#DC2626;display:inline-block;"></span> Delayed
+                <span style="background:#FEE2E2;color:#B91C1C;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_delayed_count|default:delayed_jobs_count }}</span>
+            </button>
+        </div>
+
+        <!-- Instant Quick Search Input -->
+        <div style="position:relative;min-width:230px;flex:0 1 280px;">
+            <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:0.8rem;pointer-events:none;"></i>
+            <input type="text" id="trackingPulseSearch" oninput="window.applyTrackingPulseFilters()" placeholder="Search File No, BL, Client, Car..." style="width:100%;padding:0.42rem 2rem 0.42rem 2.1rem;border:1px solid #CBD5E1;border-radius:999px;font-size:0.79rem;background:#FFFFFF;color:#0F172A;outline:none;">
+            <button type="button" id="trackingPulseClearSearch" onclick="document.getElementById('trackingPulseSearch').value='';window.applyTrackingPulseFilters();" style="display:none;position:absolute;right:0.55rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#94A3B8;cursor:pointer;font-size:0.8rem;" title="Clear search">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-table" id="trackingPulseTable" data-page-size="8">
+            <thead>
+                <tr>
+                    <th style="min-width:160px;">File No &amp; BL</th>
+                    <th style="min-width:200px;">Client &amp; Cargo</th>
+                    <th style="min-width:220px;">Current Location &amp; Stage</th>
+                    <th style="min-width:130px;">Status</th>
+                    {% if can_view_financials %}
+                    <th style="min-width:150px;">Profit &amp; Margin</th>
+                    {% endif %}
+                    <th style="text-align:right;min-width:150px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+                <tr class="tracking-pulse-row"
+                    data-status="{% if job.status == 'COMPLETED' or job.status == 'CLOSED' %}COMPLETED{% elif job.status == 'DELAYED' %}DELAYED{% else %}ACTIVE{% endif %}"
+                    data-stage="{{ job.current_stage_number }}"
+                    data-mode="{{ job.clearance_mode }}"
+                    data-search="{{ job.job_number|lower }} {{ job.bl_number|default:''|lower }} {{ job.customer.company_name|lower }} {{ job.cargo_description|default:''|lower }} {{ job.chassis_number|default:''|lower }} {{ job.current_stage_display_name|lower }}">
+                    <!-- 1. FILE NO & BL -->
+                    <td>
+                        <strong style="font-family:var(--font-heading);font-size:0.95rem;color:var(--brand-navy-900);">
+                            <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;">
+                                {{ job.job_number }}
+                            </a>
+                        </strong>
+                        <div style="font-size:0.78rem;font-weight:700;color:#0F172A;font-family:monospace;margin-top:2px;">
+                            BL: {{ job.bl_number|default:"—" }}
+                        </div>
+                    </td>
+
+                    <!-- 2. CLIENT & CARGO -->
+                    <td>
+                        <strong style="color:var(--brand-navy-900);font-size:0.92rem;display:block;">
+                            {{ job.customer.company_name }}
+                        </strong>
+                        <div style="font-size:0.78rem;color:#475569;margin-top:2px;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">
+                            <span style="display:inline-flex;align-items:center;gap:0.25rem;color:#0369A1;font-weight:600;">
+                                <i class="fa-solid fa-car" style="font-size:0.72rem;"></i>
+                                {{ job.cargo_description|default:"1 Motor Vehicle"|truncatechars:26 }}
+                            </span>
+                            {% if job.chassis_number and job.chassis_number != "—" and job.chassis_number != "-" %}
+                            <span style="color:#CBD5E1;">&bull;</span>
+                            <span style="font-family:monospace;font-size:0.72rem;color:#64748B;">Chassis: {{ job.chassis_number|truncatechars:10 }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+
+                    <!-- 3. CURRENT LOCATION & STAGE -->
+                    <td>
+                        <div style="display:inline-flex;align-items:center;gap:0.45rem;background:{% if job.status == 'COMPLETED' or job.status == 'CLOSED' %}#F0FDF4{% else %}#F8FAFC{% endif %};padding:4px 8px;border-radius:6px;border:1px solid {% if job.status == 'COMPLETED' or job.status == 'CLOSED' %}#BBF7D0{% else %}#E2E8F0{% endif %};">
+                            <span style="font-size:0.72rem;font-weight:800;background:{% if job.status == 'COMPLETED' or job.status == 'CLOSED' %}#16A34A{% else %}var(--brand-primary){% endif %};color:#FFF;padding:2px 6px;border-radius:4px;white-space:nowrap;">
+                                Step {{ job.current_stage_number }}
+                            </span>
+                            <span style="font-size:0.82rem;font-weight:700;color:var(--brand-navy-900);white-space:nowrap;">
+                                {{ job.current_stage_display_name }}
+                            </span>
+                        </div>
+                        {% if job.clearance_mode == 'BOND' and job.status != 'COMPLETED' and job.status != 'CLOSED' %}
+                        <div style="margin-top:3px;">
+                            <span style="font-size:0.68rem;font-weight:800;background:#FEF3C7;color:#B45309;padding:1px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:0.25rem;">
+                                <i class="fa-solid fa-warehouse"></i> IN-BOND STORAGE
+                            </span>
+                        </div>
+                        {% endif %}
+                    </td>
+
+                    <!-- 4. STATUS -->
+                    <td>
+                        {% if job.status == 'DELAYED' %}
+                        <span class="badge-pill badge-delayed" style="font-weight:700;">
+                            <span class="badge-dot"></span> Delayed
+                        </span>
+                        {% elif job.status == 'COMPLETED' or job.status == 'CLOSED' %}
+                        <span class="badge-pill badge-completed" style="font-weight:700;background:#DCFCE7;color:#15803D;border:1px solid #86EFAC;">
+                            <i class="fa-solid fa-circle-check" style="font-size:0.72rem;"></i> Completed
+                        </span>
+                        {% else %}
+                        <span class="badge-pill badge-active" style="font-weight:700;">
+                            <span class="badge-dot"></span> On Track
+                        </span>
+                        {% endif %}
+                    </td>
+
+                    <!-- 5. PROFIT & MARGIN -->
+                    {% if can_view_financials %}
+                    <td>
+                        <strong class="{% if job.gross_margin > 0 %}text-profit-positive{% else %}text-profit-negative{% endif %}" style="font-size:0.92rem;display:block;">
+                            TSh {{ job.gross_margin|floatformat:0 }}
+                        </strong>
+                        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:1px;">
+                            {{ job.gross_margin_percentage }}% margin
+                        </div>
+                    </td>
+                    {% endif %}
+
+                    <!-- 6. ACTION (BOTH BUTTONS PRESERVED) -->
+                    <td style="text-align:right;white-space:nowrap;">
+                        <div style="display:inline-flex;gap:0.4rem;align-items:center;">
+                            <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="padding:0.35rem 0.72rem;font-size:0.78rem;background:#16A34A;color:#FFFFFF;border:none;font-weight:800;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:0.32rem;box-shadow:0 1px 2px rgba(22,163,74,0.3);" title="Track 9 Clearance Milestones">
+                                <i class="fa-solid fa-route"></i> Track
+                            </a>
+                            <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.78rem;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:0.25rem;">
+                                File <i class="fa-solid fa-chevron-right" style="font-size:0.7rem;"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">
+                        {% if can_view_all_stages %}
+                        No shipments currently recorded. Click 'Open New File' to register a shipment.
+                        {% else %}
+                        No active shipments currently requiring action in your assigned workflow stages.
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div id="trackingPulseEmptyState" style="display:none;text-align:center;padding:2.2rem 1rem;color:#64748B;font-size:0.88rem;border-top:1px solid #F1F5F9;">
+            <i class="fa-solid fa-filter-circle-xmark" style="font-size:1.5rem;color:#94A3B8;display:block;margin-bottom:0.5rem;"></i>
+            No shipments match the selected filter.
+            <button type="button" onclick="document.getElementById('trackingPulseSearch').value='';window.filterTrackingPulse('ALL');" style="margin-left:0.5rem;background:none;border:none;color:#2563EB;font-weight:700;text-decoration:underline;cursor:pointer;">Show All Shipments</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    window._currentPulseFilter = 'ALL';
+
+    window.filterTrackingPulse = function(filterType) {
+        window._currentPulseFilter = filterType || 'ALL';
+        var btns = document.querySelectorAll('#trackingPulseFilterBtns .pulse-filter-btn');
+        btns.forEach(function(btn) {
+            var isAct = btn.getAttribute('data-pulse-filter') === window._currentPulseFilter;
+            btn.classList.toggle('active', isAct);
+            if (isAct) {
+                btn.style.background = '#2563EB';
+                btn.style.borderColor = '#2563EB';
+                btn.style.color = '#FFFFFF';
+            } else {
+                btn.style.background = '#FFFFFF';
+                btn.style.borderColor = '#CBD5E1';
+                btn.style.color = '#1E293B';
+            }
+        });
+        window.applyTrackingPulseFilters();
+    };
+
+    window.filterTrackingPulseAndScroll = function(filterType) {
+        window.filterTrackingPulse(filterType);
+        var panel = document.getElementById('trackingPulsePanel');
+        if (panel) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    window.applyTrackingPulseFilters = function() {
+        var table = document.getElementById('trackingPulseTable');
+        if (!table) return;
+        var searchInput = document.getElementById('trackingPulseSearch');
+        var clearBtn = document.getElementById('trackingPulseClearSearch');
+        var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
+
+        var filter = window._currentPulseFilter || 'ALL';
+        var rows = table.querySelectorAll('tbody tr.tracking-pulse-row');
+        var matchCount = 0;
+
+        rows.forEach(function(row) {
+            var status = row.getAttribute('data-status') || '';
+            var stage = parseInt(row.getAttribute('data-stage') || '1', 10);
+            var mode = row.getAttribute('data-mode') || '';
+            var searchBlob = row.getAttribute('data-search') || '';
+
+            var statusMatch = true;
+            if (filter === 'ACTIVE') {
+                statusMatch = (status === 'ACTIVE');
+            } else if (filter === 'COMPLETED') {
+                statusMatch = (status === 'COMPLETED');
+            } else if (filter === 'DELAYED') {
+                statusMatch = (status === 'DELAYED');
+            } else if (filter === 'TRA') {
+                statusMatch = (status !== 'COMPLETED' && (stage === 2 || stage === 3 || stage === 4));
+            } else if (filter === 'PORT') {
+                statusMatch = (status !== 'COMPLETED' && (stage === 5 || stage === 6 || stage === 7));
+            } else if (filter === 'BOND') {
+                statusMatch = (status !== 'COMPLETED' && (mode === 'BOND' || stage === 8));
+            }
+
+            var queryMatch = !query || searchBlob.indexOf(query) !== -1;
+            var visible = statusMatch && queryMatch;
+
+            row.dataset.hiddenByFilter = visible ? 'false' : 'true';
+            row.setAttribute('data-filter-hidden', visible ? 'false' : 'true');
+            row.style.display = visible ? '' : 'none';
+            if (visible) matchCount++;
+        });
+
+        var emptyState = document.getElementById('trackingPulseEmptyState');
+        if (emptyState && rows.length > 0) {
+            emptyState.style.display = (matchCount === 0) ? 'block' : 'none';
+        }
+
+        if (typeof window.repaginateTable === 'function') {
+            window.repaginateTable(table, 1);
+        }
+    };
+})();
+</script>
+
+<!-- PENDING EXPENSE APPROVALS MODAL / QUICK ACTION BAR (Finance & Operations Only) -->
+
+{% if pending_expenses and can_manage_finance or pending_expenses and is_ops %}
+
+<div class="card-panel">
+
+    <div class="card-panel-header" style="background:#FFFBEB;">
+
+        <div>
+
+            <h3 class="panel-title" style="color:#92400E;">
+
+                <i class="fa-solid fa-hand-holding-dollar"></i> Pending Expense Approvals (Approval Matrix)
+
+            </h3>
+
+            <p class="panel-description" style="color:#B45309;">
+
+                The following operational disbursements require supervisory / CEO sign-off
+
+            </p>
+
+        </div>
+
+        <span class="badge-pill badge-delayed">{{ pending_expenses|length }} Pending Action</span>
+
+    </div>
+
+    <div class="table-responsive">
+
+        <table class="modern-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>Voucher #</th>
+
+                    <th>{% if is_ceo or is_admin %}Job Reference{% else %}B/L &amp; Chassis No{% endif %}</th>
+
+                    <th>Category</th>
+
+                    <th>Amount (TSh)</th>
+
+                    <th>Required Approver</th>
+
+                    <th>Requested By</th>
+
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for exp in pending_expenses %}
+
+                <tr>
+
+                    <td><strong>{{ exp.voucher_number }}</strong></td>
+
+                    <td>
+
+                        {% if is_ceo or is_admin %}
+
+                        <a href="{% url 'job_detail' exp.job.id %}" style="color:var(--brand-primary);font-weight:600;">{{ exp.job.job_number }}</a>
+
+                        {% else %}
+
+                        <a href="{% url 'job_detail' exp.job.id %}" style="color:var(--brand-primary);font-weight:700;font-family:monospace;">{{ exp.job.bl_number|default:exp.job.job_number }}</a>
+
+                        <div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">Chassis: {{ exp.job.chassis_number|default:"—" }}</div>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td><span class="badge-pill" style="background:#F1F5F9;color:#334155;">{{ exp.get_category_display }}</span></td>
+
+                    <td><strong style="font-size:1rem;color:var(--brand-navy-900);">TSh {{ exp.amount|floatformat:2 }}</strong></td>
+
+                    <td>
+
+                        <span class="badge-pill" style="background:#FEF3C7;color:#B45309;font-weight:700;">
+
+                            {{ exp.get_required_role_display }}
+
+                        </span>
+
+                    </td>
+
+                    <td>{{ exp.requester.get_full_name|default:exp.requester.username }}</td>
+
+                    <td>
+
+                        <form action="{% url 'expense_approval' exp.id %}" method="POST" style="display:inline-flex;gap:0.35rem;">
+
+                            {% csrf_token %}
+
+                            <button type="submit" name="decision" value="APPROVE" class="btn-header-action btn-primary" style="background:#059669;padding:0.3rem 0.7rem;font-size:0.75rem;">
+
+                                <i class="fa-solid fa-check"></i> Approve
+
+                            </button>
+
+                            <button type="submit" name="decision" value="REJECT" class="btn-header-action btn-outline" style="color:#DC2626;border-color:#FCA5A5;padding:0.3rem 0.7rem;font-size:0.75rem;">
+
+                                <i class="fa-solid fa-xmark"></i> Reject
+
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+
+{% endblock %}
+
+
+
+{% block extra_js %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Financials Chart
+
+    const ctxFin = document.getElementById('financialsChart');
+
+    if (ctxFin) {
+
+        const rev = parseFloat(ctxFin.getAttribute('data-revenue') || '0');
+
+        const exp = parseFloat(ctxFin.getAttribute('data-expenses') || '0');
+
+        const mar = parseFloat(ctxFin.getAttribute('data-margin') || '0');
+
+
+
+        new Chart(ctxFin, {
+
+            type: 'bar',
+
+            data: {
+
+                labels: ['Billed Revenue', 'Direct Port & Ops Costs', 'Gross Margin'],
+
+                datasets: [{
+
+                    label: 'Amount in TSh',
+
+                    data: [rev, exp, mar],
+
+                    backgroundColor: [
+
+                        'rgba(37, 99, 235, 0.85)',
+
+                        'rgba(245, 158, 11, 0.85)',
+
+                        'rgba(16, 185, 129, 0.85)'
+
+                    ],
+
+                    borderRadius: 8,
+
+                    borderWidth: 0
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                plugins: {
+
+                    legend: { display: false }
+
+                },
+
+                scales: {
+
+                    y: {
+
+                        beginAtZero: true,
+
+                        ticks: {
+
+                            callback: function(val) {
+
+                                return 'TSh ' + (val / 1000000) + 'M';
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        });
+
+    }
+
+
+
+    // Pipeline Stages Chart
+
+    const ctxStages = document.getElementById('stagesChart');
+
+    const stagesJsonElem = document.getElementById('stagesDataJson');
+
+    if (ctxStages && stagesJsonElem) {
+
+        const stagesData = JSON.parse(stagesJsonElem.textContent);
+
+        const stageLabels = stagesData.map(function(s) {
+
+            return s.name.length > 18 ? s.name.substring(0, 18) + '...' : s.name;
+
+        });
+
+        const stageData = stagesData.map(function(s) {
+
+            return s.count;
+
+        });
+
+
+
+        new Chart(ctxStages, {
+
+            type: 'doughnut',
+
+            data: {
+
+                labels: stageLabels,
+
+                datasets: [{
+
+                    data: stageData,
+
+                    backgroundColor: [
+
+                        '#3B82F6', '#60A5FA', '#93C5FD', '#F59E0B', '#EF4444',
+
+                        '#10B981', '#059669', '#06B6D4', '#6366F1', '#8B5CF6', '#14B8A6'
+
+                    ],
+
+                    borderWidth: 2,
+
+                    borderColor: '#FFFFFF'
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                plugins: {
+
+                    legend: {
+
+                        position: 'right',
+
+                        labels: { boxWidth: 10, font: { size: 10 } }
+
+                    }
+
+                },
+
+                cutout: '65%'
+
+            }
+
+        });
+
+    }
+
+});
+
+</script>
+
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<!-- MALKIA AI EXECUTIVE — FLOATING CHAT WIDGET (CEO ONLY)   -->
+
+<!-- ═══════════════════════════════════════════════════════ -->
+
+{% if is_ceo %}
+
+<style>
+
+/* ── Floating AI Toggle Button ── */
+
+.exec-ai-fab {
+
+    position: fixed;
+
+    bottom: 28px;
+
+    right: 28px;
+
+    z-index: 9999;
+
+    width: 62px;
+
+    height: 62px;
+
+    border-radius: 50%;
+
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A855F7 100%);
+
+    border: none;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.45), 0 0 0 0 rgba(139, 92, 246, 0.3);
+
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    animation: exec-ai-pulse 2.5s ease-in-out infinite;
+
+}
+
+.exec-ai-fab:hover {
+
+    transform: scale(1.1) translateY(-2px);
+
+    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.6);
+
+}
+
+.exec-ai-fab i {
+
+    font-size: 1.5rem;
+
+    color: #fff;
+
+    transition: transform 0.3s ease;
+
+}
+
+.exec-ai-fab.active i { transform: rotate(90deg); }
+
+@keyframes exec-ai-pulse {
+
+    0%, 100% { box-shadow: 0 8px 32px rgba(99, 102, 241, 0.45), 0 0 0 0 rgba(139, 92, 246, 0.3); }
+
+    50% { box-shadow: 0 8px 32px rgba(99, 102, 241, 0.45), 0 0 0 12px rgba(139, 92, 246, 0); }
+
+}
+
+.exec-ai-fab .notif-dot {
+
+    position: absolute;
+
+    top: 2px;
+
+    right: 2px;
+
+    width: 14px;
+
+    height: 14px;
+
+    border-radius: 50%;
+
+    background: #EF4444;
+
+    border: 2px solid #fff;
+
+    animation: notif-blink 1.5s ease-in-out infinite;
+
+}
+
+@keyframes notif-blink {
+
+    0%, 100% { opacity: 1; }
+
+    50% { opacity: 0.4; }
+
+}
+
+
+
+/* ── Chat Panel ── */
+
+.exec-ai-panel {
+
+    position: fixed;
+
+    bottom: 92px;
+
+    right: 24px;
+
+    z-index: 9998;
+
+    width: 420px;
+
+    max-height: calc(100vh - 110px);
+
+    height: 560px;
+
+    border-radius: 20px;
+
+    background: linear-gradient(165deg, #0F172A 0%, #1E293B 100%);
+
+    border: 1px solid rgba(148, 163, 184, 0.15);
+
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 0 60px rgba(99, 102, 241, 0.08);
+
+    display: flex;
+
+    flex-direction: column;
+
+    overflow: hidden;
+
+    opacity: 0;
+
+    transform: translateY(20px) scale(0.95);
+
+    pointer-events: none;
+
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+}
+
+.exec-ai-panel.open {
+
+    opacity: 1;
+
+    transform: translateY(0) scale(1);
+
+    pointer-events: all;
+
+}
+
+
+
+/* ── Header ── */
+
+.exec-ai-header {
+
+    padding: 12px 18px;
+
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%);
+
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    flex-shrink: 0;
+
+}
+
+.exec-ai-avatar {
+
+    width: 38px;
+
+    height: 38px;
+
+    border-radius: 12px;
+
+    background: linear-gradient(135deg, #6366F1, #A855F7);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 1.1rem;
+
+    color: #fff;
+
+    flex-shrink: 0;
+
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+
+}
+
+.exec-ai-header-info h4 {
+
+    margin: 0;
+
+    font-size: 0.92rem;
+
+    font-weight: 700;
+
+    color: #F8FAFC;
+
+    letter-spacing: -0.02em;
+
+}
+
+.exec-ai-header-info p {
+
+    margin: 2px 0 0;
+
+    font-size: 0.7rem;
+
+    color: #94A3B8;
+
+}
+
+.exec-ai-header-info p .online-dot {
+
+    display: inline-block;
+
+    width: 7px;
+
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #22C55E;
+
+    margin-right: 4px;
+
+    box-shadow: 0 0 6px #22C55E;
+
+}
+
+
+
+/* ── Messages ── */
+
+.exec-ai-messages {
+
+    flex: 1;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    padding: 16px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+
+    scrollbar-width: thin;
+
+    scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
+
+}
+
+.exec-ai-messages::-webkit-scrollbar { width: 4px; }
+
+.exec-ai-messages::-webkit-scrollbar-track { background: transparent; }
+
+.exec-ai-messages::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 10px; }
+
+
+
+.exec-ai-msg {
+
+    max-width: 92%;
+
+    padding: 12px 16px;
+
+    border-radius: 16px;
+
+    font-size: 0.82rem;
+
+    line-height: 1.6;
+
+    animation: exec-msg-in 0.3s ease-out;
+
+}
+
+@keyframes exec-msg-in {
+
+    from { opacity: 0; transform: translateY(8px); }
+
+    to { opacity: 1; transform: translateY(0); }
+
+}
+
+
+
+.exec-ai-msg.bot {
+
+    background: rgba(30, 41, 59, 0.9);
+
+    border: 1px solid rgba(148, 163, 184, 0.1);
+
+    color: #E2E8F0;
+
+    align-self: flex-start;
+
+    border-bottom-left-radius: 4px;
+
+}
+
+.exec-ai-msg.bot strong { color: #A5B4FC; }
+
+.exec-ai-msg.bot p { margin: 4px 0; }
+
+
+
+.exec-ai-msg.user {
+
+    background: linear-gradient(135deg, #4F46E5, #6366F1);
+
+    color: #F8FAFC;
+
+    align-self: flex-end;
+
+    border-bottom-right-radius: 4px;
+
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+
+}
+
+.exec-ai-msg .msg-time {
+
+    font-size: 0.65rem;
+
+    color: rgba(148, 163, 184, 0.6);
+
+    margin-top: 6px;
+
+    display: block;
+
+    text-align: right;
+
+}
+
+.exec-ai-msg.user .msg-time { color: rgba(255,255,255,0.5); }
+
+
+
+/* ── Typing Indicator ── */
+
+.exec-ai-typing {
+
+    display: none;
+
+    align-self: flex-start;
+
+    padding: 10px 16px;
+
+    background: rgba(30, 41, 59, 0.8);
+
+    border: 1px solid rgba(148, 163, 184, 0.08);
+
+    border-radius: 16px;
+
+    border-bottom-left-radius: 4px;
+
+    gap: 4px;
+
+    align-items: center;
+
+}
+
+.exec-ai-typing.show { display: flex; }
+
+.exec-ai-typing span {
+
+    width: 6px;
+
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: #6366F1;
+
+    animation: exec-typing-bounce 1.4s infinite ease-in-out;
+
+}
+
+.exec-ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+
+.exec-ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes exec-typing-bounce {
+
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+
+    40% { transform: translateY(-8px); opacity: 1; }
+
+}
+
+
+
+/* ── Suggestions ── */
+
+.exec-ai-suggestions {
+
+    padding: 8px 16px;
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 6px;
+
+    border-top: 1px solid rgba(148, 163, 184, 0.08);
+
+    background: rgba(15, 23, 42, 0.6);
+
+}
+
+.exec-ai-suggestions:empty { display: none; padding: 0; border: none; }
+
+.exec-ai-chip {
+
+    padding: 5px 12px;
+
+    border-radius: 20px;
+
+    font-size: 0.7rem;
+
+    background: rgba(99, 102, 241, 0.1);
+
+    border: 1px solid rgba(99, 102, 241, 0.25);
+
+    color: #A5B4FC;
+
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+
+    white-space: nowrap;
+
+}
+
+.exec-ai-chip:hover {
+
+    background: rgba(99, 102, 241, 0.25);
+
+    border-color: #6366F1;
+
+    color: #E0E7FF;
+
+    transform: translateY(-1px);
+
+}
+
+
+
+/* ── Input ── */
+
+.exec-ai-input-wrap {
+
+    padding: 12px 16px;
+
+    background: rgba(15, 23, 42, 0.8);
+
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+
+    display: flex;
+
+    gap: 8px;
+
+    align-items: center;
+
+}
+
+.exec-ai-input-wrap input {
+
+    flex: 1;
+
+    padding: 10px 16px;
+
+    border-radius: 12px;
+
+    border: 1px solid rgba(148, 163, 184, 0.15);
+
+    background: rgba(30, 41, 59, 0.7);
+
+    color: #F1F5F9;
+
+    font-size: 0.82rem;
+
+    outline: none;
+
+    transition: border-color 0.2s;
+
+}
+
+.exec-ai-input-wrap input:focus {
+
+    border-color: #6366F1;
+
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+
+}
+
+.exec-ai-input-wrap input::placeholder {
+
+    color: #64748B;
+
+}
+
+.exec-ai-send-btn {
+
+    width: 40px;
+
+    height: 40px;
+
+    border-radius: 12px;
+
+    border: none;
+
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+
+    color: #fff;
+
+    font-size: 0.95rem;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    transition: all 0.2s ease;
+
+    flex-shrink: 0;
+
+}
+
+.exec-ai-send-btn:hover {
+
+    transform: scale(1.08);
+
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+
+}
+
+.exec-ai-send-btn:disabled {
+
+    opacity: 0.5;
+
+    cursor: not-allowed;
+
+    transform: none;
+
+}
+
+
+
+/* ── Responsive ── */
+
+@media (max-width: 640px) {
+
+    .exec-ai-panel {
+
+        position: fixed !important;
+
+        top: 0 !important;
+
+        left: 0 !important;
+
+        right: 0 !important;
+
+        bottom: 0 !important;
+
+        width: 100vw !important;
+
+        max-width: 100vw !important;
+
+        height: 100% !important;
+
+        height: 100dvh !important;
+
+        max-height: 100dvh !important;
+
+        border-radius: 0 !important;
+
+        margin: 0 !important;
+
+        transform: translateY(100%) !important;
+
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease !important;
+
+        box-shadow: none !important;
+
+        z-index: 999999 !important;
+
+        background: #0F172A !important;
+
+        display: flex !important;
+
+        flex-direction: column !important;
+
+    }
+
+    .exec-ai-panel.open {
+
+        transform: translateY(0) !important;
+
+        opacity: 1 !important;
+
+        pointer-events: auto !important;
+
+    }
+
+    .exec-ai-header {
+
+        position: sticky !important;
+
+        top: 0 !important;
+
+        left: 0 !important;
+
+        right: 0 !important;
+
+        flex-shrink: 0 !important;
+
+        z-index: 100 !important;
+
+        padding: 10px 14px !important;
+
+        padding-top: max(10px, env(safe-area-inset-top)) !important;
+
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
+
+    }
+
+    .exec-ai-messages {
+
+        flex: 1 1 auto !important;
+
+        min-height: 0 !important;
+
+        overflow-y: auto !important;
+
+        -webkit-overflow-scrolling: touch !important;
+
+        padding: 12px 14px !important;
+
+    }
+
+    .exec-ai-suggestions {
+
+        flex-shrink: 0 !important;
+
+        padding: 6px 14px !important;
+
+    }
+
+    .exec-ai-typing {
+
+        flex-shrink: 0 !important;
+
+    }
+
+    .exec-ai-input-wrap {
+
+        position: sticky !important;
+
+        bottom: 0 !important;
+
+        left: 0 !important;
+
+        right: 0 !important;
+
+        flex-shrink: 0 !important;
+
+        background: rgba(15, 23, 42, 0.98) !important;
+
+        padding: 10px 14px !important;
+
+        padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+
+        border-top: 1px solid rgba(148, 163, 184, 0.15) !important;
+
+        z-index: 100 !important;
+
+    }
+
+    .exec-ai-input-wrap input {
+
+        font-size: 16px !important; /* Prevents mobile browser auto-zoom jump */
+
+    }
+
+    .exec-ai-fab { bottom: 18px; right: 18px; width: 54px; height: 54px; }
+
+}
+
+</style>
+
+
+
+<!-- FAB Button -->
+
+<button class="exec-ai-fab" id="execAiFab" title="Malkia AI Executive Assistant">
+
+    <span class="notif-dot"></span>
+
+    <i class="fa-solid fa-robot"></i>
+
+</button>
+
+
+
+<!-- Chat Panel -->
+
+<div class="exec-ai-panel" id="execAiPanel">
+
+    <div class="exec-ai-header">
+
+        <div style="display:flex; align-items:center; gap:10px;">
+
+            <div class="exec-ai-avatar">
+
+                <i class="fa-solid fa-brain"></i>
+
+            </div>
+
+            <div class="exec-ai-header-info">
+
+                <h4>Malkia AI Executive</h4>
+
+                <p><span class="online-dot"></span>DeepSeek AI • Active Intelligence</p>
+
+            </div>
+
+        </div>
+
+        <div style="display:flex; align-items:center; gap:6px;">
+
+            <button id="execAiResetBtn" title="Reset Chat" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#94A3B8; cursor:pointer; font-size:0.85rem; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
+
+                <i class="fa-solid fa-rotate-right"></i>
+
+            </button>
+
+            <button id="execAiCloseBtn" title="Close Chat" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#FCA5A5; cursor:pointer; font-size:1.1rem; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="exec-ai-messages" id="execAiMessages">
+
+        <!-- Messages render here -->
+
+    </div>
+
+
+
+    <div class="exec-ai-typing" id="execAiTyping">
+
+        <span></span><span></span><span></span>
+
+    </div>
+
+
+
+    <div class="exec-ai-suggestions" id="execAiSuggestions">
+
+        <!-- Dynamic suggestion chips -->
+
+    </div>
+
+
+
+    <div class="exec-ai-input-wrap">
+
+        <input type="text" id="execAiInput" placeholder="Ask any executive or business query..." autocomplete="off">
+
+        <button class="exec-ai-send-btn" id="execAiSendBtn" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+(function() {
+
+    const fab = document.getElementById('execAiFab');
+
+    const panel = document.getElementById('execAiPanel');
+
+    const msgContainer = document.getElementById('execAiMessages');
+
+    const typingIndicator = document.getElementById('execAiTyping');
+
+    const suggestionsWrap = document.getElementById('execAiSuggestions');
+
+    const input = document.getElementById('execAiInput');
+
+    const sendBtn = document.getElementById('execAiSendBtn');
+
+    const closeBtn = document.getElementById('execAiCloseBtn');
+
+    const fabIcon = fab ? fab.querySelector('i') : null;
+
+    const API_URL = '{% url "executive_ai_chat_api" %}';
+
+    let isOpen = false;
+
+    let isFirstOpen = true;
+
+
+
+    function closePanel() {
+
+        isOpen = false;
+
+        panel.classList.remove('open');
+
+        fab.classList.remove('active');
+
+        if (fabIcon) fabIcon.className = 'fa-solid fa-robot';
+
+        document.body.style.overflow = '';
+
+        panel.style.height = '';
+
+    }
+
+
+
+    function openPanel() {
+
+        isOpen = true;
+
+        panel.classList.add('open');
+
+        fab.classList.add('active');
+
+        if (fabIcon) fabIcon.className = 'fa-solid fa-xmark';
+
+        const dot = fab.querySelector('.notif-dot');
+
+        if (dot) dot.style.display = 'none';
+
+        if (window.innerWidth <= 640) {
+
+            document.body.style.overflow = 'hidden';
+
+        }
+
+        if (isFirstOpen) {
+
+            isFirstOpen = false;
+
+            appendBotMsg('Hello! 👋 I am Malkia AI Executive, your executive intelligence assistant. How can I assist you with operations today?');
+
+        }
+
+        setTimeout(function() { 
+
+            input.focus(); 
+
+            if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+
+        }, 300);
+
+    }
+
+
+
+    // Mobile keyboard and visualViewport handling
+
+    input.addEventListener('focus', function() {
+
+        if (window.innerWidth <= 640) {
+
+            window.scrollTo(0, 0);
+
+            document.body.scrollTop = 0;
+
+            setTimeout(function() {
+
+                if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+
+            }, 120);
+
+        }
+
+    });
+
+
+
+    if (window.visualViewport) {
+
+        window.visualViewport.addEventListener('resize', function() {
+
+            if (isOpen && window.innerWidth <= 640 && panel) {
+
+                panel.style.height = `${window.visualViewport.height}px`;
+
+                if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+
+            }
+
+        });
+
+    }
+
+
+
+    fab.addEventListener('click', function() {
+
+        if (isOpen) closePanel();
+
+        else openPanel();
+
+    });
+
+
+
+    if (closeBtn) {
+
+        closeBtn.addEventListener('click', closePanel);
+
+    }
+
+
+
+    document.addEventListener('keydown', function(e) {
+
+        if (e.key === 'Escape' && isOpen) closePanel();
+
+    });
+
+
+
+    // Send message
+
+    function sendMessage() {
+
+        const text = input.value.trim();
+
+        if (!text) return;
+
+        appendUserMsg(text);
+
+        input.value = '';
+
+        sendBtn.disabled = true;
+
+        sendToAI(text);
+
+    }
+
+
+
+    sendBtn.addEventListener('click', sendMessage);
+
+    input.addEventListener('keydown', function(e) {
+
+        if (e.key === 'Enter') sendMessage();
+
+    });
+
+
+
+    const resetBtn = document.getElementById('execAiResetBtn');
+
+    if (resetBtn) {
+
+        resetBtn.addEventListener('click', function() {
+
+            fetch(API_URL, {
+
+                method: 'POST',
+
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRF() },
+
+                body: JSON.stringify({ action: 'clear' })
+
+            });
+
+            msgContainer.innerHTML = '';
+
+            appendBotMsg('Conversation reset. How can I assist you today?');
+
+        });
+
+    }
+
+
+
+    function appendUserMsg(text) {
+
+        const now = new Date();
+
+        const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+
+        const div = document.createElement('div');
+
+        div.className = 'exec-ai-msg user';
+
+        div.innerHTML = escapeHtml(text) + '<span class="msg-time">' + timeStr + '</span>';
+
+        msgContainer.appendChild(div);
+
+        scrollBottom();
+
+    }
+
+
+
+    function appendBotMsg(html, time) {
+
+        const div = document.createElement('div');
+
+        div.className = 'exec-ai-msg bot';
+
+        div.innerHTML = renderMarkdown(html) + '<span class="msg-time">' + (time || '') + '</span>';
+
+        msgContainer.appendChild(div);
+
+        scrollBottom();
+
+    }
+
+
+
+    function showTyping() { typingIndicator.classList.add('show'); scrollBottom(); }
+
+    function hideTyping() { typingIndicator.classList.remove('show'); }
+
+
+
+    function renderSuggestions(suggestions) {
+
+        suggestionsWrap.innerHTML = '';
+
+        if (!suggestions || !suggestions.length) return;
+
+        suggestions.forEach(function(s) {
+
+            const chip = document.createElement('span');
+
+            chip.className = 'exec-ai-chip';
+
+            chip.textContent = s;
+
+            chip.addEventListener('click', function() {
+
+                input.value = s;
+
+                sendMessage();
+
+            });
+
+            suggestionsWrap.appendChild(chip);
+
+        });
+
+    }
+
+
+
+    function sendToAI(text) {
+
+        showTyping();
+
+        fetch(API_URL, {
+
+            method: 'POST',
+
+            headers: {
+
+                'Content-Type': 'application/json',
+
+                'X-CSRFToken': getCSRF()
+
+            },
+
+            body: JSON.stringify({ message: text })
+
+        })
+
+        .then(function(r) { return r.json(); })
+
+        .then(function(data) {
+
+            hideTyping();
+
+            sendBtn.disabled = false;
+
+            if (data.status === 'success') {
+
+                appendBotMsg(data.reply, data.timestamp);
+
+                renderSuggestions(data.suggestions || []);
+
+            } else {
+
+                appendBotMsg('⚠️ ' + (data.message || 'An error occurred.'), '');
+
+            }
+
+        })
+
+        .catch(function(err) {
+
+            hideTyping();
+
+            sendBtn.disabled = false;
+
+            appendBotMsg('⚠️ Network connectivity error. Please try again.', '');
+
+        });
+
+    }
+
+
+
+    function scrollBottom() {
+
+        setTimeout(function() { msgContainer.scrollTop = msgContainer.scrollHeight; }, 60);
+
+    }
+
+
+
+    function getCSRF() {
+
+        const c = document.cookie.split(';').find(function(c) { return c.trim().startsWith('csrftoken='); });
+
+        return c ? c.split('=')[1] : '';
+
+    }
+
+
+
+    function escapeHtml(t) {
+
+        const d = document.createElement('div');
+
+        d.textContent = t;
+
+        return d.innerHTML;
+
+    }
+
+
+
+    function renderMarkdown(text) {
+
+        if (!text) return '';
+
+        // Bold: **text**
+
+        let html = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+        // Italic: *text*
+
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+        // Inline code: `text`
+
+        html = html.replace(/`(.+?)`/g, '<code style="background:rgba(99,102,241,0.15);padding:1px 5px;border-radius:4px;font-size:0.78rem;color:#A5B4FC;">$1</code>');
+
+        // Newlines
+
+        html = html.replace(/\n/g, '<br>');
+
+        return html;
+
+    }
+
+})();
+
+</script>
+
+{% endif %}
+
+
+
+{% endblock %}
+
