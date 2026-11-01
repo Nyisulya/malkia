@@ -163,7 +163,65 @@
 
 {% block content %}
 <!-- Toast Notification Element -->
-<div id="copyToast"><i class="fa-solid fa-circle-check" style="color:#10B981;"></i> <span id="copyToastText">Copied to clipboard</span></div>
+<style>
+#copyToast {
+    position: fixed !important;
+    bottom: 24px !important;
+    right: 24px !important;
+    background: #0F172A !important;
+    color: #FFFFFF !important;
+    padding: 0.75rem 1.25rem !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3) !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    z-index: 100000 !important;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    transform: translateY(10px);
+    border: 1px solid #334155 !important;
+}
+#copyToast.show {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+.customs-tab-btn {
+    padding: 0.65rem 1.15rem !important;
+    font-weight: 600 !important;
+    font-size: 0.84rem !important;
+    border: 1px solid #E2E8F0 !important;
+    border-bottom: 3px solid transparent !important;
+    border-radius: 10px 10px 0 0 !important;
+    background: #F8FAFC !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    color: #475569 !important;
+    transition: all 0.2s ease !important;
+    outline: none !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+}
+.customs-tab-btn:hover {
+    background: #EFF6FF !important;
+    color: #1D4ED8 !important;
+    border-color: #BFDBFE !important;
+}
+.customs-tab-btn.active-tab {
+    background: #FFFFFF !important;
+    color: #2563EB !important;
+    border-color: #CBD5E1 !important;
+    border-bottom: 3px solid #2563EB !important;
+    font-weight: 700 !important;
+    box-shadow: 0 -2px 8px rgba(37, 99, 235, 0.06) !important;
+}
+</style>
+<div id="copyToast" style="position:fixed;bottom:24px;right:24px;background:#0F172A;color:#FFFFFF;padding:0.75rem 1.25rem;border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.3);font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;z-index:100000;opacity:0;pointer-events:none;transition:opacity 0.25s ease,transform 0.25s ease;transform:translateY(10px);border:1px solid #334155;"><i class="fa-solid fa-circle-check" style="color:#10B981;"></i> <span id="copyToastText">Copied to clipboard</span></div>
 
 <div style="max-width:1140px;margin:0 auto;padding-bottom:3rem;">
 
@@ -236,15 +294,15 @@
 <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #E2E8F0;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem;">
     <div style="display:flex;gap:0.25rem;flex-wrap:wrap;" id="tabButtonGroup">
         <!-- TAB 1: Awaiting TANESW -->
-        <button type="button" id="tabBtnPending" onclick="switchCustomsTab('pending')" class="customs-tab-btn active-tab">
+        <button type="button" id="tabBtnPending" onclick="switchCustomsTab('pending')" class="customs-tab-btn active-tab" style="padding:0.65rem 1.15rem;font-weight:700;font-size:0.84rem;border:1px solid #CBD5E1;border-bottom:3px solid #2563EB;border-radius:10px 10px 0 0;background:#FFFFFF;cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;color:#2563EB;transition:all 0.2s;">
             <i class="fa-solid fa-hourglass-half"></i> 1. Awaiting TANESW Entry
-            <span style="background:var(--brand-primary);color:#FFFFFF;padding:0.15rem 0.55rem;border-radius:12px;font-size:0.75rem;font-weight:700;">
+            <span style="background:#2563EB;color:#FFFFFF;padding:0.15rem 0.55rem;border-radius:12px;font-size:0.75rem;font-weight:700;">
                 {{ awaiting_lodgement_count }}
             </span>
         </button>
 
         <!-- TAB 2: At TRA 76h Review & TBS -->
-        <button type="button" id="tabBtnTanesw76h" onclick="switchCustomsTab('tanesw_76h')" class="customs-tab-btn">
+        <button type="button" id="tabBtnTanesw76h" onclick="switchCustomsTab('tanesw_76h')" class="customs-tab-btn" style="padding:0.65rem 1.15rem;font-weight:600;font-size:0.84rem;border:1px solid #E2E8F0;border-bottom:3px solid transparent;border-radius:10px 10px 0 0;background:#F8FAFC;cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;color:#475569;transition:all 0.2s;">
             <i class="fa-solid fa-clock-rotate-left"></i> 2. At TRA Review & TBS
             <span style="background:#F59E0B;color:#FFFFFF;padding:0.15rem 0.55rem;border-radius:12px;font-size:0.75rem;font-weight:700;">
                 {{ tanesw_76h_count }}
@@ -252,7 +310,7 @@
         </button>
         
         <!-- TAB 3: Accepted & Control No -->
-        <button type="button" id="tabBtnAssessed" onclick="switchCustomsTab('assessed')" class="customs-tab-btn">
+        <button type="button" id="tabBtnAssessed" onclick="switchCustomsTab('assessed')" class="customs-tab-btn" style="padding:0.65rem 1.15rem;font-weight:600;font-size:0.84rem;border:1px solid #E2E8F0;border-bottom:3px solid transparent;border-radius:10px 10px 0 0;background:#F8FAFC;cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;color:#475569;transition:all 0.2s;">
             <i class="fa-solid fa-circle-check"></i> 3. Accepted & Control No
             <span style="background:#10B981;color:#FFFFFF;padding:0.15rem 0.55rem;border-radius:12px;font-size:0.75rem;font-weight:700;">
                 {{ accepted_count }}
@@ -260,7 +318,7 @@
         </button>
 
         <!-- TAB 4: TRA Objections -->
-        <button type="button" id="tabBtnObjections" onclick="switchCustomsTab('objections')" class="customs-tab-btn">
+        <button type="button" id="tabBtnObjections" onclick="switchCustomsTab('objections')" class="customs-tab-btn" style="padding:0.65rem 1.15rem;font-weight:600;font-size:0.84rem;border:1px solid #E2E8F0;border-bottom:3px solid transparent;border-radius:10px 10px 0 0;background:#F8FAFC;cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;color:#475569;transition:all 0.2s;">
             <i class="fa-solid fa-triangle-exclamation"></i> 4. TRA Objections
             <span style="background:{% if objection_count %}#EF4444;color:#FFFFFF{% else %}#E2E8F0;color:#475569{% endif %};padding:0.15rem 0.55rem;border-radius:12px;font-size:0.75rem;font-weight:700;">
                 {{ objection_count }}
@@ -268,7 +326,7 @@
         </button>
         
         <!-- TAB 5: All Active Files -->
-        <button type="button" id="tabBtnAll" onclick="switchCustomsTab('all')" class="customs-tab-btn">
+        <button type="button" id="tabBtnAll" onclick="switchCustomsTab('all')" class="customs-tab-btn" style="padding:0.65rem 1.15rem;font-weight:600;font-size:0.84rem;border:1px solid #E2E8F0;border-bottom:3px solid transparent;border-radius:10px 10px 0 0;background:#F8FAFC;cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;color:#475569;transition:all 0.2s;">
             <i class="fa-solid fa-list-check"></i> 5. All Active Files
             <span style="background:#E2E8F0;color:#475569;padding:0.15rem 0.55rem;border-radius:12px;font-size:0.75rem;font-weight:700;">
                 {{ all_jobs|length }}
@@ -1487,7 +1545,7 @@
 // =========================================================================
 // 1. CLIENT-SIDE 5-TAB SWITCHING (ZERO RELOAD)
 // =========================================================================
-function switchCustomsTab(tabName) {
+window.switchCustomsTab = function switchCustomsTab(tabName) {
     const tabs = ['Pending', 'Tanesw76h', 'Assessed', 'Objections', 'All'];
     tabs.forEach(t => {
         const pane = document.getElementById('tabContent' + t);
@@ -1495,7 +1553,9 @@ function switchCustomsTab(tabName) {
         const btn = document.getElementById('tabBtn' + t);
         if (btn) {
             btn.classList.remove('active-tab');
-            btn.style.color = 'var(--text-muted)';
+            btn.style.background = '#F8FAFC';
+            btn.style.color = '#475569';
+            btn.style.borderColor = '#E2E8F0';
             btn.style.borderBottom = '3px solid transparent';
             btn.style.fontWeight = '600';
         }
@@ -1512,35 +1572,41 @@ function switchCustomsTab(tabName) {
     if (activePane) activePane.style.display = 'block';
     if (activeBtn) {
         activeBtn.classList.add('active-tab');
-        activeBtn.style.color = 'var(--brand-primary)';
-        activeBtn.style.borderBottom = '3px solid var(--brand-primary)';
+        activeBtn.style.background = '#FFFFFF';
+        activeBtn.style.color = '#2563EB';
+        activeBtn.style.borderColor = '#CBD5E1';
+        activeBtn.style.borderBottom = '3px solid #2563EB';
         activeBtn.style.fontWeight = '700';
     }
-}
+};
+var switchCustomsTab = window.switchCustomsTab;
 
-// Auto open tab from query string
-document.addEventListener('DOMContentLoaded', function() {
+// Auto open tab from query string (both initial load and seamless AJAX load)
+(function initRequestedCustomsTab() {
     const urlParams = new URLSearchParams(window.location.search);
     const requestedTab = urlParams.get('tab');
     if (requestedTab) {
-        switchCustomsTab(requestedTab);
+        window.switchCustomsTab(requestedTab);
     }
-});
+})();
 
 // =========================================================================
 // 2. PARSE SHIPMENTS DATA FOR INSTANT PREPARATION SHEET
 // =========================================================================
-let shipmentsMap = {};
+var shipmentsMap = window.shipmentsMap = {};
 try {
-    const rawData = JSON.parse(document.getElementById('shipmentsData').textContent);
-    rawData.forEach(item => {
-        shipmentsMap[item.id] = item;
-    });
+    const shipEl = document.getElementById('shipmentsData');
+    if (shipEl) {
+        const rawData = JSON.parse(shipEl.textContent);
+        rawData.forEach(item => {
+            shipmentsMap[item.id] = item;
+        });
+    }
 } catch(e) {
     console.error("Error parsing shipments data:", e);
 }
 
-let activeSheetJob = null;
+var activeSheetJob = null;
 
 function setSheetValue(elementId, value, fallback) {
     const el = document.getElementById(elementId);
@@ -1549,7 +1615,7 @@ function setSheetValue(elementId, value, fallback) {
     el.classList.toggle('is-empty', !clean);
 }
 
-function openTancisDataSheet(jobId) {
+window.openTancisDataSheet = function openTancisDataSheet(jobId) {
     const job = shipmentsMap[jobId];
     if (!job) return;
     activeSheetJob = job;
@@ -1641,7 +1707,7 @@ function openTancisDataSheet(jobId) {
 }
 
 // 1-Click Copy helpers
-function copySpecific(fieldKey, btnElem) {
+window.copySpecific = function copySpecific(fieldKey, btnElem) {
     if (!activeSheetJob) return;
     let val = '';
     if (fieldKey === 'consignee_name') val = activeSheetJob.consignee_name;
@@ -1661,7 +1727,7 @@ function copySpecific(fieldKey, btnElem) {
     copyTextDirect(val, btnElem);
 }
 
-function copyFullTancisSummary(btnElem) {
+window.copyFullTancisSummary = function copyFullTancisSummary(btnElem) {
     if (!activeSheetJob) return;
     const j = activeSheetJob;
     const contStr = j.containers.map(c => `${c.number} (${c.size_type}, Seal: ${c.seal})`).join('\n');
@@ -1681,7 +1747,7 @@ ${contStr}
     copyTextDirect(summary, btnElem);
 }
 
-function copyTextDirect(text, btnElem) {
+window.copyTextDirect = function copyTextDirect(text, btnElem) {
     if (!text || text === '-') {
         showToast("No data to copy");
         return;
@@ -1719,7 +1785,7 @@ function showToast(msg) {
 // =========================================================================
 
 // Modal 1: Lodge in TANESW
-function openLodgeTaneswModal(jobId, jobNumber, blNumber, consignee, currentTansad) {
+window.openLodgeTaneswModal = function openLodgeTaneswModal(jobId, jobNumber, blNumber, consignee, currentTansad) {
     document.getElementById('lodgeTaneswForm').action = `/customs/declarations/${jobId}/lodge-tanesw/`;
     document.getElementById('lodgeModalShipmentContext').textContent = {% if is_ceo %}`Shipment ${jobNumber} | B/L: ${blNumber} | Importer: ${consignee}`{% else %}`B/L: ${blNumber || jobNumber} | Importer: ${consignee}`{% endif %};
     document.getElementById('lodgeTansadNo').value = currentTansad || '';
@@ -1727,9 +1793,9 @@ function openLodgeTaneswModal(jobId, jobNumber, blNumber, consignee, currentTans
 }
 
 // Modal 2: Record TRA Outcome
-let currentRecordClearanceMode = 'DIRECT_DUTY';
+var currentRecordClearanceMode = 'DIRECT_DUTY';
 
-function openRecordOutcomeModal(jobId, jobNumber, blNumber, currentTansad, clearanceMode, bondRef) {
+window.openRecordOutcomeModal = function openRecordOutcomeModal(jobId, jobNumber, blNumber, currentTansad, clearanceMode, bondRef) {
     currentRecordClearanceMode = clearanceMode || 'DIRECT_DUTY';
     document.getElementById('recordOutcomeForm').action = `/customs/declarations/${jobId}/tra-outcome/`;
     document.getElementById('outcomeModalJobContext').textContent = {% if is_ceo %}`Shipment ${jobNumber} | B/L: ${blNumber} | TANSAD: ${currentTansad}`{% else %}`B/L: ${blNumber || jobNumber} | TANSAD: ${currentTansad || 'Pending'}`{% endif %};
@@ -1754,7 +1820,7 @@ function openRecordOutcomeModal(jobId, jobNumber, blNumber, currentTansad, clear
     openModal('recordOutcomeModal');
 }
 
-function toggleOutcomeFields() {
+window.toggleOutcomeFields = function toggleOutcomeFields() {
     const isAccepted = document.getElementById('radioAccepted').checked;
     const acceptedBox = document.getElementById('acceptedFieldsContainer');
     const objectionBox = document.getElementById('objectionFieldsContainer');
@@ -1794,7 +1860,7 @@ function toggleOutcomeFields() {
 }
 
 // Modal 3: Update TBS
-function openUpdateTbsModal(jobId, jobNumber, currentStatus, currentRef, currentNotes) {
+window.openUpdateTbsModal = function openUpdateTbsModal(jobId, jobNumber, currentStatus, currentRef, currentNotes) {
     document.getElementById('updateTbsForm').action = `/customs/declarations/${jobId}/tbs-update/`;
     document.getElementById('tbsModalJobContext').textContent = {% if is_ceo %}`Shipment ${jobNumber}`{% else %}`B/L: ${jobNumber}`{% endif %};
     if (currentStatus) document.getElementById('tbsModalStatusSelect').value = currentStatus;
@@ -1804,14 +1870,14 @@ function openUpdateTbsModal(jobId, jobNumber, currentStatus, currentRef, current
 }
 
 // Modal 4: Handover Docs
-function openHandoverDocsModal(jobId, jobNumber, blNumber) {
+window.openHandoverDocsModal = function openHandoverDocsModal(jobId, jobNumber, blNumber) {
     document.getElementById('handoverDocsForm').action = `/jobs/${jobId}/handover-original-docs/`;
     document.getElementById('handoverModalJobContext').textContent = `Shipment ${jobNumber} | B/L: ${blNumber}`;
     openModal('handoverDocsModal');
 }
 
 // Modal 5: Share Payment Notice (100% English)
-function openSharePaymentNoticeModal(jobId, jobNumber, blNumber, consignee, controlNo, dutyAmount, declarationNo) {
+window.openSharePaymentNoticeModal = function openSharePaymentNoticeModal(jobId, jobNumber, blNumber, consignee, controlNo, dutyAmount, declarationNo) {
     document.getElementById('shareModalSubtitle').textContent = `Job: ${jobNumber} | B/L: ${blNumber} | Importer: ${consignee}`;
     document.getElementById('shareModalControlNo').textContent = controlNo || 'Pending';
     document.getElementById('shareModalDutyAmount').textContent = 'TSh ' + dutyAmount;
@@ -1843,13 +1909,13 @@ Thank you for choosing Malkia C&F.`;
     openModal('shareClientPaymentModal');
 }
 
-function copySharePaymentMessage(btnElem) {
+window.copySharePaymentMessage = function copySharePaymentMessage(btnElem) {
     const text = document.getElementById('shareMessageText').value;
     copyTextDirect(text, btnElem);
 }
 
 // Modal 6: Confirm Duty Payment
-function openConfirmDutyModal(jobId, jobNumber, controlNo, dutyAmount, blNumber) {
+window.openConfirmDutyModal = function openConfirmDutyModal(jobId, jobNumber, controlNo, dutyAmount, blNumber) {
     document.getElementById('confirmDutyPaymentForm').action = `/customs/declarations/${jobId}/confirm-duty/`;
     const isCeo = {% if is_ceo %}true{% else %}false{% endif %};
     const title = isCeo ? `Shipment ${jobNumber} | Control #: ${controlNo || 'N/A'}` : `B/L: ${blNumber || jobNumber} | Control #: ${controlNo || 'N/A'}`;

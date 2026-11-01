@@ -34,7 +34,7 @@
 
     <!-- Custom CSS -->
 
-    <link rel="stylesheet" href="/static/css/styles.css?v=20261101_tables">
+    <link rel="stylesheet" href="/static/css/styles.css?v=20261101_v4">
 
     <style>
         /* ==========================================================================
@@ -174,7 +174,7 @@
         }
     </style>
 
-    {% block extra_css %}{% endblock %}
+    <div id="dynamicExtraCss">{% block extra_css %}{% endblock %}</div>
 
 </head>
 
@@ -1004,7 +1004,7 @@
 
     <!-- Scripts -->
 
-    <script src="/static/js/app.js?v=2.5"></script>
+    <script src="/static/js/app.js?v=20261101_v4"></script>
 
     <script>
 
@@ -1220,7 +1220,7 @@
 
     </script>
 
-    {% block extra_js %}{% endblock %}
+    <div id="dynamicExtraJs">{% block extra_js %}{% endblock %}</div>
 
 </body>
 

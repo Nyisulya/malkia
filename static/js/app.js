@@ -39,13 +39,16 @@ function initGlobalEngine() {
 
     // Close modal on clicking backdrop
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                overlay.classList.remove('open');
-                overlay.style.display = 'none';
-                document.body.style.overflow = '';
-            }
-        });
+        if (!overlay.dataset.backdropBound) {
+            overlay.dataset.backdropBound = 'true';
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('open');
+                    overlay.style.display = 'none';
+                    document.body.style.overflow = '';
+                }
+            });
+        }
     });
 
     // Close modal on Escape key
@@ -199,6 +202,19 @@ function rebindDynamicElements() {
         };
     });
 
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        if (!overlay.dataset.backdropBound) {
+            overlay.dataset.backdropBound = 'true';
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('open');
+                    overlay.style.display = 'none';
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+    });
+
     if (window.initTablePagination) {
         window.initTablePagination();
     }
@@ -236,6 +252,11 @@ function executeScripts(container) {
     if (!container) return;
     const scripts = container.querySelectorAll('script');
     scripts.forEach(oldScript => {
+        const scriptType = (oldScript.getAttribute('type') || '').trim().toLowerCase();
+        // Skip JSON data payloads (e.g. application/json) so they stay intact in DOM
+        if (scriptType && scriptType !== 'text/javascript' && scriptType !== 'application/javascript' && scriptType !== 'module') {
+            return;
+        }
         const newScript = document.createElement('script');
         Array.from(oldScript.attributes).forEach(attr => {
             newScript.setAttribute(attr.name, attr.value);
@@ -243,6 +264,26 @@ function executeScripts(container) {
         newScript.textContent = oldScript.textContent;
         oldScript.parentNode.replaceChild(newScript, oldScript);
     });
+}
+
+// Sync extra_css and extra_js blocks across seamless AJAX navigation
+function syncExtraCss(doc) {
+    if (!doc) return;
+    const newCss = doc.getElementById('dynamicExtraCss');
+    const curCss = document.getElementById('dynamicExtraCss');
+    if (newCss && curCss) {
+        curCss.innerHTML = newCss.innerHTML;
+    }
+}
+
+function syncExtraJs(doc) {
+    if (!doc) return;
+    const newJs = doc.getElementById('dynamicExtraJs');
+    const curJs = document.getElementById('dynamicExtraJs');
+    if (newJs && curJs) {
+        curJs.innerHTML = newJs.innerHTML;
+        executeScripts(curJs);
+    }
 }
 
 // Update sidebar active link state dynamically
@@ -299,8 +340,10 @@ window.loadPageSeamlessly = async function(url, pushState = true) {
             currentContent.style.transition = 'opacity 0.12s ease';
 
             setTimeout(() => {
+                syncExtraCss(doc);
                 currentContent.innerHTML = newContent.innerHTML;
                 executeScripts(currentContent);
+                syncExtraJs(doc);
                 currentContent.style.opacity = '1';
 
                 rebindDynamicElements();
@@ -463,15 +506,17 @@ function setupGlobalFormInterceptor() {
                 // Close all open modals immediately
                 window.closeAllModals();
 
-                // Seamlessly update .page-content without page refresh!
+                // Seamlessly update .page-content, extra_css, and extra_js without page refresh!
                 const newContent = doc.querySelector('.page-content');
                 const currentContent = document.querySelector('.page-content');
                 if (newContent && currentContent) {
                     const newMessages = newContent.querySelector('.toast-messages-container');
                     if (newMessages) newMessages.remove();
 
+                    syncExtraCss(doc);
                     currentContent.innerHTML = newContent.innerHTML;
                     executeScripts(currentContent);
+                    syncExtraJs(doc);
                 }
 
                 if (doc.title) {

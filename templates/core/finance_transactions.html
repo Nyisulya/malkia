@@ -742,7 +742,7 @@
 
 {% block extra_js %}
 <script>
-const txStore = JSON.parse(document.getElementById('txData').textContent || '[]');
+var txStore = JSON.parse(document.getElementById('txData').textContent || '[]');
 
 function numberToWords(num) {
     // Simple readable representation helper for TSh amounts
