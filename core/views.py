@@ -5490,91 +5490,55 @@ def field_update_action(request, job_id):
 
 
         # 1. TRA PHYSICAL VERIFICATION
-
         elif update_type in ['VERIFICATION', 'TRA_VERIFICATION']:
-
             verification_outcome = request.POST.get('verification_outcome', 'PASSED')
-
             findings = request.POST.get('findings', '').strip()
-
             is_passed = 'PASS' in verification_outcome.upper() or verification_outcome == 'PASSED'
 
-
-
             if is_passed:
-
-                note = f"TRA Physical Verification: PASSED / Wameridhia. {findings} {remarks}".strip()
-
+                now = timezone.now()
+                note = f"TRA Physical Verification: PASSED / Verified. {findings} {remarks}".strip()
                 if evidence_file:
-
                     JobDocument.objects.create(
-
                         job=job,
-
                         stage=current_stage,
-
                         document_type='OTHER',
-
                         title=f"TRA Verification Stamp/Slip - {job.chassis_number or job.job_number}",
-
                         file=evidence_file,
-
                         uploaded_by=request.user,
-
                         notes=note
-
                     )
 
-                
+                for st in job.stages.filter(stage_number__lte=5):
+                    if st.status != 'COMPLETED':
+                        st.status = 'COMPLETED'
+                        st.completed_at = now
+                        st.completed_by = request.user
+                        st.remarks = note
+                        st.save()
 
-                if job.current_stage_number == 5:
-
-                    if current_stage:
-
-                        current_stage.status = 'COMPLETED'
-
-                        current_stage.completed_at = timezone.now()
-
-                        current_stage.completed_by = request.user
-
-                        current_stage.remarks = note
-
-                        current_stage.save()
-
+                if job.current_stage_number <= 5:
                     job.current_stage_number = 6
+                if job.tra_status != 'ACCEPTED':
+                    job.tra_status = 'ACCEPTED'
+                job.status = 'ACTIVE'
+                job.save()
 
-                    job.status = 'ACTIVE'
+                next_stage = job.stages.filter(stage_number=6).first()
+                if next_stage and next_stage.status != 'COMPLETED':
+                    next_stage.status = 'IN_PROGRESS'
+                    next_stage.started_at = now
+                    next_stage.save()
 
-                    job.save()
-
-                    next_stage = job.stages.filter(stage_number=6).first()
-
-                    if next_stage:
-
-                        next_stage.status = 'IN_PROGRESS'
-
-                        next_stage.started_at = timezone.now()
-
-                        next_stage.save()
-
-                    
-
-                    try:
-
-                        from .email_service import send_stage_update_email
-
-                        send_stage_update_email(job, 6, extra_note=note)
-
-                    except Exception as e:
-
-                        print(f"[Email Notification Error] {e}")
-
-
+                try:
+                    from .email_service import send_stage_update_email
+                    send_stage_update_email(job, 6, extra_note=note)
+                except Exception as e:
+                    print(f"[Email Notification Error] {e}")
 
                 log_audit(request, "PHYSICAL_VERIFICATION_PASSED", note, job=job)
                 log_audit(request, "FIELD_VERIFICATION", note, job=job)
-
-                messages.success(request, f"✅ TRA Physical Verification approved for vehicle {job.chassis_number or job.job_number}! File advanced to Stage 6 (Port & ICD Charges).")
+                messages.success(request, f"✅ TRA Verification imekamilika kwa {job.chassis_number or job.job_number}! Sasa unaweza ku-verify Gate Pass & Dispatch.")
 
             else:
 
@@ -5623,21 +5587,22 @@ def field_update_action(request, job_id):
             if gate_pass_num:
                 job.gate_pass_number = gate_pass_num
             elif not job.gate_pass_number:
-                job.gate_pass_number = f"GP-{job.port_invoice_number or job.id:04d}"
+                job.gate_pass_number = f"GP-{job.port_invoice_number}" if job.port_invoice_number else f"GP-{job.id:04d}"
 
             job.vehicle_driver_name = driver_name
             job.vehicle_dispatched_to_office = True
             job.vehicle_dispatched_at = now
 
-            # Complete Stage 7 (Gate Exit & Vehicle Inspection) and advance to Stage 8 (Malkia Yard Arrival)
+            # Complete Stages <= 7 (Gate Exit & Simple Verify) and advance to Stage 8 (Malkia Yard Arrival)
+            for st in job.stages.filter(stage_number__lte=7):
+                if st.status != 'COMPLETED':
+                    st.status = 'COMPLETED'
+                    st.completed_at = now
+                    st.completed_by = request.user
+                    st.responsible_officer = request.user
+                    st.remarks = f"Gate Pass #{job.gate_pass_number} | Driver: {driver_name} | Verified. {notes}".strip()
+                    st.save()
             st7 = job.stages.filter(stage_number=7).first()
-            if st7:
-                st7.status = 'COMPLETED'
-                st7.completed_at = now
-                st7.completed_by = request.user
-                st7.responsible_officer = request.user
-                st7.remarks = f"Gate Pass #{job.gate_pass_number} | Driver: {driver_name} | Inspected Clean. {notes}".strip()
-                st7.save()
 
             if job.current_stage_number <= 7:
                 job.current_stage_number = 8
@@ -5669,7 +5634,7 @@ def field_update_action(request, job_id):
                     notes=f"Gate Pass: {job.gate_pass_number} | Scratches: {has_scratches}, Radio: {radio_present}, Spare: {spare_wheel_present}, Jack: {jack_tools_present}, Mirrors: {mirrors_ok}"
                 )
 
-            summary = f"Gate Exit & Ukaguzi wa gari ICD (Gate Pass #{job.gate_pass_number}, Dereva: {driver_name}): Mikwaruzo: {'IPO' if has_scratches else 'HAKUNA'}, Radio: {'IPO' if radio_present else 'KOSA'}, Spare: {'IPO' if spare_wheel_present else 'KOSA'}, Jack: {'IPO' if jack_tools_present else 'KOSA'}. {notes}".strip()
+            summary = f"Gate Exit & Simple Vehicle Verify imekamilika (Gate Pass #{job.gate_pass_number}, Dereva: {driver_name}). {notes}".strip()
             log_audit(request, "VEHICLE_INSPECTION", summary, job=job)
             log_audit(request, "GATE_EXIT_RECORDED", summary, job=job)
             messages.success(request, f"✅ Gate Exit & Vehicle Inspection completed for {job.chassis_number or job.job_number} (Gate Pass #{job.gate_pass_number})! Vehicle is now en route to Malkia Yard (Stage 8).")
@@ -5687,7 +5652,7 @@ def field_update_action(request, job_id):
             if gate_pass_num:
                 job.gate_pass_number = gate_pass_num
             elif not job.gate_pass_number:
-                job.gate_pass_number = f"GP-{job.port_invoice_number or job.id:04d}"
+                job.gate_pass_number = f"GP-{job.port_invoice_number}" if job.port_invoice_number else f"GP-{job.id:04d}"
 
             st7 = job.stages.filter(stage_number=7).first()
             if st7:
