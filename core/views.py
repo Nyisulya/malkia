@@ -11553,8 +11553,17 @@ def bing_site_auth_xml_view(request):
 
 def google_verification_file_view(request, token):
     """
-    Serves /google<token>.html for Google Search Console HTML file verification.
+    Serves /google<token>.html ONLY for the exact authorized Google Search Console token.
+    Returns 404 for any other random probe (required by Google Search Console security check).
     """
+    configured_token = SystemConfig.get_value('GOOGLE_SITE_VERIFICATION', '').replace('google', '').replace('.html', '').strip()
+    allowed_tokens = {'45f3f04c3ca65559'}
+    if configured_token:
+        allowed_tokens.add(configured_token)
+
+    if token not in allowed_tokens:
+        return HttpResponse("404 Not Found", status=404, content_type="text/plain; charset=utf-8")
+
     filename = f"google{token}.html"
     return HttpResponse(f"google-site-verification: {filename}", content_type="text/html; charset=utf-8")
 
