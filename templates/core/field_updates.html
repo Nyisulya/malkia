@@ -134,7 +134,11 @@
                     </div>
                     {% if pv.is_paid or pv.approval_status == 'APPROVED' or pv.approval_status == 'PAID' %}
                     <span style="font-size:0.7rem;font-weight:800;color:#059669;background:#DCFCE7;padding:0.15rem 0.5rem;border-radius:999px;">
-                        <i class="fa-solid fa-circle-check"></i> PAID BY FINANCE
+                        <i class="fa-solid fa-circle-check"></i> PAID (CEO APPROVED)
+                    </span>
+                    {% elif pv.approval_status == 'VERIFIED' %}
+                    <span style="font-size:0.7rem;font-weight:800;color:#6D28D9;background:#F3E8FF;padding:0.15rem 0.5rem;border-radius:999px;">
+                        <i class="fa-solid fa-clock"></i> VERIFIED BY FINANCE &bull; PENDING CEO
                     </span>
                     {% elif pv.approval_status == 'REJECTED' %}
                     <span style="font-size:0.7rem;font-weight:800;color:#DC2626;background:#FEE2E2;padding:0.15rem 0.5rem;border-radius:999px;">
@@ -142,7 +146,7 @@
                     </span>
                     {% else %}
                     <span style="font-size:0.7rem;font-weight:800;color:#B45309;background:#FEF3C7;padding:0.15rem 0.5rem;border-radius:999px;">
-                        PENDING FINANCE
+                        PENDING FINANCE AUDIT
                     </span>
                     {% endif %}
                 </div>

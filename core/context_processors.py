@@ -7,7 +7,7 @@ def global_stats(request):
     try:
         total_staff_count = UserProfile.objects.count()
         active_jobs_count = JobShipment.objects.filter(status__in=['ACTIVE', 'DELAYED']).count()
-        pending_expenses_count = ExpenseVoucher.objects.filter(approval_status='REQUESTED').count()
+        pending_expenses_count = ExpenseVoucher.objects.filter(approval_status__in=['REQUESTED', 'VERIFIED']).count()
         unpaid_invoices_count = ClientInvoice.objects.filter(status__in=['ISSUED', 'PARTIALLY_PAID', 'OVERDUE']).count()
         overdue_stages_count = JobStageInstance.objects.filter(
             status__in=['IN_PROGRESS', 'DELAYED', 'BLOCKED']
@@ -98,7 +98,7 @@ def global_stats(request):
                 ).count()
 
         is_manager = (is_ops or is_ceo or is_admin)
-        can_manage_finance = (is_finance or is_admin) and not is_ceo
+        can_manage_finance = (is_finance or is_admin or is_ceo)
         can_view_financials = (is_finance or is_ceo or is_admin or is_ops)
         can_create_shipment = (is_doc or is_ops) and not is_ceo
         can_view_audit = (is_ceo or is_ops or is_finance or is_admin)

@@ -54,24 +54,22 @@ def role_required(allowed_roles, redirect_url='dashboard'):
 
 def can_approve_expense(user, voucher):
     """
-    Checks if user is authorized to approve this specific voucher
-    based on the multi-tier approval matrix:
-    - Amount <= 500,000: Operations Manager, Finance, CEO, Admin
-    - 500,001 <= Amount <= 2,000,000: Finance, CEO, Admin
-    - Amount > 2,000,000: CEO / Managing Director, Admin
+    Checks if user is authorized to approve and disburse/release office funds.
+    Pesa zote za ofisi zinatolewa na kuidhinishwa na CEO pekee (au Superuser / Admin).
+    Mhasibu (Finance) anafanya ukaguzi na kuwasilisha maombi (Audit & Verification bridge).
     """
     role = get_user_role(user)
-    if role == UserRole.ADMIN or user.is_superuser or role == UserRole.CEO:
+    if role in [UserRole.CEO, UserRole.ADMIN] or user.is_superuser:
         return True
+    return False
 
-    amt = voucher.amount
-    if amt <= Decimal('500000'):
-        return role in [UserRole.OPERATIONS_MGR, UserRole.FINANCE, UserRole.CEO, UserRole.ADMIN]
-    elif amt <= Decimal('2000000'):
-        return role in [UserRole.FINANCE, UserRole.CEO, UserRole.ADMIN]
-    else:
-        # High value (> 2M) approved by CEO / Managing Director, Admin, or Finance
-        return role in [UserRole.CEO, UserRole.ADMIN, UserRole.FINANCE]
+
+def can_audit_expense(user, voucher=None):
+    """
+    Checks if user is authorized to audit & forward vouchers to CEO (Accountant bridge).
+    """
+    role = get_user_role(user)
+    return role in [UserRole.FINANCE, UserRole.OPERATIONS_MGR, UserRole.ADMIN, UserRole.CEO] or user.is_superuser
 
 
 def can_advance_stage(user, stage_number):

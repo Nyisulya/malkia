@@ -763,8 +763,9 @@ class ExpenseCategory(models.TextChoices):
 
 class ExpenseVoucher(models.Model):
     APPROVAL_STATUS_CHOICES = [
-        ('REQUESTED', 'Requested / Pending Approval'),
-        ('APPROVED', 'Approved'),
+        ('REQUESTED', 'Requested / Pending Audit'),
+        ('VERIFIED', 'Verified by Accountant / Pending CEO Payout'),
+        ('APPROVED', 'Approved by CEO'),
         ('REJECTED', 'Rejected'),
         ('PAID', 'Disbursed / Paid'),
         ('CANCELLED', 'Cancelled'),
@@ -782,8 +783,12 @@ class ExpenseVoucher(models.Model):
     requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='requested_expenses')
     requested_at = models.DateTimeField(auto_now_add=True)
 
-    # Approval Matrix tracking
-    required_role = models.CharField(max_length=30, choices=UserRole.choices, default=UserRole.OPERATIONS_MGR)
+    # Verification by Accountant (Bridge role)
+    audited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='audited_expenses')
+    audited_at = models.DateTimeField(null=True, blank=True)
+
+    # Approval Matrix tracking (Authorized by CEO / Admin)
+    required_role = models.CharField(max_length=30, choices=UserRole.choices, default=UserRole.CEO)
     approver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_expenses')
     approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS_CHOICES, default='REQUESTED')
     approval_date = models.DateTimeField(null=True, blank=True)

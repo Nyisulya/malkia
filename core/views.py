@@ -596,7 +596,19 @@ def dashboard_view(request):
 
     # Pending approvals for current role
 
-    pending_expenses = ExpenseVoucher.objects.filter(approval_status='REQUESTED').select_related('job', 'requester')
+    # Pending approvals for current role (CEO disburses, Finance audits & forwards)
+    if is_ceo or is_admin:
+        pending_expenses = ExpenseVoucher.objects.filter(
+            approval_status__in=['VERIFIED', 'REQUESTED'], is_paid=False
+        ).select_related('job', 'job__customer', 'requester', 'audited_by').order_by('-requested_at')
+    elif is_finance:
+        pending_expenses = ExpenseVoucher.objects.filter(
+            approval_status__in=['REQUESTED', 'VERIFIED'], is_paid=False
+        ).select_related('job', 'job__customer', 'requester', 'audited_by').order_by('-requested_at')
+    else:
+        pending_expenses = ExpenseVoucher.objects.filter(
+            approval_status='REQUESTED', is_paid=False
+        ).select_related('job', 'job__customer', 'requester', 'audited_by').order_by('-requested_at')
 
 
 
@@ -4018,26 +4030,20 @@ def finance_pending_payments_view(request):
 
 
     if status_filter == 'pending':
-
-        expenses = expenses.filter(Q(approval_status='REQUESTED') | Q(approval_status='APPROVED', is_paid=False))
-
+        expenses = expenses.filter(Q(approval_status__in=['REQUESTED', 'VERIFIED']) | Q(approval_status='APPROVED', is_paid=False))
     elif status_filter == 'requested':
-
         expenses = expenses.filter(approval_status='REQUESTED')
-
+    elif status_filter == 'verified':
+        expenses = expenses.filter(approval_status='VERIFIED')
     elif status_filter == 'approved':
-
         expenses = expenses.filter(approval_status='APPROVED', is_paid=False)
-
     elif status_filter == 'paid':
-
         expenses = expenses.filter(is_paid=True)
 
-
-
     # Breakdown metrics by payment type according to spec
-
-    all_active_vouchers = ExpenseVoucher.objects.filter(Q(approval_status='REQUESTED') | Q(approval_status='APPROVED', is_paid=False))
+    all_active_vouchers = ExpenseVoucher.objects.filter(Q(approval_status__in=['REQUESTED', 'VERIFIED']) | Q(approval_status='APPROVED', is_paid=False))
+    requested_count = ExpenseVoucher.objects.filter(approval_status='REQUESTED').count()
+    verified_count = ExpenseVoucher.objects.filter(approval_status='VERIFIED').count()
 
     pending_duty_jobs = JobShipment.objects.filter(
         duty_paid=False,
@@ -4109,6 +4115,8 @@ def finance_pending_payments_view(request):
         'gate_pass_count': gate_pass_count,
 
         'fuel_count': fuel_count,
+        'requested_count': requested_count,
+        'verified_count': verified_count,
 
         'other_count': other_count,
 
@@ -4707,104 +4715,100 @@ def _sync_operational_voucher_to_job(voucher, request):
 @login_required
 
 def expense_approval_action(request, voucher_id):
-
     if request.method == 'POST':
-
         voucher = get_object_or_404(ExpenseVoucher, id=voucher_id)
-
-        decision = request.POST.get('decision') # 'APPROVE', 'REJECT', or 'PAY'
-
+        decision = request.POST.get('decision') # 'VERIFY', 'APPROVE', 'PAY', 'REJECT'
         remarks = request.POST.get('remarks', '').strip()
+        user_role = get_user_role(request.user)
+        user_disp = request.user.get_full_name() or request.user.username
+        now = timezone.now()
+        next_url = request.POST.get('next') or request.META.get('HTTP_REFERER') or 'finance'
 
+        # 1. DARAJA LA MHASIBU: Hakiki & Tuma kwa CEO (Audit & Forward to CEO)
+        if decision in ['VERIFY', 'FORWARD_TO_CEO']:
+            can_audit = (user_role in [UserRole.FINANCE, UserRole.OPERATIONS_MGR, UserRole.ADMIN, UserRole.CEO] or request.user.is_superuser)
+            if not can_audit:
+                messages.error(request, "Huna mamlaka ya kuhakiki na kuwasilisha maombi ya malipo kwa CEO.")
+                return redirect(next_url)
 
+            voucher.approval_status = 'VERIFIED'
+            voucher.audited_by = request.user
+            voucher.audited_at = now
+            if remarks:
+                voucher.approval_remarks = remarks
+            else:
+                voucher.approval_remarks = f"Imekaguliwa na Mhasibu ({user_disp}) na kuwasilishwa kwa CEO kwa malipo."
+            voucher.save()
 
-        # RBAC Enforcement: Check Approval Authority
+            log_audit(
+                request,
+                "VERIFY_EXPENSE",
+                f"Mhasibu {user_disp} amehakiki vocha {voucher.voucher_number} (TSh {voucher.amount:,.2f}) na kuituma kwa CEO kwa idhini ya kutoa fedha.",
+                job=voucher.job
+            )
+            messages.success(
+                request,
+                f"✅ Vocha {voucher.voucher_number} ({voucher.get_category_display()} - TSh {voucher.amount:,.2f}) imehakikiwa na kuwasilishwa rasmi kwa CEO kwa ajili ya kutoa fedha!"
+            )
+            return redirect(next_url)
 
-        if decision in ['APPROVE', 'REJECT']:
-
-            if not can_approve_expense(request.user, voucher):
-
-                role_disp = request.user.profile.get_role_display() if hasattr(request.user, 'profile') else get_user_role(request.user)
-
+        # 2. MAMLAKA YA CEO: Idhinisha & Toa Fedha kutoka Akaunti ya Ofisi / Cash
+        elif decision in ['APPROVE', 'PAY']:
+            is_authorized = (user_role in [UserRole.CEO, UserRole.ADMIN] or request.user.is_superuser)
+            if not is_authorized:
                 messages.error(
-
                     request,
-
-                    f"RBAC Unauthorized: Your role ({role_disp}) cannot approve expenses of TSh {voucher.amount:,.2f}. This amount strictly requires approval by {voucher.get_required_role_display()}."
-
+                    f"Mamlaka ya kutoa fedha za ofisi na kuidhinisha malipo ni ya CEO pekee. Mhasibu kazi yake ni kuhakiki na kutuma kwa CEO (tumia kitufe cha 'Hakiki na Tuma kwa CEO')."
                 )
+                return redirect(next_url)
 
-                return redirect('finance')
-
-
-
-            if decision == 'APPROVE':
-
-                voucher.approval_status = 'APPROVED'
-                now = timezone.now()
-                voucher.approval_date = now
-                voucher.approver = request.user
-                voucher.approval_remarks = remarks
-
-                # When Finance, Admin, or Operations approves an operational voucher (D/O or Port Charges),
-                # automatically disburse/settle payment and advance the shipment milestone!
-                user_role = get_user_role(request.user)
-                can_disburse_auto = (user_role in [UserRole.FINANCE, UserRole.ADMIN, UserRole.OPERATIONS_MGR] or request.user.is_superuser)
-                if can_disburse_auto:
-                    voucher.is_paid = True
-                    voucher.paid_at = now
-                    voucher.payment_reference = voucher.control_number or f"PAY-{voucher.voucher_number}"
-
-                voucher.save()
-
-                if voucher.is_paid:
-                    _sync_operational_voucher_to_job(voucher, request)
-
-                log_audit(request, "APPROVE_EXPENSE", f"Approved & settled expense {voucher.voucher_number} of TSh {voucher.amount:,.2f} ({voucher.get_category_display()}).", job=voucher.job)
-                messages.success(request, f"Expense {voucher.voucher_number} ({voucher.get_category_display()}) has been APPROVED & DISBURSED by {request.user.get_full_name() or request.user.username}!")
-
-            elif decision == 'REJECT':
-
-                voucher.approval_status = 'REJECTED'
-                voucher.approval_date = timezone.now()
-                voucher.approver = request.user
-                voucher.approval_remarks = remarks
-                voucher.save()
-
-                log_audit(request, "REJECT_EXPENSE", f"Rejected expense {voucher.voucher_number}: {remarks}", job=voucher.job)
-                messages.warning(request, f"Expense {voucher.voucher_number} has been REJECTED.")
-
-        elif decision == 'PAY':
-
-            # Disbursing funds strictly requires Finance or Admin
-            user_role = get_user_role(request.user)
-            if user_role not in [UserRole.FINANCE, UserRole.ADMIN, UserRole.OPERATIONS_MGR] and not request.user.is_superuser:
-                messages.error(request, "RBAC Unauthorized: Only Finance/Accounts staff can disburse funds and record payments.")
-                return redirect('finance')
-
-            pay_method = request.POST.get('payment_method')
-            if pay_method:
-                voucher.payment_method = pay_method
-
-            voucher.is_paid = True
-            now = timezone.now()
-            voucher.paid_at = now
+            pay_method = request.POST.get('payment_method') or voucher.payment_method or 'BANK'
             pay_ref = request.POST.get('payment_reference', '').strip()
+
+            voucher.approval_status = 'APPROVED'
+            voucher.approval_date = now
+            voucher.approver = request.user
+            if remarks:
+                voucher.approval_remarks = remarks
+            voucher.payment_method = pay_method
+            voucher.is_paid = True
+            voucher.paid_at = now
             voucher.payment_reference = pay_ref or voucher.control_number or f"PAY-{voucher.voucher_number}"
             voucher.save()
 
             # Automatic synchronization with shipment workflow for payments
             _sync_operational_voucher_to_job(voucher, request)
 
-            log_audit(request, "DISBURSE_EXPENSE", f"Disbursed/Paid expense {voucher.voucher_number} [{voucher.get_payment_method_display()}] (Ref: {voucher.payment_reference})", job=voucher.job)
+            log_audit(
+                request,
+                "CEO_DISBURSE_EXPENSE",
+                f"CEO {user_disp} ameidhinisha na kutoa malipo ya vocha {voucher.voucher_number} ya TSh {voucher.amount:,.2f} ({voucher.get_category_display()}) kupitia {voucher.get_payment_method_display()} (Ref: {voucher.payment_reference}).",
+                job=voucher.job
+            )
+            messages.success(
+                request,
+                f"💰 Malipo ya TSh {voucher.amount:,.2f} ({voucher.get_category_display()}) yameidhinishwa na kutolewa na CEO! Hatua ya mzigo imesasishwa kiotomatiki."
+            )
+            return redirect(next_url)
 
-            messages.success(request, f"Expense {voucher.voucher_number} marked as PAID/DISBURSED ({voucher.get_payment_method_display()}). Shipment {job.job_number} duty payment marked as SETTLED!")
+        # 3. KATAA: Kataa vocha
+        elif decision == 'REJECT':
+            can_reject = (user_role in [UserRole.FINANCE, UserRole.CEO, UserRole.ADMIN, UserRole.OPERATIONS_MGR] or request.user.is_superuser)
+            if not can_reject:
+                messages.error(request, "Huna mamlaka ya kukataa vocha.")
+                return redirect(next_url)
 
+            voucher.approval_status = 'REJECTED'
+            voucher.approval_date = now
+            voucher.approver = request.user
+            voucher.approval_remarks = remarks or f"Yamekataliwa na {user_disp}"
+            voucher.save()
 
+            log_audit(request, "REJECT_EXPENSE", f"Vocha {voucher.voucher_number} imekataliwa: {remarks}", job=voucher.job)
+            messages.warning(request, f"Vocha {voucher.voucher_number} imekataliwa ({remarks or 'Bila maelezo'}).")
+            return redirect(next_url)
 
     return redirect('finance')
-
-
 
 
 
