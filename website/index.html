@@ -23,6 +23,14 @@
     <link rel="alternate" hreflang="sw" href="https://malkiacargowave.com/">
     <link rel="alternate" hreflang="en" href="https://malkiacargowave.com/?lang=en">
     <link rel="alternate" hreflang="x-default" href="https://malkiacargowave.com/">
+    <!-- Official Favicon & App Icons (Google Search, Bing & Mobile) -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/images/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/static/images/favicon-96.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/images/favicon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/static/images/favicon-512.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
     <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
 
@@ -40,7 +48,7 @@
     <meta property="og:description" content="Wakala rasmi wa kutoa magari Bandari ya Dar es Salaam, Yadi binafsi ya In-Bond bila faini za bandari, na ulinzi wa 100% wa vifaa vya gari lako.">
     <meta property="og:locale" content="sw_TZ">
     <meta property="og:locale:alternate" content="en_US">
-    <meta property="og:image" content="https://malkiacargowave.com/static/images/malkia-og-banner.jpg">
+    <meta property="og:image" content="https://malkiacargowave.com/static/images/og_malkia_banner.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
 
@@ -49,7 +57,7 @@
     <meta name="twitter:url" content="https://malkiacargowave.com/">
     <meta name="twitter:title" content="Malkia Cargo Wave Limited | Motor Vehicle Clearing &amp; In-Bond Yard">
     <meta name="twitter:description" content="Utoaji wa magari Bandari ya Dar es Salaam kwa haraka, Yadi ya In-Bond bila faini za bandari, na usafirishaji salama.">
-    <meta name="twitter:image" content="https://malkiacargowave.com/static/images/malkia-og-banner.jpg">
+    <meta name="twitter:image" content="https://malkiacargowave.com/static/images/og_malkia_banner.png">
 
     <!-- Dynamic Google Search Console & Bing Webmaster Verification Tags -->
     <!-- SEO_DYNAMIC_VERIFICATION_TAGS -->
@@ -62,9 +70,21 @@
         {
           "@type": ["Organization", "LocalBusiness"],
           "@id": "https://malkiacargowave.com/#organization",
-          "name": "Malkia Cargo Wave Limited",
-          "alternateName": "Malkia C&F",
+          "name": "Malkia Cargo Waves Ltd",
+          "legalName": "Malkia Cargo Wave Limited",
+          "alternateName": ["Malkia Cargo Waves", "Malkia Cargo Wave Limited", "MCW", "Malkia C&F"],
+          "slogan": "Malkia Cargo Waves Ltd, Crossing borders with no limit",
           "url": "https://malkiacargowave.com/",
+          "logo": {
+            "@type": "ImageObject",
+            "@id": "https://malkiacargowave.com/#logo",
+            "url": "https://malkiacargowave.com/static/images/malkia_logo_square.png",
+            "contentUrl": "https://malkiacargowave.com/static/images/malkia_logo_square.png",
+            "width": 512,
+            "height": 512,
+            "caption": "Malkia Cargo Waves Ltd, Crossing borders with no limit"
+          },
+          "image": "https://malkiacargowave.com/static/images/og_malkia_banner.png",
           "telephone": "+255787367474",
           "email": "info@malkiacargowave.com",
           "priceRange": "$$",
@@ -1347,9 +1367,12 @@
     <!-- ── 1. CLEAN MINIMAL WHITE TOP STRIP (PALE JUU PEUPE - NO MENU LINKS, NO BULKY NAME) ── -->
     <header class="top-strip">
         <div class="top-strip-container">
-            <div class="top-accreditation">
-                <i class="fa-solid fa-shield-halved"></i>
-                <span data-i18n="top_license">Mawakala Walioidhinishwa na TRA • Bandari ya Dar es Salaam</span>
+            <div class="top-accreditation" style="display:flex;align-items:center;gap:0.65rem;">
+                <img src="/static/images/malkia_logo.png" alt="Malkia Cargo Waves Ltd Logo" style="height:36px;width:auto;object-fit:contain;">
+                <div style="display:flex;flex-direction:column;line-height:1.2;">
+                    <span style="font-size:0.82rem;font-weight:900;color:#1E3A8A;">Malkia Cargo Waves Ltd</span>
+                    <span style="font-size:0.7rem;font-weight:700;color:#0284C7;font-style:italic;">“Crossing borders with no limit”</span>
+                </div>
             </div>
 
             <div class="top-strip-actions">
@@ -1378,12 +1401,15 @@
     <section class="showcase-hero">
         <!-- CENTER BRANDING -->
         <div class="brand-center-wrap">
-            <div class="brand-crest">
-                <i class="fa-solid fa-ship"></i>
+            <div style="background:#FFFFFF;padding:0.75rem 1.35rem;border-radius:18px;box-shadow:0 10px 28px rgba(30,58,138,0.12);border:1.5px solid #E2E8F0;display:inline-flex;align-items:center;justify-content:center;margin-bottom:0.85rem;">
+                <img src="/static/images/malkia_logo.png" alt="Malkia Cargo Waves Ltd Official Logo" style="height:86px;width:auto;object-fit:contain;display:block;">
             </div>
             <h1 class="brand-center-title">
-                MALKIA CARGO WAVE <span>LIMITED</span>
+                MALKIA CARGO WAVES <span>LTD</span>
             </h1>
+            <div style="display:inline-flex;align-items:center;gap:0.45rem;background:linear-gradient(90deg, #1E3A8A, #0284C7);color:#FFFFFF;padding:0.35rem 1.1rem;border-radius:999px;font-size:0.86rem;font-weight:800;letter-spacing:0.02em;margin:0.25rem 0 0.65rem;box-shadow:0 4px 14px rgba(2,132,199,0.25);">
+                <i class="fa-solid fa-compass"></i> “Malkia Cargo Waves Ltd, Crossing borders with no limit”
+            </div>
             <p class="brand-center-sub" data-i18n="hero_sub">
                 Utoaji wa Magari Bandari ya Dar es Salaam &bull; Yadi Binafsi ya In-Bond &bull; Usafirishaji Mikoani
             </p>
@@ -1892,7 +1918,15 @@
     <footer class="footer">
         <div class="footer-container">
             <div class="footer-brand">
-                <h4>MALKIA CARGO WAVE LIMITED</h4>
+                <div style="display:flex;align-items:center;gap:0.85rem;margin-bottom:0.65rem;">
+                    <div style="background:#FFFFFF;padding:0.35rem 0.65rem;border-radius:10px;display:inline-flex;">
+                        <img src="/static/images/malkia_logo.png" alt="Malkia Cargo Waves Ltd Logo" style="height:44px;width:auto;object-fit:contain;">
+                    </div>
+                    <div>
+                        <h4 style="margin:0;">MALKIA CARGO WAVES LTD</h4>
+                        <div style="font-size:0.8rem;font-weight:700;color:#38BDF8;font-style:italic;">“Malkia Cargo Waves Ltd, Crossing borders with no limit”</div>
+                    </div>
+                </div>
                 <p data-i18n="footer_desc">
                     Mawakala walioidhinishwa wa forodha kutoa magari na kuhifadhi magari kwenye Yadi ya In-Bond Bandari ya Dar es Salaam, Tanzania.
                 </p>

@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Commercial Invoice {{ invoice.invoice_number }} - {{ job.chassis_number|default:job.job_number }} | Malkia C&amp;F</title>
+    <!-- Official Favicon & App Icons (Google Search, Bing & Mobile) -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="48x48" href="/static/images/favicon-48.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/static/images/favicon-96.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/images/favicon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/static/images/favicon-512.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -314,12 +322,15 @@
         
         <!-- HEADER -->
         <div class="header">
-            <div>
-                <div class="brand-name">MALKIA CLEARING &amp; FORWARDING</div>
-                <div class="brand-sub">Customs Clearance &bull; Port Logistics</div>
-                <div class="brand-info">
-                    Bandari Road, Kurasini Wharf, Dar es Salaam<br>
-                    Tel: +255 754 123 456 &bull; TIN: 142-892-019
+            <div style="display:flex;align-items:center;gap:0.9rem;">
+                <img src="/static/images/malkia_logo.png" alt="Malkia Cargo Waves Ltd Logo" style="height:64px;width:auto;object-fit:contain;">
+                <div>
+                    <div class="brand-name">MALKIA CARGO WAVES LTD</div>
+                    <div class="brand-sub" style="text-transform:none;font-style:italic;color:#0284C7;margin-bottom:0.15rem;">“Malkia Cargo Waves Ltd, Crossing borders with no limit”</div>
+                    <div class="brand-info">
+                        Bandari Road, Kurasini Wharf, Dar es Salaam<br>
+                        Tel: +255 787 367 474 &bull; info@malkiacargowave.com
+                    </div>
                 </div>
             </div>
 

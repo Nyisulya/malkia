@@ -497,11 +497,17 @@ def notify_client_milestone(job, milestone_key, extra_note=''):
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F1F5F9; margin: 0; padding: 24px 12px; line-height: 1.6; color: #1E293B;">
         <div style="max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #E2E8F0;">
-            <div style="background: linear-gradient(135deg, #0F766E 0%, #0F172A 100%); color: #FFFFFF; padding: 26px 24px; text-align: center;">
-                <div style="font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #99F6E4; margin-bottom: 6px;">
-                    {COMPANY_OFFICIAL_NAME}
+            <div style="background: linear-gradient(135deg, #0B1329 0%, #1E3A8A 100%); color: #FFFFFF; padding: 24px; text-align: center;">
+                <div style="background: #FFFFFF; display: inline-block; padding: 6px 14px; border-radius: 10px; margin-bottom: 10px;">
+                    <img src="https://malkiacargowave.com/static/images/malkia_logo_white.png" alt="Malkia Cargo Waves Ltd" style="height: 48px; width: auto; display: block;">
                 </div>
-                <h1 style="font-size: 21px; font-weight: 800; margin: 0;">
+                <div style="font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #FFFFFF;">
+                    MALKIA CARGO WAVES LTD
+                </div>
+                <div style="font-size: 11.5px; color: #38BDF8; font-style: italic; margin-bottom: 6px;">
+                    “Malkia Cargo Waves Ltd, Crossing borders with no limit”
+                </div>
+                <h1 style="font-size: 20px; font-weight: 800; margin: 0;">
                     Taarifa ya Mzigo Wako
                 </h1>
             </div>
@@ -560,7 +566,8 @@ def notify_client_milestone(job, milestone_key, extra_note=''):
 
                 <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid #E2E8F0; font-size: 14px; color: #334155;">
                     Karibu sana,<br>
-                    <strong>{COMPANY_OFFICIAL_NAME}</strong><br>
+                    <strong>Malkia Cargo Waves Ltd</strong><br>
+                    <em style="font-size: 12.5px; color: #0284C7;">“Crossing borders with no limit”</em><br>
                     <span style="font-size: 12.5px; color: #64748B;">Dar es Salaam, Tanzania</span>
                 </div>
             </div>

@@ -11541,19 +11541,82 @@ def indexnow_key_txt_view(request):
 
 def web_manifest_json_view(request):
     """
-    Serves /manifest.json for Mobile SEO and Progressive Web App metadata.
+    Serves /manifest.json for Mobile SEO, Google Search, Bing, and Progressive Web App metadata.
     """
     manifest = {
-        "name": "Malkia Cargo Wave Limited",
+        "name": "Malkia Cargo Waves Ltd",
         "short_name": "Malkia Cargo",
-        "description": "Utoaji wa Magari Bandari ya Dar es Salaam, Yadi ya In-Bond, na Usafirishaji Salama.",
+        "description": "Malkia Cargo Waves Ltd, Crossing borders with no limit — Utoaji wa Magari Bandari ya Dar es Salaam, Yadi ya In-Bond, na Usafirishaji Salama.",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#0B1329",
+        "background_color": "#FFFFFF",
         "theme_color": "#1E3A8A",
         "lang": "sw-TZ",
+        "icons": [
+            {
+                "src": "/static/images/favicon-48.png",
+                "sizes": "48x48",
+                "type": "image/png"
+            },
+            {
+                "src": "/static/images/favicon-96.png",
+                "sizes": "96x96",
+                "type": "image/png"
+            },
+            {
+                "src": "/static/images/favicon-192.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any maskable"
+            },
+            {
+                "src": "/static/images/favicon-512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable"
+            }
+        ]
     }
     return JsonResponse(manifest)
+
+
+def favicon_ico_view(request):
+    """
+    Serves /favicon.ico directly from root domain for Google Search Console, Bing Webmaster & Browsers.
+    """
+    ico_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'favicon.ico')
+    if os.path.exists(ico_path):
+        with open(ico_path, 'rb') as f:
+            resp = HttpResponse(f.read(), content_type="image/x-icon")
+            resp["Cache-Control"] = "public, max-age=86400"
+            return resp
+    return HttpResponse(status=404)
+
+
+def apple_touch_icon_view(request):
+    """
+    Serves /apple-touch-icon.png directly from root domain.
+    """
+    png_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'apple-touch-icon.png')
+    if os.path.exists(png_path):
+        with open(png_path, 'rb') as f:
+            resp = HttpResponse(f.read(), content_type="image/png")
+            resp["Cache-Control"] = "public, max-age=86400"
+            return resp
+    return HttpResponse(status=404)
+
+
+def official_logo_png_view(request):
+    """
+    Serves /logo.png directly from root domain for Schema.org Organization logo & Search Engines.
+    """
+    png_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'malkia_logo_square.png')
+    if os.path.exists(png_path):
+        with open(png_path, 'rb') as f:
+            resp = HttpResponse(f.read(), content_type="image/png")
+            resp["Cache-Control"] = "public, max-age=86400"
+            return resp
+    return HttpResponse(status=404)
 
 
 @login_required
