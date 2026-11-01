@@ -406,13 +406,13 @@ def dashboard_view(request):
 
         # Jobs in range: Active operations up to date_to, and completed delivered in range
 
-        completed_jobs = all_jobs_raw.filter(status='COMPLETED', delivered_date__date__range=(date_from, date_to))
+        completed_jobs = all_jobs_raw.filter(status__in=['COMPLETED', 'CLOSED']).filter(Q(delivered_date__date__range=(date_from, date_to)) | Q(updated_at__date__range=(date_from, date_to)) | Q(created_at__date__range=(date_from, date_to)))
 
         active_jobs = all_jobs_raw.filter(status__in=['ACTIVE', 'DELAYED'], created_at__date__lte=date_to)
 
         delayed_jobs = all_jobs_raw.filter(status='DELAYED', created_at__date__lte=date_to)
 
-        jobs = all_jobs_raw.filter(Q(status__in=['ACTIVE', 'DELAYED'], created_at__date__lte=date_to) | Q(status='COMPLETED', delivered_date__date__range=(date_from, date_to)))
+        jobs = all_jobs_raw.filter(Q(status__in=['ACTIVE', 'DELAYED'], created_at__date__lte=date_to) | Q(status__in=['COMPLETED', 'CLOSED'], delivered_date__date__range=(date_from, date_to)) | Q(status__in=['COMPLETED', 'CLOSED'], updated_at__date__range=(date_from, date_to)) | Q(status__in=['COMPLETED', 'CLOSED'], created_at__date__range=(date_from, date_to)))
 
     else:
 
@@ -660,7 +660,7 @@ def dashboard_view(request):
 
     if can_view_all_stages:
 
-        visible_jobs = jobs.filter(status__in=['ACTIVE', 'DELAYED'])
+        visible_jobs = all_jobs_raw.filter(Q(id__in=jobs.values_list('id', flat=True)) | Q(status__in=['ACTIVE', 'DELAYED', 'COMPLETED', 'CLOSED'])).select_related('customer', 'documentation_officer', 'clearing_officer', 'port_officer', 'driver').order_by('-updated_at', '-created_at')
 
     else:
 
@@ -726,7 +726,7 @@ def dashboard_view(request):
 
         else:
 
-            visible_jobs = jobs.filter(status__in=['ACTIVE', 'DELAYED'])
+            visible_jobs = all_jobs_raw.filter(Q(id__in=jobs.values_list('id', flat=True)) | Q(status__in=['ACTIVE', 'DELAYED', 'COMPLETED', 'CLOSED'])).select_related('customer', 'documentation_officer', 'clearing_officer', 'port_officer', 'driver').order_by('-updated_at', '-created_at')
 
 
 
@@ -798,7 +798,14 @@ def dashboard_view(request):
 
         'pipeline_desc': pipeline_desc,
 
-        'jobs': visible_jobs[:8],
+        'jobs': visible_jobs,
+        'pulse_all_count': visible_jobs.count(),
+        'pulse_active_count': visible_jobs.filter(status='ACTIVE').count(),
+        'pulse_completed_count': visible_jobs.filter(status__in=['COMPLETED', 'CLOSED']).count(),
+        'pulse_delayed_count': visible_jobs.filter(status='DELAYED').count(),
+        'pulse_tra_count': visible_jobs.filter(current_stage_number__in=[2, 3, 4], status__in=['ACTIVE', 'DELAYED']).count(),
+        'pulse_port_count': visible_jobs.filter(current_stage_number__in=[5, 6, 7], status__in=['ACTIVE', 'DELAYED']).count(),
+        'pulse_bond_count': visible_jobs.filter(Q(clearance_mode='BOND') | Q(current_stage_number=8), status__in=['ACTIVE', 'DELAYED']).count(),
 
         'visible_jobs_count': visible_jobs.count(),
 
