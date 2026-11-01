@@ -2,17 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TBS Letter - {{ job.job_number }} | Malkia C&F</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TBS Authorization Letter - {{ job.job_number }} | Malkia C&F</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #F1F5F9;
+            font-family: 'Times New Roman', Times, Georgia, serif;
+            background: #E2E8F0;
             color: #0F172A;
             margin: 0;
-            padding: 2rem 1rem;
+            padding: 1.5rem 1rem 3rem 1rem;
+            line-height: 1.6;
         }
+
+        /* Top Action Bar (hidden on print) */
         .toolbar {
             max-width: 820px;
             margin: 0 auto 1.25rem auto;
@@ -23,7 +30,10 @@
             color: #fff;
             padding: 0.85rem 1.25rem;
             border-radius: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
         }
+
         .btn {
             display: inline-flex;
             align-items: center;
@@ -35,182 +45,408 @@
             text-decoration: none;
             cursor: pointer;
             border: none;
+            transition: all 0.2s;
         }
+
         .btn-back { background: #334155; color: #fff; }
+        .btn-back:hover { background: #475569; }
         .btn-print { background: #2563EB; color: #fff; }
+        .btn-print:hover { background: #1D4ED8; }
+        .btn-toggle-stamp { background: #059669; color: #fff; }
+        .btn-toggle-stamp:hover { background: #047857; }
+
+        /* A4 Page Paper */
         .page {
             max-width: 820px;
+            min-height: 1080px;
             margin: 0 auto;
             background: #FFFFFF;
-            padding: 2.75rem 3rem;
+            padding: 3.5rem 4rem 3rem 4rem;
             border: 1px solid #CBD5E1;
-            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
-            line-height: 1.6;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
-        .letterhead {
+
+        /* Header block with Logo & Date */
+        .header-section {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            border-bottom: 3px solid #1E3A8A;
-            padding-bottom: 1rem;
-            margin-bottom: 1.75rem;
+            margin-bottom: 2.5rem;
         }
-        table.vehicle-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1rem 0 1.25rem 0;
-            font-size: 0.9rem;
+
+        .header-logo-box {
+            text-align: right;
+            margin-left: auto;
         }
-        table.vehicle-table th, table.vehicle-table td {
-            border: 1px solid #94A3B8;
-            padding: 0.55rem 0.8rem;
-            text-align: left;
+
+        .client-logo-badge {
+            width: 70px;
+            height: 70px;
+            background: #FACC15;
+            color: #1E3A8A;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            font-weight: 900;
+            font-family: Arial, sans-serif;
+            border-radius: 4px;
+            border: 1px solid #EAB308;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
         }
-        table.vehicle-table th {
-            background: #F8FAFC;
-            width: 34%;
+
+        .letter-date {
+            font-size: 1.05rem;
+            color: #000;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        /* Recipient Address */
+        .recipient-box {
+            margin-bottom: 2rem;
+            font-size: 1.08rem;
             font-weight: 700;
+            color: #000;
+            line-height: 1.45;
+            letter-spacing: 0.02em;
         }
+
+        .salutation {
+            font-size: 1.08rem;
+            color: #000;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Centered Subject */
+        .subject-box {
+            text-align: center;
+            margin: 1.75rem 0 2rem 0;
+        }
+
+        .subject-title {
+            display: inline-block;
+            font-size: 1.15rem;
+            font-weight: 800;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            letter-spacing: 0.05em;
+            color: #000;
+        }
+
+        /* Body text */
+        .letter-body {
+            font-size: 1.12rem;
+            color: #000;
+            line-height: 1.85;
+            margin-bottom: 3.5rem;
+        }
+
+        .letter-body .doc-ref {
+            margin-bottom: 1.5rem;
+        }
+
+        .letter-body .doc-ref strong {
+            font-size: 1.15rem;
+        }
+
+        .letter-body .body-p {
+            margin-bottom: 1.5rem;
+        }
+
+        /* Sign-off & Stamp Section */
+        .signoff-section {
+            position: relative;
+            margin-bottom: 4rem;
+        }
+
+        .yours-faithfully {
+            font-size: 1.08rem;
+            color: #000;
+            margin-bottom: 0.5rem;
+        }
+
+        .company-signee-name {
+            font-size: 1.12rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #000;
+            margin-top: 0.25rem;
+        }
+
+        /* Digital Signature */
+        .signature-display {
+            min-height: 55px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .cursive-signature {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2.2rem;
+            color: #1E3A8A;
+            transform: rotate(-3deg);
+            line-height: 1;
+        }
+
+        /* Digital Blue Rubber Stamp */
+        .rubber-stamp-container {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .svg-stamp {
+            width: 175px;
+            height: 175px;
+            transform: rotate(-8deg);
+            opacity: 0.88;
+            filter: contrast(1.1);
+        }
+
+        /* Physical blank line fallback */
+        .physical-sign-box {
+            display: none;
+            margin-top: 2rem;
+            border-top: 2px dashed #94A3B8;
+            width: 280px;
+            padding-top: 0.5rem;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 0.85rem;
+            color: #64748B;
+        }
+
+        /* Yellow Corporate Letterhead Footer */
+        .letterhead-footer-bar {
+            background: #F4D03F;
+            color: #1E293B;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 0.95rem;
+            text-align: center;
+            padding: 0.65rem 1.25rem;
+            font-weight: 500;
+            border-radius: 2px;
+            margin-top: auto;
+            letter-spacing: 0.01em;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
         @media print {
-            body { background: #fff; padding: 0; }
-            .toolbar { display: none !important; }
-            .page { border: none; box-shadow: none; padding: 1rem; max-width: 100%; }
+            body {
+                background: #fff;
+                padding: 0;
+            }
+            .toolbar {
+                display: none !important;
+            }
+            .page {
+                border: none;
+                box-shadow: none;
+                padding: 15mm 20mm;
+                max-width: 100%;
+                min-height: 98vh;
+            }
+            .letterhead-footer-bar {
+                position: absolute;
+                bottom: 15mm;
+                left: 20mm;
+                right: 20mm;
+                background: #F4D03F !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .client-logo-badge {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .svg-stamp {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
     </style>
 </head>
 <body>
 
+    <!-- TOP TOOLBAR -->
     <div class="toolbar">
         <div>
-            <strong><i class="fa-solid fa-file-lines"></i> Company Letter: TBS Letter</strong>
-            <span style="margin-left:0.75rem;font-size:0.82rem;color:#94A3B8;">File: {{ job.job_number }} | Ref: {{ job.tbs_letter_reference_no }}</span>
+            <strong style="font-size:0.95rem;"><i class="fa-solid fa-stamp" style="color:#3B82F6;margin-right:0.35rem;"></i> TBS Authorization Letter</strong>
+            <span style="margin-left:0.75rem;font-size:0.82rem;color:#94A3B8;">Job: {{ job.job_number }} | Client: {{ job.customer.company_name }}</span>
         </div>
         <div style="display:flex;gap:0.6rem;">
             <a href="{% url 'job_detail' job.id %}" class="btn btn-back">
                 <i class="fa-solid fa-arrow-left"></i> Back to File
             </a>
+            <button type="button" onclick="toggleSignatureMode()" class="btn btn-toggle-stamp" id="toggleStampBtn">
+                <i class="fa-solid fa-signature"></i> <span id="toggleStampText">Physical Sign Mode</span>
+            </button>
             <button onclick="window.print()" class="btn btn-print">
                 <i class="fa-solid fa-print"></i> Print / Save PDF
             </button>
         </div>
     </div>
 
+    <!-- MAIN A4 PAGE -->
     <div class="page">
-        <div class="letterhead">
-            <div>
-                <h1 style="margin:0;font-size:1.45rem;font-weight:900;color:#1E3A8A;letter-spacing:-0.02em;">
-                    MALKIA FREIGHT &amp; LOGISTICS LTD
-                </h1>
-                <div style="font-size:0.85rem;font-weight:700;color:#475569;">
-                    licensed Customs Clearing &amp; Forwarding Agents
+        <div>
+            <!-- HEADER SECTION: LOGO & DATE -->
+            <div class="header-section">
+                <div></div>
+                <div class="header-logo-box">
+                    {% if job.customer.logo_image %}
+                        <img src="{{ job.customer.logo_image.url }}" alt="{{ job.customer.company_name }}" style="max-height:75px;max-width:140px;display:block;margin-left:auto;margin-bottom:0.5rem;">
+                    {% else %}
+                        <div class="client-logo-badge">
+                            {{ job.customer.company_name|slice:":1"|upper }}
+                        </div>
+                    {% endif %}
+                    <div class="letter-date">
+                        {{ today|date:"d/m/Y" }}
+                    </div>
                 </div>
             </div>
-            <div style="text-align:right;font-size:0.8rem;color:#334155;">
-                <div><strong>Head Office:</strong> Dar es Salaam, Tanzania</div>
-                <div><strong>Email:</strong> operations@malkiafreight.com</div>
-                <div><strong>Tel:</strong> +255 754 123 456</div>
+
+            <!-- RECIPIENT -->
+            <div class="recipient-box">
+                DIRECTIONAL GENERAL,<br>
+                TANZANIA BUREAU OF STANDARD,<br>
+                P.O.BOX 9524,<br>
+                DAR ES SALAAM,<br>
+                TANZANIA.
             </div>
-        </div>
 
-        <div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:1.5rem;">
-            <div>
-                <strong>Our Ref:</strong> <code>{{ job.tbs_letter_reference_no }}</code><br>
-                <strong>Job File No:</strong> <code>{{ job.job_number }}</code>
+            <!-- SALUTATION -->
+            <div class="salutation">
+                Dear Sir/Madam:
             </div>
-            <div style="text-align:right;">
-                <strong>Date:</strong> {{ job.file_opened_at|default:today|date:"d F Y" }}
+
+            <!-- SUBJECT -->
+            <div class="subject-box">
+                <div class="subject-title">RE: AUTHORIZATION LETTER</div>
             </div>
-        </div>
 
-        <div style="font-size:0.92rem;margin-bottom:1.35rem;">
-            <strong>THE DIRECTOR GENERAL,</strong><br>
-            TANZANIA BUREAU OF STANDARDS (TBS),<br>
-            P.O. BOX 9524,<br>
-            <strong>DAR ES SALAAM, TANZANIA.</strong>
-        </div>
-
-        <div style="font-size:0.92rem;margin-bottom:1rem;">
-            Dear Sir / Madam,
-        </div>
-
-        <div style="font-size:0.95rem;font-weight:800;text-decoration:underline;margin-bottom:1rem;color:#0F172A;">
-            RE: APPLICATION FORTBS MOTOR VEHICLE CLEARANCE / STANDARDS VERIFICATION FOR {{ job.customer.company_name|upper }} — BL NO: {{ job.bl_number|default:"N/A" }} / CHASSIS NO: {{ job.chassis_number|default:"N/A" }}
-        </div>
-
-        <p style="font-size:0.9rem;margin:0 0 0.85rem 0;text-align:justify;">
-            Kindly refer to the heading above. We, <strong>Malkia Freight &amp; Logistics Ltd</strong>, are the appointed Clearing and Forwarding Agents for our client whose consignment / motor vehicle details are provided below:
-        </p>
-
-        <table class="vehicle-table">
-            <tr>
-                <th>Importer / Client Name</th>
-                <td><strong>{{ job.customer.company_name }}</strong></td>
-            </tr>
-            <tr>
-                <th>Client TIN &amp; ID Number</th>
-                <td>TIN: <strong>{{ job.customer.tin_number|default:"—" }}</strong> &nbsp;|&nbsp; ID: <strong>{{ job.customer.id_number|default:"—" }}</strong></td>
-            </tr>
-            <tr>
-                <th>Client Phone &amp; Email</th>
-                <td>{{ job.customer.phone }} &nbsp;|&nbsp; {{ job.customer.email|default:"—" }}</td>
-            </tr>
-            <tr>
-                <th>Bill of Lading (BL) Number</th>
-                <td><strong style="font-family:monospace;font-size:0.95rem;">{{ job.bl_number|default:"—" }}</strong></td>
-            </tr>
-            <tr>
-                <th>Chassis Number</th>
-                <td><strong style="font-family:monospace;font-size:0.95rem;">{{ job.chassis_number|default:"—" }}</strong></td>
-            </tr>
-            <tr>
-                <th>Vehicle / Cargo Description</th>
-                <td><strong>{{ job.cargo_description }}</strong></td>
-            </tr>
-            <tr>
-                <th>Vessel Name &amp; Port of Entry</th>
-                <td>{{ job.vessel_name|default:"TBA" }} &bull; {{ job.port_of_arrival }}</td>
-            </tr>
-            {% if job.declaration_number %}
-            <tr>
-                <th>TANSAD Number</th>
-                <td><strong style="font-family:monospace;">{{ job.declaration_number }}</strong></td>
-            </tr>
-            {% endif %}
-        </table>
-
-        <p style="font-size:0.9rem;margin:0 0 0.65rem 0;">
-            Enclosed herewith are copies of the client's shipping and vehicle documents for your review and necessary TBS approval:
-        </p>
-
-        <ul style="font-size:0.88rem;margin:0 0 1.25rem 1.25rem;padding:0;">
-            <li>Bill of Lading (BL Document) — {% if job.doc_bl_received %}<strong>Attached</strong>{% else %}Pending{% endif %}</li>
-            <li>Commercial Invoice — {% if job.doc_invoice_received %}<strong>Attached</strong>{% else %}Pending{% endif %}</li>
-            <li>Packing List — {% if job.doc_packing_list_received %}<strong>Attached</strong>{% else %}Pending{% endif %}</li>
-            <li>TBS Certificate (CoC / Roadworthiness) — {% if job.doc_tbs_cert_received %}<strong>Attached</strong>{% else %}Pending{% endif %}</li>
-            <li>Export Certificate — {% if job.doc_export_cert_received %}<strong>Attached</strong>{% else %}Pending{% endif %}</li>
-        </ul>
-
-        <p style="font-size:0.9rem;margin:0 0 2rem 0;">
-            We kindly request your good office to process the TBS verification and issue the necessary clearance / control number accordingly.
-        </p>
-
-        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:2.5rem;">
-            <div>
-                <div style="font-size:0.9rem;margin-bottom:2.2rem;">Yours faithfully,<br><strong>FOR: MALKIA FREIGHT &amp; LOGISTICS LTD</strong></div>
-                <div style="border-bottom:1px dotted #334155;width:240px;margin-bottom:0.35rem;"></div>
-                <div style="font-size:0.85rem;font-weight:700;">
-                    {{ job.documentation_officer.get_full_name|default:job.documentation_officer.username|default:"Documentation & Clearing Officer" }}
+            <!-- BODY -->
+            <div class="letter-body">
+                <div class="doc-ref">
+                    Transportation Documents(s) Bill of Lading <strong>{{ job.bl_number|default:"MOLU18009368961" }}</strong>
                 </div>
-                <div style="font-size:0.78rem;color:#64748B;">Authorized Signatory</div>
+
+                <div class="body-p">
+                    I authorized <strong>MALKIA CARGO WAVE LIMITED</strong> to clear above-mentioned goods on our behalf.
+                </div>
+
+                <div class="body-p">
+                    Please assist them accordingly.
+                </div>
             </div>
 
-            <div style="border:2px dashed #94A3B8;padding:1.25rem 2rem;text-align:center;color:#64748B;font-size:0.78rem;border-radius:8px;">
-                <strong>OFFICIAL COMPANY STAMP</strong><br>
-                MALKIA FREIGHT &amp; LOGISTICS LTD
+            <!-- SIGNOFF & STAMP -->
+            <div class="signoff-section">
+                <div class="yours-faithfully">Yours faithfully</div>
+
+                <!-- Digital Stamp & Signature Wrapper -->
+                <div id="digitalStampBlock">
+                    <!-- Signature -->
+                    <div class="signature-display">
+                        {% if job.customer.signature_image %}
+                            <img src="{{ job.customer.signature_image.url }}" alt="Authorized Signature" style="max-height:55px;display:block;">
+                        {% else %}
+                            <div class="cursive-signature">
+                                {{ job.customer.contact_person|default:job.customer.company_name }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Company Name -->
+                    <div class="company-signee-name">
+                        {{ job.customer.company_name }}
+                    </div>
+
+                    <!-- Circular Blue Rubber Stamp -->
+                    <div class="rubber-stamp-container">
+                        {% if job.customer.stamp_image %}
+                            <img src="{{ job.customer.stamp_image.url }}" alt="Company Stamp" class="svg-stamp">
+                        {% else %}
+                            <!-- Realistic Authentic Blue Rubber Stamp SVG -->
+                            <svg class="svg-stamp" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <path id="stampCircleTop" d="M 28,100 A 72,72 0 0,1 172,100" fill="none" />
+                                    <path id="stampCircleBottom" d="M 172,100 A 72,72 0 0,1 28,100" fill="none" />
+                                </defs>
+                                <!-- Outer ring -->
+                                <circle cx="100" cy="100" r="92" fill="none" stroke="#1E40AF" stroke-width="4.5" stroke-dasharray="1000" opacity="0.9" />
+                                <!-- Inner ring -->
+                                <circle cx="100" cy="100" r="82" fill="none" stroke="#1E40AF" stroke-width="2" opacity="0.85" />
+                                <!-- Innermost circle -->
+                                <circle cx="100" cy="100" r="54" fill="none" stroke="#1E40AF" stroke-width="1.8" stroke-dasharray="4,2" opacity="0.8" />
+                                
+                                <!-- Top Arc Text: Customer Company Name -->
+                                <text fill="#1E40AF" font-size="12" font-family="'Segoe UI', Arial, sans-serif" font-weight="900" letter-spacing="2">
+                                    <textPath href="#stampCircleTop" startOffset="50%" text-anchor="middle">
+                                        {{ job.customer.company_name|upper|truncatechars:30 }}
+                                    </textPath>
+                                </text>
+
+                                <!-- Bottom Arc Text: City & Country -->
+                                <text fill="#1E40AF" font-size="11" font-family="'Segoe UI', Arial, sans-serif" font-weight="900" letter-spacing="2.5">
+                                    <textPath href="#stampCircleBottom" startOffset="50%" text-anchor="middle">
+                                        * DAR ES SALAAM * TANZANIA *
+                                    </textPath>
+                                </text>
+
+                                <!-- Center Content: Star and Date -->
+                                <text x="100" y="85" text-anchor="middle" fill="#1E40AF" font-size="16">★</text>
+                                <text x="100" y="103" text-anchor="middle" fill="#1E40AF" font-size="9" font-family="Arial, sans-serif" font-weight="bold" letter-spacing="1">AUTHORIZED</text>
+                                <text x="100" y="117" text-anchor="middle" fill="#1E40AF" font-size="9" font-family="Arial, sans-serif" font-weight="bold">{{ today|date:"d M Y"|upper }}</text>
+                                <text x="100" y="130" text-anchor="middle" fill="#1E40AF" font-size="16">★</text>
+                            </svg>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Physical Signature Fallback for walk-ins -->
+                <div id="physicalSignBlock" class="physical-sign-box">
+                    <strong>Authorized Signature & Stamp</strong><br>
+                    <span>{{ job.customer.company_name }}</span>
+                </div>
             </div>
+        </div>
+
+        <!-- YELLOW BRAND FOOTER BAR -->
+        <div class="letterhead-footer-bar">
+            {{ job.customer.company_name }}. {{ job.customer.physical_address|default:"Mikocheni A, Dar es Salaam, Tanzania." }} Email: {{ job.customer.email|default:"info@sabagold.co.tz" }}
         </div>
     </div>
 
+    <script>
+        let isDigitalMode = true;
+        function toggleSignatureMode() {
+            isDigitalMode = !isDigitalMode;
+            const digitalBlock = document.getElementById('digitalStampBlock');
+            const physicalBlock = document.getElementById('physicalSignBlock');
+            const toggleText = document.getElementById('toggleStampText');
+            
+            if (isDigitalMode) {
+                digitalBlock.style.display = 'block';
+                physicalBlock.style.display = 'none';
+                toggleText.innerText = 'Physical Sign Mode';
+            } else {
+                digitalBlock.style.display = 'none';
+                physicalBlock.style.display = 'block';
+                toggleText.innerText = 'Digital Stamp Mode';
+            }
+        }
+    </script>
 </body>
 </html>
-

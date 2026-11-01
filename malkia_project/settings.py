@@ -31,14 +31,27 @@ DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
 ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+    'http://127.0.0.1:3444',
+    'http://localhost:3444',
+    'http://127.0.0.1:8080',
+    'http://localhost:8080',
+    'http://127.0.0.1',
+    'http://localhost',
     'https://portal.malkiacargowave.com',
     'https://malkiacargowave.com',
     'https://www.malkiacargowave.com',
     'http://portal.malkiacargowave.com',
     'http://malkiacargowave.com',
-    'http://127.0.0.1:3444',
-    'http://localhost:3444',
 ]
+
+extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+if extra_csrf:
+    for origin in extra_csrf.split(','):
+        origin = origin.strip()
+        if origin and origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(origin)
 
 # Application definition
 

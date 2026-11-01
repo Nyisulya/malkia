@@ -558,149 +558,43 @@
 
 
                 {% for item in costing_items %}
-
-
-
                 <tr>
-
-
-
                     <td>
-
-
-
                         <div style="display:flex;align-items:center;gap:0.6rem;">
-
-
-
                             <div style="width:28px;height:28px;border-radius:6px;background:#F1F5F9;color:{{ item.color }};display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;">
-
-
-
                                 <i class="fa-solid {{ item.icon }}"></i>
-
-
-
                             </div>
-
-
-
                             <div>
-
-
-
                                 <strong style="color:var(--brand-navy-900);display:block;">{{ item.title }}</strong>
-
-
-
-                                {% if item.category == 'FUEL' %}
-
-
-
-                                <span style="font-size:0.72rem;color:#EA580C;font-weight:600;"><i class="fa-solid fa-circle-exclamation"></i> Vehicle fuel top-up logged by Port Officer</span>
-
-
-
+                                {% if item.subtitle %}
+                                <span style="font-size:0.72rem;color:#64748B;font-weight:600;">{{ item.subtitle }}</span>
                                 {% endif %}
-
-
-
                             </div>
-
-
-
                         </div>
-
-
-
                     </td>
-
-
-
                     <td style="text-align:right;font-weight:700;color:#1E40AF;font-family:monospace;font-size:0.88rem;">
-
-
-
                         TSh {{ item.billed|floatformat:2|intcomma }}
-
-
-
                     </td>
-
-
-
                     <td style="text-align:right;font-weight:700;color:#DC2626;font-family:monospace;font-size:0.88rem;">
-
-
-
                         TSh {{ item.actual|floatformat:2|intcomma }}
-
-
-
                     </td>
-
-
-
                     <td style="text-align:right;font-weight:800;font-family:monospace;font-size:0.9rem;color:{% if item.margin >= 0 %}#16A34A{% else %}#DC2626{% endif %};">
-
-
-
                         {% if item.margin > 0 %}+{% endif %}TSh {{ item.margin|floatformat:2|intcomma }}
-
-
-
                     </td>
-
-
-
                     <td style="text-align:center;">
-
-
-
-                        {% if item.actual > 0 and item.billed == 0 %}
-
-
-
-                        <span class="badge-pill" style="background:#FEF2F2;color:#DC2626;font-size:0.7rem;font-weight:700;">Field Extra Cost</span>
-
-
-
-                        {% elif item.margin > 0 %}
-
-
-
-                        <span class="badge-pill" style="background:#ECFDF5;color:#065F46;font-size:0.7rem;font-weight:700;"><i class="fa-solid fa-circle-check"></i> Profit Margin</span>
-
-
-
-                        {% elif item.margin == 0 and item.billed > 0 %}
-
-
-
-                        <span class="badge-pill" style="background:#EFF6FF;color:#1D4ED8;font-size:0.7rem;font-weight:700;">Reimbursed in Full</span>
-
-
-
+                        {% if item.category == 'AGENCY_FEE' %}
+                        <span class="badge-pill" style="background:#ECFDF5;color:#065F46;font-size:0.72rem;font-weight:800;"><i class="fa-solid fa-circle-check"></i> PROFIT MARGIN</span>
                         {% else %}
-
-
-
-                        <span class="badge-pill" style="background:#F1F5F9;color:#64748B;font-size:0.7rem;">Pending</span>
-
-
-
+                        <span class="badge-pill" style="background:#DCFCE7;color:#166534;font-size:0.72rem;font-weight:800;"><i class="fa-solid fa-circle-check"></i> PAID</span>
                         {% endif %}
-
-
-
                     </td>
-
-
-
                 </tr>
-
-
-
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:0.84rem;">
+                        Hakuna bili au matumizi yaliyolipwa bado kwa mzigo huu. Port Officer akijaza bili na Finance akailipia (Approve/Pay), itaonekana hapa moja kwa moja.
+                    </td>
+                </tr>
                 {% endfor %}
 
 
@@ -901,14 +795,8 @@
 
 
 
-                        <span class="badge-pill {% if exp.approval_status == 'APPROVED' or exp.approval_status == 'PAID' %}badge-completed{% elif exp.approval_status == 'REQUESTED' %}badge-delayed{% else %}badge-closed{% endif %}" style="font-size:0.68rem;">
-
-
-
-                            {{ exp.get_approval_status_display }}
-
-
-
+                        <span class="badge-pill {% if exp.is_paid or exp.approval_status == 'APPROVED' or exp.approval_status == 'PAID' %}badge-completed{% elif exp.approval_status == 'REQUESTED' %}badge-delayed{% else %}badge-closed{% endif %}" style="font-size:0.68rem;">
+                            {% if exp.is_paid or exp.approval_status == 'APPROVED' or exp.approval_status == 'PAID' %}<i class="fa-solid fa-circle-check"></i> PAID{% else %}{{ exp.get_approval_status_display }}{% endif %}
                         </span>
 
 
@@ -1885,7 +1773,7 @@
 
 
 
-                        Form C41 (TRA Declaration)
+                        TRA Authorization Letter
 
 
 
@@ -1905,7 +1793,7 @@
 
 
 
-                <i class="fa-solid fa-print"></i> Print C41
+                <i class="fa-solid fa-print"></i> Print TRA Letter
 
 
 
@@ -1957,7 +1845,7 @@
 
 
 
-                        TBS Clearance Application
+                        TBS Authorization Letter
 
 
 
@@ -1977,7 +1865,7 @@
 
 
 
-                <i class="fa-solid fa-print"></i> Print TBS
+                <i class="fa-solid fa-print"></i> Print TBS Letter
 
 
 

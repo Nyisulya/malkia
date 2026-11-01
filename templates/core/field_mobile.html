@@ -24,7 +24,7 @@
             <select name="job_id" class="form-control" onchange="this.form.submit()" style="font-size:0.95rem;font-weight:600;padding:0.75rem;">
                 {% for j in jobs %}
                 <option value="{{ j.id }}" {% if active_job and active_job.id == j.id %}selected{% endif %}>
-                    {{ j.job_number }} &bull; {{ j.container_numbers|truncatechars:18 }} (Step {{ j.current_stage_number }}/11)
+                    {{ j.job_number }} &bull; {{ j.container_numbers|truncatechars:18 }} (Step {{ j.current_stage_number }}/9)
                 </option>
                 {% endfor %}
             </select>
@@ -42,7 +42,7 @@
                 </div>
             </div>
             <span class="badge-pill {% if active_job.status == 'DELAYED' %}badge-delayed{% else %}badge-active{% endif %}" style="font-size:0.8rem;padding:0.35rem 0.75rem;">
-                Stage {{ active_job.current_stage_number }}/11
+                Stage {{ active_job.current_stage_number }}/9
             </span>
         </div>
 

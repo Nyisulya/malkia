@@ -198,9 +198,14 @@
                     </strong>
                     <span style="font-size:0.72rem;color:var(--text-muted);">{{ doc.uploaded_at|date:"d M Y H:i" }}</span>
                 </div>
-                <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="padding:0.3rem 0.65rem;font-size:0.74rem;white-space:nowrap;">
-                    <i class="fa-solid fa-download"></i> View
-                </a>
+                <div style="display:flex;gap:0.35rem;flex-shrink:0;">
+                    <a href="{% url 'download_job_document' doc.id %}" class="btn-header-action btn-primary" style="padding:0.3rem 0.6rem;font-size:0.72rem;background:#0284C7;border-color:#0284C7;text-decoration:none;" title="Pakua">
+                        <i class="fa-solid fa-download"></i> Download
+                    </a>
+                    <a href="{% url 'view_job_document' doc.id %}" target="_blank" class="btn-header-action btn-outline" style="padding:0.3rem 0.55rem;font-size:0.72rem;white-space:nowrap;">
+                        <i class="fa-solid fa-eye"></i> View
+                    </a>
+                </div>
             </div>
             {% endfor %}
         </div>

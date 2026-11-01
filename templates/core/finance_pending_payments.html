@@ -142,7 +142,7 @@
             <button type="button" onclick="filterExpenseCategory('PORT_HANDLING', this)" class="badge-pill exp-cat-pill badge-closed" style="border:none;cursor:pointer;">
                 Gate Pass ({{ gate_pass_count }})
             </button>
-            <button type="button" onclick="filterExpenseCategory('TRANSPORT', this)" class="badge-pill exp-cat-pill badge-closed" style="border:none;cursor:pointer;">
+            <button type="button" onclick="filterExpenseCategory('FUEL_TRANSPORT', this)" class="badge-pill exp-cat-pill badge-closed" style="border:none;cursor:pointer;">
                 Fuel & Haulage ({{ fuel_count }})
             </button>
             <button type="button" onclick="filterExpenseCategory('OTHER', this)" class="badge-pill exp-cat-pill badge-closed" style="border:none;cursor:pointer;">
@@ -425,7 +425,7 @@
                     </td>
                     <td>
                         {% if exp.approval_status == 'REQUESTED' %}
-                            {% if is_admin or is_ceo or is_finance and exp.amount <= 2000000 or is_ops and exp.amount <= 500000 %}
+                            {% if is_admin or is_ceo or is_finance or is_ops and exp.amount <= 500000 %}
                             <form action="{% url 'expense_approval' exp.id %}" method="POST" style="display:inline-flex;gap:0.35rem;">
                                 {% csrf_token %}
                                 <button type="submit" name="decision" value="APPROVE" class="btn-header-action btn-primary" style="background:#059669;padding:0.35rem 0.75rem;font-size:0.75rem;font-weight:700;">

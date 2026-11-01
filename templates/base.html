@@ -34,7 +34,145 @@
 
     <!-- Custom CSS -->
 
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/styles.css?v=20261101_tables">
+
+    <style>
+        /* ==========================================================================
+           UNIVERSAL ENTERPRISE TABLE SYSTEM (GREEN HEADER & EVEN/ODD ZEBRA STRIPING)
+           Applied across all roles: Customs, Finance, Operations, Docs, Admin, CEO
+           ========================================================================== */
+        table.modern-table, 
+        table.data-table, 
+        table.clean-table,
+        table.containers-table,
+        .table-responsive > table:not(.idcard-info-table):not(.print-table),
+        .card-body table:not(.idcard-info-table):not(.print-table),
+        .dashboard-card table:not(.idcard-info-table):not(.print-table),
+        main table:not(.idcard-info-table):not(.print-table),
+        .app-main table:not(.idcard-info-table):not(.print-table) {
+            width: 100%;
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            border: 1px solid #CBD5E1 !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
+            background-color: #FFFFFF !important;
+        }
+
+        /* 1. TABLE HEAD: RANGI YA KIJANI (CORPORATE EMERALD/TEAL GREEN) */
+        table.modern-table thead, 
+        table.data-table thead,
+        table.clean-table thead,
+        table.containers-table thead,
+        .table-responsive > table:not(.idcard-info-table):not(.print-table) thead,
+        .card-body table:not(.idcard-info-table):not(.print-table) thead,
+        main table:not(.idcard-info-table):not(.print-table) thead,
+        .app-main table:not(.idcard-info-table):not(.print-table) thead,
+        table.modern-table thead tr, 
+        table.data-table thead tr,
+        .table-responsive > table thead tr {
+            background: #0F766E !important;
+        }
+
+        table.modern-table th, 
+        table.data-table th,
+        table.clean-table th,
+        table.containers-table th,
+        .table-responsive > table:not(.idcard-info-table):not(.print-table) th,
+        .card-body table:not(.idcard-info-table):not(.print-table) th,
+        main table:not(.idcard-info-table):not(.print-table) th,
+        .app-main table:not(.idcard-info-table):not(.print-table) th {
+            background-color: #0F766E !important;
+            color: #FFFFFF !important;
+            font-weight: 700 !important;
+            font-size: 0.74rem !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+            padding: 0.85rem 1.1rem !important;
+            border-top: none !important;
+            border-bottom: 2px solid #0B5E58 !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+            white-space: nowrap !important;
+            vertical-align: middle !important;
+        }
+
+        table.modern-table th a, 
+        table.data-table th a, 
+        .table-responsive > table th a {
+            color: #FFFFFF !important;
+            text-decoration: none !important;
+        }
+
+        table.modern-table th:last-child, 
+        table.data-table th:last-child,
+        table.clean-table th:last-child,
+        table.containers-table th:last-child,
+        .table-responsive > table th:last-child,
+        main table:not(.idcard-info-table):not(.print-table) th:last-child {
+            border-right: none !important;
+        }
+
+        /* CELLS GENERAL */
+        table.modern-table td, 
+        table.data-table td,
+        table.clean-table td,
+        table.containers-table td,
+        .table-responsive > table:not(.idcard-info-table):not(.print-table) td,
+        .card-body table:not(.idcard-info-table):not(.print-table) td,
+        main table:not(.idcard-info-table):not(.print-table) td,
+        .app-main table:not(.idcard-info-table):not(.print-table) td {
+            padding: 0.85rem 1.1rem !important;
+            border-bottom: 1px solid #E2E8F0 !important;
+            vertical-align: middle !important;
+            color: #1E293B !important;
+            transition: background-color 0.15s ease !important;
+        }
+
+        /* 2. ROW 1 (ODD - NYEUPE): PURE WHITE */
+        table.modern-table tbody tr:nth-child(odd) td,
+        table.data-table tbody tr:nth-child(odd) td,
+        table.clean-table tbody tr:nth-child(odd) td,
+        table.containers-table tbody tr:nth-child(odd) td,
+        .table-responsive > table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(odd) td,
+        .card-body table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(odd) td,
+        main table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(odd) td,
+        .app-main table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(odd) td,
+        table.modern-table tbody tr:nth-child(odd),
+        table.data-table tbody tr:nth-child(odd),
+        .table-responsive > table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(odd) {
+            background-color: #FFFFFF !important;
+        }
+
+        /* 3. ROW 2 (EVEN - MAZIWA / MAJIVU): SOFT MILKY ASH SLATE */
+        table.modern-table tbody tr:nth-child(even) td,
+        table.data-table tbody tr:nth-child(even) td,
+        table.clean-table tbody tr:nth-child(even) td,
+        table.containers-table tbody tr:nth-child(even) td,
+        .table-responsive > table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(even) td,
+        .card-body table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(even) td,
+        main table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(even) td,
+        .app-main table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(even) td,
+        table.modern-table tbody tr:nth-child(even),
+        table.data-table tbody tr:nth-child(even),
+        .table-responsive > table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(even) {
+            background-color: #F1F5F9 !important;
+        }
+
+        /* 4. HOVER: SOFT MINT TINT */
+        table.modern-table tbody tr:hover td,
+        table.data-table tbody tr:hover td,
+        table.clean-table tbody tr:hover td,
+        table.containers-table tbody tr:hover td,
+        .table-responsive > table:not(.idcard-info-table):not(.print-table) tbody tr:hover td,
+        .card-body table:not(.idcard-info-table):not(.print-table) tbody tr:hover td,
+        main table:not(.idcard-info-table):not(.print-table) tbody tr:hover td,
+        .app-main table:not(.idcard-info-table):not(.print-table) tbody tr:hover td,
+        table.modern-table tbody tr:hover,
+        table.data-table tbody tr:hover,
+        .table-responsive > table:not(.idcard-info-table):not(.print-table) tbody tr:hover {
+            background-color: #E2F3F0 !important;
+        }
+    </style>
 
     {% block extra_css %}{% endblock %}
 

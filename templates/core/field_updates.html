@@ -161,9 +161,8 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- SEND PAYMENT CONTROL NUMBER TO FINANCE (D/O or ICD)      -->
+    <!-- SEND PAYMENT CONTROL NUMBER / FIELD EXPENSE TO FINANCE   -->
     <!-- ======================================================== -->
-    {% if not selected_job.vehicle_arrived_at_office %}
     <div class="card-panel" style="padding:1.1rem;margin-bottom:1.5rem;border-left:5px solid #F59E0B;background:#FFFBEB;">
         <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;">
             <span style="width:30px;height:30px;border-radius:50%;background:#FEF3C7;color:#D97706;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.95rem;">
@@ -171,9 +170,9 @@
             </span>
             <div>
                 <h4 style="font-family:var(--font-heading);font-size:1rem;font-weight:800;color:#92400E;margin:0;">
-                    Send Payment Control Number to Finance
+                    Send Bill / Field Expense Request to Finance (D/O, ICD, Mafuta &amp; Matumizi)
                 </h4>
-                <span style="font-size:0.75rem;color:#B45309;">Send Shipping Line D/O or ICD Port Charges slip to Accountant for immediate payment</span>
+                <span style="font-size:0.75rem;color:#B45309;">Tuma Control Number (D/O, Bandari/ICD) au ombi la fedha ya matumizi (Mafuta ya Gari, Usafiri, n.k.) kwenda Finance kulipiwa</span>
             </div>
         </div>
 
@@ -181,30 +180,35 @@
         {% if port_vouchers %}
         <div style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.75rem;">
             {% for pv in port_vouchers %}
-            <div style="background:#fff;border-radius:6px;padding:0.65rem 0.85rem;border:1px solid {% if pv.is_paid %}#86EFAC{% else %}#FCD34D{% endif %};font-size:0.82rem;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="background:#fff;border-radius:6px;padding:0.65rem 0.85rem;border:1px solid {% if pv.is_paid or pv.approval_status == 'APPROVED' or pv.approval_status == 'PAID' %}#86EFAC{% elif pv.approval_status == 'REJECTED' %}#FCA5A5{% else %}#FCD34D{% endif %};font-size:0.82rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.4rem;">
                     <div>
                         <strong style="color:#1E293B;">{{ pv.get_category_display }}</strong>
-                        {% if pv.beneficiary_name %}• <span style="color:#64748B;">{{ pv.beneficiary_name }}</span>{% endif %}
+                        {% if pv.beneficiary_name %}&bull; <span style="color:#64748B;font-weight:600;">{{ pv.beneficiary_name }}</span>{% endif %}
                     </div>
-                    {% if pv.is_paid %}
-                    <span style="font-size:0.72rem;font-weight:800;color:#059669;background:#DCFCE7;padding:0.2rem 0.5rem;border-radius:999px;">
-                        <i class="fa-solid fa-circle-check"></i> PAID BY FINANCE
+                    {% if pv.is_paid or pv.approval_status == 'APPROVED' or pv.approval_status == 'PAID' %}
+                    <span style="font-size:0.72rem;font-weight:800;color:#059669;background:#DCFCE7;padding:0.2rem 0.55rem;border-radius:999px;">
+                        <i class="fa-solid fa-circle-check"></i> PAID &amp; APPROVED BY FINANCE
+                    </span>
+                    {% elif pv.approval_status == 'REJECTED' %}
+                    <span style="font-size:0.72rem;font-weight:800;color:#DC2626;background:#FEE2E2;padding:0.2rem 0.55rem;border-radius:999px;">
+                        <i class="fa-solid fa-circle-xmark"></i> REJECTED BY FINANCE
                     </span>
                     {% else %}
-                    <span style="font-size:0.72rem;font-weight:800;color:#B45309;background:#FEF3C7;padding:0.2rem 0.5rem;border-radius:999px;">
-                        <i class="fa-solid fa-clock"></i> AWAITING FINANCE PAYMENT
+                    <span style="font-size:0.72rem;font-weight:800;color:#B45309;background:#FEF3C7;padding:0.2rem 0.55rem;border-radius:999px;">
+                        <i class="fa-solid fa-clock"></i> AWAITING FINANCE APPROVAL
                     </span>
                     {% endif %}
                 </div>
                 <div style="margin-top:0.3rem;display:flex;gap:0.75rem;color:#475569;flex-wrap:wrap;font-size:0.8rem;">
-                    <div>Control No: <strong style="font-family:monospace;color:#1E3A8A;">{{ pv.control_number|default:"-" }}</strong></div>
+                    <div>Voucher: <strong style="font-family:monospace;color:#334155;">{{ pv.voucher_number }}</strong></div>
+                    {% if pv.control_number %}<div>Control / Ref No: <strong style="font-family:monospace;color:#1E3A8A;">{{ pv.control_number }}</strong></div>{% endif %}
                     <div>Amount: <strong style="color:#0F766E;">TSh {{ pv.amount|floatformat:0 }}</strong></div>
                     {% if pv.payment_reference %}<div>Payment Ref: <strong style="color:#059669;">{{ pv.payment_reference }}</strong></div>{% endif %}
                 </div>
-                {% if pv.is_paid %}
+                {% if pv.is_paid or pv.approval_status == 'APPROVED' or pv.approval_status == 'PAID' %}
                 <div style="margin-top:0.3rem;font-size:0.76rem;color:#166534;font-weight:700;">
-                    👉 Payment confirmed! You can now collect the D/O or Release Gate Pass at the counter.
+                    👉 Malipo yamelipwa na kuthibitishwa na Finance (PAID)! Pia yanaonekana moja kwa moja kwenye ripoti ya Boss.
                 </div>
                 {% endif %}
             </div>
@@ -212,10 +216,10 @@
         </div>
         {% endif %}
 
-        <!-- FORM TO DISPATCH NEW CONTROL NUMBER -->
+        <!-- FORM TO DISPATCH NEW CONTROL NUMBER OR FIELD EXPENSE -->
         <details style="background:#fff;border-radius:var(--radius-md);border:1px solid #FDE68A;padding:0.75rem;" {% if not port_vouchers %}open{% endif %}>
             <summary style="font-size:0.82rem;font-weight:800;color:#92400E;cursor:pointer;">
-                <i class="fa-solid fa-paper-plane"></i> Submit New Control Number / Bill to Finance
+                <i class="fa-solid fa-plus-circle"></i> + Add / Send New Bill, Fuel (Mafuta) or Field Expense to Finance
             </summary>
             <form method="POST" action="{% url 'field_update_action' selected_job.id %}" enctype="multipart/form-data" style="margin-top:0.75rem;">
                 {% csrf_token %}
@@ -223,46 +227,46 @@
 
                 <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:0.65rem;margin-bottom:0.65rem;">
                     <div>
-                        <label style="display:block;font-size:0.72rem;font-weight:700;color:#334155;margin-bottom:0.2rem;">Payment Category *</label>
+                        <label style="display:block;font-size:0.72rem;font-weight:700;color:#334155;margin-bottom:0.2rem;">Expense / Bill Category *</label>
                         <select name="payment_category" class="form-control" style="font-size:0.82rem;padding:0.45rem;font-weight:700;" required>
                             <option value="SHIPPING_LINE">Shipping Line D/O (e.g. MSC, Maersk)</option>
-                            <option value="PORT_CHARGES">ICD Port Charges & Wharfage</option>
+                            <option value="PORT_CHARGES">ICD Port Charges &amp; Wharfage</option>
+                            <option value="FUEL">Vehicle Fuel / Mafuta ya Gari (Petrol/Diesel)</option>
+                            <option value="TRANSPORT">Driver / Transport Allowance (Usafiri)</option>
+                            <option value="PORT_HANDLING">Port Handling, Tally &amp; Extra Charges</option>
+                            <option value="OTHER">Other Operational Expense (Matumizi Mengine)</option>
                         </select>
                     </div>
 
                     <div>
-                        <label style="display:block;font-size:0.72rem;font-weight:700;color:#334155;margin-bottom:0.2rem;">Payee / Line / Yard *</label>
-                        <input type="text" name="beneficiary_name" class="form-control" placeholder="e.g. MSC Line or DICD" style="font-size:0.82rem;padding:0.45rem;" required>
+                        <label style="display:block;font-size:0.72rem;font-weight:700;color:#334155;margin-bottom:0.2rem;">Payee / Purpose / Maelezo *</label>
+                        <input type="text" name="beneficiary_name" class="form-control" placeholder="e.g. MSC Line, DICD, au Mafuta ya Gari" style="font-size:0.82rem;padding:0.45rem;" required>
                     </div>
 
                     <div>
-                        <label style="display:block;font-size:0.72rem;font-weight:700;color:#334155;margin-bottom:0.2rem;">Control Number / Bill Ref *</label>
-                        <input type="text" name="control_number" class="form-control" placeholder="e.g. 992810482019" style="font-size:0.9rem;font-weight:800;letter-spacing:0.04em;font-family:monospace;padding:0.45rem;" required>
+                        <label style="display:block;font-size:0.72rem;font-weight:700;color:#334155;margin-bottom:0.2rem;">Control No / Receipt Ref (Optional kwa Mafuta)</label>
+                        <input type="text" name="control_number" class="form-control" placeholder="e.g. 992810482019 (Acha wazi kama huna)" style="font-size:0.86rem;font-weight:800;letter-spacing:0.03em;font-family:monospace;padding:0.45rem;">
                     </div>
 
                     <div>
                         <label style="display:block;font-size:0.72rem;font-weight:700;color:#334155;margin-bottom:0.2rem;">Amount (TSh) *</label>
-                        <input type="number" step="1000" name="amount" class="form-control" placeholder="e.g. 450000" style="font-size:0.9rem;font-weight:800;padding:0.45rem;" required>
+                        <input type="number" step="500" name="amount" class="form-control" placeholder="e.g. 50000" style="font-size:0.9rem;font-weight:800;padding:0.45rem;" required>
                     </div>
                 </div>
 
                 <div style="margin-bottom:0.75rem;">
                     <label style="display:block;font-size:0.72rem;font-weight:700;color:#334155;margin-bottom:0.2rem;">
-                        <i class="fa-solid fa-camera"></i> Take Photo of Payment Advice / Control Number Slip (Optional):
+                        <i class="fa-solid fa-camera"></i> Attach Bill Slip / Receipt Photo (Optional):
                     </label>
-                    <input type="file" name="slip_photo" class="form-control" accept="image/*" capture="environment" style="font-size:0.8rem;padding:0.35rem;">
+                    <input type="file" name="slip_photo" class="form-control" accept="image/*,.pdf" capture="environment" style="font-size:0.8rem;padding:0.35rem;">
                 </div>
 
                 <button type="submit" class="btn-header-action btn-primary" style="width:100%;background:#D97706;border-color:#D97706;padding:0.75rem;font-size:0.92rem;font-weight:800;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
-                    <i class="fa-solid fa-paper-plane"></i> 🚀 Send Control Number to Finance
+                    <i class="fa-solid fa-paper-plane"></i> 🚀 Send Payment / Expense Request to Finance
                 </button>
             </form>
         </details>
-    </div>
-    {% endif %}
-
-
-    <!-- ======================================================== -->
+    </div><!-- ======================================================== -->
     <!-- SCENARIO A: ALL 4 STEPS COMPLETED FOR THIS VEHICLE       -->
     <!-- ======================================================== -->
     {% if selected_job.vehicle_arrived_at_office %}
@@ -353,11 +357,19 @@
             {% csrf_token %}
             <input type="hidden" name="update_type" value="DISPATCH_OFFICE">
 
-            <div style="margin-bottom:1rem;">
-                <label style="display:block;font-size:0.82rem;font-weight:700;color:#334155;margin-bottom:0.35rem;">
-                    Assigned Office Driver Name:
-                </label>
-                <input type="text" name="driver_name" class="form-control" value="{{ selected_job.vehicle_driver_name }}" placeholder="e.g. Mohamed Said (Office Driver)" required style="font-size:0.95rem;padding:0.7rem 0.85rem;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:0.75rem;margin-bottom:1rem;">
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:700;color:#334155;margin-bottom:0.35rem;">
+                        Port / ICD Gate Pass Number:
+                    </label>
+                    <input type="text" name="gate_pass_number" class="form-control" value="{{ selected_job.gate_pass_number }}" placeholder="e.g. GP-2026-0021 (Auto if blank)" style="font-size:0.95rem;padding:0.7rem 0.85rem;font-family:monospace;font-weight:700;">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.82rem;font-weight:700;color:#334155;margin-bottom:0.35rem;">
+                        Assigned Office Driver Name:
+                    </label>
+                    <input type="text" name="driver_name" class="form-control" value="{{ selected_job.vehicle_driver_name }}" placeholder="e.g. Mohamed Said (Office Driver)" required style="font-size:0.95rem;padding:0.7rem 0.85rem;">
+                </div>
             </div>
 
             <button type="submit" class="btn-header-action btn-primary" style="width:100%;background:#16A34A;border-color:#16A34A;padding:0.95rem;font-size:1.05rem;font-weight:800;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;gap:0.5rem;">
@@ -376,9 +388,9 @@
             <span style="width:32px;height:32px;border-radius:50%;background:#DBEAFE;color:#1D4ED8;display:flex;align-items:center;justify-content:center;font-weight:800;">2</span>
             <div>
                 <h4 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
-                    Step 2: Vehicle Condition & Accessories (ICD Check)
+                    Step 2 &amp; 3: Gate Exit &amp; Vehicle Condition Inspection
                 </h4>
-                <span style="font-size:0.8rem;color:var(--text-muted);">Check scratches and equipment before driver drives it out</span>
+                <span style="font-size:0.8rem;color:var(--text-muted);">Inspect vehicle accessories, record Gate Pass &amp; dispatch driver to Malkia Yard</span>
             </div>
         </div>
 
@@ -453,12 +465,27 @@
                 <input type="file" name="photos" multiple class="form-control" accept="image/*" capture="environment" style="padding:0.5rem;font-size:0.85rem;">
             </div>
 
-            <div style="margin-bottom:1rem;">
-                <input type="text" name="condition_notes" class="form-control" placeholder="Additional inspection remarks (Optional)..." style="font-size:0.85rem;padding:0.55rem 0.75rem;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:0.75rem;margin-bottom:0.85rem;">
+                <div>
+                    <label style="display:block;font-size:0.8rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                        Port / ICD Gate Pass No (Optional):
+                    </label>
+                    <input type="text" name="gate_pass_number" class="form-control" value="{{ selected_job.gate_pass_number }}" placeholder="e.g. GP-2026-0021" style="font-size:0.88rem;padding:0.55rem 0.75rem;font-family:monospace;font-weight:700;">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.8rem;font-weight:700;color:#334155;margin-bottom:0.25rem;">
+                        Assigned Office Driver:
+                    </label>
+                    <input type="text" name="driver_name" class="form-control" value="{{ selected_job.vehicle_driver_name|default:'Mohamed Said (Office Driver)' }}" placeholder="e.g. Mohamed Said" style="font-size:0.88rem;padding:0.55rem 0.75rem;">
+                </div>
             </div>
 
-            <button type="submit" class="btn-header-action btn-primary" style="width:100%;background:#2563EB;border-color:#2563EB;padding:0.95rem;font-size:1.05rem;font-weight:800;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;gap:0.5rem;">
-                <i class="fa-solid fa-floppy-disk"></i> Save Vehicle Inspection
+            <div style="margin-bottom:1rem;">
+                <input type="text" name="condition_notes" class="form-control" placeholder="Additional inspection & gate exit remarks (Optional)..." style="font-size:0.85rem;padding:0.55rem 0.75rem;">
+            </div>
+
+            <button type="submit" class="btn-header-action btn-primary" style="width:100%;background:#16A34A;border-color:#16A34A;padding:0.95rem;font-size:1.05rem;font-weight:800;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+                <i class="fa-solid fa-car-side"></i> ✅ Approve Gate Pass, Save Inspection &amp; Dispatch to Yard
             </button>
         </form>
     </div>
@@ -562,7 +589,7 @@
             <div style="display:flex;justify-content:space-between;padding:0.4rem 0.55rem;background:#F8FAFC;border-radius:4px;border-left:3px solid #CBD5E1;">
                 <div>
                     <strong style="color:#0F172A;">{{ log.user.get_full_name|default:log.user.username }}</strong>:
-                    <span style="color:#334155;">{{ log.action_details|truncatechars:75 }}</span>
+                    <span style="color:#334155;">{{ log.details|truncatechars:75 }}</span>
                 </div>
                 <div style="color:#94A3B8;white-space:nowrap;margin-left:0.5rem;font-size:0.75rem;">
                     {{ log.timestamp|date:"d M H:i" }}

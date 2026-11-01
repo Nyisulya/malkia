@@ -58,7 +58,7 @@
         <div class="card-panel" style="padding:1.1rem;border-left:4px solid #F59E0B;">
             <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Gate &amp; Loading</div>
             <div style="font-size:1.6rem;font-weight:800;color:#B45309;margin-top:0.25rem;">{{ gate_loading_count }}</div>
-            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Stages 8 &amp; 10 at terminal</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">Stages 6 &amp; 7 at terminal</div>
         </div>
 
         <div class="card-panel" style="padding:1.1rem;border-left:4px solid #EF4444;">
@@ -77,7 +77,7 @@
                     <i class="fa-solid fa-user-check"></i> My Assigned ({{ my_jobs_count }})
                 </a>
                 <a href="?tab=port_stages" class="badge-pill {% if filter_tab == 'port_stages' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
-                    <i class="fa-solid fa-anchor"></i> Port Stages (5, 8, 10)
+                    <i class="fa-solid fa-anchor"></i> Port Stages (4, 5, 6, 7)
                 </a>
                 <a href="?tab=delayed" class="badge-pill {% if filter_tab == 'delayed' %}badge-delayed{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:600;">
                     <i class="fa-solid fa-triangle-exclamation"></i> Delayed / Issues
@@ -123,7 +123,7 @@
                         {% endif %}
 
                         <span class="badge-pill {% if job.status == 'DELAYED' %}badge-delayed{% else %}badge-active{% endif %}" style="font-size:0.75rem;">
-                            Step {{ job.current_stage_number }}/11: {{ job.current_stage_obj.name_en }}
+                            Step {{ job.current_stage_number }}/9: {{ job.current_stage_obj.name_en }}
                         </span>
                     </div>
 

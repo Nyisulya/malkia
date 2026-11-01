@@ -1063,11 +1063,13 @@
 
             <!-- SECTION 4: SOURCE DOCUMENTS -->
             <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                <div style="background:#F1F5F9;padding:0.65rem 1rem;border-bottom:1px solid #E2E8F0;font-size:0.8rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;justify-content:space-between;">
-                    <span><i class="fa-solid fa-file-pdf" style="color:#DC2626;margin-right:0.4rem;"></i> ORIGINAL SOURCE DOCUMENTS (CLOUDFLARE R2)</span>
-                    <span style="font-size:0.72rem;color:var(--text-muted);">ATTACHED FILES</span>
+                <div style="background:#F1F5F9;padding:0.65rem 1rem;border-bottom:1px solid #E2E8F0;font-size:0.8rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+                    <span><i class="fa-solid fa-file-pdf" style="color:#DC2626;margin-right:0.4rem;"></i> ORIGINAL SOURCE DOCUMENTS (FOR TRA TANCIS LODGEMENT)</span>
+                    <a id="dsDownloadAllZipBtn" href="#" class="btn-header-action btn-primary" style="padding:0.3rem 0.75rem;font-size:0.74rem;background:#059669;border-color:#059669;text-decoration:none;display:inline-flex;align-items:center;gap:0.35rem;">
+                        <i class="fa-solid fa-file-zipper"></i> Pakua Zote kwa Pamoja (ZIP)
+                    </a>
                 </div>
-                <div id="dsDocumentsList" style="padding:1rem;display:flex;gap:0.65rem;flex-wrap:wrap;"></div>
+                <div id="dsDocumentsList" style="padding:1rem;display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:0.75rem;"></div>
             </div>
         </div>
 
@@ -1465,9 +1467,11 @@
         "documents": [
             {% for d in j.documents.all %}
             {
+                "id": {{ d.id }},
                 "type": "{{ d.get_document_type_display|escapejs }}",
                 "title": "{{ d.title|escapejs }}",
-                "url": "{{ d.file.url|default:'' }}"
+                "view_url": "{% url 'view_job_document' d.id %}",
+                "download_url": "{% url 'download_job_document' d.id %}"
             }{% if not forloop.last %},{% endif %}
             {% endfor %}
         ]
@@ -1587,23 +1591,43 @@ function openTancisDataSheet(jobId) {
         contContainer.innerHTML = '<span style="font-size:0.78rem;color:var(--text-muted);">No container records specified.</span>';
     }
 
-    // Populate Documents
+    // Setup ZIP Download Button
+    const zipBtn = document.getElementById('dsDownloadAllZipBtn');
+    if (zipBtn) {
+        zipBtn.href = '/jobs/' + job.id + '/download-all-docs/';
+        zipBtn.style.display = (job.documents && job.documents.length > 0) ? 'inline-flex' : 'none';
+    }
+
+    // Populate Documents with Download and View buttons
     const docsContainer = document.getElementById('dsDocumentsList');
     docsContainer.innerHTML = '';
     if (job.documents && job.documents.length > 0) {
         job.documents.forEach(d => {
-            if (d.url) {
-                const btn = document.createElement('a');
-                btn.href = d.url;
-                btn.target = "_blank";
-                btn.className = "copy-btn-inline";
-                btn.style.cssText = "text-decoration:none;background:#FFFFFF;border-color:#E2E8F0;font-size:0.78rem;";
-                btn.innerHTML = `<i class="fa-solid fa-file-pdf" style="color:#DC2626;"></i> ${d.type} (View)`;
-                docsContainer.appendChild(btn);
-            }
+            const card = document.createElement('div');
+            card.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:8px;padding:0.6rem 0.8rem;gap:0.5rem;box-shadow:0 1px 2px rgba(0,0,0,0.03);";
+            card.innerHTML = `
+                <div style="display:flex;align-items:center;gap:0.5rem;overflow:hidden;flex:1;">
+                    <div style="width:32px;height:32px;border-radius:6px;background:#FEE2E2;color:#DC2626;display:flex;align-items:center;justify-content:center;font-size:0.95rem;flex-shrink:0;">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
+                    <div style="overflow:hidden;">
+                        <div style="font-weight:700;font-size:0.82rem;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.type}</div>
+                        <div style="font-size:0.68rem;color:#64748B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.title || ''}</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.35rem;flex-shrink:0;">
+                    <a href="${d.download_url}" class="btn-header-action btn-primary" style="padding:0.3rem 0.6rem;font-size:0.72rem;background:#0284C7;border-color:#0284C7;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;" title="Pakua faili hili moja kwa moja ili uliweke TANCIS">
+                        <i class="fa-solid fa-download"></i> Download
+                    </a>
+                    <a href="${d.view_url}" target="_blank" class="btn-header-action btn-outline" style="padding:0.3rem 0.55rem;font-size:0.72rem;text-decoration:none;" title="Tazama">
+                        <i class="fa-solid fa-eye"></i> View
+                    </a>
+                </div>
+            `;
+            docsContainer.appendChild(card);
         });
     } else {
-        docsContainer.innerHTML = '<span style="font-size:0.78rem;color:var(--text-muted);">No documents attached to this shipment.</span>';
+        docsContainer.innerHTML = '<span style="font-size:0.78rem;color:var(--text-muted);grid-column:1/-1;">Hapana nyaraka zilizopakiwa bado kwenye file hili.</span>';
     }
 
     // Hook Launch Lodge Button

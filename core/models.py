@@ -147,6 +147,9 @@ class Customer(models.Model):
     physical_address = models.TextField(blank=True)
     credit_limit = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     payment_terms = models.CharField(max_length=30, choices=PAYMENT_TERMS_CHOICES, default='IMMEDIATE')
+    logo_image = models.ImageField(upload_to='customer_logos/', null=True, blank=True, verbose_name="Client Letterhead Logo")
+    stamp_image = models.ImageField(upload_to='customer_stamps/', null=True, blank=True, verbose_name="Client Official Stamp")
+    signature_image = models.ImageField(upload_to='customer_signatures/', null=True, blank=True, verbose_name="Client Authorized Signature")
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -712,6 +715,8 @@ class JobDocument(models.Model):
         ('BILL_OF_LADING', 'Bill of Lading (BL)'),
         ('COMMERCIAL_INVOICE', 'Commercial Invoice'),
         ('PACKING_LIST', 'Packing List'),
+        ('TBS_CERT', 'TBS Inspection Certificate'),
+        ('EXPORT_CERT', 'Export Certificate'),
         ('CERTIFICATE_OF_ORIGIN', 'Certificate of Origin'),
         ('DECLARATION_ASSESSMENT', 'Customs Assessment / Declaration'),
         ('DUTY_PAYMENT_RECEIPT', 'Duty Payment Receipt'),

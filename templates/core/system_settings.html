@@ -58,7 +58,10 @@
                 <i class="fa-solid fa-cloud-arrow-up"></i> Cloudflare R2 Storage
             </a>
             <a href="?tab=email" class="badge-pill {% if tab == 'email' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.5rem 1rem;font-size:0.82rem;font-weight:700;background:{% if tab == 'email' %}#2563EB{% else %}#F1F5F9{% endif %};color:{% if tab == 'email' %}#FFFFFF{% else %}#1E293B{% endif %};">
-                <i class="fa-solid fa-envelope"></i> Resend Email Setup
+                <i class="fa-solid fa-paper-plane"></i> Email (Resend) &amp; SMS Gate
+            </a>
+            <a href="?tab=seo" class="badge-pill {% if tab == 'seo' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.5rem 1rem;font-size:0.82rem;font-weight:800;background:{% if tab == 'seo' %}#059669{% else %}#ECFDF5{% endif %};color:{% if tab == 'seo' %}#FFFFFF{% else %}#065F46{% endif %};border:1px solid #6EE7B7;">
+                <i class="fa-solid fa-magnifying-glass-chart"></i> SEO (Google &amp; Bing Console)
             </a>
         </div>
     </div>
@@ -361,7 +364,7 @@
             <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
                 Registered Corporate Legal Name
             </label>
-            <input type="text" name="company_name" value="{{ config.company_name|default:'Malkia Clearing & Forwarding Ltd' }}" class="form-input">
+            <input type="text" name="company_name" value="{{ config.company_name|default:'Malkia Cargo Wave Limited' }}" class="form-input">
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
@@ -519,7 +522,7 @@
                     <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
                         Sender Display Name *
                     </label>
-                    <input type="text" name="sender_name" value="{{ config.RESEND_SENDER_NAME|default:'Malkia Freight & Logistics' }}" class="form-input" placeholder="Malkia Freight & Logistics">
+                    <input type="text" name="sender_name" value="{{ config.RESEND_SENDER_NAME|default:'Malkia Cargo Wave Limited' }}" class="form-input" placeholder="Malkia Cargo Wave Limited">
                     <small style="color:var(--text-muted);font-size:0.75rem;">Displayed as the sender name in the client's inbox.</small>
                 </div>
             </div>
@@ -529,22 +532,206 @@
                     <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
                         From Email Address *
                     </label>
-                    <input type="text" name="from_email" value="{{ config.RESEND_FROM_EMAIL|default:'notifications@bongocode.com' }}" class="form-input" placeholder="e.g. info@malkia.co.tz or onboarding@resend.dev">
+                    <input type="text" name="from_email" value="{{ config.RESEND_FROM_EMAIL|default:'info@malkiacargowave.com' }}" class="form-input" placeholder="e.g. info@malkiacargowave.com">
                     <small style="color:var(--text-muted);font-size:0.75rem;">Verified domain email address in Resend.</small>
                 </div>
 
                 <div>
                     <label style="display:block;font-size:0.85rem;font-weight:700;color:#0F172A;margin-bottom:0.35rem;">
-                        Recipient Test Email *
+                        Recipient Test Email (Optional)
                     </label>
-                    <input type="email" name="to_email" class="form-input" placeholder="Enter your email to receive a test message" required style="border-color:#2563EB;">
+                    <input type="email" name="to_email" class="form-input" placeholder="e.g. nyisulyafelician@gmail.com" style="border-color:#2563EB;">
                     <small style="color:#2563EB;font-size:0.75rem;font-weight:600;">Sends an immediate test email to verify your setup.</small>
                 </div>
             </div>
 
             <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;border-top:1px solid #E2E8F0;padding-top:1.25rem;">
-                <button type="submit" class="btn-primary" style="padding:0.75rem 1.75rem;font-weight:700;display:inline-flex;align-items:center;gap:0.5rem;">
+                <button type="submit" name="action_mode" value="save" class="btn-primary" style="padding:0.75rem 1.5rem;font-weight:700;">
+                    <i class="fa-solid fa-save"></i> Save Resend Settings
+                </button>
+                <button type="submit" name="action_mode" value="test" class="btn-header-action" style="background:#2563EB;color:#FFFFFF;border:none;padding:0.75rem 1.75rem;font-weight:700;display:inline-flex;align-items:center;gap:0.5rem;">
                     <i class="fa-solid fa-paper-plane"></i> Save &amp; Send Test Email
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 8B. SMS GATE ANDROID GATEWAY INTEGRATION -->
+    <div class="card-panel" style="padding:1.75rem;margin-top:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;border-bottom:1px solid #E2E8F0;padding-bottom:1rem;">
+            <div>
+                <h4 style="font-family:var(--font-heading);font-size:1.15rem;font-weight:800;color:var(--text-main);margin:0 0 0.35rem 0;display:flex;align-items:center;gap:0.5rem;">
+                    <i class="fa-solid fa-comment-sms" style="color:#059669;"></i> Client SMS Gateway (SMS Gate Android Gateway - api.sms-gate.app)
+                </h4>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin:0;">
+                    Sends automated Swahili SMS messages for the 3 core milestones: 1. Kupokea Nyaraka, 2. Kodi ya TRA Ikitoka, 3. Mzigo Kufika Yard.
+                </p>
+            </div>
+            <div>
+                <span class="badge-pill badge-active" style="padding:0.4rem 0.85rem;font-size:0.8rem;background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;">
+                    <i class="fa-solid fa-mobile-screen-button"></i> SMS Gate Active
+                </span>
+            </div>
+        </div>
+
+        <form action="{% url 'test_nextsms' %}" method="POST">
+            {% csrf_token %}
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        SMS Gate Server URL *
+                    </label>
+                    <input type="text" name="smsgate_server_url" value="{{ config.SMS_GATE_SERVER_URL|default:'https://api.sms-gate.app' }}" class="form-input" style="font-family:monospace;">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        SMS Gate Username *
+                    </label>
+                    <input type="text" name="smsgate_username" value="{{ config.SMS_GATE_USERNAME|default:'' }}" class="form-input" placeholder="SMS Gate Username" style="font-family:monospace;">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        SMS Gate Password *
+                    </label>
+                    <input type="password" name="smsgate_password" value="{{ config.SMS_GATE_PASSWORD|default:'' }}" class="form-input" placeholder="Enter SMS Gate Password" style="font-family:monospace;">
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        Device ID *
+                    </label>
+                    <input type="text" name="smsgate_device_id" value="{{ config.SMS_GATE_DEVICE_ID|default:'' }}" class="form-input" placeholder="SMS Gate Device ID" style="font-family:monospace;">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        SIM Slot Number *
+                    </label>
+                    <input type="number" name="smsgate_sim_number" value="{{ config.SMS_GATE_SIM_NUMBER|default:'1' }}" class="form-input">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:#065F46;margin-bottom:0.35rem;">
+                        Test Phone Number (Namba ya Kujaribu)
+                    </label>
+                    <input type="text" name="to_phone" value="0756670798" class="form-input" placeholder="0756670798" style="border-color:#059669;font-family:monospace;">
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;border-top:1px solid #E2E8F0;padding-top:1.25rem;">
+                <button type="submit" name="action_mode" value="save" class="btn-primary" style="padding:0.75rem 1.5rem;font-weight:700;">
+                    <i class="fa-solid fa-save"></i> Save SMS Gate Settings
+                </button>
+                <button type="submit" name="action_mode" value="test" class="btn-header-action" style="background:#059669;color:#FFFFFF;border:none;padding:0.75rem 1.75rem;font-weight:700;display:inline-flex;align-items:center;gap:0.5rem;">
+                    <i class="fa-solid fa-comment-sms"></i> Save &amp; Send Test SMS
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if tab == 'seo' %}
+    <!-- 9. GOOGLE SEARCH CONSOLE & BING WEBMASTER SEO ENGINE TAB -->
+    <div class="card-panel" style="padding:1.75rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;border-bottom:1px solid #E2E8F0;padding-bottom:1rem;">
+            <div>
+                <h4 style="font-family:var(--font-heading);font-size:1.18rem;font-weight:800;color:var(--text-main);margin:0 0 0.35rem 0;display:flex;align-items:center;gap:0.5rem;">
+                    <i class="fa-solid fa-magnifying-glass-chart" style="color:#059669;"></i> SEO Engine — Google Search Console &amp; Bing Webmaster Tools
+                </h4>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin:0;">
+                    Tovuti yako ya <strong>Malkia Cargo Wave Limited</strong> sasa ina Sitemap.xml, Robots.txt, Schema.org JSON-LD (LocalBusiness + FAQPage), Open Graph, na IndexNow kwa ajili ya Google na Bing.
+                </p>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <a href="/sitemap.xml" target="_blank" class="badge-pill" style="text-decoration:none;background:#EFF6FF;color:#1D4ED8;border:1px solid #93C5FD;font-weight:800;padding:0.4rem 0.85rem;">
+                    <i class="fa-solid fa-sitemap"></i> Fungua /sitemap.xml
+                </a>
+                <a href="/robots.txt" target="_blank" class="badge-pill" style="text-decoration:none;background:#F0FDF4;color:#065F46;border:1px solid #86EFAC;font-weight:800;padding:0.4rem 0.85rem;">
+                    <i class="fa-solid fa-robot"></i> Fungua /robots.txt
+                </a>
+                <a href="/BingSiteAuth.xml" target="_blank" class="badge-pill" style="text-decoration:none;background:#FFF7ED;color:#C2410C;border:1px solid #FDBA74;font-weight:800;padding:0.4rem 0.85rem;">
+                    <i class="fa-brands fa-microsoft"></i> /BingSiteAuth.xml
+                </a>
+            </div>
+        </div>
+
+        <!-- QUICK LINKS FOR GOOGLE SEARCH CONSOLE & BING -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+            <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:1.1rem;">
+                <div style="font-weight:800;color:#1E3A8A;font-size:0.92rem;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem;">
+                    <i class="fa-brands fa-google"></i> Hatua za Google Search Console
+                </div>
+                <ol style="margin:0;padding-left:1.2rem;font-size:0.8rem;color:#1E40AF;line-height:1.6;">
+                    <li>Fungua <a href="https://search.google.com/search-console" target="_blank" style="font-weight:700;color:#1D4ED8;">search.google.com/search-console</a></li>
+                    <li>Weka URL Prefix: <code>https://malkiacargowave.com</code></li>
+                    <li>Chagua <strong>HTML tag verification</strong>, kisha copy code yake ubandike hapa chini kwenye <em>Google Verification Code</em>.</li>
+                    <li>Ukisha-verify, nenda <strong>Sitemaps</strong> &rarr; weka <code>sitemap.xml</code> &rarr; bonyeza Submit!</li>
+                </ol>
+            </div>
+
+            <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;padding:1.1rem;">
+                <div style="font-weight:800;color:#065F46;font-size:0.92rem;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem;">
+                    <i class="fa-brands fa-microsoft"></i> Hatua za Bing Webmaster Tools
+                </div>
+                <ol style="margin:0;padding-left:1.2rem;font-size:0.8rem;color:#065F46;line-height:1.6;">
+                    <li>Fungua <a href="https://www.bing.com/webmasters" target="_blank" style="font-weight:700;color:#047857;">bing.com/webmasters</a></li>
+                    <li>Unaweza ku-import moja kwa moja kutoka Google Search Console kwa sekunde 5, AU ubandike <em>Bing Verification Code</em> hapa chini.</li>
+                    <li>Weka Sitemap URL: <code>https://malkiacargowave.com/sitemap.xml</code></li>
+                    <li>Bonyeza kitufe cha <strong>Save &amp; Ping Bing IndexNow</strong> hapa chini!</li>
+                </ol>
+            </div>
+        </div>
+
+        <form action="{% url 'save_seo_settings' %}" method="POST">
+            {% csrf_token %}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        Primary Website Domain (Canonical URL) *
+                    </label>
+                    <input type="text" name="seo_canonical_domain" value="{{ config.SEO_CANONICAL_DOMAIN|default:'https://malkiacargowave.com' }}" class="form-input" style="font-family:monospace;">
+                    <small style="color:var(--text-muted);font-size:0.75rem;">Domain kuu inayotumiwa kwenye <code>sitemap.xml</code> na <code>robots.txt</code>.</small>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                        Customer Portal Subdomain *
+                    </label>
+                    <input type="text" name="seo_portal_domain" value="{{ config.SEO_PORTAL_DOMAIN|default:'https://portal.malkiacargowave.com' }}" class="form-input" style="font-family:monospace;">
+                    <small style="color:var(--text-muted);font-size:0.75rem;">Subdomain ya Portal na Tracking.</small>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:#1D4ED8;margin-bottom:0.35rem;">
+                        <i class="fa-brands fa-google"></i> Google Search Console Verification Code (<code>google-site-verification</code>)
+                    </label>
+                    <input type="text" name="google_site_verification" value="{{ config.GOOGLE_SITE_VERIFICATION|default:'' }}" class="form-input" placeholder="Bandika code au <meta name='google-site-verification' ...> hapa" style="font-family:monospace;border-color:#93C5FD;">
+                    <small style="color:var(--text-muted);font-size:0.75rem;">Inawekwa moja kwa moja ndani ya <code>&lt;head&gt;</code> ya tovuti na pia inafungua <code>/google[TOKEN].html</code>.</small>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.85rem;font-weight:700;color:#047857;margin-bottom:0.35rem;">
+                        <i class="fa-brands fa-microsoft"></i> Bing Webmaster Verification Code (<code>msvalidate.01</code>)
+                    </label>
+                    <input type="text" name="bing_site_verification" value="{{ config.BING_SITE_VERIFICATION|default:'' }}" class="form-input" placeholder="Bandika code au <meta name='msvalidate.01' ...> hapa" style="font-family:monospace;border-color:#6EE7B7;">
+                    <small style="color:var(--text-muted);font-size:0.75rem;">Inawekwa ndani ya <code>&lt;head&gt;</code> na pia kwenye faili la <code>/BingSiteAuth.xml</code> moja kwa moja.</small>
+                </div>
+            </div>
+
+            <div style="margin-bottom:1.5rem;">
+                <label style="display:block;font-size:0.85rem;font-weight:700;color:var(--text-main);margin-bottom:0.35rem;">
+                    IndexNow Instant Indexing Key (Bing / Yandex / Seznam)
+                </label>
+                <input type="text" name="indexnow_key" value="{{ config.INDEXNOW_KEY|default:'malkia2026seokey8899' }}" class="form-input" style="font-family:monospace;max-width:420px;">
+                <small style="color:var(--text-muted);font-size:0.75rem;display:block;margin-top:0.25rem;">Inapatikana pia kwenye <a href="/indexnow-key.txt" target="_blank"><code>/indexnow-key.txt</code></a>.</small>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;border-top:1px solid #E2E8F0;padding-top:1.25rem;">
+                <button type="submit" name="action_mode" value="save" class="btn-primary" style="padding:0.75rem 1.5rem;font-weight:700;">
+                    <i class="fa-solid fa-save"></i> Save Verification Codes &amp; SEO Settings
+                </button>
+                <button type="submit" name="action_mode" value="ping" class="btn-header-action" style="background:#059669;color:#FFFFFF;border:none;padding:0.75rem 1.75rem;font-weight:800;display:inline-flex;align-items:center;gap:0.5rem;">
+                    <i class="fa-solid fa-bolt"></i> Save &amp; Ping Bing IndexNow Now
                 </button>
             </div>
         </form>

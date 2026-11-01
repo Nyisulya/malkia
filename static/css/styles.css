@@ -713,43 +713,131 @@ body {
   overflow-x: auto;
 }
 
-.modern-table, .data-table {
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+/* ==========================================================================
+   ENTERPRISE CORPORATE TABLE SYSTEM (GREEN HEADER & ZEBRA STRIPING)
+   ========================================================================== */
+.modern-table, 
+.data-table, 
+.clean-table, 
+.containers-table,
+.table-responsive > table:not(.idcard-info-table):not(.print-table) {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   text-align: left;
   font-size: 0.84rem;
-}
-
-.modern-table th, .data-table th {
-  background: #F8FAFC;
-  padding: 0.85rem 1rem;
-  font-weight: 700;
-  color: #475569;
-  text-transform: uppercase;
-  font-size: 0.72rem;
-  letter-spacing: 0.05em;
-  border-top: 1px solid #E2E8F0;
-  border-bottom: 2px solid #E2E8F0;
-  white-space: nowrap;
-  vertical-align: middle;
-}
-
-.modern-table td, .data-table td {
-  padding: 0.9rem 1rem;
-  border-bottom: 1px solid #EDF2F7;
-  vertical-align: middle;
-  color: var(--text-main);
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  overflow: hidden;
   background: #FFFFFF;
+}
+
+/* 1. TABLE HEADER: KIJANI (CORPORATE EMERALD/TEAL GREEN) */
+.modern-table thead, 
+.data-table thead, 
+.clean-table thead, 
+.containers-table thead,
+.table-responsive > table:not(.idcard-info-table):not(.print-table) thead,
+.modern-table thead tr, 
+.data-table thead tr, 
+.table-responsive > table thead tr {
+  background: #0F766E !important;
+}
+
+.modern-table th, 
+.data-table th, 
+.clean-table th, 
+.containers-table th,
+.table-responsive > table:not(.idcard-info-table):not(.print-table) th {
+  background: #0F766E !important;
+  padding: 0.9rem 1.1rem !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
+  text-transform: uppercase !important;
+  font-size: 0.74rem !important;
+  letter-spacing: 0.05em !important;
+  border-top: none !important;
+  border-bottom: 2px solid #0B5E58 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
+}
+
+.modern-table th a, 
+.data-table th a, 
+.table-responsive > table th a {
+  color: #FFFFFF !important;
+}
+
+.modern-table th:last-child, 
+.data-table th:last-child, 
+.clean-table th:last-child, 
+.containers-table th:last-child,
+.table-responsive > table th:last-child {
+  border-right: none !important;
+}
+
+/* TABLE CELLS GENERAL */
+.modern-table td, 
+.data-table td, 
+.clean-table td, 
+.containers-table td,
+.table-responsive > table:not(.idcard-info-table):not(.print-table) td {
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid #E2E8F0;
+  vertical-align: middle;
+  color: var(--text-main, #1E293B);
   transition: background-color 0.15s ease;
 }
 
-.modern-table tbody tr:hover td, .data-table tbody tr:hover td {
-  background: #F8FAFD;
+/* 2. ROW 1 (ODD): NYEUPE (PURE WHITE) */
+.modern-table tbody tr:nth-child(odd) td,
+.data-table tbody tr:nth-child(odd) td,
+.clean-table tbody tr:nth-child(odd) td,
+.containers-table tbody tr:nth-child(odd) td,
+.table-responsive > table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(odd) td,
+.modern-table tbody tr:nth-child(odd),
+.data-table tbody tr:nth-child(odd),
+.table-responsive > table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(odd) {
+  background-color: #FFFFFF !important;
 }
 
-.modern-table tbody tr:last-child td, .data-table tbody tr:last-child td {
-  border-bottom: 1px solid #E2E8F0;
+/* 3. ROW 2 (EVEN): MAZIWA FULANI KAMA MAJIVU (MILKY SOFT ASH #F1F5F9) */
+.modern-table tbody tr:nth-child(even) td,
+.data-table tbody tr:nth-child(even) td,
+.clean-table tbody tr:nth-child(even) td,
+.containers-table tbody tr:nth-child(even) td,
+.table-responsive > table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(even) td,
+.modern-table tbody tr:nth-child(even),
+.data-table tbody tr:nth-child(even),
+.table-responsive > table:not(.idcard-info-table):not(.print-table) tbody tr:nth-child(even) {
+  background-color: #F1F5F9 !important;
+}
+
+/* 4. ROW HOVER EFFECT: SOFT MINT/TEAL TINT */
+.modern-table tbody tr:hover td,
+.data-table tbody tr:hover td,
+.clean-table tbody tr:hover td,
+.containers-table tbody tr:hover td,
+.table-responsive > table:not(.idcard-info-table):not(.print-table) tbody tr:hover td,
+.modern-table tbody tr:hover,
+.data-table tbody tr:hover,
+.table-responsive > table:not(.idcard-info-table):not(.print-table) tbody tr:hover {
+  background-color: #E2F3F0 !important;
+}
+
+.modern-table tbody tr:last-child td, 
+.data-table tbody tr:last-child td,
+.clean-table tbody tr:last-child td,
+.containers-table tbody tr:last-child td,
+.table-responsive > table tbody tr:last-child td {
+  border-bottom: 1px solid #CBD5E1;
 }
 
 /* ==========================================================================

@@ -129,6 +129,18 @@ class MalkiaDynamicR2Storage(FileSystemStorage):
             custom_domain,
         )
 
+    def _open(self, name, mode='rb'):
+        local_path = os.path.join(settings.MEDIA_ROOT, name)
+        if os.path.exists(local_path):
+            return super()._open(name, mode)
+        r2 = self._get_r2_storage()
+        if r2 is not None:
+            try:
+                return r2._open(name, mode)
+            except Exception as e:
+                print(f"[Cloudflare R2 Read Fallback] {e}")
+        return super()._open(name, mode)
+
     def _save(self, name, content):
         r2 = self._get_r2_storage()
         if r2 is not None:

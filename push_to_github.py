@@ -27,19 +27,35 @@ def main():
 
     repo = Repo('.')
     
-    # Stage and commit any latest changes
-    print("[1/3] Checking for latest changes...")
-    porcelain.add(repo)
+    # Stage and commit any latest changes safely (NEVER stage .env, db.sqlite3, .venv, media, or scratch)
+    print("[1/3] Checking for latest changes (excluding .env, db.sqlite3, and secrets)...")
+    FORBIDDEN_PATTERNS = ('.env', 'db.sqlite3', '.sqlite3', '.venv', 'venv', 'media', 'staticfiles', 'scratch', '__pycache__')
+    st = porcelain.status(repo)
+    safe_paths = []
+    for p in st.unstaged:
+        p_str = p.decode('utf-8', errors='ignore')
+        if p_str == '.env.example' or not any(bad in p_str for bad in FORBIDDEN_PATTERNS):
+            safe_paths.append(p_str)
+    for p in st.untracked:
+        p_str = p.decode('utf-8', errors='ignore') if isinstance(p, bytes) else str(p)
+        if p_str == '.env.example' or (not any(bad in p_str for bad in FORBIDDEN_PATTERNS) and ('core' in p_str or 'templates' in p_str or 'website' in p_str or 'deploy' in p_str)):
+            safe_paths.append(p_str)
+    if safe_paths:
+        porcelain.add(repo, paths=safe_paths)
     try:
-        porcelain.commit(
-            repo,
-            message=b"Update: Production release with clean credentials and .env security",
-            author=b"Nyisulya <nyisulya@users.noreply.github.com>",
-            committer=b"Nyisulya <nyisulya@users.noreply.github.com>"
-        )
-        print("[2/3] Committed latest changes.")
-    except Exception:
-        print("[2/3] Working tree clean, nothing new to commit.")
+        st_after = porcelain.status(repo)
+        if st_after.staged['add'] or st_after.staged['modify'] or st_after.staged['delete']:
+            porcelain.commit(
+                repo,
+                message=b"Production release: Resend Email, SMS Gate, SEO Engine, Costing Ledger & Workflow updates (zero secrets)",
+                author=b"Nyisulya <nyisulya@users.noreply.github.com>",
+                committer=b"Nyisulya <nyisulya@users.noreply.github.com>"
+            )
+            print("[2/3] Committed latest changes.")
+        else:
+            print("[2/3] Working tree clean, all changes already committed.")
+    except Exception as e:
+        print(f"[2/3] Commit status: {e}")
 
     remote_url = f"https://{token}@github.com/Nyisulya/malkia.git"
     print("[3/3] Pushing to GitHub (https://github.com/Nyisulya/malkia.git)...")

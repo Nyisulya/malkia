@@ -16,7 +16,7 @@
                 <i class="fa-solid fa-folder-plus" style="color:var(--brand-primary);margin-right:0.4rem;"></i> OPEN NEW FILE ({{ next_job_number }})
             </h2>
             <p class="page-subtitle" style="font-size:0.9rem;color:var(--text-muted);">
-                Enter only the essential file details, select <strong>Direct Duty Payment</strong> or <strong>In-Bond</strong> for the Declaration Officer, and drop the <strong>scanned client documents</strong> from the scanner machine to auto-bundle with <strong>Form C41 (TRA)</strong> &amp; <strong>TBS Letter</strong>.
+                Enter essential file details, select <strong>Direct Duty</strong> or <strong>In-Bond</strong>, and attach client documents into their dedicated slots for TANCIS or drop all at once — auto-bundled with official <strong>TRA &amp; TBS Authorization Letters</strong>.
             </p>
         </div>
     </div>
@@ -184,31 +184,31 @@
                 </div>
             </div>
 
-            <!-- SECTION 3: QUICK SCANNER INTAKE & AUTO-BUNDLING WITH C41 + TBS LETTER -->
+            <!-- SECTION 3: DEDICATED DOCUMENT SLOTS & BATCH SCANNER INTAKE -->
             <div style="margin-bottom:1.5rem;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem;flex-wrap:wrap;gap:0.5rem;">
                     <div style="display:flex;align-items:center;gap:0.6rem;">
                         <span style="width:28px;height:28px;border-radius:50%;background:#0284C7;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;">3</span>
                         <div>
                             <h3 style="font-family:var(--font-heading);color:var(--brand-navy-900);font-size:1.12rem;font-weight:800;margin:0;">
-                                Scanned Client Documents &amp; Auto-Bundling (C41 + TBS Letter)
+                                Scanned Client Documents (For TRA TANCIS &amp; TBS Lodgement)
                             </h3>
                             <div style="font-size:0.8rem;color:var(--text-muted);">
-                                Scan the client documents on the scanner machine, then drop them below — the system automatically merges them with <strong>Form C41</strong> and <strong>TBS Letter</strong>.
+                                Attach each document into its dedicated slot or drop all at once — organized separately so the Customs Declarer can upload them directly into TRA TANCIS.
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- QUICK CHECKLIST PILLS (ALL CHECKED BY DEFAULT FOR 1-CLICK SPEED) -->
-                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.85rem;background:#F8FAFC;padding:0.75rem 1rem;border-radius:10px;border:1px solid #E2E8F0;">
-                    <div style="display:flex;align-items:center;gap:0.85rem;flex-wrap:wrap;font-size:0.82rem;font-weight:700;color:#0F172A;">
-                        <span style="color:var(--text-muted);font-weight:800;">5 Client Docs:</span>
-                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_bl_received" value="1" checked style="accent-color:#0284C7;"> 1. BL</label>
-                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_invoice_received" value="1" checked style="accent-color:#0284C7;"> 2. Invoice</label>
-                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_packing_list_received" value="1" checked style="accent-color:#0284C7;"> 3. Packing List</label>
-                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_tbs_cert_received" value="1" checked style="accent-color:#0284C7;"> 4. TBS Cert</label>
-                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_export_cert_received" value="1" checked style="accent-color:#0284C7;"> 5. Export Cert</label>
+                <!-- QUICK CHECKLIST STATUS -->
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;background:#F8FAFC;padding:0.75rem 1rem;border-radius:10px;border:1px solid #E2E8F0;">
+                    <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;font-size:0.82rem;font-weight:700;color:#0F172A;">
+                        <span style="color:var(--text-muted);font-weight:800;">Checklist Status:</span>
+                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_bl_received" id="chk_doc_bl" value="1" checked style="accent-color:#0284C7;"> 1. BL</label>
+                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_invoice_received" id="chk_doc_invoice" value="1" checked style="accent-color:#0284C7;"> 2. Invoice</label>
+                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_packing_list_received" id="chk_doc_packing_list" value="1" checked style="accent-color:#0284C7;"> 3. Packing List</label>
+                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_tbs_cert_received" id="chk_doc_tbs_cert" value="1" checked style="accent-color:#0284C7;"> 4. TBS Cert</label>
+                        <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;"><input type="checkbox" name="doc_export_cert_received" id="chk_doc_export_cert" value="1" checked style="accent-color:#0284C7;"> 5. Export Cert</label>
                     </div>
                     <select name="doc_receive_method" class="form-control" style="width:auto;height:34px;font-size:0.78rem;font-weight:700;padding:0 0.65rem;">
                         <option value="PHYSICAL">Received: Physical (In-Office)</option>
@@ -217,33 +217,187 @@
                     </select>
                 </div>
 
-                <!-- EASY DRAG & DROP SCANNER DROPZONE -->
-                <div id="scannerDropzone" onclick="document.getElementById('scannerFilesInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" style="border:2.5px dashed #0284C7;background:#F0F9FF;border-radius:14px;padding:1.65rem 1.25rem;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:1rem;">
-                    <input type="file" name="scanned_documents" id="scannerFilesInput" multiple accept=".pdf,image/*" style="display:none;" onchange="updateScannedFileList(this.files)">
-                    <div style="width:52px;height:52px;border-radius:50%;background:#E0F2FE;color:#0284C7;display:inline-flex;align-items:center;justify-content:center;font-size:1.45rem;margin-bottom:0.6rem;">
-                        <i class="fa-solid fa-file-arrow-up"></i>
+                <!-- 5 DEDICATED INDIVIDUAL DOCUMENT SLOTS -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:0.85rem;margin-bottom:1.15rem;">
+                    
+                    <!-- SLOT 1: BILL OF LADING -->
+                    <div id="slotCard_bl" style="background:#FFFFFF;border:1.5px solid #CBD5E1;border-radius:12px;padding:0.95rem;transition:all 0.2s;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                            <div style="display:flex;align-items:center;gap:0.45rem;">
+                                <div style="width:28px;height:28px;border-radius:6px;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:0.85rem;">
+                                    <i class="fa-solid fa-ship"></i>
+                                </div>
+                                <strong style="font-size:0.86rem;color:#0F172A;">1. Bill of Lading (BL)</strong>
+                            </div>
+                            <span class="badge-pill" style="font-size:0.6rem;background:#DBEAFE;color:#1E40AF;font-weight:800;">TANCIS PRIMARY</span>
+                        </div>
+                        <input type="file" name="file_bl" id="inputFile_bl" accept=".pdf,image/*" style="display:none;" onchange="onSlotFileSelected('bl', this)">
+                        <div id="slotEmpty_bl" onclick="document.getElementById('inputFile_bl').click()" style="border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.85rem 0.6rem;text-align:center;cursor:pointer;transition:all 0.15s;">
+                            <i class="fa-solid fa-arrow-up-from-bracket" style="color:#64748B;font-size:1.1rem;margin-bottom:0.25rem;"></i>
+                            <div style="font-size:0.78rem;font-weight:700;color:#334155;">Click to Attach BL</div>
+                            <div style="font-size:0.68rem;color:#94A3B8;">PDF or Scanned Image</div>
+                        </div>
+                        <div id="slotFilled_bl" style="display:none;background:#ECFDF5;border:1.5px solid #10B981;border-radius:8px;padding:0.65rem 0.8rem;align-items:center;justify-content:space-between;gap:0.45rem;">
+                            <div style="display:flex;align-items:center;gap:0.45rem;overflow:hidden;">
+                                <i class="fa-solid fa-circle-check" style="color:#10B981;font-size:1rem;flex-shrink:0;"></i>
+                                <div style="overflow:hidden;">
+                                    <div id="slotFileName_bl" style="font-weight:800;font-size:0.78rem;color:#065F46;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                                    <div id="slotFileSize_bl" style="font-size:0.68rem;color:#047857;"></div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="clearSlotFile('bl')" style="background:transparent;border:none;color:#DC2626;cursor:pointer;font-size:0.85rem;padding:0.2rem;" title="Remove file">&times;</button>
+                        </div>
                     </div>
-                    <div style="font-weight:800;font-size:1rem;color:#0F172A;">
-                        Click Here or Drag &amp; Drop Scanned Documents from the Office Scanner
+
+                    <!-- SLOT 2: COMMERCIAL INVOICE -->
+                    <div id="slotCard_invoice" style="background:#FFFFFF;border:1.5px solid #CBD5E1;border-radius:12px;padding:0.95rem;transition:all 0.2s;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                            <div style="display:flex;align-items:center;gap:0.45rem;">
+                                <div style="width:28px;height:28px;border-radius:6px;background:#FEF3C7;color:#D97706;display:flex;align-items:center;justify-content:center;font-size:0.85rem;">
+                                    <i class="fa-solid fa-receipt"></i>
+                                </div>
+                                <strong style="font-size:0.86rem;color:#0F172A;">2. Commercial Invoice</strong>
+                            </div>
+                            <span class="badge-pill" style="font-size:0.6rem;background:#FEF3C7;color:#92400E;font-weight:800;">VALUATION</span>
+                        </div>
+                        <input type="file" name="file_invoice" id="inputFile_invoice" accept=".pdf,image/*" style="display:none;" onchange="onSlotFileSelected('invoice', this)">
+                        <div id="slotEmpty_invoice" onclick="document.getElementById('inputFile_invoice').click()" style="border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.85rem 0.6rem;text-align:center;cursor:pointer;transition:all 0.15s;">
+                            <i class="fa-solid fa-arrow-up-from-bracket" style="color:#64748B;font-size:1.1rem;margin-bottom:0.25rem;"></i>
+                            <div style="font-size:0.78rem;font-weight:700;color:#334155;">Click to Attach Invoice</div>
+                            <div style="font-size:0.68rem;color:#94A3B8;">PDF or Scanned Image</div>
+                        </div>
+                        <div id="slotFilled_invoice" style="display:none;background:#ECFDF5;border:1.5px solid #10B981;border-radius:8px;padding:0.65rem 0.8rem;align-items:center;justify-content:space-between;gap:0.45rem;">
+                            <div style="display:flex;align-items:center;gap:0.45rem;overflow:hidden;">
+                                <i class="fa-solid fa-circle-check" style="color:#10B981;font-size:1rem;flex-shrink:0;"></i>
+                                <div style="overflow:hidden;">
+                                    <div id="slotFileName_invoice" style="font-weight:800;font-size:0.78rem;color:#065F46;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                                    <div id="slotFileSize_invoice" style="font-size:0.68rem;color:#047857;"></div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="clearSlotFile('invoice')" style="background:transparent;border:none;color:#DC2626;cursor:pointer;font-size:0.85rem;padding:0.2rem;" title="Remove file">&times;</button>
+                        </div>
                     </div>
-                    <div style="font-size:0.82rem;color:#475569;margin-top:0.25rem;">
-                        Select one combined PDF or multiple scanned pages (BL, Invoice, Packing List, TBS Cert, Export Cert) — they go straight into this file!
+
+                    <!-- SLOT 3: PACKING LIST -->
+                    <div id="slotCard_packing_list" style="background:#FFFFFF;border:1.5px solid #CBD5E1;border-radius:12px;padding:0.95rem;transition:all 0.2s;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                            <div style="display:flex;align-items:center;gap:0.45rem;">
+                                <div style="width:28px;height:28px;border-radius:6px;background:#F1F5F9;color:#475569;display:flex;align-items:center;justify-content:center;font-size:0.85rem;">
+                                    <i class="fa-solid fa-boxes-stacked"></i>
+                                </div>
+                                <strong style="font-size:0.86rem;color:#0F172A;">3. Packing List</strong>
+                            </div>
+                            <span class="badge-pill" style="font-size:0.6rem;background:#F1F5F9;color:#475569;font-weight:800;">WEIGHT &amp; PKGS</span>
+                        </div>
+                        <input type="file" name="file_packing_list" id="inputFile_packing_list" accept=".pdf,image/*" style="display:none;" onchange="onSlotFileSelected('packing_list', this)">
+                        <div id="slotEmpty_packing_list" onclick="document.getElementById('inputFile_packing_list').click()" style="border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.85rem 0.6rem;text-align:center;cursor:pointer;transition:all 0.15s;">
+                            <i class="fa-solid fa-arrow-up-from-bracket" style="color:#64748B;font-size:1.1rem;margin-bottom:0.25rem;"></i>
+                            <div style="font-size:0.78rem;font-weight:700;color:#334155;">Click to Attach Packing List</div>
+                            <div style="font-size:0.68rem;color:#94A3B8;">PDF or Scanned Image</div>
+                        </div>
+                        <div id="slotFilled_packing_list" style="display:none;background:#ECFDF5;border:1.5px solid #10B981;border-radius:8px;padding:0.65rem 0.8rem;align-items:center;justify-content:space-between;gap:0.45rem;">
+                            <div style="display:flex;align-items:center;gap:0.45rem;overflow:hidden;">
+                                <i class="fa-solid fa-circle-check" style="color:#10B981;font-size:1rem;flex-shrink:0;"></i>
+                                <div style="overflow:hidden;">
+                                    <div id="slotFileName_packing_list" style="font-weight:800;font-size:0.78rem;color:#065F46;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                                    <div id="slotFileSize_packing_list" style="font-size:0.68rem;color:#047857;"></div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="clearSlotFile('packing_list')" style="background:transparent;border:none;color:#DC2626;cursor:pointer;font-size:0.85rem;padding:0.2rem;" title="Remove file">&times;</button>
+                        </div>
                     </div>
-                    <div id="selectedScansPreview" style="margin-top:0.85rem;display:none;text-align:left;background:#FFFFFF;border:1px solid #BAE6FD;border-radius:10px;padding:0.75rem 1rem;"></div>
+
+                    <!-- SLOT 4: TBS CERTIFICATE -->
+                    <div id="slotCard_tbs_cert" style="background:#FFFFFF;border:1.5px solid #CBD5E1;border-radius:12px;padding:0.95rem;transition:all 0.2s;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                            <div style="display:flex;align-items:center;gap:0.45rem;">
+                                <div style="width:28px;height:28px;border-radius:6px;background:#EDE9FE;color:#7C3AED;display:flex;align-items:center;justify-content:center;font-size:0.85rem;">
+                                    <i class="fa-solid fa-vial-circle-check"></i>
+                                </div>
+                                <strong style="font-size:0.86rem;color:#0F172A;">4. TBS Cert</strong>
+                            </div>
+                            <span class="badge-pill" style="font-size:0.6rem;background:#EDE9FE;color:#6D28D9;font-weight:800;">TBS STANDARDS</span>
+                        </div>
+                        <input type="file" name="file_tbs_cert" id="inputFile_tbs_cert" accept=".pdf,image/*" style="display:none;" onchange="onSlotFileSelected('tbs_cert', this)">
+                        <div id="slotEmpty_tbs_cert" onclick="document.getElementById('inputFile_tbs_cert').click()" style="border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.85rem 0.6rem;text-align:center;cursor:pointer;transition:all 0.15s;">
+                            <i class="fa-solid fa-arrow-up-from-bracket" style="color:#64748B;font-size:1.1rem;margin-bottom:0.25rem;"></i>
+                            <div style="font-size:0.78rem;font-weight:700;color:#334155;">Click to Attach TBS Cert</div>
+                            <div style="font-size:0.68rem;color:#94A3B8;">PDF or Inspection Certificate</div>
+                        </div>
+                        <div id="slotFilled_tbs_cert" style="display:none;background:#ECFDF5;border:1.5px solid #10B981;border-radius:8px;padding:0.65rem 0.8rem;align-items:center;justify-content:space-between;gap:0.45rem;">
+                            <div style="display:flex;align-items:center;gap:0.45rem;overflow:hidden;">
+                                <i class="fa-solid fa-circle-check" style="color:#10B981;font-size:1rem;flex-shrink:0;"></i>
+                                <div style="overflow:hidden;">
+                                    <div id="slotFileName_tbs_cert" style="font-weight:800;font-size:0.78rem;color:#065F46;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                                    <div id="slotFileSize_tbs_cert" style="font-size:0.68rem;color:#047857;"></div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="clearSlotFile('tbs_cert')" style="background:transparent;border:none;color:#DC2626;cursor:pointer;font-size:0.85rem;padding:0.2rem;" title="Remove file">&times;</button>
+                        </div>
+                    </div>
+
+                    <!-- SLOT 5: EXPORT CERTIFICATE / OTHER -->
+                    <div id="slotCard_export_cert" style="background:#FFFFFF;border:1.5px solid #CBD5E1;border-radius:12px;padding:0.95rem;transition:all 0.2s;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                            <div style="display:flex;align-items:center;gap:0.45rem;">
+                                <div style="width:28px;height:28px;border-radius:6px;background:#CCFBF1;color:#0F766E;display:flex;align-items:center;justify-content:center;font-size:0.85rem;">
+                                    <i class="fa-solid fa-file-shield"></i>
+                                </div>
+                                <strong style="font-size:0.86rem;color:#0F172A;">5. Export Cert</strong>
+                            </div>
+                            <span class="badge-pill" style="font-size:0.6rem;background:#CCFBF1;color:#115E59;font-weight:800;">ORIGIN / EXPORT</span>
+                        </div>
+                        <input type="file" name="file_export_cert" id="inputFile_export_cert" accept=".pdf,image/*" style="display:none;" onchange="onSlotFileSelected('export_cert', this)">
+                        <div id="slotEmpty_export_cert" onclick="document.getElementById('inputFile_export_cert').click()" style="border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.85rem 0.6rem;text-align:center;cursor:pointer;transition:all 0.15s;">
+                            <i class="fa-solid fa-arrow-up-from-bracket" style="color:#64748B;font-size:1.1rem;margin-bottom:0.25rem;"></i>
+                            <div style="font-size:0.78rem;font-weight:700;color:#334155;">Click to Attach Export Cert</div>
+                            <div style="font-size:0.68rem;color:#94A3B8;">PDF or Certificate of Origin</div>
+                        </div>
+                        <div id="slotFilled_export_cert" style="display:none;background:#ECFDF5;border:1.5px solid #10B981;border-radius:8px;padding:0.65rem 0.8rem;align-items:center;justify-content:space-between;gap:0.45rem;">
+                            <div style="display:flex;align-items:center;gap:0.45rem;overflow:hidden;">
+                                <i class="fa-solid fa-circle-check" style="color:#10B981;font-size:1rem;flex-shrink:0;"></i>
+                                <div style="overflow:hidden;">
+                                    <div id="slotFileName_export_cert" style="font-weight:800;font-size:0.78rem;color:#065F46;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                                    <div id="slotFileSize_export_cert" style="font-size:0.68rem;color:#047857;"></div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="clearSlotFile('export_cert')" style="background:transparent;border:none;color:#DC2626;cursor:pointer;font-size:0.85rem;padding:0.2rem;" title="Remove file">&times;</button>
+                        </div>
+                    </div>
+
                 </div>
 
-                <!-- AUTO-BUNDLED OFFICE DOCUMENTS PREVIEW -->
-                <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+                <!-- BATCH MULTI-SELECT / SCANNER DROPZONE (ALTERNATIVE FOR FAST UPLOAD) -->
+                <div id="scannerDropzone" onclick="document.getElementById('scannerFilesInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" style="border:2px dashed #0284C7;background:#F0F9FF;border-radius:12px;padding:1.15rem 1rem;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:1rem;">
+                    <input type="file" name="scanned_documents" id="scannerFilesInput" multiple accept=".pdf,image/*" style="display:none;" onchange="handleBatchFiles(this.files)">
+                    <div style="display:flex;align-items:center;justify-content:center;gap:0.75rem;flex-wrap:wrap;">
+                        <div style="width:38px;height:38px;border-radius:50%;background:#E0F2FE;color:#0284C7;display:inline-flex;align-items:center;justify-content:center;font-size:1.15rem;">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </div>
+                        <div style="text-align:left;">
+                            <div style="font-weight:800;font-size:0.92rem;color:#0F172A;">
+                                Au Pakia Zote kwa Pamoja: Bofya hapa au Buruta (Drag &amp; Drop) Nyaraka Zote Mara Moja
+                            </div>
+                            <div style="font-size:0.78rem;color:#475569;">
+                                Mfumo utatambua jina la kila faili na kuliweka kwenye chumba chake kiotomatiki (BL, Invoice, Packing List, TBS, Export).
+                            </div>
+                        </div>
+                    </div>
+                    <div id="selectedScansPreview" style="margin-top:0.75rem;display:none;text-align:left;background:#FFFFFF;border:1px solid #BAE6FD;border-radius:8px;padding:0.65rem 0.85rem;"></div>
+                </div>
+
+                <!-- AUTO-BUNDLED COMPANY DOCUMENTS BANNER -->
+                <div style="background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:12px;padding:0.95rem 1.15rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
                     <div style="display:flex;align-items:center;gap:0.75rem;">
-                        <div style="width:40px;height:40px;border-radius:10px;background:#16A34A;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <div style="width:38px;height:38px;border-radius:10px;background:#16A34A;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0;">
+                            <i class="fa-solid fa-stamp"></i>
                         </div>
                         <div>
-                            <div style="font-weight:800;font-size:0.9rem;color:#14532D;">
-                                Auto-Merged with Company Documents: 1. Form C41 (TRA) + 2. TBS Letter
+                            <div style="font-weight:800;font-size:0.88rem;color:#14532D;">
+                                Barua Rasmi za Idhini: 1. TRA Authorization Letter + 2. TBS Authorization Letter
                             </div>
                             <div style="font-size:0.78rem;color:#166534;">
-                                As soon as you click Submit, the system generates <code>TRA-C41/{{ next_job_number }}</code> and <code>MALKIA/TBS/{{ next_job_number }}</code> and combines them with your scanned client documents in one File Pack.
+                                Mfumo unatengeneza barua rasmi zilizosainiwa zenye muhuri wa mteja kiotomatiki kwa ajili ya TRA Customs na TBS.
                             </div>
                         </div>
                     </div>
@@ -256,7 +410,7 @@
                     <i class="fa-solid fa-xmark"></i> Cancel
                 </a>
                 <button type="submit" class="btn-header-action btn-primary" style="padding:0.85rem 2rem;font-size:0.95rem;font-weight:800;">
-                    <i class="fa-solid fa-folder-open"></i> Open File Now &amp; Bundle Scanned Docs + C41 + TBS
+                    <i class="fa-solid fa-folder-open"></i> Fungua File &amp; Kabidhi kwa Customs Declarer
                 </button>
             </div>
         </form>
@@ -318,6 +472,40 @@ function highlightClearanceMode(val) {
     }
 }
 
+// Handling Individual Document Slots
+function onSlotFileSelected(slotKey, input) {
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    const emptyBox = document.getElementById('slotEmpty_' + slotKey);
+    const filledBox = document.getElementById('slotFilled_' + slotKey);
+    const nameEl = document.getElementById('slotFileName_' + slotKey);
+    const sizeEl = document.getElementById('slotFileSize_' + slotKey);
+    const cardEl = document.getElementById('slotCard_' + slotKey);
+
+    nameEl.innerText = file.name;
+    sizeEl.innerText = (file.size / 1024).toFixed(1) + ' KB';
+    emptyBox.style.display = 'none';
+    filledBox.style.display = 'flex';
+    cardEl.style.borderColor = '#10B981';
+
+    // Auto-check the checklist pill
+    const chk = document.getElementById('chk_doc_' + slotKey);
+    if (chk) chk.checked = true;
+}
+
+function clearSlotFile(slotKey) {
+    const input = document.getElementById('inputFile_' + slotKey);
+    const emptyBox = document.getElementById('slotEmpty_' + slotKey);
+    const filledBox = document.getElementById('slotFilled_' + slotKey);
+    const cardEl = document.getElementById('slotCard_' + slotKey);
+
+    input.value = '';
+    emptyBox.style.display = 'block';
+    filledBox.style.display = 'none';
+    cardEl.style.borderColor = '#CBD5E1';
+}
+
+// Handling Batch Multi-File Upload
 function handleDragOver(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -341,21 +529,54 @@ function handleDrop(e) {
     const input = document.getElementById('scannerFilesInput');
     if (e.dataTransfer && e.dataTransfer.files.length > 0) {
         input.files = e.dataTransfer.files;
-        updateScannedFileList(input.files);
+        handleBatchFiles(input.files);
     }
 }
 
-function updateScannedFileList(files) {
+function handleBatchFiles(files) {
     const preview = document.getElementById('selectedScansPreview');
     if (!files || files.length === 0) {
         preview.style.display = 'none';
         preview.innerHTML = '';
         return;
     }
-    let html = '<div style="font-weight:800;font-size:0.82rem;color:#0369A1;margin-bottom:0.4rem;"><i class="fa-solid fa-circle-check"></i> ' + files.length + ' Scanned File(s) Ready to Bundle into This File:</div><ul style="margin:0;padding-left:1.2rem;font-size:0.82rem;color:#0F172A;">';
+
+    let html = '<div style="font-weight:800;font-size:0.82rem;color:#0369A1;margin-bottom:0.4rem;"><i class="fa-solid fa-circle-check"></i> ' + files.length + ' Scanned Document(s) Ready to Attach:</div><ul style="margin:0;padding-left:1.2rem;font-size:0.82rem;color:#0F172A;">';
     for (let i = 0; i < files.length; i++) {
-        const kb = Math.round(files[i].size / 1024);
-        html += '<li><strong>' + files[i].name + '</strong> <span style="color:#64748B;">(' + kb + ' KB)</span></li>';
+        const file = files[i];
+        const kb = Math.round(file.size / 1024);
+        const lower = file.name.toLowerCase();
+        let detected = 'Other Supporting Doc';
+        let badgeColor = '#64748B';
+
+        if (lower.includes('bl') || lower.includes('lading')) {
+            detected = 'Bill of Lading (BL)';
+            badgeColor = '#2563EB';
+            const chk = document.getElementById('chk_doc_bl');
+            if (chk) chk.checked = true;
+        } else if (lower.includes('inv')) {
+            detected = 'Commercial Invoice';
+            badgeColor = '#D97706';
+            const chk = document.getElementById('chk_doc_invoice');
+            if (chk) chk.checked = true;
+        } else if (lower.includes('pack')) {
+            detected = 'Packing List';
+            badgeColor = '#475569';
+            const chk = document.getElementById('chk_doc_packing_list');
+            if (chk) chk.checked = true;
+        } else if (lower.includes('tbs')) {
+            detected = 'TBS Certificate';
+            badgeColor = '#7C3AED';
+            const chk = document.getElementById('chk_doc_tbs_cert');
+            if (chk) chk.checked = true;
+        } else if (lower.includes('export') || lower.includes('origin')) {
+            detected = 'Export Certificate';
+            badgeColor = '#0F766E';
+            const chk = document.getElementById('chk_doc_export_cert');
+            if (chk) chk.checked = true;
+        }
+
+        html += '<li style="margin-bottom:0.25rem;"><strong>' + file.name + '</strong> <span style="color:#64748B;">(' + kb + ' KB)</span> &rarr; <span class="badge-pill" style="font-size:0.65rem;background:#F1F5F9;color:' + badgeColor + ';font-weight:800;">' + detected + '</span></li>';
     }
     html += '</ul>';
     preview.innerHTML = html;

@@ -170,7 +170,7 @@
                     <td>
                         <div style="display:flex;align-items:center;gap:0.4rem;">
                             <span class="badge-pill {% if job.status == 'DELAYED' %}badge-delayed{% elif job.status == 'COMPLETED' %}badge-completed{% else %}badge-active{% endif %}">
-                                Step {{ job.current_stage_number }}/11
+                                Step {{ job.current_stage_number }}/9
                             </span>
                             <span style="font-size:0.8rem;font-weight:600;">{{ job.current_stage_obj.name_en }}</span>
                         </div>
