@@ -271,8 +271,10 @@ def logout_view(request):
 @login_required
 
 def dashboard_view(request):
-
     role = get_user_role(request.user)
+    is_ceo = (role == UserRole.CEO)
+    is_admin = (role == UserRole.ADMIN or request.user.is_superuser)
+    is_finance = (role == UserRole.FINANCE)
 
     # Drivers and Port Officers have specialized operational field consoles
 
