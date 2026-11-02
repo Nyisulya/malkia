@@ -249,73 +249,30 @@
 
 
         <!-- Executive Quick Actions -->
-
-
-
         <div style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
-
-
-
             <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:800;padding:0.45rem 0.85rem;border-radius:8px;font-size:0.82rem;box-shadow:0 2px 4px rgba(22,163,74,0.25);">
-
-
-
-                <i class="fa-solid fa-route"></i> Track (9 Steps)
-
-
-
+                <i class="fa-solid fa-route"></i> Track ({{ milestones|length }} Steps)
             </a>
 
-
-
+            {% if not is_ceo %}
             <a href="{% url 'print_combined_pack' job.id %}" target="_blank" class="btn-header-action" style="background:#0F172A;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:700;padding:0.45rem 0.8rem;border-radius:8px;font-size:0.82rem;">
-
-
-
                 <i class="fa-solid fa-file-pdf" style="color:#38BDF8;"></i> File Pack
-
-
-
             </a>
-
-
+            {% endif %}
 
             <a href="{% url 'print_job_invoice' job.id %}" target="_blank" class="btn-header-action" style="background:#FFFFFF;color:#1E293B;border:1px solid #CBD5E1;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:700;padding:0.45rem 0.8rem;border-radius:8px;font-size:0.82rem;">
-
-
-
                 <i class="fa-solid fa-print" style="color:#64748B;"></i> Invoice
-
-
-
             </a>
 
-
-
+            {% if not is_ceo %}
             <button type="button" class="btn-header-action" onclick="openModal('requestExpenseModal')" style="background:#0284C7;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:800;padding:0.45rem 0.85rem;border-radius:8px;font-size:0.82rem;cursor:pointer;" title="Log a field expense voucher">
-
-
-
                 <i class="fa-solid fa-plus-circle"></i> + Add Field Expense
-
-
-
             </button>
 
-
-
             <a href="{% url 'send_job_stage_email' job.id %}" class="btn-header-action" style="background:#2563EB;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:700;padding:0.45rem 0.8rem;border-radius:8px;font-size:0.82rem;" title="Notify client">
-
-
-
                 <i class="fa-solid fa-paper-plane"></i> Notify
-
-
-
             </a>
-
-
-
+            {% endif %}
             {% if user_can_advance_current and job.status != 'COMPLETED' %}
 
 
@@ -477,23 +434,13 @@
 
 
 
+        {% if not is_ceo %}
         <div style="display:flex;gap:0.5rem;align-items:center;">
-
-
-
             <button type="button" class="btn-header-action btn-primary" onclick="openModal('requestExpenseModal')" style="font-size:0.78rem;padding:0.4rem 0.8rem;background:#16A34A;border-color:#16A34A;cursor:pointer;">
-
-
-
                 <i class="fa-solid fa-plus-circle"></i> + Add Field Expense
-
-
-
             </button>
-
-
-
         </div>
+        {% endif %}
 
 
 
