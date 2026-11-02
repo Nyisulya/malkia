@@ -38,7 +38,7 @@ def main():
             safe_paths.append(p_str)
     for p in st.untracked:
         p_str = p.decode('utf-8', errors='ignore') if isinstance(p, bytes) else str(p)
-        if p_str == '.env.example' or (not any(bad in p_str for bad in FORBIDDEN_PATTERNS) and ('core' in p_str or 'templates' in p_str or 'website' in p_str or 'static' in p_str or 'deploy' in p_str)):
+        if p_str in ('.env.example', 'delete_second_job.py') or (not any(bad in p_str for bad in FORBIDDEN_PATTERNS) and ('core' in p_str or 'templates' in p_str or 'website' in p_str or 'static' in p_str or 'deploy' in p_str or p_str.endswith('.py'))):
             safe_paths.append(p_str)
     if safe_paths:
         porcelain.add(repo, paths=safe_paths)
