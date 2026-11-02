@@ -2,15 +2,42 @@ import os
 import re
 import time
 import base64
+import threading
 import requests
 from requests.auth import HTTPBasicAuth
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.db import close_old_connections
 
 RESEND_API_URL = "https://api.resend.com/emails"
 DEFAULT_SMSGATE_SERVER = "https://api.sms-gate.app"
 DEFAULT_NEXTSMS_URL = "https://messaging-service.co.tz/api/sms/v1/text/single"
 COMPANY_OFFICIAL_NAME = "Malkia Cargo Wave Limited"
+
+
+# =========================================================================
+# ASYNC BACKGROUND EXECUTION HELPER
+# =========================================================================
+
+def run_in_background(func, *args, **kwargs):
+    """
+    Executes a function in a background daemon thread so it does not block
+    the user's HTTP request or database transactions.
+    Automatically handles Django DB connection closing before and after.
+    """
+    def _worker():
+        close_old_connections()
+        try:
+            func(*args, **kwargs)
+        except Exception as exc:
+            import traceback
+            print(f"[Background Async Task Error: {getattr(func, '__name__', str(func))}] {exc}")
+        finally:
+            close_old_connections()
+
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
+    return t
 
 
 # =========================================================================
@@ -401,7 +428,9 @@ MILESTONE_TEMPLATES = {
 }
 
 
-def notify_client_milestone(job, milestone_key, extra_note=''):
+def notify_client_milestone(job, milestone_key, extra_note='', async_send=False):
+    if async_send:
+        return run_in_background(notify_client_milestone, job, milestone_key, extra_note=extra_note, async_send=False)
     """
     Sends BOTH Email (via Resend) AND SMS (via SMS Gate / NextSMS) using simple, clear Swahili
     without internal file numbers or technical port jargon.
@@ -596,7 +625,10 @@ def notify_client_milestone(job, milestone_key, extra_note=''):
     }
 
 
-def send_stage_update_email(job, stage_number, extra_note=''):
+def send_stage_update_email(job, stage_number, extra_note='', async_send=False):
+    if async_send:
+        return run_in_background(send_stage_update_email, job, stage_number, extra_note=extra_note, async_send=False)
+
     if stage_number == 1:
         milestone_key = 'DOCS_RECEIVED'
     elif stage_number in [3, 4] and not job.duty_paid:
@@ -612,7 +644,10 @@ def send_stage_update_email(job, stage_number, extra_note=''):
     return any_ok, summary
 
 
-def send_declarer_intake_notification(job, declarer):
+def send_declarer_intake_notification(job, declarer, async_send=False):
+    if async_send:
+        return run_in_background(send_declarer_intake_notification, job, declarer, async_send=False)
+
     if not declarer:
         return False, "Hakuna Customs Declarer aliyepatikana."
     recipient = (declarer.email or '').strip()

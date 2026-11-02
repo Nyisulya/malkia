@@ -1248,7 +1248,7 @@ def job_detail_view(request, job_id):
         'total_itemized_margin': total_itemized_margin,
 
         'primary_invoice': primary_invoice,
-
+        'is_ceo': is_ceo,
     }
 
     return render(request, 'core/job_detail.html', context)
@@ -1331,11 +1331,6 @@ def job_create_view(request):
         doc_packing_list_received = (request.POST.get('doc_packing_list_received') == '1') or bool(request.FILES.get('file_packing_list'))
         doc_tbs_cert_received = (request.POST.get('doc_tbs_cert_received') == '1') or bool(request.FILES.get('file_tbs_cert'))
         doc_export_cert_received = (request.POST.get('doc_export_cert_received') == '1') or bool(request.FILES.get('file_export_cert'))
-        doc_packing_list_received = request.POST.get('doc_packing_list_received') == '1'
-
-        doc_tbs_cert_received = request.POST.get('doc_tbs_cert_received') == '1'
-
-        doc_export_cert_received = request.POST.get('doc_export_cert_received') == '1'
 
 
 
@@ -1423,51 +1418,36 @@ def job_create_view(request):
 
 
 
-        # Initialize active workflow stage definitions
-
-        first_stage_instance = None
-
-        stage_defs = WorkflowStageDefinition.objects.all().order_by('stage_number')
-
+        # Initialize active workflow stage definitions with single bulk_create
+        stage_defs = list(WorkflowStageDefinition.objects.all().order_by('stage_number'))
+        stage_instances = []
         for sdef in stage_defs:
-
             is_first = (sdef.stage_number == 1)
-
             is_declaration = (sdef.stage_number == 2)
-
-            st_obj = JobStageInstance.objects.create(
-
-                job=job,
-
-                stage_definition=sdef,
-
-                stage_number=sdef.stage_number,
-
-                name_en=sdef.name_en,
-
-                name_sw=sdef.name_sw,
-
-                status='COMPLETED' if is_first else ('IN_PROGRESS' if is_declaration else 'PENDING'),
-
-                target_days=sdef.target_days,
-
-                responsible_officer=request.user if is_first else (declarer if is_declaration else None),
-
-                started_at=now if (is_first or is_declaration) else None,
-
-                completed_at=now if is_first else None,
-
-                remarks=f"Client documents received & scanned ({job.get_doc_receive_method_display()}), Clearance Mode: {job.get_clearance_mode_display()}, and File opened with auto-generated C41 & TBS Letter." if is_first else (
-
-                    "File handed over directly to Customs Declarer for TRA TANESW & TBS declaration." if is_declaration else ""
-
+            stage_instances.append(
+                JobStageInstance(
+                    job=job,
+                    stage_definition=sdef,
+                    stage_number=sdef.stage_number,
+                    name_en=sdef.name_en,
+                    name_sw=sdef.name_sw,
+                    status='COMPLETED' if is_first else ('IN_PROGRESS' if is_declaration else 'PENDING'),
+                    target_days=sdef.target_days,
+                    responsible_officer=request.user if is_first else (declarer if is_declaration else None),
+                    started_at=now if (is_first or is_declaration) else None,
+                    completed_at=now if is_first else None,
+                    remarks=(
+                        f"Client documents received & scanned ({job.get_doc_receive_method_display()}), Clearance Mode: {job.get_clearance_mode_display()}, and File opened with auto-generated C41 & TBS Letter."
+                        if is_first else (
+                            "File handed over directly to Customs Declarer for TRA TANESW & TBS declaration."
+                            if is_declaration else ""
+                        )
+                    )
                 )
-
             )
 
-            if is_first:
-
-                first_stage_instance = st_obj
+        JobStageInstance.objects.bulk_create(stage_instances)
+        first_stage_instance = JobStageInstance.objects.filter(job=job, stage_number=1).first()
 
 
 
@@ -1553,30 +1533,23 @@ def job_create_view(request):
 
 
 
-        # Automated Client Notification: 1. Documents Received
-
+        # Automated Client Notification: 1. Documents Received (Non-blocking background thread)
         try:
-
             from .email_service import send_stage_update_email
-
-            send_stage_update_email(job, 1, extra_note=f"Your documents have been received ({job.get_doc_receive_method_display()}): {rec_str} and your File (BL: {bl_number or job.job_number}) has been officially opened.")
-
+            send_stage_update_email(
+                job,
+                1,
+                extra_note=f"Your documents have been received ({job.get_doc_receive_method_display()}): {rec_str} and your File (BL: {bl_number or job.job_number}) has been officially opened.",
+                async_send=True
+            )
         except Exception as e:
-
             print(f"[Email Notification Error] {e}")
 
-
-
-        # Direct notification to the Customs Declarer (TANESW/TBS queue)
-
+        # Direct notification to the Customs Declarer (Non-blocking background thread)
         try:
-
             from .email_service import send_declarer_intake_notification
-
-            send_declarer_intake_notification(job, declarer)
-
+            send_declarer_intake_notification(job, declarer, async_send=True)
         except Exception as e:
-
             print(f"[Declarer Notification Error] {e}")
 
 

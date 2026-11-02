@@ -409,7 +409,7 @@
                 <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline">
                     <i class="fa-solid fa-xmark"></i> Cancel
                 </a>
-                <button type="submit" class="btn-header-action btn-primary" style="padding:0.85rem 2rem;font-size:0.95rem;font-weight:800;">
+                <button type="submit" id="btnSaveFile" class="btn-header-action btn-primary" style="padding:0.85rem 2rem;font-size:0.95rem;font-weight:800;transition:all 0.2s ease;">
                     <i class="fa-solid fa-folder-open"></i> Fungua File &amp; Kabidhi kwa Customs Declarer
                 </button>
             </div>
@@ -581,6 +581,21 @@ function handleBatchFiles(files) {
     html += '</ul>';
     preview.innerHTML = html;
     preview.style.display = 'block';
+}
+
+// Instant submit feedback to prevent double submission and indicate progress
+const saveForm = document.getElementById('docReceiveForm');
+const btnSave = document.getElementById('btnSaveFile');
+if (saveForm && btnSave) {
+    saveForm.addEventListener('submit', function(e) {
+        // Only trigger loading state if form validity checks pass
+        if (saveForm.checkValidity()) {
+            btnSave.disabled = true;
+            btnSave.style.opacity = '0.75';
+            btnSave.style.cursor = 'wait';
+            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Inafungua File &amp; Kukabidhi...';
+        }
+    });
 }
 </script>
 {% endblock %}

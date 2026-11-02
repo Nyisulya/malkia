@@ -254,7 +254,7 @@
                 <i class="fa-solid fa-route"></i> Track ({{ milestones|length }} Steps)
             </a>
 
-            {% if not is_ceo %}
+            {% if not is_ceo and request.user.profile.role != 'CEO' %}
             <a href="{% url 'print_combined_pack' job.id %}" target="_blank" class="btn-header-action" style="background:#0F172A;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:700;padding:0.45rem 0.8rem;border-radius:8px;font-size:0.82rem;">
                 <i class="fa-solid fa-file-pdf" style="color:#38BDF8;"></i> File Pack
             </a>
@@ -264,7 +264,7 @@
                 <i class="fa-solid fa-print" style="color:#64748B;"></i> Invoice
             </a>
 
-            {% if not is_ceo %}
+            {% if not is_ceo and request.user.profile.role != 'CEO' %}
             <button type="button" class="btn-header-action" onclick="openModal('requestExpenseModal')" style="background:#0284C7;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:800;padding:0.45rem 0.85rem;border-radius:8px;font-size:0.82rem;cursor:pointer;" title="Log a field expense voucher">
                 <i class="fa-solid fa-plus-circle"></i> + Add Field Expense
             </button>
@@ -434,7 +434,7 @@
 
 
 
-        {% if not is_ceo %}
+        {% if not is_ceo and request.user.profile.role != 'CEO' %}
         <div style="display:flex;gap:0.5rem;align-items:center;">
             <button type="button" class="btn-header-action btn-primary" onclick="openModal('requestExpenseModal')" style="font-size:0.78rem;padding:0.4rem 0.8rem;background:#16A34A;border-color:#16A34A;cursor:pointer;">
                 <i class="fa-solid fa-plus-circle"></i> + Add Field Expense
@@ -1144,7 +1144,7 @@
 
 
 
-                {% if not is_ceo %}
+                {% if not is_ceo and request.user.profile.role != 'CEO' %}
 
 
 
@@ -1272,7 +1272,7 @@
 
 
 
-                {% if not is_ceo %}
+                {% if not is_ceo and request.user.profile.role != 'CEO' %}
 
 
 
@@ -1348,7 +1348,7 @@
 
 
 
-                {% if not is_ceo %}
+                {% if not is_ceo and request.user.profile.role != 'CEO' %}
 
 
 
@@ -1632,7 +1632,7 @@
 
 
 
-            {% if not is_ceo %}
+            {% if not is_ceo and request.user.profile.role != 'CEO' %}
 
 
 
