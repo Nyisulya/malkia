@@ -142,7 +142,7 @@
                 <!-- ASSIGNED / HANDLED BY -->
                 <div style="display:flex;justify-content:space-between;align-items:center;color:#334155;border-top:1px dashed #E2E8F0;padding-top:0.35rem;margin-top:0.15rem;">
                     <span style="color:#64748B;"><i class="fa-solid fa-user-check" style="color:#16A34A;"></i> Handled by:</span>
-                    <strong style="color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;" title="{{ m.assigned_officer }}">
+                    <strong style="color:#0F172A;white-space:nowrap;" title="{{ m.assigned_officer }}">
                         {{ m.assigned_officer }}
                     </strong>
                 </div>
@@ -156,8 +156,8 @@
                     </strong>
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;color:#334155;border-top:1px dashed #E2E8F0;padding-top:0.35rem;margin-top:0.15rem;">
-                    <span style="color:#64748B;"><i class="fa-solid fa-user-clock" style="color:#2563EB;"></i> Assigned:</span>
-                    <strong style="color:#1D4ED8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;" title="{{ m.assigned_officer }}">
+                    <span style="color:#64748B;"><i class="fa-solid fa-user-clock" style="color:#2563EB;"></i> Handled by:</span>
+                    <strong style="color:#1D4ED8;white-space:nowrap;" title="{{ m.assigned_officer }}">
                         {{ m.assigned_officer }}
                     </strong>
                 </div>
@@ -171,10 +171,10 @@
                     </strong>
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;color:#64748B;border-top:1px dashed #E2E8F0;padding-top:0.35rem;margin-top:0.15rem;">
-                    <span><i class="fa-solid fa-user" style="color:#94A3B8;"></i> Role:</span>
-                    <span style="color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;" title="{{ m.assigned_officer }}">
+                    <span><i class="fa-solid fa-user" style="color:#94A3B8;"></i> Handled by:</span>
+                    <strong style="color:#475569;white-space:nowrap;" title="{{ m.assigned_officer }}">
                         {{ m.assigned_officer }}
-                    </span>
+                    </strong>
                 </div>
                 {% endif %}
             </div>

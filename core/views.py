@@ -10215,17 +10215,49 @@ def get_vehicle_tracking_milestones(job):
     m6_sub = f"At Malkia Yard ({job.box_number or 'Bay Parked'})" if m6_done else "In Transit to Yard"
     m7_sub = f"Delivered ({job.received_by_name or 'POD Signed'})" if m7_done else "Pending Handover"
 
-    # Officers
-    m1_officer = getattr(job.documentation_officer, 'get_full_name', lambda: None)() or log_users.get('OPEN_FILE_AND_SCAN_DOCS') or 'Amani Bakari (Doc Officer)'
-    m2_officer = getattr(job.clearing_officer, 'get_full_name', lambda: None)() or log_users.get('TANESW_LODGED') or 'Rashid Nassor (Customs Declarer)'
+    # Clean Person Names mapping & extraction (Real personnel names only)
+    staff_username_map = {
+        'doc_officer': 'Amani Bakari',
+        'clearing_officer': 'Rashid Nassor',
+        'finance_mgr': 'Subira Kilonzo',
+        'port_officer': 'Juma Kavishe',
+        'driver1': 'Mohamed Said',
+        'operations_mgr': 'Grace Mushi',
+        'dispatch_officer': 'Baraka Makonda',
+        'ceo': 'Hashim Mkwawa',
+        'admin': 'Hashim Mkwawa',
+    }
+
+    def _extract_person_name(u, log_key=None, default=''):
+        if u:
+            fn = getattr(u, 'get_full_name', lambda: None)()
+            if fn and fn.strip() and fn.strip() not in ['Super Administrator', 'IT Administrator']:
+                return fn.strip()
+            un = getattr(u, 'username', '')
+            if un and un in staff_username_map:
+                return staff_username_map[un]
+            if fn and fn.strip():
+                return fn.strip()
+
+        if log_key and log_users.get(log_key):
+            log_nm = log_users[log_key].strip()
+            if '(' in log_nm:
+                log_nm = log_nm.split('(')[0].strip()
+            if log_nm and log_nm not in ['Super Administrator', 'IT Administrator']:
+                return log_nm
+
+        return default
+
+    m1_officer = _extract_person_name(job.documentation_officer, 'OPEN_FILE_AND_SCAN_DOCS', default='Amani Bakari')
+    m2_officer = _extract_person_name(job.clearing_officer, 'TANESW_LODGED', default='Rashid Nassor')
     if is_bond:
-        m3_officer = getattr(job.clearing_officer, 'get_full_name', lambda: None)() or log_users.get('TRA_BOND_RELEASE_ACCEPTED') or 'Rashid Nassor (Customs Declarer)'
+        m3_officer = _extract_person_name(job.clearing_officer, 'TRA_BOND_RELEASE_ACCEPTED', default='Rashid Nassor')
     else:
-        m3_officer = log_users.get('DUTY_PAID') or 'Subira Kilonzo (Finance Officer)'
-    m4_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Verification Inspector'
-    m5_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Operations Officer'
-    m6_officer = getattr(job.driver, 'get_full_name', lambda: None)() or 'Transport Driver & Yard Master'
-    m7_officer = getattr(job.documentation_officer, 'get_full_name', lambda: None)() or 'Customer Service Officer'
+        m3_officer = _extract_person_name(None, 'DUTY_PAID', default='Subira Kilonzo')
+    m4_officer = _extract_person_name(job.vehicle_inspection_by or job.port_officer, 'PHYSICAL_VERIFICATION_PASSED', default='Juma Kavishe')
+    m5_officer = _extract_person_name(job.vehicle_inspection_by or job.port_officer, 'GATE_EXIT_RECORDED', default='Juma Kavishe')
+    m6_officer = job.vehicle_driver_name.strip() if getattr(job, 'vehicle_driver_name', None) and job.vehicle_driver_name.strip() else _extract_person_name(job.driver, 'YARD_ARRIVAL_RECORDED', default='Mohamed Said')
+    m7_officer = getattr(job, 'received_by_name', None) or _extract_person_name(job.documentation_officer, 'CUSTOMER_HANDOVER', default='Amani Bakari')
 
     # Timestamps & Durations
     m1_time = job.file_opened_at or (logs[0].timestamp if logs else job.created_at)
