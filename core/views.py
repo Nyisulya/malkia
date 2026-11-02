@@ -4730,7 +4730,7 @@ def expense_approval_action(request, voucher_id):
         if decision in ['VERIFY', 'FORWARD_TO_CEO']:
             can_audit = (user_role in [UserRole.FINANCE, UserRole.OPERATIONS_MGR, UserRole.ADMIN, UserRole.CEO] or request.user.is_superuser)
             if not can_audit:
-                messages.error(request, "Huna mamlaka ya kuhakiki na kuwasilisha maombi ya malipo kwa CEO.")
+                messages.error(request, "Unauthorized to audit and submit payment requests to CEO.")
                 return redirect(next_url)
 
             voucher.approval_status = 'VERIFIED'
@@ -4739,18 +4739,18 @@ def expense_approval_action(request, voucher_id):
             if remarks:
                 voucher.approval_remarks = remarks
             else:
-                voucher.approval_remarks = f"Imekaguliwa na Mhasibu ({user_disp}) na kuwasilishwa kwa CEO kwa malipo."
+                voucher.approval_remarks = f"Audited by Finance ({user_disp}) and submitted to CEO for payout."
             voucher.save()
 
             log_audit(
                 request,
                 "VERIFY_EXPENSE",
-                f"Mhasibu {user_disp} amehakiki vocha {voucher.voucher_number} (TSh {voucher.amount:,.2f}) na kuituma kwa CEO kwa idhini ya kutoa fedha.",
+                f"Finance Officer {user_disp} audited voucher {voucher.voucher_number} (TSh {voucher.amount:,.2f}) and forwarded to CEO for payout.",
                 job=voucher.job
             )
             messages.success(
                 request,
-                f"✅ Vocha {voucher.voucher_number} ({voucher.get_category_display()} - TSh {voucher.amount:,.2f}) imehakikiwa na kuwasilishwa rasmi kwa CEO kwa ajili ya kutoa fedha!"
+                f"Voucher {voucher.voucher_number} ({voucher.get_category_display()} - TSh {voucher.amount:,.2f}) verified and forwarded to CEO for payout."
             )
             return redirect(next_url)
 
@@ -4760,7 +4760,7 @@ def expense_approval_action(request, voucher_id):
             if not is_authorized:
                 messages.error(
                     request,
-                    f"Mamlaka ya kutoa fedha za ofisi na kuidhinisha malipo ni ya CEO pekee. Mhasibu kazi yake ni kuhakiki na kutuma kwa CEO (tumia kitufe cha 'Hakiki na Tuma kwa CEO')."
+                    f"Only the CEO / Managing Director is authorized to disburse office funds."
                 )
                 return redirect(next_url)
 
@@ -4784,12 +4784,12 @@ def expense_approval_action(request, voucher_id):
             log_audit(
                 request,
                 "CEO_DISBURSE_EXPENSE",
-                f"CEO {user_disp} ameidhinisha na kutoa malipo ya vocha {voucher.voucher_number} ya TSh {voucher.amount:,.2f} ({voucher.get_category_display()}) kupitia {voucher.get_payment_method_display()} (Ref: {voucher.payment_reference}).",
+                f"CEO {user_disp} approved & disbursed voucher {voucher.voucher_number} (TSh {voucher.amount:,.2f}) via {voucher.get_payment_method_display()} (Ref: {voucher.payment_reference}).",
                 job=voucher.job
             )
             messages.success(
                 request,
-                f"💰 Malipo ya TSh {voucher.amount:,.2f} ({voucher.get_category_display()}) yameidhinishwa na kutolewa na CEO! Hatua ya mzigo imesasishwa kiotomatiki."
+                f"Payment of TSh {voucher.amount:,.2f} ({voucher.get_category_display()}) approved and disbursed by CEO."
             )
             return redirect(next_url)
 
@@ -4797,17 +4797,17 @@ def expense_approval_action(request, voucher_id):
         elif decision == 'REJECT':
             can_reject = (user_role in [UserRole.FINANCE, UserRole.CEO, UserRole.ADMIN, UserRole.OPERATIONS_MGR] or request.user.is_superuser)
             if not can_reject:
-                messages.error(request, "Huna mamlaka ya kukataa vocha.")
+                messages.error(request, "Unauthorized to reject expense voucher.")
                 return redirect(next_url)
 
             voucher.approval_status = 'REJECTED'
             voucher.approval_date = now
             voucher.approver = request.user
-            voucher.approval_remarks = remarks or f"Yamekataliwa na {user_disp}"
+            voucher.approval_remarks = remarks or f"Rejected by {user_disp}"
             voucher.save()
 
-            log_audit(request, "REJECT_EXPENSE", f"Vocha {voucher.voucher_number} imekataliwa: {remarks}", job=voucher.job)
-            messages.warning(request, f"Vocha {voucher.voucher_number} imekataliwa ({remarks or 'Bila maelezo'}).")
+            log_audit(request, "REJECT_EXPENSE", f"Voucher {voucher.voucher_number} rejected: {remarks}", job=voucher.job)
+            messages.warning(request, f"Voucher {voucher.voucher_number} has been rejected.")
             return redirect(next_url)
 
     return redirect('finance')
@@ -5497,7 +5497,7 @@ def field_update_action(request, job_id):
                 )
 
             log_audit(request, "PORT_EXPENSE_DISPATCH", f"Sent {cat_label} request (TSh {amt:,.2f}) to Finance. Ref: {control_num or v_num}. Voucher: {v_num}", job=job)
-            messages.success(request, f"🚀 Ombi la malipo ({cat_label} - TSh {amt:,.2f}) limetumwa Finance! Ukishalipiwa litaonekana PAID.")
+            messages.success(request, f"Payment request for {cat_label} (TSh {amt:,.2f}) has been submitted to Finance.")
             return redirect(f"/field/updates/?job_id={job.id}")
 
 

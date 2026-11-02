@@ -78,18 +78,7 @@
     </div>
 </div>
 
-<!-- APPROVAL MATRIX POLICY BANNER -->
-<div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-    <div>
-        <strong style="color:var(--brand-navy-900);font-size:0.9rem;"><i class="fa-solid fa-shield-halved"></i> Utaratibu wa Kifedha &amp; Utoaji wa Pesa za Ofisi:</strong>
-        <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">
-            1. <strong>Port Officer (Uwanjani):</strong> Anajaza na kutuma ankara/control number &bull; 
-            2. <strong>Mhasibu (Finance):</strong> Anahakiki stakabadhi na kutuma ombi rasmi kwa CEO &bull; 
-            3. <strong>CEO (Mkurugenzi):</strong> Anaidhinisha na kutoa fedha kutoka akaunti ya ofisi / taslimu (Sole Payout Authority)
-        </div>
-    </div>
-    <span class="badge-pill" style="background:#F1F5F9;color:#334155;font-weight:700;">Internal Control Enforced</span>
-</div>
+
 
 <!-- SEARCH & FILTER BAR -->
 <div class="card-panel" style="padding:1.25rem;margin-bottom:1.5rem;background:#FFFFFF;">
@@ -103,10 +92,10 @@
                     Active Pending
                 </a>
                 <a href="{% url 'finance_pending_payments' %}?status=requested{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn-header-action {% if status_filter == 'requested' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
-                    Inasubiri Uhakiki wa Mhasibu ({{ requested_count }})
+                    Awaiting Verification ({{ requested_count }})
                 </a>
                 <a href="{% url 'finance_pending_payments' %}?status=verified{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn-header-action {% if status_filter == 'verified' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
-                    Iko kwa CEO ({{ verified_count }})
+                    Awaiting CEO Payout ({{ verified_count }})
                 </a>
                 <a href="{% url 'finance_pending_payments' %}?status=paid{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn-header-action {% if status_filter == 'paid' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
                     Disbursed / Paid
@@ -411,14 +400,14 @@
                     <td>
                         {% if exp.approval_status == 'VERIFIED' %}
                         <span class="badge-pill" style="background:#F3E8FF;color:#6D28D9;font-weight:800;font-size:0.75rem;">
-                            <i class="fa-solid fa-check-double"></i> Imehakikiwa &bull; Iko kwa CEO
+                            <i class="fa-solid fa-check-double"></i> Imehakikiwa &bull; Awaiting CEO Payout
                         </span>
                         {% if exp.audited_by %}
                         <div style="font-size:0.68rem;color:#7C3AED;margin-top:2px;">Auditor: {{ exp.audited_by.get_full_name|default:exp.audited_by.username }}</div>
                         {% endif %}
                         {% elif exp.approval_status == 'REQUESTED' %}
                         <span class="badge-pill badge-delayed" style="font-weight:800;font-size:0.75rem;">
-                            <i class="fa-solid fa-clock"></i> Inasubiri Uhakiki
+                            <i class="fa-solid fa-clock"></i> Pending Review
                         </span>
                         {% elif exp.approval_status == 'APPROVED' or exp.approval_status == 'PAID' or exp.is_paid %}
                         <span class="badge-pill badge-completed" style="font-weight:800;font-size:0.75rem;">
@@ -440,11 +429,11 @@
                             <form action="{% url 'expense_approval' exp.id %}" method="POST" style="display:inline-flex;gap:0.35rem;align-items:center;">
                                 {% csrf_token %}
                                 <input type="hidden" name="payment_method" value="BANK">
-                                <button type="submit" name="decision" value="APPROVE" class="btn-header-action btn-primary" style="background:#16A34A;padding:0.35rem 0.8rem;font-size:0.75rem;font-weight:800;" title="Idhinisha na kutoa fedha kutoka akaunti ya ofisi">
-                                    <i class="fa-solid fa-money-bill-transfer"></i> Idhinisha &amp; Toa Fedha
+                                <button type="submit" name="decision" value="APPROVE" class="btn-header-action btn-primary" style="background:#16A34A;padding:0.35rem 0.8rem;font-size:0.75rem;font-weight:800;" title="Approve and disburse payment from office funds">
+                                    <i class="fa-solid fa-money-bill-transfer"></i> Approve &amp; Disburse
                                 </button>
                                 <button type="submit" name="decision" value="REJECT" class="btn-header-action btn-outline" style="color:#DC2626;border-color:#FCA5A5;padding:0.35rem 0.65rem;font-size:0.75rem;font-weight:700;">
-                                    <i class="fa-solid fa-xmark"></i> Kataa
+                                    <i class="fa-solid fa-xmark"></i> Reject
                                 </button>
                             </form>
                             {% else %}
@@ -452,16 +441,16 @@
                             {% if exp.approval_status == 'REQUESTED' %}
                             <form action="{% url 'expense_approval' exp.id %}" method="POST" style="display:inline-flex;gap:0.35rem;align-items:center;">
                                 {% csrf_token %}
-                                <button type="submit" name="decision" value="VERIFY" class="btn-header-action btn-primary" style="background:#2563EB;padding:0.35rem 0.8rem;font-size:0.75rem;font-weight:800;" title="Hakiki na Tuma ombi la malipo kwa CEO">
-                                    <i class="fa-solid fa-paper-plane"></i> Hakiki &amp; Tuma kwa CEO
+                                <button type="submit" name="decision" value="VERIFY" class="btn-header-action btn-primary" style="background:#2563EB;padding:0.35rem 0.8rem;font-size:0.75rem;font-weight:800;" title="Verify and submit payment request to CEO">
+                                    <i class="fa-solid fa-paper-plane"></i> Verify &amp; Forward to CEO
                                 </button>
                                 <button type="submit" name="decision" value="REJECT" class="btn-header-action btn-outline" style="color:#DC2626;border-color:#FCA5A5;padding:0.35rem 0.65rem;font-size:0.75rem;font-weight:700;">
-                                    <i class="fa-solid fa-xmark"></i> Kataa
+                                    <i class="fa-solid fa-xmark"></i> Reject
                                 </button>
                             </form>
                             {% elif exp.approval_status == 'VERIFIED' %}
                             <span class="badge-pill" style="background:#FEF3C7;color:#B45309;font-weight:800;font-size:0.75rem;">
-                                <i class="fa-solid fa-clock"></i> Imetumwa kwa CEO (Inasubiri Payout)
+                                <i class="fa-solid fa-clock"></i> Submitted to CEO (Pending Payout)
                             </span>
                             {% endif %}
                             {% endif %}
