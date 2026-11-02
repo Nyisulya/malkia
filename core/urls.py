@@ -118,6 +118,7 @@ urlpatterns = [
     path('portal/shipment/<int:job_id>/', views.client_shipment_detail_view, name='client_shipment_detail'),
     path('api/executive-ai/chat/', views.executive_ai_chat_api, name='executive_ai_chat_api'),
 
+    path('api/realtime-pulse/', views.api_realtime_pulse, name='api_realtime_pulse'),
     # Real-Time Staff Team Chat & Direct Messaging
     path('chat/', chat_views.internal_chat_view, name='internal_chat'),
     path('chat/api/messages/<int:user_id>/', chat_views.api_chat_messages, name='api_chat_messages'),

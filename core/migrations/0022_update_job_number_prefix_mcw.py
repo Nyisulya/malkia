@@ -31,3 +31,4 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(update_mf_to_mcw, reverse_mcw_to_mf),
     ]
+

@@ -705,3 +705,153 @@ window.repaginateTable = function(table, targetPage) {
         });
     });
 };
+
+
+// =========================================================================
+// MALKIA CARGO WAVE - REAL-TIME COLLABORATIVE AUTO-SYNC ENGINE
+// Real-time synchronization across all ~7 staff consoles & clients without manual page refresh
+// =========================================================================
+(function initMalkiaRealtimeSync() {
+    let lastVersion = null;
+    let isReloading = false;
+    let pendingReload = false;
+
+    function isUserEditing() {
+        const openModal = document.querySelector('.modal.open, .modal[style*="display: flex"], .modal[style*="display: block"]');
+        if (openModal) return true;
+
+        const active = document.activeElement;
+        if (active && ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)) {
+            return true;
+        }
+        return false;
+    }
+
+    async function checkPulse() {
+        if (document.hidden || isReloading) return;
+
+        try {
+            const url = '/api/realtime-pulse/?v=' + encodeURIComponent(lastVersion || '');
+            const res = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!res.ok) return;
+
+            const data = await res.json();
+            if (!lastVersion) {
+                lastVersion = data.version;
+                return;
+            }
+
+            if (data.has_change && data.version !== lastVersion) {
+                lastVersion = data.version;
+
+                // 1. Sleek Floating Toast Notification for the update
+                if (data.latest_event && data.latest_event.details) {
+                    const evt = data.latest_event;
+                    const actor = evt.actor || 'Operations';
+                    const toastText = `⚡ <strong>${actor}</strong>: ${evt.details}`;
+                    if (window.showToast) {
+                        window.showToast(toastText, 'info');
+                    }
+                }
+
+                // 2. Real-time badge counter update
+                if (data.counts) {
+                    const finBadges = document.querySelectorAll('.finance-badge-count, #sidebarFinanceBadge');
+                    finBadges.forEach(b => {
+                        const cnt = data.counts.pending_finance || 0;
+                        b.textContent = cnt;
+                        b.style.display = cnt > 0 ? 'inline-flex' : 'none';
+                    });
+                }
+
+                // 3. Auto-Reload current view seamlessly
+                if (isUserEditing()) {
+                    pendingReload = true;
+                } else {
+                    seamlessContentReload();
+                }
+            }
+        } catch (e) {
+            // Quiet network recovery
+        }
+    }
+
+    async function seamlessContentReload() {
+        if (isReloading) return;
+        isReloading = true;
+        pendingReload = false;
+
+        const pill = document.getElementById('malkiaLiveSyncPill');
+        if (pill) {
+            pill.style.background = '#EFF6FF';
+            pill.style.borderColor = '#BFDBFE';
+            pill.style.color = '#1D4ED8';
+            const dot = pill.querySelector('span');
+            if (dot) dot.style.background = '#2563EB';
+        }
+
+        try {
+            const targetUrl = window.location.href;
+            const res = await fetch(targetUrl, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            if (res.ok) {
+                const html = await res.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                const newContent = doc.querySelector('.page-content');
+                const currentContent = document.querySelector('.page-content');
+
+                if (newContent && currentContent) {
+                    currentContent.style.transition = 'opacity 0.15s ease';
+                    currentContent.style.opacity = '0.5';
+
+                    setTimeout(() => {
+                        // Remove flash messages from new content to avoid repeating past alerts
+                        const newMsgs = newContent.querySelector('.toast-messages-container');
+                        if (newMsgs) newMsgs.remove();
+
+                        currentContent.innerHTML = newContent.innerHTML;
+                        if (typeof executeScripts === 'function') executeScripts(currentContent);
+                        if (typeof rebindDynamicElements === 'function') rebindDynamicElements();
+
+                        currentContent.style.opacity = '1';
+                        isReloading = false;
+                    }, 120);
+                } else {
+                    isReloading = false;
+                }
+            } else {
+                isReloading = false;
+            }
+        } catch (err) {
+            isReloading = false;
+        } finally {
+            setTimeout(() => {
+                if (pill) {
+                    pill.style.background = '#ECFDF5';
+                    pill.style.borderColor = '#A7F3D0';
+                    pill.style.color = '#065F46';
+                    const dot = pill.querySelector('span');
+                    if (dot) dot.style.background = '#10B981';
+                }
+            }, 600);
+        }
+    }
+
+    // Trigger reload once user finishes typing or closes modal
+    document.addEventListener('focusout', () => {
+        if (pendingReload && !isUserEditing()) {
+            setTimeout(() => {
+                if (!isUserEditing()) seamlessContentReload();
+            }, 400);
+        }
+    });
+
+    // Check every 3.5 seconds
+    setInterval(checkPulse, 3500);
+})();

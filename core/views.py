@@ -12011,3 +12011,63 @@ INSTRUCTIONS:
 
     return JsonResponse({'status': 'success', 'reply': reply})
 
+
+
+def api_realtime_pulse(request):
+    """
+    Ultra-lightweight real-time synchronization pulse endpoint for all ~7 connected staff & client consoles.
+    Detects any stage progress, expense request/approval, yard arrival, or milestone update
+    and broadcasts updates without full-page reloads.
+    """
+    client_version = request.GET.get('v', '').strip()
+
+    latest_audit = AuditLog.objects.select_related('user', 'job').order_by('-id').first()
+    latest_expense = ExpenseVoucher.objects.order_by('-id').first()
+    latest_job = JobShipment.objects.order_by('-updated_at').first()
+
+    audit_ts = int(latest_audit.timestamp.timestamp()) if latest_audit else 0
+    audit_id = latest_audit.id if latest_audit else 0
+    exp_id = latest_expense.id if latest_expense else 0
+    job_ts = int(latest_job.updated_at.timestamp()) if latest_job else 0
+
+    current_version = f"{audit_ts}_{audit_id}_{exp_id}_{job_ts}"
+
+    if client_version and client_version == current_version:
+        return JsonResponse({'has_change': False, 'version': current_version})
+
+    # Prepare latest event info for alert banner / toast
+    event_info = None
+    if latest_audit:
+        actor_name = ""
+        if latest_audit.user:
+            fn = latest_audit.user.get_full_name().strip()
+            actor_name = fn if fn and fn not in ['Super Administrator', 'IT Administrator'] else latest_audit.user.username
+        if not actor_name:
+            actor_name = "Operations Team"
+
+        clean_details = latest_audit.details or latest_audit.action
+        event_info = {
+            'id': latest_audit.id,
+            'action': latest_audit.action,
+            'actor': actor_name,
+            'job_id': latest_audit.job_id,
+            'job_number': latest_audit.job.job_number if latest_audit.job else "",
+            'details': clean_details,
+            'timestamp': latest_audit.timestamp.isoformat(),
+        }
+
+    # Badge metrics for live counters
+    requested_vouchers = ExpenseVoucher.objects.filter(approval_status='REQUESTED').count()
+    verified_vouchers = ExpenseVoucher.objects.filter(approval_status='VERIFIED', is_paid=False).count()
+    active_jobs = JobShipment.objects.filter(status__in=['ACTIVE', 'DELAYED']).count()
+
+    return JsonResponse({
+        'has_change': True,
+        'version': current_version,
+        'latest_event': event_info,
+        'counts': {
+            'pending_finance': requested_vouchers,
+            'pending_ceo': verified_vouchers,
+            'active_jobs': active_jobs,
+        }
+    })
