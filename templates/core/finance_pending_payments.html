@@ -92,10 +92,10 @@
                     Active Pending
                 </a>
                 <a href="{% url 'finance_pending_payments' %}?status=requested{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn-header-action {% if status_filter == 'requested' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
-                    Awaiting Verification ({{ requested_count }})
+                    Awaiting Finance Review ({{ requested_count }})
                 </a>
                 <a href="{% url 'finance_pending_payments' %}?status=verified{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn-header-action {% if status_filter == 'verified' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
-                    Awaiting CEO Payout ({{ verified_count }})
+                    Awaiting CEO Approval ({{ verified_count }})
                 </a>
                 <a href="{% url 'finance_pending_payments' %}?status=paid{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn-header-action {% if status_filter == 'paid' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.6rem 0.9rem;font-size:0.8rem;">
                     Disbursed / Paid
@@ -394,13 +394,13 @@
                     </td>
                     <td>
                         <span class="badge-pill" style="background:#FEF3C7;color:#B45309;font-weight:700;">
-                            {{ exp.get_required_role_display }}
+                            CEO / Managing Director
                         </span>
                     </td>
                     <td>
                         {% if exp.approval_status == 'VERIFIED' %}
                         <span class="badge-pill" style="background:#F3E8FF;color:#6D28D9;font-weight:800;font-size:0.75rem;">
-                            <i class="fa-solid fa-check-double"></i> Imehakikiwa &bull; Awaiting CEO Payout
+                            <i class="fa-solid fa-check-double"></i> Verified &bull; Awaiting CEO Approval
                         </span>
                         {% if exp.audited_by %}
                         <div style="font-size:0.68rem;color:#7C3AED;margin-top:2px;">Auditor: {{ exp.audited_by.get_full_name|default:exp.audited_by.username }}</div>
@@ -574,7 +574,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Preferred Payment Channel / Njia ya Malipo</label>
+                    <label>Preferred Payment Channel / Disbursement Account</label>
                     <select name="payment_method" class="form-control">
                         <option value="BANK">Direct Bank Transfer / Cheque</option>
                         <option value="CASH">Cashier Cash / Petty Cash</option>

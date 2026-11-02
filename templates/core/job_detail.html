@@ -204,7 +204,7 @@
 
 
 
-                    <i class="fa-solid fa-location-dot" style="color:var(--brand-primary);"></i> Step {{ completed_milestones_count }}/9: {{ job.current_stage_display_name }}
+                    <i class="fa-solid fa-location-dot" style="color:var(--brand-primary);"></i> Step {{ completed_milestones_count }}/{{ milestones|length }}: {{ job.current_stage_display_name }}
 
 
 
@@ -1477,7 +1477,7 @@
 
 
 
-            Vehicle Clearing Milestones: <span style="color:var(--brand-primary);">{{ completed_milestones_count }}/9 Completed</span>
+            Vehicle Clearing Milestones: <span style="color:var(--brand-primary);">{{ completed_milestones_count }}/{{ milestones|length }} Completed</span>
 
 
 
@@ -1509,7 +1509,7 @@
 
 
 
-    <div style="display:grid;grid-template-columns:repeat(9, minmax(75px, 1fr));gap:0.35rem;overflow-x:auto;">
+    <div style="display:grid;grid-template-columns:repeat({{ milestones|length }}, minmax(75px, 1fr));gap:0.35rem;overflow-x:auto;">
 
 
 

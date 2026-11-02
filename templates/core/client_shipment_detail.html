@@ -63,10 +63,10 @@
                     Milestones Progress
                 </div>
                 <div style="font-size:1.2rem;font-weight:900;color:var(--brand-navy-900);margin-top:0.1rem;">
-                    {{ completed_milestones_count }} <span style="font-size:0.82rem;color:var(--text-muted);font-weight:600;">of 9 Steps</span>
+                    {{ completed_milestones_count }} <span style="font-size:0.82rem;color:var(--text-muted);font-weight:600;">of {{ milestones|length }} Steps</span>
                 </div>
                 <div style="width:100%;height:6px;background:#E2E8F0;border-radius:999px;margin-top:0.35rem;overflow:hidden;">
-                    <div style="height:100%;width:{% widthratio completed_milestones_count 9 100 %}%;background:{% if completed_milestones_count == 9 %}#16A34A{% else %}#2563EB{% endif %};border-radius:999px;"></div>
+                    <div style="height:100%;width:{% widthratio completed_milestones_count milestones|length 100 %}%;background:{% if completed_milestones_count == milestones|length %}#16A34A{% else %}#2563EB{% endif %};border-radius:999px;"></div>
                 </div>
             </div>
         </div>

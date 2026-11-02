@@ -239,8 +239,18 @@
                 <input type="text" name="findings" class="form-control" placeholder="Maelezo mafupi kama yapo (Optional)..." style="font-size:0.86rem;padding:0.6rem 0.75rem;">
             </div>
 
+            {% if verification_done %}
+            <div style="background:#ECFDF5;border:1px solid #A7F3D0;padding:0.85rem;border-radius:8px;margin-bottom:0.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;color:#065F46;font-size:0.85rem;font-weight:700;">
+                    <i class="fa-solid fa-circle-check" style="color:#059669;font-size:1.15rem;"></i> Physical Verification Completed
+                </div>
+                <button type="button" onclick="showFieldStep(2)" class="btn-header-action btn-primary" style="background:#0D9488;border-color:#0D9488;padding:0.4rem 0.85rem;font-size:0.8rem;font-weight:800;">
+                    Proceed to Gate Exit &rarr;
+                </button>
+            </div>
+            {% endif %}
             <button type="submit" class="btn-header-action btn-primary" style="width:100%;background:#0D9488;border-color:#0D9488;padding:0.9rem;font-size:1rem;font-weight:800;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;gap:0.5rem;cursor:pointer;">
-                <i class="fa-solid fa-circle-check"></i> ✅ Verify TRA Release &amp; Continue
+                <i class="fa-solid fa-circle-check"></i> {% if verification_done %}Update Verification Status{% else %}✅ Verify TRA Release &amp; Continue{% endif %}
             </button>
         </form>
     </div>
@@ -264,6 +274,14 @@
             {% endif %}
         </div>
 
+        {% if not gate_exit_allowed %}
+        <div style="background:#FEF3C7;border-left:4px solid #F59E0B;padding:0.75rem 1rem;border-radius:6px;margin-bottom:1rem;display:flex;align-items:center;gap:0.6rem;">
+            <i class="fa-solid fa-triangle-exclamation" style="color:#D97706;font-size:1.1rem;"></i>
+            <div style="font-size:0.84rem;color:#92400E;font-weight:700;">
+                {{ gate_exit_block_reason }}
+            </div>
+        </div>
+        {% endif %}
         <form method="POST" action="{% url 'field_update_action' selected_job.id %}" enctype="multipart/form-data" data-no-ajax="true">
             {% csrf_token %}
             <input type="hidden" name="update_type" value="VEHICLE_INSPECTION">
@@ -287,7 +305,7 @@
                 <input type="text" name="condition_notes" class="form-control" placeholder="Maelezo mafupi ya Gate Exit kama yapo (Optional)..." style="font-size:0.85rem;padding:0.6rem 0.75rem;">
             </div>
 
-            <button type="submit" class="btn-header-action btn-primary" style="width:100%;background:#16A34A;border-color:#16A34A;padding:0.95rem;font-size:1.02rem;font-weight:800;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;gap:0.5rem;cursor:pointer;">
+            <button type="submit" class="btn-header-action btn-primary" {% if not gate_exit_allowed %}disabled style="width:100%;background:#94A3B8;border-color:#94A3B8;padding:0.95rem;font-size:1.02rem;font-weight:800;border-radius:var(--radius-md);cursor:not-allowed;opacity:0.7;"{% else %}style="width:100%;background:#16A34A;border-color:#16A34A;padding:0.95rem;font-size:1.02rem;font-weight:800;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;gap:0.5rem;cursor:pointer;"{% endif %}>
                 <i class="fa-solid fa-circle-check"></i> ✅ Verify Gate Exit &amp; Dispatch to Malkia Yard
             </button>
         </form>

@@ -5410,35 +5410,47 @@ def field_updates_view(request):
 
 
     recent_logs = []
-
     job_docs = []
-
     port_vouchers = []
+    verification_done = False
+    unpaid_port_bills = []
+    gate_exit_allowed = True
+    gate_exit_block_reason = ""
 
     if selected_job:
-
         recent_logs = selected_job.audit_logs.all().select_related('user').order_by('-timestamp')[:8]
-
         job_docs = selected_job.documents.all().order_by('-uploaded_at')[:6]
-
         port_vouchers = selected_job.expenses.exclude(category=ExpenseCategory.CUSTOMS_DUTY).order_by('-requested_at')
 
+        verification_done = bool(
+            selected_job.current_stage_number > 5 or
+            selected_job.stages.filter(stage_number=5, status='COMPLETED').exists() or
+            selected_job.vehicle_inspection_done
+        )
 
+        unpaid_port_bills = list(selected_job.expenses.filter(
+            category__in=[ExpenseCategory.SHIPPING_LINE, ExpenseCategory.PORT_CHARGES],
+            is_paid=False
+        ).exclude(approval_status='REJECTED'))
+
+        if not verification_done:
+            gate_exit_allowed = False
+            gate_exit_block_reason = "Physical Verification must be completed first."
+        elif unpaid_port_bills:
+            gate_exit_allowed = False
+            gate_exit_block_reason = "Port bills (D/O or Port Charges) are awaiting Finance review and CEO payout."
 
     context = {
-
         'jobs': jobs,
-
         'selected_job': selected_job,
-
         'recent_logs': recent_logs,
-
         'job_docs': job_docs,
-
         'port_vouchers': port_vouchers,
-
+        'verification_done': verification_done,
+        'unpaid_port_bills': unpaid_port_bills,
+        'gate_exit_allowed': gate_exit_allowed,
+        'gate_exit_block_reason': gate_exit_block_reason,
     }
-
     return render(request, 'core/field_updates.html', context)
 
 
@@ -10151,181 +10163,110 @@ def get_vehicle_tracking_milestones(job):
         job.proof_of_delivery_image
     )
 
-    s1_done = True
-    s2_done = has_declaration_done
-    s3_done = has_payment_done
-    s4_done = has_do_done
-    s5_done = has_verification_done
-    s6_done = has_port_charges_done
-    s7_done = has_gate_exit_done
-    s8_done = has_yard_done
-    s9_done = has_handover_done
+    # 7 REAL-WORLD VEHICLE CLEARING & FORWARDING MILESTONES
+    m1_done = True
+    m2_done = has_declaration_done
+    m3_done = has_payment_done
+    m4_done = has_verification_done
+    m5_done = has_gate_exit_done
+    m6_done = has_yard_done
+    m7_done = has_handover_done
 
     # Subtitles
-    s1_sub = f"File Opened ({job.job_number})"
-    if s2_done:
+    m1_sub = f"File Opened ({job.job_number})"
+    if m2_done:
         if job.duty_control_number:
-            s2_sub = f"Control No: {job.duty_control_number}"
+            m2_sub = f"Control No: {job.duty_control_number}"
         elif job.declaration_number:
-            s2_sub = f"TANSAD #{job.declaration_number}"
+            m2_sub = f"TANSAD #{job.declaration_number}"
         else:
-            s2_sub = "Lodged in TANSAD"
+            m2_sub = "Lodged in TANSAD"
     else:
-        s2_sub = "Pending TANSAD Lodgement & Control No"
+        m2_sub = "Pending TANSAD Lodgement & Control No"
 
     if is_bond:
-        s3_title = "In-Bond Clearance"
-        if s3_done:
-            s3_sub = f"In-Bond Approved ({job.duty_payment_reference or 'RO Approved'})"
-        elif s2_done:
-            s3_sub = "Awaiting Bond Release Approval"
+        m3_title = "In-Bond Clearance"
+        if m3_done:
+            m3_sub = f"In-Bond Approved ({job.duty_payment_reference or 'RO Approved'})"
+        elif m2_done:
+            m3_sub = "Awaiting Bond Release Approval"
         else:
-            s3_sub = "Under Customs Bond"
+            m3_sub = "Under Customs Bond"
     else:
-        s3_title = "TRA Duty Payment"
-        if s3_done:
-            s3_sub = f"Duty Settled ({job.duty_payment_reference or 'Paid'})"
+        m3_title = "TRA Duty Payment"
+        if m3_done:
+            m3_sub = f"Duty Settled ({job.duty_payment_reference or 'Paid'})"
         elif job.duty_control_number:
-            s3_sub = f"Pending Payment (Ctrl #{job.duty_control_number})"
+            m3_sub = f"Pending Payment (Ctrl #{job.duty_control_number})"
         else:
-            s3_sub = "Awaiting Control Number"
+            m3_sub = "Awaiting Control Number"
 
-    s4_sub = f"D/O #{job.delivery_order_number}" if job.delivery_order_number else ("D/O Released" if s4_done else "Awaiting D/O")
+    m4_sub = "Customs Verified" if m4_done else "Awaiting Port Inspection"
 
-    s5_sub = "Customs Verified" if s5_done else "Awaiting Inspection"
+    if m5_done:
+        m5_sub = f"Gate Pass #{job.gate_pass_number}" if job.gate_pass_number else "Port Cleared & Exited"
+    elif has_port_charges_done:
+        m5_sub = "Charges Settled & Awaiting Gate Exit"
+    elif has_do_done:
+        m5_sub = "D/O Released & Clearing Port Charges"
+    else:
+        m5_sub = "Pending D/O & Port Clearance"
 
-    s6_sub = f"Invoice #{job.port_invoice_number}" if job.port_invoice_number else ("Port Charges Settled" if s6_done else "Pending Port Invoice")
-
-    s7_sub = f"Gate Pass #{job.gate_pass_number}" if job.gate_pass_number else ("Gate Exited & Released" if s7_done else "At Port / ICD")
-
-    s8_sub = f"At Malkia Yard ({job.box_number or 'Bay Parked'})" if s8_done else "In Transit to Yard"
-
-    s9_sub = f"Delivered ({job.received_by_name or 'POD Signed'})" if s9_done else "Pending Handover"
-
-
+    m6_sub = f"At Malkia Yard ({job.box_number or 'Bay Parked'})" if m6_done else "In Transit to Yard"
+    m7_sub = f"Delivered ({job.received_by_name or 'POD Signed'})" if m7_done else "Pending Handover"
 
     # Officers
-
-    s1_officer = getattr(job.documentation_officer, 'get_full_name', lambda: None)() or log_users.get('OPEN_FILE_AND_SCAN_DOCS') or 'Amani Bakari (Doc Officer)'
-
-    s2_officer = getattr(job.clearing_officer, 'get_full_name', lambda: None)() or log_users.get('TANESW_LODGED') or 'Rashid Nassor (Customs Declarer)'
-
+    m1_officer = getattr(job.documentation_officer, 'get_full_name', lambda: None)() or log_users.get('OPEN_FILE_AND_SCAN_DOCS') or 'Amani Bakari (Doc Officer)'
+    m2_officer = getattr(job.clearing_officer, 'get_full_name', lambda: None)() or log_users.get('TANESW_LODGED') or 'Rashid Nassor (Customs Declarer)'
     if is_bond:
-        s3_officer = getattr(job.clearing_officer, 'get_full_name', lambda: None)() or log_users.get('TRA_BOND_RELEASE_ACCEPTED') or 'Rashid Nassor (Customs Declarer)'
+        m3_officer = getattr(job.clearing_officer, 'get_full_name', lambda: None)() or log_users.get('TRA_BOND_RELEASE_ACCEPTED') or 'Rashid Nassor (Customs Declarer)'
     else:
-        if s3_done:
-            s3_officer = log_users.get('DUTY_PAID') or 'Subira Kilonzo (Finance Officer)'
-        else:
-            s3_officer = 'Subira Kilonzo (Finance Officer)'
-
-
-    s4_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Operations Officer'
-
-    s5_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Verification Inspector'
-
-    s6_officer = 'Port Finance & Accounts'
-
-    s7_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Gate Inspector'
-
-    s8_officer = getattr(job.driver, 'get_full_name', lambda: None)() or 'Transport Driver & Yard Master'
-
-    s9_officer = getattr(job.documentation_officer, 'get_full_name', lambda: None)() or 'Customer Service Officer'
-
-
+        m3_officer = log_users.get('DUTY_PAID') or 'Subira Kilonzo (Finance Officer)'
+    m4_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Verification Inspector'
+    m5_officer = getattr(job.port_officer, 'get_full_name', lambda: None)() or 'Port Operations Officer'
+    m6_officer = getattr(job.driver, 'get_full_name', lambda: None)() or 'Transport Driver & Yard Master'
+    m7_officer = getattr(job.documentation_officer, 'get_full_name', lambda: None)() or 'Customer Service Officer'
 
     # Timestamps & Durations
+    m1_time = job.file_opened_at or (logs[0].timestamp if logs else job.created_at)
+    m2_time = job.tanesw_lodged_at or log_times.get('TANESW_LODGED')
+    m3_time = log_times.get('TRA_BOND_RELEASE_ACCEPTED') or log_times.get('DUTY_PAID') or job.duty_payment_date
+    m4_time = log_times.get('PHYSICAL_VERIFICATION_PASSED') or log_times.get('FIELD_VERIFICATION')
+    m5_time = log_times.get('GATE_EXIT_RECORDED') or log_times.get('VEHICLE_DISPATCH') or log_times.get('VEHICLE_INSPECTION') or job.vehicle_dispatched_at or job.vehicle_inspection_at
+    m6_time = log_times.get('YARD_ARRIVAL_RECORDED') or log_times.get('VEHICLE_ARRIVED_YARD') or log_times.get('VEHICLE_ARRIVED_BOND') or log_times.get('YARD_ARRIVAL') or job.vehicle_arrived_at
+    m7_time = job.delivered_date
 
-    s1_time = job.file_opened_at or (logs[0].timestamp if logs else job.created_at)
-
-    s2_time = job.tanesw_lodged_at or log_times.get('TANESW_LODGED')
-
-    s3_time = log_times.get('TRA_BOND_RELEASE_ACCEPTED') or log_times.get('DUTY_PAID') or job.duty_payment_date
-
-    s4_time = log_times.get('DELIVERY_ORDER_RECORDED')
-
-    s5_time = log_times.get('PHYSICAL_VERIFICATION_PASSED') or log_times.get('FIELD_VERIFICATION')
-
-    s6_time = log_times.get('PORT_INVOICE_PAID')
-
-    s7_time = log_times.get('GATE_EXIT_RECORDED') or log_times.get('VEHICLE_DISPATCH') or log_times.get('VEHICLE_INSPECTION') or job.vehicle_dispatched_at or job.vehicle_inspection_at
-
-    s8_time = log_times.get('YARD_ARRIVAL_RECORDED') or log_times.get('VEHICLE_ARRIVED_YARD') or log_times.get('VEHICLE_ARRIVED_BOND') or log_times.get('YARD_ARRIVAL') or job.vehicle_arrived_at
-
-    s9_time = job.delivered_date
-
-
-
-    s1_duration = "Instant (Setup)"
-
-    s2_duration = _calc_duration(s2_time, s1_time, default=("2 mins" if s2_done else None))
-
-    s3_duration = _calc_duration(s3_time, s2_time, default=("57 mins" if s3_done else None))
-
-    s4_duration = _calc_duration(s4_time, s3_time, default=("1h 20m" if s4_done else None))
-
-    s5_duration = _calc_duration(s5_time, s4_time, default=("3 hrs" if s5_done else None))
-
-    s6_duration = _calc_duration(s6_time, s5_time, default=("1.5 hrs" if s6_done else None))
-
-    s7_duration = _calc_duration(s7_time, s6_time, default=("45 mins" if s7_done else None))
-
-    s8_duration = _calc_duration(s8_time, s7_time, default=("1 hr" if s8_done else None))
-
-    s9_duration = _calc_duration(s9_time, s8_time, default=("Same Day" if s9_done else None))
-
-
+    m1_duration = "Instant (Setup)"
+    m2_duration = _calc_duration(m2_time, m1_time, default=("2 mins" if m2_done else None))
+    m3_duration = _calc_duration(m3_time, m2_time, default=("57 mins" if m3_done else None))
+    m4_duration = _calc_duration(m4_time, m3_time, default=("3 hrs" if m4_done else None))
+    m5_duration = _calc_duration(m5_time, m4_time, default=("1.5 hrs" if m5_done else None))
+    m6_duration = _calc_duration(m6_time, m5_time, default=("1 hr" if m6_done else None))
+    m7_duration = _calc_duration(m7_time, m6_time, default=("Same Day" if m7_done else None))
 
     milestones = [
-
-        {'id': 1, 'name': 'File Opening', 'subtitle': s1_sub, 'done': s1_done, 'assigned_officer': s1_officer, 'completed_at': s1_time, 'time_taken': s1_duration, 'target_sla': 'Same Day'},
-
-        {'id': 2, 'name': 'Customs Declaration', 'subtitle': s2_sub, 'done': s2_done, 'assigned_officer': s2_officer, 'completed_at': s2_time, 'time_taken': s2_duration, 'target_sla': '24 Hours'},
-
-        {'id': 3, 'name': s3_title, 'subtitle': s3_sub, 'done': s3_done, 'assigned_officer': s3_officer, 'completed_at': s3_time, 'time_taken': s3_duration, 'target_sla': '76 Hours SLA'},
-
-        {'id': 4, 'name': 'Delivery Order (D/O)', 'subtitle': s4_sub, 'done': s4_done, 'assigned_officer': s4_officer, 'completed_at': s4_time, 'time_taken': s4_duration, 'target_sla': '24 Hours'},
-
-        {'id': 5, 'name': 'Physical Verification', 'subtitle': s5_sub, 'done': s5_done, 'assigned_officer': s5_officer, 'completed_at': s5_time, 'time_taken': s5_duration, 'target_sla': '1-2 Days'},
-
-        {'id': 6, 'name': 'Port & ICD Charges', 'subtitle': s6_sub, 'done': s6_done, 'assigned_officer': s6_officer, 'completed_at': s6_time, 'time_taken': s6_duration, 'target_sla': '24 Hours'},
-
-        {'id': 7, 'name': 'Gate Exit & Inspection', 'subtitle': s7_sub, 'done': s7_done, 'assigned_officer': s7_officer, 'completed_at': s7_time, 'time_taken': s7_duration, 'target_sla': 'Same Day'},
-
-        {'id': 8, 'name': 'Malkia Yard Arrival', 'subtitle': s8_sub, 'done': s8_done, 'assigned_officer': s8_officer, 'completed_at': s8_time, 'time_taken': s8_duration, 'target_sla': 'Same Day'},
-
-        {'id': 9, 'name': 'Customer Handover', 'subtitle': s9_sub, 'done': s9_done, 'assigned_officer': s9_officer, 'completed_at': s9_time, 'time_taken': s9_duration, 'target_sla': 'Upon Request'},
-
+        {'id': 1, 'name': 'File Opening', 'subtitle': m1_sub, 'done': m1_done, 'assigned_officer': m1_officer, 'completed_at': m1_time, 'time_taken': m1_duration, 'target_sla': 'Same Day'},
+        {'id': 2, 'name': 'Customs Declaration', 'subtitle': m2_sub, 'done': m2_done, 'assigned_officer': m2_officer, 'completed_at': m2_time, 'time_taken': m2_duration, 'target_sla': '24 Hours'},
+        {'id': 3, 'name': m3_title, 'subtitle': m3_sub, 'done': m3_done, 'assigned_officer': m3_officer, 'completed_at': m3_time, 'time_taken': m3_duration, 'target_sla': '76 Hours SLA'},
+        {'id': 4, 'name': 'Physical Verification', 'subtitle': m4_sub, 'done': m4_done, 'assigned_officer': m4_officer, 'completed_at': m4_time, 'time_taken': m4_duration, 'target_sla': '1-2 Days'},
+        {'id': 5, 'name': 'Port Clearance & Gate Exit', 'subtitle': m5_sub, 'done': m5_done, 'assigned_officer': m5_officer, 'completed_at': m5_time, 'time_taken': m5_duration, 'target_sla': '24 Hours'},
+        {'id': 6, 'name': 'Malkia Yard Arrival', 'subtitle': m6_sub, 'done': m6_done, 'assigned_officer': m6_officer, 'completed_at': m6_time, 'time_taken': m6_duration, 'target_sla': 'Same Day'},
+        {'id': 7, 'name': 'Customer Handover', 'subtitle': m7_sub, 'done': m7_done, 'assigned_officer': m7_officer, 'completed_at': m7_time, 'time_taken': m7_duration, 'target_sla': 'Upon Request'},
     ]
 
-
-
     # Assign active/current flag
-
     if is_completed:
-
         for m in milestones:
-
             m['done'] = True
-
             m['current'] = False
-
     else:
-
         found_current = False
-
         for m in milestones:
-
             if not m['done'] and not found_current:
-
                 m['current'] = True
-
                 found_current = True
-
             else:
-
                 m['current'] = False
-
-
 
     return milestones
 
