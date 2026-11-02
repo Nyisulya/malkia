@@ -1053,6 +1053,8 @@ def job_detail_view(request, job_id):
     documents = job.documents.all().select_related('uploaded_by', 'stage')
 
     expenses = job.expenses.all().select_related('requester', 'approver')
+    if get_user_role(request.user) == UserRole.CEO and not request.user.is_superuser:
+        expenses = expenses.exclude(approval_status='REQUESTED')
 
     invoices = job.invoices.all()
 
@@ -4010,6 +4012,11 @@ def finance_pending_payments_view(request):
 
     expenses = ExpenseVoucher.objects.all().select_related('job', 'job__customer', 'requester', 'approver').order_by('-requested_at')
 
+    _role = get_user_role(request.user)
+    _ceo_only = (_role == UserRole.CEO and not request.user.is_superuser)
+    if _ceo_only:
+        expenses = expenses.exclude(approval_status='REQUESTED')
+
 
 
     if query:
@@ -4060,7 +4067,7 @@ def finance_pending_payments_view(request):
         all_active_vouchers = ExpenseVoucher.objects.filter(approval_status='VERIFIED', is_paid=False)
     else:
         all_active_vouchers = ExpenseVoucher.objects.filter(Q(approval_status__in=['REQUESTED', 'VERIFIED']) | Q(approval_status='APPROVED', is_paid=False))
-    requested_count = ExpenseVoucher.objects.filter(approval_status='REQUESTED').count()
+    requested_count = 0 if _ceo_only else ExpenseVoucher.objects.filter(approval_status='REQUESTED').count()
     verified_count = ExpenseVoucher.objects.filter(approval_status='VERIFIED').count()
 
     pending_duty_jobs = JobShipment.objects.filter(
@@ -4772,6 +4779,9 @@ def expense_approval_action(request, voucher_id):
 
         # 2. MAMLAKA YA CEO: Idhinisha & Toa Fedha kutoka Akaunti ya Ofisi / Cash
         elif decision in ['APPROVE', 'PAY']:
+            if voucher.approval_status != 'VERIFIED':
+                messages.error(request, "This voucher must be verified by Finance before it can be approved.")
+                return redirect(next_url)
             is_authorized = (user_role in [UserRole.CEO, UserRole.ADMIN] or request.user.is_superuser)
             if not is_authorized:
                 messages.error(
