@@ -599,7 +599,12 @@ def dashboard_view(request):
     # Pending approvals for current role
 
     # Pending approvals for current role (CEO disburses, Finance audits & forwards)
-    if is_ceo or is_admin:
+    if is_ceo and not is_admin:
+        # CEO strictly sees vouchers that have already been audited & verified by Finance!
+        pending_expenses = ExpenseVoucher.objects.filter(
+            approval_status='VERIFIED', is_paid=False
+        ).select_related('job', 'job__customer', 'requester', 'audited_by').order_by('-requested_at')
+    elif is_admin:
         pending_expenses = ExpenseVoucher.objects.filter(
             approval_status__in=['VERIFIED', 'REQUESTED'], is_paid=False
         ).select_related('job', 'job__customer', 'requester', 'audited_by').order_by('-requested_at')
@@ -4031,8 +4036,16 @@ def finance_pending_payments_view(request):
 
 
 
+    role = get_user_role(request.user)
+    is_ceo = (role == UserRole.CEO)
+    is_admin = (role == UserRole.ADMIN or request.user.is_superuser)
+
     if status_filter == 'pending':
-        expenses = expenses.filter(Q(approval_status__in=['REQUESTED', 'VERIFIED']) | Q(approval_status='APPROVED', is_paid=False))
+        if is_ceo and not is_admin:
+            # CEO strictly sees vouchers verified by Finance awaiting CEO payout
+            expenses = expenses.filter(approval_status='VERIFIED', is_paid=False)
+        else:
+            expenses = expenses.filter(Q(approval_status__in=['REQUESTED', 'VERIFIED']) | Q(approval_status='APPROVED', is_paid=False))
     elif status_filter == 'requested':
         expenses = expenses.filter(approval_status='REQUESTED')
     elif status_filter == 'verified':
@@ -4043,7 +4056,10 @@ def finance_pending_payments_view(request):
         expenses = expenses.filter(is_paid=True)
 
     # Breakdown metrics by payment type according to spec
-    all_active_vouchers = ExpenseVoucher.objects.filter(Q(approval_status__in=['REQUESTED', 'VERIFIED']) | Q(approval_status='APPROVED', is_paid=False))
+    if is_ceo and not is_admin:
+        all_active_vouchers = ExpenseVoucher.objects.filter(approval_status='VERIFIED', is_paid=False)
+    else:
+        all_active_vouchers = ExpenseVoucher.objects.filter(Q(approval_status__in=['REQUESTED', 'VERIFIED']) | Q(approval_status='APPROVED', is_paid=False))
     requested_count = ExpenseVoucher.objects.filter(approval_status='REQUESTED').count()
     verified_count = ExpenseVoucher.objects.filter(approval_status='VERIFIED').count()
 

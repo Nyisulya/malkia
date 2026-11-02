@@ -424,8 +424,25 @@
                     </td>
                     <td style="white-space:nowrap;">
                         {% if not exp.is_paid and exp.approval_status != 'REJECTED' %}
-                            {% if is_ceo or is_admin %}
-                            <!-- CEO DISBURSEMENT ACTION (SOLE AUTHORITY TO RELEASE OFFICE FUNDS) -->
+                            {% if is_ceo and not is_admin %}
+                            {% if exp.approval_status == 'REQUESTED' %}
+                            <span class="badge-pill badge-delayed" style="font-size:0.72rem;font-weight:700;">
+                                <i class="fa-solid fa-clock"></i> Awaiting Finance Audit
+                            </span>
+                            {% else %}
+                            <!-- CEO DISBURSEMENT ACTION (ONLY AFTER FINANCE VERIFIES) -->
+                            <form action="{% url 'expense_approval' exp.id %}" method="POST" style="display:inline-flex;gap:0.35rem;align-items:center;">
+                                {% csrf_token %}
+                                <input type="hidden" name="payment_method" value="BANK">
+                                <button type="submit" name="decision" value="APPROVE" class="btn-header-action btn-primary" style="background:#16A34A;padding:0.35rem 0.8rem;font-size:0.75rem;font-weight:800;" title="Approve and disburse payment from office funds">
+                                    <i class="fa-solid fa-money-bill-transfer"></i> Approve &amp; Disburse
+                                </button>
+                                <button type="submit" name="decision" value="REJECT" class="btn-header-action btn-outline" style="color:#DC2626;border-color:#FCA5A5;padding:0.35rem 0.65rem;font-size:0.75rem;font-weight:700;">
+                                    <i class="fa-solid fa-xmark"></i> Reject
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% elif is_admin %}
                             <form action="{% url 'expense_approval' exp.id %}" method="POST" style="display:inline-flex;gap:0.35rem;align-items:center;">
                                 {% csrf_token %}
                                 <input type="hidden" name="payment_method" value="BANK">

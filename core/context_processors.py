@@ -7,7 +7,7 @@ def global_stats(request):
     try:
         total_staff_count = UserProfile.objects.count()
         active_jobs_count = JobShipment.objects.filter(status__in=['ACTIVE', 'DELAYED']).count()
-        pending_expenses_count = ExpenseVoucher.objects.filter(approval_status__in=['REQUESTED', 'VERIFIED']).count()
+        pending_expenses_count = ExpenseVoucher.objects.filter(approval_status__in=['REQUESTED', 'VERIFIED'], is_paid=False).count()
         unpaid_invoices_count = ClientInvoice.objects.filter(status__in=['ISSUED', 'PARTIALLY_PAID', 'OVERDUE']).count()
         overdue_stages_count = JobStageInstance.objects.filter(
             status__in=['IN_PROGRESS', 'DELAYED', 'BLOCKED']
@@ -79,6 +79,12 @@ def global_stats(request):
             is_dispatch = False
             is_driver = False
             is_admin = (user_role == UserRole.ADMIN or request.user.is_superuser)
+            if is_ceo and not is_admin:
+                # CEO only gets badged for vouchers verified by Finance awaiting CEO payout
+                pending_expenses_count = ExpenseVoucher.objects.filter(approval_status='VERIFIED', is_paid=False).count()
+            elif is_finance:
+                # Finance gets badged for field requests needing review & audit
+                pending_expenses_count = ExpenseVoucher.objects.filter(approval_status='REQUESTED').count()
 
             if is_port:
                 field_today_jobs_count = JobShipment.objects.filter(
