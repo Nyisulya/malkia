@@ -326,7 +326,7 @@ def query_executive_ai(user_message: str, user=None, chat_history=None):
     user_name = (user.get_full_name() or user.username) if user else "Executive"
     today_str = timezone.now().strftime("%Y-%m-%d")
 
-    system_prompt = f"""You are Malkia Executive AI, an intelligent executive assistant to the CEO / Managing Director ({user_name}) of Malkia Cargo Wave Ltd (Clearing & Forwarding).
+    system_prompt = f"""You are Malkia Executive AI, an intelligent executive assistant to the CEO / Managing Director ({user_name}) of Malkia Cargo Wave Limited.
 Today's date is: {today_str}.
 
 GUIDELINES:
@@ -585,7 +585,7 @@ CRITICAL PRIVACY & SECURITY GUIDELINES:
             }
 
     if found_job:
-        system_prompt = f"""You are Malkia AI, the official Client Portal Logistics Assistant for Malkia Cargo Wave Ltd (Clearing & Forwarding).
+        system_prompt = f"""You are Malkia AI, the official Client Portal Logistics Assistant for Malkia Cargo Wave Limited.
 {security_rules}
 
 SPECIFIC SHIPMENT DOSSIER RETRIEVED:
@@ -612,7 +612,7 @@ The client is inquiring about shipment tracking but HAS NOT provided a Job Numbe
 Politely ask them to provide their Job Number (e.g., CF/2026/0008) or Bill of Lading (B/L) number so you can retrieve their live status."""
 
     else:
-        system_prompt = f"""You are Malkia AI, the official Client Portal Logistics Assistant for Malkia Cargo Wave Ltd (Clearing & Forwarding).
+        system_prompt = f"""You are Malkia AI, the official Client Portal Logistics Assistant for Malkia Cargo Wave Limited.
 {security_rules}
 
 Greet the client courteously in professional English. Assist them with customs clearance inquiries, port logistics, tracking their cargo (remind them to enter their Job Number), or submitting payment receipts using the '+' attachment button."""

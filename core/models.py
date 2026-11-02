@@ -1,6 +1,7 @@
 import os
 from decimal import Decimal
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
@@ -506,8 +507,8 @@ class JobShipment(models.Model):
     @classmethod
     def generate_next_job_number(cls):
         year = timezone.now().year
-        prefix = f"MF/{year}/"
-        last_job = cls.objects.filter(job_number__startswith=prefix).order_by('-job_number').first()
+        prefix = f"MCW/{year}/"
+        last_job = cls.objects.filter(Q(job_number__startswith=prefix) | Q(job_number__startswith=f"MF/{year}/")).order_by('-job_number').first()
         if last_job:
             try:
                 seq = int(last_job.job_number.split('/')[-1]) + 1
@@ -524,7 +525,7 @@ class JobShipment(models.Model):
 
     @property
     def boss_file_name(self):
-        """Boss/CEO sees MF/YYYY/XXXX with the BL Number in front."""
+        """Boss/CEO sees MCW/YYYY/XXXX with the BL Number in front."""
         if self.bl_number:
             return f"{self.job_number} — {self.bl_number}"
         return self.job_number

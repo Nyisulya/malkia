@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Unified File Pack - BL {{ job.bl_number|default:job.job_number }} | Malkia C&F</title>
+    <title>Unified File Pack - BL {{ job.bl_number|default:job.job_number }} | Malkia Cargo Wave Limited</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { box-sizing: border-box; }
@@ -234,7 +234,7 @@
 
         <div style="font-size:0.84rem;line-height:1.55;margin:1rem 0;padding:0.85rem;border:1px dashed #64748B;background:#FAFAFA;">
             <strong>DECLARATION &amp; AUTHORISATION:</strong><br>
-            I/We, <strong>{{ job.customer.company_name }}</strong> (TIN: <strong>{{ job.customer.tin_number|default:"N/A" }}</strong>), hereby authorize <strong>MALKIA FREIGHT &amp; LOGISTICS LTD</strong> to act as our lawful Customs Clearing and Forwarding Agent before the Tanzania Revenue Authority (TRA) for the clearance of the above-described motor vehicle under BL No. <strong>{{ job.bl_number|default:"N/A" }}</strong> and Chassis No. <strong>{{ job.chassis_number|default:"N/A" }}</strong> under <strong>{{ job.get_clearance_mode_display }}</strong> mode.
+            I/We, <strong>{{ job.customer.company_name }}</strong> (TIN: <strong>{{ job.customer.tin_number|default:"N/A" }}</strong>), hereby authorize <strong>MALKIA CARGO WAVE LIMITED</strong> to act as our lawful Customs Clearing Agent before the Tanzania Revenue Authority (TRA) for the clearance of the above-described motor vehicle under BL No. <strong>{{ job.bl_number|default:"N/A" }}</strong> and Chassis No. <strong>{{ job.chassis_number|default:"N/A" }}</strong> under <strong>{{ job.get_clearance_mode_display }}</strong> mode.
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
@@ -247,7 +247,7 @@
             </div>
             <div style="border:1px solid #94A3B8;padding:0.85rem;min-height:110px;">
                 <div style="font-weight:800;font-size:0.78rem;text-transform:uppercase;color:#334155;margin-bottom:1.8rem;">
-                    Authorized Agent (MALKIA FREIGHT &amp; LOGISTICS LTD)
+                    Authorized Agent (MALKIA CARGO WAVE LIMITED)
                 </div>
                 <div style="border-bottom:1px dotted #475569;margin-bottom:0.3rem;"></div>
                 <div style="font-size:0.74rem;color:#64748B;">Authorized Signature &amp; Official Company Stamp</div>
@@ -261,8 +261,8 @@
     <div class="page">
         <div style="border-bottom:3px solid #1E3A8A;padding-bottom:0.85rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:flex-end;">
             <div>
-                <h1 style="margin:0;font-size:1.35rem;font-weight:900;color:#1E3A8A;">MALKIA FREIGHT &amp; LOGISTICS LTD</h1>
-                <div style="font-size:0.8rem;font-weight:700;color:#475569;">CUSTOMS CLEARING, FORWARDING &amp; MOTOR VEHICLE LOGISTICS</div>
+                <h1 style="margin:0;font-size:1.35rem;font-weight:900;color:#1E3A8A;">MALKIA CARGO WAVE LIMITED</h1>
+                <div style="font-size:0.8rem;font-weight:700;color:#475569;">MOTOR VEHICLE LOGISTICS &amp; PORT CLEARANCE</div>
             </div>
             <div style="text-align:right;font-size:0.78rem;color:#334155;">
                 <strong>Dar es Salaam, Tanzania</strong><br>
@@ -289,7 +289,7 @@
         </div>
 
         <p style="font-size:0.88rem;line-height:1.6;">
-            We, <strong>MALKIA FREIGHT &amp; LOGISTICS LTD</strong>, acting as the appointed Clearing and Forwarding Agent for our client <strong>{{ job.customer.company_name }}</strong>, kindly submit this official request for TBS clearance and standards verification for the motor vehicle detailed below:
+            We, <strong>MALKIA CARGO WAVE LIMITED</strong>, acting as the appointed Customs Port Clearance Agent for our client <strong>{{ job.customer.company_name }}</strong>, kindly submit this official request for TBS clearance and standards verification for the motor vehicle detailed below:
         </p>
 
         <table class="info-table" style="margin:1rem 0;">
@@ -321,7 +321,7 @@
 
         <div style="margin-top:2rem;font-size:0.88rem;">
             Yours faithfully,<br>
-            <strong>FOR: MALKIA FREIGHT &amp; LOGISTICS LTD</strong>
+            <strong>FOR: MALKIA CARGO WAVE LIMITED</strong>
             <div style="margin-top:2.2rem;border-bottom:1px dotted #475569;width:260px;"></div>
             <div style="font-size:0.8rem;color:#475569;margin-top:0.3rem;">
                 {{ job.documentation_officer.get_full_name|default:job.documentation_officer.username|default:"Authorized Documentation Officer" }}<br>

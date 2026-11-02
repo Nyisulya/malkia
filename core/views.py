@@ -1176,7 +1176,7 @@ def job_detail_view(request, job_id):
         {
             'category': 'AGENCY_FEE',
             'title': 'Clearing Agency Fee (Malkia Agency)',
-            'subtitle': 'Malkia C&F service & clearance fee',
+            'subtitle': 'Malkia Cargo Wave service fee',
             'icon': 'fa-handshake',
             'color': '#16A34A',
             'billed': agency_billed,
@@ -4317,7 +4317,7 @@ def finance_transactions_view(request):
 
                 'vessel_name': job.vessel_name,
 
-                'notes': p.notes or "Payment received in full settlement of customs clearing and forwarding charges.",
+                'notes': p.notes or "Payment received in full settlement of Malkia Cargo Wave port and customs clearance charges.",
 
             })
 
@@ -8156,14 +8156,14 @@ def test_resend_email_action(request):
             return redirect('/settings/?tab=email')
 
         from .email_service import send_resend_email
-        active_sender = sender_name or SystemConfig.get_value('RESEND_SENDER_NAME', 'Malkia Freight & Logistics')
+        active_sender = sender_name or SystemConfig.get_value('RESEND_SENDER_NAME', 'Malkia Cargo Wave Limited')
         active_from = from_email or SystemConfig.get_value('RESEND_FROM_EMAIL', 'onboarding@resend.dev')
 
         subject = f"Uthibitisho wa Mfumo wa Barua Pepe (Resend) - {active_sender}"
         html_body = f"""
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background: #FFFFFF;">
             <div style="background: linear-gradient(135deg, #0F766E 0%, #0F172A 100%); padding: 24px; color: #FFFFFF; text-align: center;">
-                <h1 style="margin: 0; font-size: 21px; font-weight: 800;">MALKIA FREIGHT &amp; LOGISTICS</h1>
+                <h1 style="margin: 0; font-size: 21px; font-weight: 800;">MALKIA CARGO WAVE LIMITED</h1>
                 <p style="margin: 6px 0 0 0; font-size: 13px; color: #99F6E4;">Mfumo Rasmi wa Taarifa kwa Wateja (Email &amp; SMS)</p>
             </div>
             <div style="padding: 24px; color: #1E293B; line-height: 1.6;">

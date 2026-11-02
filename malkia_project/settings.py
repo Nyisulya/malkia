@@ -180,7 +180,7 @@ HIVE_MODEL = os.getenv('HIVE_MODEL', 'deepseek-ai/deepseek-v4.1-flash')
 
 # Resend Email Configuration (Primary - Fast HTTP API)
 RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
-RESEND_SENDER_NAME = os.getenv('RESEND_SENDER_NAME', 'Malkia Freight & Logistics')
+RESEND_SENDER_NAME = os.getenv('RESEND_SENDER_NAME', 'Malkia Cargo Wave Limited')
 RESEND_FROM_EMAIL = os.getenv('RESEND_FROM_EMAIL', 'info@nyisu.com')
 
 # Standard Django SMTP Settings (Gmail Fallback)
