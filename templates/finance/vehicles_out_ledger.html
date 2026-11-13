@@ -186,17 +186,17 @@
                         <i class="fa-solid fa-calendar-days" style="color: #2563EB;"></i> Period:
                     </span>
                     <a href="?year=2026{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}"
-                        class="btn-header-action {% if selected_year == '2026' and not date_from %}btn-primary{% else %}btn-outline{% endif %}"
+                        class="btn-header-action {% if selected_year == '2026' and not date_from and not date_to %}btn-primary{% else %}btn-outline{% endif %}"
                         style="font-size: 0.78rem; padding: 0.32rem 0.75rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
                         2026 (Active)
                     </a>
                     <a href="?year=2025{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}"
-                        class="btn-header-action {% if selected_year == '2025' and not date_from %}btn-primary{% else %}btn-outline{% endif %}"
+                        class="btn-header-action {% if selected_year == '2025' and not date_from and not date_to %}btn-primary{% else %}btn-outline{% endif %}"
                         style="font-size: 0.78rem; padding: 0.32rem 0.75rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
                         2025
                     </a>
                     <a href="?year=all{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}"
-                        class="btn-header-action {% if selected_year == 'all' and not date_from %}btn-primary{% else %}btn-outline{% endif %}"
+                        class="btn-header-action {% if selected_year == 'all' and not date_from and not date_to %}btn-primary{% else %}btn-outline{% endif %}"
                         style="font-size: 0.78rem; padding: 0.32rem 0.75rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
                         All Years
                     </a>
@@ -229,7 +229,7 @@
                     style="height: 34px; font-size: 0.8rem; padding: 0 0.95rem; border-radius: 8px; font-weight: 800; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;">
                     <i class="fa-solid fa-filter"></i> Filter
                 </button>
-                {% if search_q or date_from or selected_year != '2026' %}
+                {% if search_q or date_from or date_to or selected_year != '2026' or selected_status and selected_status != 'all' %}
                 <a href="?year=2026" class="btn-header-action btn-outline"
                     style="height: 34px; font-size: 0.78rem; padding: 0 0.75rem; border-radius: 8px; color: #DC2626; border-color: #FECACA; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;"
                     title="Reset to 2026">

@@ -604,20 +604,71 @@ def accountant_dashboard_view(request):
     now = timezone.now()
     current_year = now.year
 
-    period = request.GET.get('period', 'this_year').strip()
+    period = request.GET.get('period', '').strip()
     q = request.GET.get('q', '').strip()
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    parsed_date_from = None
+    parsed_date_to = None
+    if date_from_str:
+        try:
+            parsed_date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            parsed_date_from = None
+    if date_to_str:
+        try:
+            parsed_date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            parsed_date_to = None
 
     jobs_qs = JobShipment.objects.all().select_related('customer').prefetch_related('documents', 'invoices')
+    salaries_qs = SalaryPayment.objects.filter(status='PAID')
+    expenses_qs = OperatingExpense.objects.all()
+    invoices_qs = ClientInvoice.objects.all()
 
-    if period == 'today':
-        jobs_qs = jobs_qs.filter(created_at__date=timezone.localdate())
+    if parsed_date_from or parsed_date_to:
+        period = 'custom'
+        if parsed_date_from and parsed_date_to:
+            jobs_qs = jobs_qs.filter(created_at__date__gte=parsed_date_from, created_at__date__lte=parsed_date_to)
+            salaries_qs = salaries_qs.filter(payment_date__gte=parsed_date_from, payment_date__lte=parsed_date_to)
+            expenses_qs = expenses_qs.filter(date__gte=parsed_date_from, date__lte=parsed_date_to)
+            invoices_qs = invoices_qs.filter(issue_date__gte=parsed_date_from, issue_date__lte=parsed_date_to)
+            filter_label = f"Custom ({parsed_date_from.strftime('%d %b %Y')} to {parsed_date_to.strftime('%d %b %Y')})"
+        elif parsed_date_from:
+            jobs_qs = jobs_qs.filter(created_at__date__gte=parsed_date_from)
+            salaries_qs = salaries_qs.filter(payment_date__gte=parsed_date_from)
+            expenses_qs = expenses_qs.filter(date__gte=parsed_date_from)
+            invoices_qs = invoices_qs.filter(issue_date__gte=parsed_date_from)
+            filter_label = f"From {parsed_date_from.strftime('%d %b %Y')}"
+        else:
+            jobs_qs = jobs_qs.filter(created_at__date__lte=parsed_date_to)
+            salaries_qs = salaries_qs.filter(payment_date__lte=parsed_date_to)
+            expenses_qs = expenses_qs.filter(date__lte=parsed_date_to)
+            invoices_qs = invoices_qs.filter(issue_date__lte=parsed_date_to)
+            filter_label = f"Up to {parsed_date_to.strftime('%d %b %Y')}"
+    elif period == 'today':
+        today_date = timezone.localdate()
+        jobs_qs = jobs_qs.filter(created_at__date=today_date)
+        salaries_qs = salaries_qs.filter(payment_date=today_date)
+        expenses_qs = expenses_qs.filter(date=today_date)
+        invoices_qs = invoices_qs.filter(issue_date=today_date)
+        filter_label = f"Today ({today_date.strftime('%d %b %Y')})"
     elif period == 'this_month':
         jobs_qs = jobs_qs.filter(created_at__year=current_year, created_at__month=now.month)
+        salaries_qs = salaries_qs.filter(payment_date__year=current_year, payment_date__month=now.month)
+        expenses_qs = expenses_qs.filter(date__year=current_year, date__month=now.month)
+        invoices_qs = invoices_qs.filter(issue_date__year=current_year, issue_date__month=now.month)
+        filter_label = f"This Month ({now.strftime('%B %Y')})"
     elif period == 'all':
-        pass
+        filter_label = "All Time"
     else:
         period = 'this_year'
         jobs_qs = jobs_qs.filter(created_at__year=current_year)
+        salaries_qs = salaries_qs.filter(payment_date__year=current_year)
+        expenses_qs = expenses_qs.filter(date__year=current_year)
+        invoices_qs = invoices_qs.filter(issue_date__year=current_year)
+        filter_label = f"Year {current_year}"
 
     if q:
         jobs_qs = jobs_qs.filter(
@@ -665,27 +716,6 @@ def accountant_dashboard_view(request):
         status_param = 'all'
         displayed_jobs = all_jobs
 
-    # Salaries & Operating Overheads for selected period
-    salaries_qs = SalaryPayment.objects.filter(status='PAID')
-    expenses_qs = OperatingExpense.objects.all()
-    invoices_qs = ClientInvoice.objects.all()
-
-    if period == 'today':
-        today_date = timezone.localdate()
-        salaries_qs = salaries_qs.filter(payment_date=today_date)
-        expenses_qs = expenses_qs.filter(date=today_date)
-        invoices_qs = invoices_qs.filter(issue_date=today_date)
-    elif period == 'this_month':
-        salaries_qs = salaries_qs.filter(payment_date__year=current_year, payment_date__month=now.month)
-        expenses_qs = expenses_qs.filter(date__year=current_year, date__month=now.month)
-        invoices_qs = invoices_qs.filter(issue_date__year=current_year, issue_date__month=now.month)
-    elif period == 'all':
-        pass
-    else:  # this_year
-        salaries_qs = salaries_qs.filter(payment_date__year=current_year)
-        expenses_qs = expenses_qs.filter(date__year=current_year)
-        invoices_qs = invoices_qs.filter(issue_date__year=current_year)
-
     # Salaries net pay
     sum_salaries_paid = sum((s.net_pay or Decimal('0')) for s in salaries_qs)
     # Office operating expenses (exclude salaries to prevent double counting)
@@ -718,6 +748,9 @@ def accountant_dashboard_view(request):
 
     context = {
         'selected_period': period,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+        'filter_label': filter_label,
         'current_year': current_year,
         'search_q': q,
         'selected_status': status_param,
@@ -23234,11 +23267,34 @@ def finance_vehicles_out_view(request):
     """
     year_param = request.GET.get('year', '2026').strip()
     q = request.GET.get('q', '').strip()
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    parsed_date_from = None
+    parsed_date_to = None
+    if date_from_str:
+        try:
+            parsed_date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            parsed_date_from = None
+    if date_to_str:
+        try:
+            parsed_date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            parsed_date_to = None
 
     jobs = JobShipment.objects.all().select_related('customer').prefetch_related('documents').order_by('-created_at')
 
-    if year_param != 'all' and year_param.isdigit():
-        jobs = jobs.filter(created_at__year=int(year_param))
+    if parsed_date_from or parsed_date_to:
+        if parsed_date_from and parsed_date_to:
+            jobs = jobs.filter(created_at__date__gte=parsed_date_from, created_at__date__lte=parsed_date_to)
+        elif parsed_date_from:
+            jobs = jobs.filter(created_at__date__gte=parsed_date_from)
+        else:
+            jobs = jobs.filter(created_at__date__lte=parsed_date_to)
+    else:
+        if year_param != 'all' and year_param.isdigit():
+            jobs = jobs.filter(created_at__year=int(year_param))
 
     if q:
         jobs = jobs.filter(
@@ -23295,6 +23351,8 @@ def finance_vehicles_out_view(request):
         'jobs': displayed_jobs,
         'total_vehicles': total_vehicles,
         'selected_year': year_param,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
         'selected_status': status_param,
         'costed_count': costed_count,
         'in_progress_count': in_progress_count,
@@ -23384,11 +23442,35 @@ def finance_vehicles_out_export_excel(request):
 
     year_param = request.GET.get('year', '2026').strip()
     q = request.GET.get('q', '').strip()
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+    status_param = request.GET.get('status', 'all').strip().lower()
+
+    parsed_date_from = None
+    parsed_date_to = None
+    if date_from_str:
+        try:
+            parsed_date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            parsed_date_from = None
+    if date_to_str:
+        try:
+            parsed_date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            parsed_date_to = None
 
     jobs = JobShipment.objects.all().select_related('customer').order_by('created_at')
 
-    if year_param != 'all' and year_param.isdigit():
-        jobs = jobs.filter(created_at__year=int(year_param))
+    if parsed_date_from or parsed_date_to:
+        if parsed_date_from and parsed_date_to:
+            jobs = jobs.filter(created_at__date__gte=parsed_date_from, created_at__date__lte=parsed_date_to)
+        elif parsed_date_from:
+            jobs = jobs.filter(created_at__date__gte=parsed_date_from)
+        else:
+            jobs = jobs.filter(created_at__date__lte=parsed_date_to)
+    else:
+        if year_param != 'all' and year_param.isdigit():
+            jobs = jobs.filter(created_at__year=int(year_param))
 
     if q:
         jobs = jobs.filter(
@@ -23398,6 +23480,16 @@ def finance_vehicles_out_export_excel(request):
             Q(vehicle_model__icontains=q) |
             Q(customer__company_name__icontains=q)
         )
+
+    job_list = list(jobs)
+    if status_param == 'costed':
+        jobs = [j for j in job_list if j.costing_status == 'FULLY_COSTED']
+    elif status_param == 'in_progress':
+        jobs = [j for j in job_list if j.costing_status == 'IN_PROGRESS']
+    elif status_param == 'pending':
+        jobs = [j for j in job_list if j.costing_status == 'PENDING']
+    else:
+        jobs = job_list
 
     wb = openpyxl.Workbook()
     ws = wb.active
