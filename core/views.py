@@ -651,8 +651,19 @@ def accountant_dashboard_view(request):
     # Status counts
     costed_count = len([j for j in all_jobs if j.costing_status == 'FULLY_COSTED'])
     in_progress_count = len([j for j in all_jobs if j.costing_status == 'IN_PROGRESS'])
-    uncosted_vehicles = [j for j in all_jobs if (j.costing_status == 'UNCOSTED' or (j.cost_duty == 0 and j.cost_agent_fee == 0))]
-    uncosted_count = len(uncosted_vehicles)
+    uncosted_count = len([j for j in all_jobs if j.costing_status == 'PENDING'])
+
+    # Status filtering
+    status_param = request.GET.get('status', 'all').strip().lower()
+    if status_param == 'costed':
+        displayed_jobs = [j for j in all_jobs if j.costing_status == 'FULLY_COSTED']
+    elif status_param == 'in_progress':
+        displayed_jobs = [j for j in all_jobs if j.costing_status == 'IN_PROGRESS']
+    elif status_param == 'pending':
+        displayed_jobs = [j for j in all_jobs if j.costing_status == 'PENDING']
+    else:
+        status_param = 'all'
+        displayed_jobs = all_jobs
 
     # Salaries & Operating Overheads for selected period
     salaries_qs = SalaryPayment.objects.filter(status='PAID')
@@ -709,7 +720,8 @@ def accountant_dashboard_view(request):
         'selected_period': period,
         'current_year': current_year,
         'search_q': q,
-        'recent_jobs': all_jobs[:20],
+        'selected_status': status_param,
+        'recent_jobs': displayed_jobs[:20],
         'total_vehicles': total_vehicles,
         'costed_count': costed_count,
         'in_progress_count': in_progress_count,
@@ -23255,6 +23267,23 @@ def finance_vehicles_out_view(request):
     sum_total_direct_costs = sum(j.total_direct_costs for j in job_list)
     sum_total_with_fee = sum(j.total_disbursement_with_agent_fee for j in job_list)
 
+    # Status counts
+    costed_count = len([j for j in job_list if j.costing_status == 'FULLY_COSTED'])
+    in_progress_count = len([j for j in job_list if j.costing_status == 'IN_PROGRESS'])
+    pending_count = len([j for j in job_list if j.costing_status == 'PENDING'])
+
+    # Status filtering
+    status_param = request.GET.get('status', 'all').strip().lower()
+    if status_param == 'costed':
+        displayed_jobs = [j for j in job_list if j.costing_status == 'FULLY_COSTED']
+    elif status_param == 'in_progress':
+        displayed_jobs = [j for j in job_list if j.costing_status == 'IN_PROGRESS']
+    elif status_param == 'pending':
+        displayed_jobs = [j for j in job_list if j.costing_status == 'PENDING']
+    else:
+        status_param = 'all'
+        displayed_jobs = job_list
+
     # Attach document URLs for quick view in ledger
     for j in job_list:
         bl_doc = j.documents.filter(document_type='BILL_OF_LADING').first()
@@ -23263,9 +23292,13 @@ def finance_vehicles_out_view(request):
         j.inv_doc_url = inv_doc.file.url if inv_doc and inv_doc.file else None
 
     context = {
-        'jobs': job_list,
+        'jobs': displayed_jobs,
         'total_vehicles': total_vehicles,
         'selected_year': year_param,
+        'selected_status': status_param,
+        'costed_count': costed_count,
+        'in_progress_count': in_progress_count,
+        'pending_count': pending_count,
         'search_q': q,
         'sum_cif_usd': sum_cif_usd,
         'sum_duty': sum_duty,

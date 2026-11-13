@@ -166,27 +166,60 @@
         </div>
     </div>
 
+    <!-- STATUS FILTER TABS -->
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.85rem;">
+        <div style="display: inline-flex; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 0.25rem; border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+            <a href="?year={{ selected_year }}&status=all{% if search_q %}&q={{ search_q }}{% endif %}{% if date_from %}&date_from={{ date_from }}&date_to={{ date_to }}{% endif %}"
+                style="padding: 0.35rem 0.85rem; border-radius: 7px; font-size: 0.8rem; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; {% if selected_status == 'all' or not selected_status %}background: #0F172A; color: #FFFFFF;{% else %}color: #64748B; background: transparent;{% endif %}">
+                <span>All</span>
+                <span style="font-size: 0.72rem; padding: 1px 6px; border-radius: 10px; {% if selected_status == 'all' or not selected_status %}background: rgba(255,255,255,0.2); color: #FFFFFF;{% else %}background: #F1F5F9; color: #475569;{% endif %}">{{ total_vehicles }}</span>
+            </a>
+            <a href="?year={{ selected_year }}&status=costed{% if search_q %}&q={{ search_q }}{% endif %}{% if date_from %}&date_from={{ date_from }}&date_to={{ date_to }}{% endif %}"
+                style="padding: 0.35rem 0.85rem; border-radius: 7px; font-size: 0.8rem; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; {% if selected_status == 'costed' %}background: #047857; color: #FFFFFF;{% else %}color: #047857; background: transparent;{% endif %}">
+                <i class="fa-solid fa-circle-check" style="font-size: 0.75rem;"></i>
+                <span>Costed</span>
+                <span style="font-size: 0.72rem; padding: 1px 6px; border-radius: 10px; {% if selected_status == 'costed' %}background: rgba(255,255,255,0.25); color: #FFFFFF;{% else %}background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;{% endif %}">{{ costed_count }}</span>
+            </a>
+            <a href="?year={{ selected_year }}&status=in_progress{% if search_q %}&q={{ search_q }}{% endif %}{% if date_from %}&date_from={{ date_from }}&date_to={{ date_to }}{% endif %}"
+                style="padding: 0.35rem 0.85rem; border-radius: 7px; font-size: 0.8rem; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; {% if selected_status == 'in_progress' %}background: #D97706; color: #FFFFFF;{% else %}color: #D97706; background: transparent;{% endif %}">
+                <i class="fa-solid fa-spinner" style="font-size: 0.75rem;"></i>
+                <span>In Progress</span>
+                <span style="font-size: 0.72rem; padding: 1px 6px; border-radius: 10px; {% if selected_status == 'in_progress' %}background: rgba(255,255,255,0.25); color: #FFFFFF;{% else %}background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A;{% endif %}">{{ in_progress_count }}</span>
+            </a>
+            <a href="?year={{ selected_year }}&status=pending{% if search_q %}&q={{ search_q }}{% endif %}{% if date_from %}&date_from={{ date_from }}&date_to={{ date_to }}{% endif %}"
+                style="padding: 0.35rem 0.85rem; border-radius: 7px; font-size: 0.8rem; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; {% if selected_status == 'pending' %}background: #E11D48; color: #FFFFFF;{% else %}color: #E11D48; background: transparent;{% endif %}">
+                <i class="fa-solid fa-clock" style="font-size: 0.75rem;"></i>
+                <span>Pending</span>
+                <span style="font-size: 0.72rem; padding: 1px 6px; border-radius: 10px; {% if selected_status == 'pending' %}background: rgba(255,255,255,0.25); color: #FFFFFF;{% else %}background: #FFF1F2; color: #E11D48; border: 1px solid #FECDD3;{% endif %}">{{ pending_count }}</span>
+            </a>
+        </div>
+        
+        <div style="font-size: 0.78rem; color: #64748B; font-weight: 600;">
+            Showing <strong style="color: #0F172A;">{{ jobs|length }}</strong> vehicle{{ jobs|length|pluralize }}
+        </div>
+    </div>
+
     <!-- FILTER & SEARCH BAR -->
     <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 0.85rem 1.15rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
         <form method="GET" action="" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem;">
-            
+            <input type="hidden" name="status" value="{{ selected_status|default:'all' }}">
             <!-- YEAR PRESETS & CUSTOM RANGE -->
             <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
                 <div style="display: flex; align-items: center; gap: 0.35rem;">
                     <span style="font-size: 0.78rem; font-weight: 800; color: #64748B; text-transform: uppercase;">
                         <i class="fa-solid fa-calendar-days" style="color: #2563EB;"></i> Period:
                     </span>
-                    <a href="?year=2026{% if search_q %}&q={{ search_q }}{% endif %}"
+                    <a href="?year=2026{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}"
                         class="btn-header-action {% if selected_year == '2026' and not date_from %}btn-primary{% else %}btn-outline{% endif %}"
                         style="font-size: 0.78rem; padding: 0.32rem 0.75rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
                         2026 (Active)
                     </a>
-                    <a href="?year=2025{% if search_q %}&q={{ search_q }}{% endif %}"
+                    <a href="?year=2025{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}"
                         class="btn-header-action {% if selected_year == '2025' and not date_from %}btn-primary{% else %}btn-outline{% endif %}"
                         style="font-size: 0.78rem; padding: 0.32rem 0.75rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
                         2025
                     </a>
-                    <a href="?year=all{% if search_q %}&q={{ search_q }}{% endif %}"
+                    <a href="?year=all{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}"
                         class="btn-header-action {% if selected_year == 'all' and not date_from %}btn-primary{% else %}btn-outline{% endif %}"
                         style="font-size: 0.78rem; padding: 0.32rem 0.75rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
                         All Years
