@@ -41,15 +41,7 @@
                     </span>
                     {% endif %}
 
-                    {% if job.clearance_mode == 'BOND' %}
-                    <span class="badge-pill" style="background:#FEF3C7;color:#92400E;border:1.5px solid #F59E0B;font-weight:800;font-size:0.76rem;">
-                        <i class="fa-solid fa-warehouse"></i> TRA: IN-BOND
-                    </span>
-                    {% else %}
-                    <span class="badge-pill" style="background:#ECFDF5;color:#065F46;border:1.5px solid #10B981;font-weight:800;font-size:0.76rem;">
-                        <i class="fa-solid fa-money-bill-transfer"></i> TRA: DIRECT CLEARANCE
-                    </span>
-                    {% endif %}
+                    <span class="badge-pill" style="background:#ECFDF5;color:#065F46;border:1.5px solid #10B981;font-weight:800;font-size:0.76rem;"><i class="fa-solid fa-ship"></i> Direct Port Clearance</span>
 
                     <span class="badge-pill {% if job.status == 'COMPLETED' %}badge-completed{% elif job.status == 'DELAYED' %}badge-delayed{% else %}badge-active{% endif %}" style="font-size:0.76rem;font-weight:700;">
                         <span class="badge-dot"></span> {{ job.get_status_display }}

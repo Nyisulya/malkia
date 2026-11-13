@@ -8,15 +8,27 @@ from datetime import timedelta
 
 
 class UserRole(models.TextChoices):
-    CEO = 'CEO', 'CEO / Managing Director'
-    OPERATIONS_MGR = 'OPERATIONS_MGR', 'Yard & Customer Handover'
-    DOC_OFFICER = 'DOC_OFFICER', 'Documentation Officer'
-    CLEARING_OFFICER = 'CLEARING_OFFICER', 'Customs Declarer'
-    FINANCE = 'FINANCE', 'Accounts / Finance'
-    PORT_OFFICER = 'PORT_OFFICER', 'Port / Operations Officer'
-    DISPATCH_OFFICER = 'DISPATCH_OFFICER', 'Logistics / Dispatch Officer'
-    DRIVER = 'DRIVER', 'Driver'
-    ADMIN = 'ADMIN', 'System Administrator'
+    # 3 Primary System Roles (Operations, Financial, CEO)
+    OPERATIONS = 'OPERATIONS', 'Operations'
+    FINANCE = 'FINANCE', 'Financial / Accountant'
+    CEO = 'CEO', 'CEO / Management'
+
+    # Backward compatibility aliases
+    OPERATIONS_MGR = 'OPERATIONS_MGR', 'Operations'
+    DOC_OFFICER = 'DOC_OFFICER', 'Operations'
+    CLEARING_OFFICER = 'CLEARING_OFFICER', 'Operations'
+    PORT_OFFICER = 'PORT_OFFICER', 'Operations'
+    DISPATCH_OFFICER = 'DISPATCH_OFFICER', 'Operations'
+    DRIVER = 'DRIVER', 'Operations'
+    ADMIN = 'ADMIN', 'CEO / Administrator'
+
+    @classmethod
+    def primary_choices(cls):
+        return [
+            (cls.OPERATIONS.value, 'Operations'),
+            (cls.FINANCE.value, 'Financial / Accountant'),
+            (cls.CEO.value, 'CEO / Management'),
+        ]
 
 
 class UserProfile(models.Model):
@@ -272,6 +284,24 @@ class JobShipment(models.Model):
     actual_arrival_date = models.DateField(null=True, blank=True, verbose_name="Actual Vessel Arrival")
     final_destination = models.CharField(max_length=150, default='Dar es Salaam, Tanzania', blank=True)
     cargo_description = models.TextField(blank=True, default='', help_text="Detailed description of vehicle/cargo")
+    vehicle_make = models.CharField(max_length=60, blank=True, default='', verbose_name="Vehicle Make (e.g. TOYOTA)")
+    vehicle_model = models.CharField(max_length=80, blank=True, default='', verbose_name="Vehicle Model (e.g. VANGUARD)")
+    registration_year = models.CharField(max_length=20, blank=True, default='', verbose_name="Registration / Manufacture Year (e.g. 2008)")
+    cif_usd = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="CIF Buying Price / Invoice ($ USD)")
+
+    # Direct Payment Costs (Accountant Ledger - Matching VEHICLES OUT format)
+    cost_duty = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Duty (TRA Customs)")
+    cost_do = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="D/O (Shipping Line Delivery Order)")
+    cost_wharfage = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Wharfage (TPA Port)")
+    cost_tiss_wharfage = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Tiss Wharfage")
+    cost_handling = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Handling (Port / ICD)")
+    cost_facilitation = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Facilitation")
+    cost_transport = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Transport")
+    cost_agent_fee = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Agent Fee (Malkia Agency)")
+    cost_fuel = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Fuel (Mafuta)")
+    cost_ferry_charges = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Ferry Charges")
+    cost_other = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Other / Miscellaneous Costs (TBS, Demurrage, Storage, etc.)")
+    cost_other_description = models.CharField(max_length=255, blank=True, verbose_name="Description for Other Costs")
 
     # 1. DOCUMENT RECEIVE (Checklist from Client - No scanning required)
     doc_receive_method = models.CharField(max_length=20, choices=DOC_RECEIVE_METHODS, default='PHYSICAL', verbose_name="Document Receive Method")
@@ -281,6 +311,7 @@ class JobShipment(models.Model):
     doc_tbs_cert_received = models.BooleanField(default=False, verbose_name="TBS Certificate")
     doc_export_cert_received = models.BooleanField(default=False, verbose_name="Export Certificate")
     doc_received_at = models.DateTimeField(null=True, blank=True)
+    doc_intake_finalized = models.BooleanField(default=False, verbose_name="Documents Saved and Finalized")
     box_number = models.CharField(max_length=50, blank=True, verbose_name="Box Number (Upon File Completion)")
 
     # 2. OPENING FILE, CLEARANCE MODE (DIRECT VS BOND) & COMPANY-GENERATED DOCUMENTS (C41 & TBS LETTER)
@@ -406,17 +437,11 @@ class JobShipment(models.Model):
         if st and st.name_en:
             return st.name_en
         stage_names = {
-            1: "Document Receipt & Opening",
-            2: "TRA Declaration (TANCIS)",
-            3: "Assessment & Duty Notice",
-            4: "Customs Duty Payment",
-            5: "Physical Verification",
-            6: "Delivery Order (D/O)",
-            7: "Shipping Line Release",
-            8: "Port Invoice & Assessment",
-            9: "Port Charges Payment",
-            10: "In-Bond Yard Transfer",
-            11: "Gate Pass & Handover"
+            1: "File Opening & Doc Intake",
+            2: "Customs Declaration (TANSAD)",
+            3: "Port Clearance & Gate Exit",
+            4: "Vehicle Arrival (Yard / Office)",
+            5: "Customer Handover"
         }
         return stage_names.get(self.current_stage_number, f"Stage {self.current_stage_number}")
 
@@ -433,6 +458,107 @@ class JobShipment(models.Model):
     @property
     def received_docs_count(self):
         return sum(1 for _, received in self.received_docs_checklist if received)
+
+    @property
+    def display_make_model(self):
+        parts = [p for p in [self.vehicle_make, self.vehicle_model] if p]
+        if parts:
+            return " ".join(parts)
+        return self.cargo_description or "Motor Vehicle"
+
+    @property
+    def total_direct_costs(self):
+        """
+        Direct disbursements paid by Malkia office on behalf of the client.
+        NOTE: Excludes TRA Customs Duty, as the client pays TRA directly via Government Control Number.
+        """
+        from decimal import Decimal
+        return (
+            (self.cost_do or Decimal('0')) +
+            (self.cost_wharfage or Decimal('0')) +
+            (self.cost_tiss_wharfage or Decimal('0')) +
+            (self.cost_handling or Decimal('0')) +
+            (self.cost_facilitation or Decimal('0')) +
+            (self.cost_transport or Decimal('0')) +
+            (self.cost_fuel or Decimal('0')) +
+            (self.cost_ferry_charges or Decimal('0')) +
+            (self.cost_other or Decimal('0'))
+        )
+
+    @property
+    def costing_status(self):
+        """
+        Calculates progressive costing status:
+        - 'PENDING': No disbursements and no agent fee entered yet.
+        - 'IN_PROGRESS': Partial disbursements or Duty entered, but clearance ongoing / Agent fee not entered.
+        - 'FULLY_COSTED': Disbursements entered and Agent Fee finalized.
+        """
+        has_direct = (self.total_direct_costs or 0) > 0
+        has_fee = (self.cost_agent_fee or 0) > 0
+        if not has_direct and not has_fee:
+            return 'PENDING'
+        elif has_direct and not has_fee:
+            return 'IN_PROGRESS'
+        else:
+            return 'FULLY_COSTED'
+
+    @property
+    def total_disbursement_with_agent_fee(self):
+        from decimal import Decimal
+        return self.total_direct_costs + (self.cost_agent_fee or Decimal('0'))
+
+    @property
+    def signed_tra_doc(self):
+        return self.documents.filter(document_type__in=['TRA_AUTH_SIGNED', 'C41_SIGNED']).order_by('-uploaded_at').first()
+
+    @property
+    def signed_c41_doc(self):
+        return self.signed_tra_doc
+
+    @property
+    def signed_tbs_doc(self):
+        return self.documents.filter(document_type='TBS_SIGNED').order_by('-uploaded_at').first()
+
+    @property
+    def c41_doc(self):
+        return self.documents.filter(document_type__in=['FORM_C41', 'C41_SIGNED']).order_by('-uploaded_at').first()
+
+    @property
+    def signed_handover_doc(self):
+        return self.documents.filter(document_type='HANDOVER_SIGNED').order_by('-uploaded_at').first()
+
+    @property
+    def latest_invoice(self):
+        return self.invoices.order_by('-created_at').first()
+
+    @property
+    def bl_doc(self):
+        return self.documents.filter(document_type='BILL_OF_LADING').order_by('-uploaded_at').first()
+
+    @property
+    def invoice_doc(self):
+        return self.documents.filter(document_type='COMMERCIAL_INVOICE').order_by('-uploaded_at').first()
+
+    @property
+    def packing_list_doc(self):
+        return self.documents.filter(document_type='PACKING_LIST').order_by('-uploaded_at').first()
+
+    @property
+    def tbs_cert_doc(self):
+        return self.documents.filter(document_type='TBS_CERT').order_by('-uploaded_at').first()
+
+    @property
+    def export_cert_doc(self):
+        return self.documents.filter(document_type='EXPORT_CERT').order_by('-uploaded_at').first()
+
+    @property
+    def other_documents(self):
+        standard_types = [
+            'TRA_AUTH_SIGNED', 'C41_SIGNED', 'TBS_SIGNED', 'FORM_C41',
+            'BILL_OF_LADING', 'COMMERCIAL_INVOICE', 'PACKING_LIST',
+            'TBS_CERT', 'EXPORT_CERT'
+        ]
+        return self.documents.exclude(document_type__in=standard_types).order_by('-uploaded_at')
 
     @property
     def tanesw_hours_elapsed(self):
@@ -713,21 +839,37 @@ def job_document_upload_path(instance, filename):
 
 class JobDocument(models.Model):
     DOC_TYPES = [
+        # 1. Office Generated Letters (Signed & Scanned Back)
+        ('TRA_AUTH_SIGNED', 'Signed TRA Authorization Letter'),
+        ('TBS_SIGNED', 'Signed TBS Inspection Letter'),
+        ('C41_SIGNED', 'Signed Form C41 (from TRA)'),  # Backwards compatibility
+
+        # 2. External Customs & Statutory Documents
+        ('FORM_C41', 'Form C41 (from TRA Portal)'),
+        ('DECLARATION_ASSESSMENT', 'Customs Assessment / TANSAD'),
+        ('DUTY_PAYMENT_RECEIPT', 'TRA Duty Payment Receipt'),
+        ('TAX_CLEARANCE', 'Tax Clearance Certificate'),
+        ('TBS_CERT', 'TBS Inspection Certificate'),
+
+        # 3. Shipping & Carrier Intake Documents
         ('BILL_OF_LADING', 'Bill of Lading (BL)'),
         ('COMMERCIAL_INVOICE', 'Commercial Invoice'),
         ('PACKING_LIST', 'Packing List'),
-        ('TBS_CERT', 'TBS Inspection Certificate'),
-        ('EXPORT_CERT', 'Export Certificate'),
+        ('EXPORT_CERT', 'Export Certificate / Logbook'),
         ('CERTIFICATE_OF_ORIGIN', 'Certificate of Origin'),
-        ('DECLARATION_ASSESSMENT', 'Customs Assessment / Declaration'),
-        ('DUTY_PAYMENT_RECEIPT', 'Duty Payment Receipt'),
-        ('DELIVERY_ORDER', 'Delivery Order (DO)'),
+
+        # 4. Port & Gate Release
+        ('DELIVERY_ORDER', 'Delivery Order (D/O)'),
         ('RELEASE_ORDER', 'Release Order'),
-        ('PORT_INVOICE', 'Port Invoice (TPA/TICTS)'),
+        ('PORT_INVOICE', 'Port Charges Invoice (TPA/TICTS/DPW)'),
         ('PORT_PAYMENT_RECEIPT', 'Port Charges Receipt'),
         ('GATE_PASS', 'Gate Pass & Inspection Sheet'),
-        ('CONTAINER_PHOTO', 'Container / Seal Photo'),
+        ('CONTAINER_PHOTO', 'Container / Vehicle Photo'),
+
+        # 5. Handover & Identification
+        ('HANDOVER_SIGNED', 'Signed Vehicle Handover Note / POD'),
         ('PROOF_OF_DELIVERY', 'Proof of Delivery (POD)'),
+        ('CLIENT_ID', 'Client ID Copy / Power of Attorney'),
         ('OTHER', 'Other Supporting Document'),
     ]
 
@@ -874,7 +1016,14 @@ class ClientInvoice(models.Model):
 
     @property
     def balance_due(self):
-        return max(Decimal('0.00'), self.total_amount - self.amount_paid)
+        from decimal import Decimal
+        tot = self.total_amount if self.total_amount is not None else Decimal('0.00')
+        paid = self.amount_paid if self.amount_paid is not None else Decimal('0.00')
+        if not isinstance(tot, Decimal):
+            tot = Decimal(str(tot))
+        if not isinstance(paid, Decimal):
+            paid = Decimal(str(paid))
+        return max(Decimal('0.00'), tot - paid)
 
     def calculate_total(self):
         return (
@@ -924,6 +1073,194 @@ class ClientPayment(models.Model):
 
     def __str__(self):
         return f"Payment of TSh {self.amount:,.2f} for {self.invoice.invoice_number} ({self.payment_reference})"
+
+
+class Employee(models.Model):
+    STATUS_CHOICES = [
+        ('ACTIVE', 'Active'),
+        ('ON_LEAVE', 'On Leave'),
+        ('SUSPENDED', 'Suspended'),
+        ('TERMINATED', 'Terminated / Left'),
+    ]
+    EMPLOYMENT_TYPE_CHOICES = [
+        ('FULL_TIME', 'Full Time'),
+        ('PART_TIME', 'Part Time'),
+        ('CONTRACT', 'Contract'),
+        ('CASUAL', 'Casual / Daily'),
+    ]
+
+    employee_number = models.CharField(max_length=20, unique=True, blank=True)
+    full_name = models.CharField(max_length=150)
+    position = models.CharField(max_length=100, verbose_name="Job Title / Position")
+    department = models.CharField(max_length=100, blank=True)
+    employment_type = models.CharField(max_length=20, choices=EMPLOYMENT_TYPE_CHOICES, default='FULL_TIME')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE')
+    date_joined = models.DateField(default=timezone.now)
+
+    phone = models.CharField(max_length=30, blank=True)
+    email = models.EmailField(blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=10, choices=[('MALE', 'Male'), ('FEMALE', 'Female')], blank=True)
+    physical_address = models.CharField(max_length=255, blank=True)
+
+    basic_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    allowances = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Monthly Allowances")
+    no_deductions = models.BooleanField(default=False, verbose_name="Flat pay — no PAYE/NSSF/WCF")
+
+    bank_name = models.CharField(max_length=100, blank=True)
+    bank_branch = models.CharField(max_length=100, blank=True)
+    bank_account_number = models.CharField(max_length=50, blank=True)
+    nida_number = models.CharField(max_length=40, blank=True, verbose_name="NIDA Number")
+    tin_number = models.CharField(max_length=40, blank=True, verbose_name="TIN Number")
+    nssf_number = models.CharField(max_length=40, blank=True, verbose_name="NSSF Number")
+
+    emergency_contact_name = models.CharField(max_length=150, blank=True)
+    emergency_contact_phone = models.CharField(max_length=30, blank=True)
+    notes = models.TextField(blank=True)
+
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='employee_record')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_employees')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['full_name']
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if not self.employee_number:
+            self.employee_number = f"MCW-EMP-{self.id:04d}"
+            super().save(update_fields=['employee_number'])
+
+    @property
+    def initials(self):
+        parts = [part for part in (self.full_name or '').split() if part]
+        if not parts:
+            return '?'
+        return (parts[0][0] + (parts[-1][0] if len(parts) > 1 else '')).upper()
+
+    @property
+    def monthly_gross(self):
+        return (self.basic_salary or 0) + (self.allowances or 0)
+
+    @property
+    def is_on_payroll(self):
+        return self.status in ('ACTIVE', 'ON_LEAVE')
+
+    def __str__(self):
+        return f"{self.full_name} ({self.employee_number})"
+
+
+class OperatingExpenseCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.CharField(max_length=255, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_expense_categories')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name_plural = 'Operating expense categories'
+
+    def __str__(self):
+        return self.name
+
+
+class OperatingExpense(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('BANK', 'Direct Bank Transfer / Cheque'),
+        ('CASH', 'Cashier Cash / Petty Cash'),
+        ('MOBILE_MONEY', 'Mobile Money (M-Pesa / TigoPesa)'),
+    ]
+
+    date = models.DateField(default=timezone.now)
+    category = models.ForeignKey(OperatingExpenseCategory, on_delete=models.PROTECT, related_name='expenses')
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    payee = models.CharField(max_length=150, verbose_name="Paid To / Payee")
+    payment_method = models.CharField(max_length=30, choices=PAYMENT_METHOD_CHOICES, default='BANK')
+    payment_reference = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True)
+    receipt_file = models.FileField(upload_to='operating_expenses/%Y/%m/', null=True, blank=True)
+    recorded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='recorded_operating_expenses')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date', '-id']
+
+    def __str__(self):
+        return f"{self.category.name} - TSh {self.amount:,.2f} ({self.date})"
+
+
+class SalaryPayment(models.Model):
+    STATUS_CHOICES = [
+        ('DRAFT', 'Draft / Not Paid'),
+        ('PAID', 'Paid'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='salary_payments')
+    period = models.DateField(help_text="First day of the salary month")
+    basic_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    allowances = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    paye = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="PAYE")
+    nssf = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="NSSF (10%)")
+    wcf = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="WCF (0.5%) — employer cost")
+    sdl = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="SDL (3.5%) — employer cost")
+    salary_advance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Salary Advance")
+    loan_deduction = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Loan Deduction")
+    other_deductions = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    deduction_notes = models.CharField(max_length=255, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
+    payment_date = models.DateField(null=True, blank=True)
+    payment_method = models.CharField(max_length=30, choices=OperatingExpense.PAYMENT_METHOD_CHOICES, default='BANK')
+    payment_reference = models.CharField(max_length=100, blank=True)
+    receipt_file = models.FileField(upload_to='salaries/%Y/%m/', null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    operating_expense = models.OneToOneField(OperatingExpense, on_delete=models.SET_NULL, null=True, blank=True, related_name='salary_payment')
+    recorded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='recorded_salary_payments')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-period', 'employee__full_name']
+        constraints = [
+            models.UniqueConstraint(fields=['employee', 'period'], name='unique_salary_per_employee_period'),
+        ]
+
+    @property
+    def gross_pay(self):
+        return (self.basic_salary or 0) + (self.allowances or 0)
+
+    @property
+    def taxable_amount(self):
+        gross = self.gross_pay or Decimal('0.00')
+        nssf = self.nssf or Decimal('0.00')
+        return max(Decimal('0.00'), gross - nssf)
+
+    @property
+    def pay_before_personal_deductions(self):
+        gross = self.gross_pay or Decimal('0.00')
+        nssf = self.nssf or Decimal('0.00')
+        paye = self.paye or Decimal('0.00')
+        return gross - nssf - paye
+
+    @property
+    def total_deductions(self):
+        return (self.paye or 0) + (self.nssf or 0) + (self.salary_advance or 0) + (self.loan_deduction or 0) + (self.other_deductions or 0)
+
+    @property
+    def employer_statutory_cost(self):
+        return (self.wcf or 0) + (self.sdl or 0)
+
+    @property
+    def net_pay(self):
+        return self.gross_pay - self.total_deductions
+
+    def __str__(self):
+        return f"{self.employee.full_name} - {self.period:%B %Y} (TSh {self.net_pay:,.2f})"
 
 
 class AuditLog(models.Model):

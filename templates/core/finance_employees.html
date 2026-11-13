@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Employee Registry | Malkia C&amp;F{% endblock %}
+
+{% block extra_css %}
+<style>
+    .employee-avatar {
+        width: 38px; height: 38px; border-radius: 50%;
+        background: linear-gradient(135deg, #0F766E, #0284C7);
+        color: #FFFFFF; font-weight: 800; font-size: 0.78rem;
+        display: inline-flex; align-items: center; justify-content: center;
+        flex-shrink: 0; letter-spacing: 0.02em;
+    }
+    .status-dot {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        font-size: 0.68rem; font-weight: 800; padding: 0.18rem 0.55rem; border-radius: 999px;
+        white-space: nowrap;
+    }
+    .money-cell { font-variant-numeric: tabular-nums; white-space: nowrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1240px;margin:0 auto;padding-bottom:3rem;">
+
+    <div class="page-header-box">
+        <div>
+            <h2 class="page-title">
+                <i class="fa-solid fa-users" style="color:var(--brand-primary);margin-right:0.4rem;"></i>
+                Employee Registry
+            </h2>
+            <p class="page-subtitle">
+                Record your staff, their salary and bank account — payroll and direct bank payment in one simple place.
+            </p>
+        </div>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+            <a href="{% url 'payroll' %}" class="btn-header-action btn-outline">
+                <i class="fa-solid fa-money-check-dollar"></i> Open Payroll
+            </a>
+            <button type="button" class="btn-header-action btn-primary" onclick="openModal('employeeModal')">
+                <i class="fa-solid fa-user-plus"></i> Add Employee
+            </button>
+        </div>
+    </div>
+
+    <!-- SUMMARY CHIPS -->
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:0.75rem 1.25rem;display:flex;align-items:center;gap:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+            <div style="width:36px;height:36px;border-radius:8px;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:1rem;">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div>
+                <div style="font-size:0.68rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;">Total Staff</div>
+                <div style="font-size:1.15rem;font-weight:900;color:#0F172A;">{{ total_employees }} <span style="font-size:0.72rem;font-weight:600;color:#16A34A;">({{ active_employees }} Active)</span></div>
+            </div>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:0.75rem 1.25rem;display:flex;align-items:center;gap:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+            <div style="width:36px;height:36px;border-radius:8px;background:#F0FDF4;color:#16A34A;display:flex;align-items:center;justify-content:center;font-size:1rem;">
+                <i class="fa-solid fa-building-columns"></i>
+            </div>
+            <div>
+                <div style="font-size:0.68rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;">Bank Details Ready</div>
+                <div style="font-size:1.15rem;font-weight:900;color:#0F172A;">{{ bank_configured_count }} <span style="font-size:0.72rem;font-weight:600;color:#64748B;">/ {{ total_employees }} Staff</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER -->
+    <div class="card-panel no-print" style="padding:1.1rem;margin-bottom:1.5rem;background:#FFFFFF;">
+        <form method="GET" action="{% url 'employees' %}" style="display:flex;align-items:flex-end;flex-wrap:wrap;gap:0.9rem;">
+            <div style="flex:1;min-width:240px;">
+                <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Search Staff</label>
+                <input type="text" name="q" class="form-control" placeholder="Name, employee number, position or phone..." value="{{ search_query }}">
+            </div>
+            <div>
+                <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Status</label>
+                <select name="status" class="form-control" onchange="this.form.submit()" style="min-width:170px;">
+                    <option value="">All Employees</option>
+                    <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>On Payroll</option>
+                    <option value="TERMINATED" {% if status_filter == 'TERMINATED' %}selected{% endif %}>Left / Not on Payroll</option>
+                </select>
+            </div>
+            <div style="display:flex;gap:0.5rem;">
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.6rem 1rem;">
+                    <i class="fa-solid fa-magnifying-glass"></i> Filter
+                </button>
+                {% if search_query or status_filter %}
+                <a href="{% url 'employees' %}" class="btn-header-action btn-outline" style="padding:0.6rem 0.9rem;">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- EMPLOYEE TABLE -->
+    <div class="card-panel" id="employeesTableContainer" data-async-container style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
+        <div style="padding:1rem 1.25rem;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+            <div>
+                <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
+                    <i class="fa-solid fa-address-card" style="color:var(--brand-primary);"></i> Staff Directory
+                </h3>
+                <p style="margin:0.25rem 0 0 0;font-size:0.8rem;color:var(--text-muted);">Click a staff member to open the full profile and salary history.</p>
+            </div>
+            <span style="font-size:0.75rem;font-weight:800;color:#0F766E;background:#CCFBF1;padding:0.25rem 0.65rem;border-radius:999px;">
+                <i class="fa-solid fa-list"></i> {{ employees|length }} Employee{% if employees|length != 1 %}s{% endif %}
+            </span>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
+                <thead>
+                    <tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;color:#64748B;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">
+                        <th style="padding:0.7rem 0.9rem;font-weight:800;">Employee</th>
+                        <th style="padding:0.7rem 0.9rem;font-weight:800;">Contact</th>
+                        <th style="padding:0.7rem 0.9rem;font-weight:800;">Bank Details</th>
+                        <th style="padding:0.7rem 0.9rem;font-weight:800;">NSSF No.</th>
+                        <th style="padding:0.7rem 0.9rem;font-weight:800;">Status</th>
+                        <th style="padding:0.7rem 0.9rem;font-weight:800;text-align:right;" class="no-print">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in employees %}
+                    <tr style="border-bottom:1px solid #F1F5F9;">
+                        <td style="padding:0.65rem 0.9rem;vertical-align:middle;">
+                            <div style="display:flex;align-items:center;gap:0.6rem;">
+                                <span class="employee-avatar">{{ emp.initials }}</span>
+                                <div>
+                                    <a href="{% url 'employee_detail' emp.id %}" style="font-weight:800;color:#0F172A;text-decoration:none;">{{ emp.full_name }}</a>
+                                    <div style="font-size:0.73rem;color:#64748B;">
+                                        {{ emp.employee_number }} · {{ emp.position }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding:0.65rem 0.9rem;vertical-align:middle;">
+                            <div style="font-size:0.78rem;color:#334155;font-weight:600;">{{ emp.phone|default:"—" }}</div>
+                            {% if emp.email %}<div style="font-size:0.71rem;color:#64748B;">{{ emp.email }}</div>{% endif %}
+                        </td>
+                        <td style="padding:0.65rem 0.9rem;vertical-align:middle;">
+                            <div style="font-size:0.76rem;color:#334155;font-weight:700;">{{ emp.bank_name|default:"—" }}</div>
+                            <div style="font-size:0.73rem;color:#64748B;font-family:monospace;">{% if emp.bank_account_number %}A/C {{ emp.bank_account_number }}{% endif %}</div>
+                        </td>
+                        <td style="padding:0.65rem 0.9rem;vertical-align:middle;font-family:monospace;font-size:0.78rem;color:#475569;">
+                            {{ emp.nssf_number|default:"—" }}
+                        </td>
+                        <td style="padding:0.65rem 0.9rem;vertical-align:middle;">
+                            {% if emp.status == 'ACTIVE' %}
+                            <span class="status-dot" style="background:#DCFCE7;color:#166534;"><i class="fa-solid fa-circle-check"></i> Active</span>
+                            {% elif emp.status == 'ON_LEAVE' %}
+                            <span class="status-dot" style="background:#EFF6FF;color:#1E40AF;"><i class="fa-solid fa-umbrella-beach"></i> On Leave</span>
+                            {% else %}
+                            <span class="status-dot" style="background:#F1F5F9;color:#64748B;"><i class="fa-solid fa-right-from-bracket"></i> Left</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:0.65rem 0.9rem;vertical-align:middle;text-align:right;white-space:nowrap;" class="no-print">
+                            <a href="{% url 'employee_detail' emp.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.55rem;font-size:0.72rem;" title="View profile">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                            <a href="{% url 'employees' %}?edit={{ emp.id }}" class="btn-header-action btn-outline" style="padding:0.35rem 0.55rem;font-size:0.72rem;" title="Edit employee">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="padding:2.5rem 1rem;text-align:center;color:#94A3B8;">
+                            <i class="fa-solid fa-users" style="font-size:2rem;display:block;margin-bottom:0.6rem;color:#CBD5E1;"></i>
+                            No employees found.
+                            <div style="margin-top:0.5rem;">
+                                <button type="button" class="btn-header-action btn-primary" onclick="openModal('employeeModal')">
+                                    <i class="fa-solid fa-user-plus"></i> Add employee
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <!-- SMART PAGINATION -->
+            {% include 'includes/pagination.html' with page_obj=page_obj extra_querystring=extra_querystring item_label="staff members" %}
+        </div>
+    </div>
+</div>
+
+<!-- EMPLOYEE CREATE / EDIT MODAL -->
+<div id="employeeModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:720px;">
+        <form action="{% if editing %}{% url 'employee_update' editing.id %}{% else %}{% url 'employee_create' %}{% endif %}" method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">{% if editing %}Edit Employee — {{ editing.full_name }}{% else %}Add New Employee{% endif %}</h3>
+                    <p style="font-size:0.8rem;color:var(--text-muted);margin:0.2rem 0 0 0;">Only the basics needed to pay salary directly to the employee's bank account.</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('employeeModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group" style="flex:2;">
+                        <label>Full Name *</label>
+                        <input type="text" name="full_name" class="form-control" required placeholder="e.g. Felician Joseph" value="{% if editing %}{{ editing.full_name }}{% endif %}">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Phone Number</label>
+                        <input type="text" name="phone" class="form-control" placeholder="+255 7XX XXX XXX" value="{% if editing %}{{ editing.phone }}{% endif %}">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex:2;">
+                        <label>Job Title / Position *</label>
+                        <input type="text" name="position" class="form-control" required placeholder="e.g. Clearing Officer" value="{% if editing %}{{ editing.position }}{% endif %}">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Basic Salary (TSh) *</label>
+                        <input type="number" step="0.01" min="0" name="basic_salary" class="form-control" required placeholder="e.g. 800000" value="{% if editing %}{{ editing.basic_salary|floatformat:2 }}{% endif %}">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Allowances (TSh)</label>
+                        <input type="number" step="0.01" min="0" name="allowances" class="form-control" placeholder="0" value="{% if editing %}{{ editing.allowances|floatformat:2 }}{% endif %}">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>NSSF Number</label>
+                        <input type="text" name="nssf_number" class="form-control" placeholder="e.g. 47988959" value="{% if editing %}{{ editing.nssf_number }}{% endif %}">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Bank Name</label>
+                        <input type="text" name="bank_name" class="form-control" placeholder="e.g. CRDB Bank" value="{% if editing %}{{ editing.bank_name }}{% endif %}">
+                    </div>
+                    <div class="form-group" style="flex:2;">
+                        <label>Bank Account Number</label>
+                        <input type="text" name="bank_account_number" class="form-control" placeholder="Salary is paid here" value="{% if editing %}{{ editing.bank_account_number }}{% endif %}">
+                    </div>
+                </div>
+
+                <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:0.75rem 0.9rem;margin-top:0.35rem;">
+                    <label style="display:flex;align-items:center;gap:0.55rem;font-weight:800;font-size:0.82rem;color:#0F172A;cursor:pointer;margin:0;">
+                        <input type="checkbox" name="on_payroll" style="width:17px;height:17px;accent-color:#0F766E;" {% if not editing or editing.status == 'ACTIVE' or editing.status == 'ON_LEAVE' %}checked{% endif %}>
+                        On Payroll — generate salary every month
+                    </label>
+                    <div style="font-size:0.73rem;color:#64748B;margin-top:0.3rem;padding-left:1.7rem;">
+                        Uncheck this only when the employee leaves, so they stop appearing in monthly payroll.
+                    </div>
+                </div>
+
+                <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:0.75rem 0.9rem;margin-top:0.6rem;">
+                    <label style="display:flex;align-items:center;gap:0.55rem;font-weight:800;font-size:0.82rem;color:#0F172A;cursor:pointer;margin:0;">
+                        <input type="checkbox" name="no_deductions" style="width:17px;height:17px;accent-color:#B45309;" {% if editing and editing.no_deductions %}checked{% endif %}>
+                        Flat pay — no PAYE / NSSF / WCF
+                    </label>
+                    <div style="font-size:0.73rem;color:#64748B;margin-top:0.3rem;padding-left:1.7rem;">
+                        Tick only for staff paid a fixed net amount with no statutory deductions (e.g. directors).
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('employeeModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-circle-check"></i> {% if editing %}Save Changes{% else %}Add Employee{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function initEmployeeModal() {
+        {% if editing %}
+        if (window.openModal) {
+            openModal('employeeModal');
+        } else {
+            document.addEventListener('DOMContentLoaded', function () { openModal('employeeModal'); });
+        }
+        {% endif %}
+    })();
+</script>
+{% endblock %}

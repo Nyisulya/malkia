@@ -67,7 +67,14 @@
             background-color: #FFFFFF !important;
         }
 
-        /* 1. TABLE HEAD: RANGI YA KIJANI (CORPORATE EMERALD/TEAL GREEN) */
+        /* 1. TABLE HEAD: RANGI YA KIJANI (CORPORATE EMERALD/TEAL GREEN) - FIXED/STICKY HEADER */
+        .table-responsive {
+            overflow-x: auto !important;
+            overflow-y: auto !important;
+            max-height: 68vh;
+            position: relative;
+        }
+
         table.modern-table thead, 
         table.data-table thead,
         table.clean-table thead,
@@ -90,6 +97,9 @@
         .card-body table:not(.idcard-info-table):not(.print-table) th,
         main table:not(.idcard-info-table):not(.print-table) th,
         .app-main table:not(.idcard-info-table):not(.print-table) th {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 10 !important;
             background-color: #0F766E !important;
             color: #FFFFFF !important;
             font-weight: 700 !important;
@@ -102,6 +112,7 @@
             border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
             white-space: nowrap !important;
             vertical-align: middle !important;
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.08) !important;
         }
 
         table.modern-table th a, 
@@ -227,493 +238,254 @@
 
 
             <ul class="nav-menu">
-
-                {% if is_doc %}
-
-                <!-- =========================================================
-
-                     1. DOCUMENTATION OFFICER MODULE (EXACTLY 4 BUTTONS)
-
-                     ========================================================= -->
-
-                <li class="nav-section-title">Documentation Module</li>
+                {% if is_finance %}
+                <!-- ========================================================
+                     1. FINANCIAL / ACCOUNTANT NAVIGATION (100% OPERATIONAL ISOLATION)
+                     ======================================================== -->
+                <li class="nav-section-title">Finance &amp; Accounts</li>
 
                 <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-
                     <a href="{% url 'dashboard' %}">
-
-                        <i class="fa-solid fa-gauge-high"></i>
-
-                        <span>Dashboard</span>
-
+                        <i class="fa-solid fa-gauge-high" style="color:#059669;"></i>
+                        <span>Accountant Dashboard</span>
                     </a>
-
                 </li>
 
-                <li class="nav-item {% if request.resolver_match.url_name == 'job_create' %}active{% endif %}">
-
-                    <a href="{% url 'job_create' %}">
-
-                        <i class="fa-solid fa-file-circle-plus"></i>
-
-                        <span>New Intake</span>
-
+                <li class="nav-item {% if request.resolver_match.url_name in 'finance_vehicles_out,finance_vehicles_out_export' %}active{% endif %}">
+                    <a href="{% url 'finance_vehicles_out' %}">
+                        <i class="fa-solid fa-table-list" style="color:#0284C7;"></i>
+                        <span>Vehicles Out Ledger</span>
+                        <span class="nav-badge" style="background:#0284C7;color:#FFFFFF;font-weight:800;font-size:0.65rem;">LEDGER</span>
                     </a>
-
-                </li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'document_register' %}active{% endif %}">
-
-                    <a href="{% url 'document_register' %}">
-
-                        <i class="fa-solid fa-book-bookmark"></i>
-
-                        <span>Document Register</span>
-
-                        {% if global_active_jobs %}
-
-                        <span class="nav-badge badge-amber">{{ global_active_jobs }}</span>
-
-                        {% endif %}
-
-                    </a>
-
-                </li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'customers_list' %}active{% endif %}">
-
-                    <a href="{% url 'customers_list' %}">
-
-                        <i class="fa-solid fa-building-user"></i>
-
-                        <span>Clients</span>
-
-                    </a>
-
-                </li>
-
-                {% elif is_ops %}
-
-                <!-- =========================================================
-
-                     2. YARD RECEPTION & CUSTOMER HANDOVER MODULE (4 CLEAN BUTTONS)
-
-                     ========================================================= -->
-
-                <li class="nav-section-title">Yard & Handover</li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'yard_operations' and not request.GET.tab %}active{% endif %}">
-
-                    <a href="{% url 'yard_operations' %}">
-
-                        <i class="fa-solid fa-warehouse"></i>
-
-                        <span>Yard Vehicles</span>
-
-                        {% if global_yard_ready_count %}
-
-                        <span class="nav-badge badge-teal">{{ global_yard_ready_count }}</span>
-
-                        {% endif %}
-
-                    </a>
-
-                </li>
-
-                <li class="nav-item {% if request.GET.tab == 'bond' %}active{% endif %}">
-
-                    <a href="{% url 'yard_operations' %}?tab=bond">
-
-                        <i class="fa-solid fa-lock"></i>
-
-                        <span>In-Bond Storage</span>
-
-                        {% if global_bond_count %}
-
-                        <span class="nav-badge badge-amber">{{ global_bond_count }}</span>
-
-                        {% endif %}
-
-                    </a>
-
                 </li>
 
                 <li class="nav-item {% if request.resolver_match.url_name == 'finance_billing' %}active{% endif %}">
-
                     <a href="{% url 'finance_billing' %}">
-
-                        <i class="fa-solid fa-receipt"></i>
-
-                        <span>Customer Payments</span>
-
-                        {% if global_unpaid_invoices_count %}
-
-                        <span class="nav-badge badge-rose">{{ global_unpaid_invoices_count }}</span>
-
+                        <i class="fa-solid fa-file-invoice-dollar" style="color:#8B5CF6;"></i>
+                        <span>Client Billing &amp; Invoices</span>
+                        {% if global_unpaid_invoices %}
+                        <span class="nav-badge" style="background:#8B5CF6;color:#FFFFFF;">{{ global_unpaid_invoices }}</span>
                         {% endif %}
-
                     </a>
-
-                </li>
-
-                <li class="nav-item {% if request.GET.tab == 'delivered' or request.resolver_match.url_name == 'jobs_archive' %}active{% endif %}">
-
-                    <a href="{% url 'yard_operations' %}?tab=delivered">
-
-                        <i class="fa-solid fa-circle-check"></i>
-
-                        <span>Delivered Archive</span>
-
-                    </a>
-
-                </li>
-
-                {% elif is_clearing %}
-
-                <!-- =========================================================
-
-                     3. CUSTOMS DECLARER MODULE (CLEAN 3 BUTTONS)
-
-                     ========================================================= -->
-
-                <li class="nav-section-title">Customs & Declarations</li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-
-                    <a href="{% url 'dashboard' %}">
-
-                        <i class="fa-solid fa-gauge-high"></i>
-
-                        <span>Dashboard</span>
-
-                    </a>
-
-                </li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'customs_pending_declarations' or request.resolver_match.url_name == 'customs_assessments' %}active{% endif %}">
-
-                    <a href="{% url 'customs_pending_declarations' %}">
-
-                        <i class="fa-solid fa-stamp"></i>
-
-                        <span>TANCIS Declarations</span>
-
-                        {% if global_pending_receipts_count %}
-
-                        <span class="nav-badge" style="background:#2563EB;color:#fff;font-weight:700;">{{ global_pending_receipts_count }} Receipt</span>
-
-                        {% elif global_pending_declarations %}
-
-                        <span class="nav-badge badge-amber">{{ global_pending_declarations }}</span>
-
-                        {% endif %}
-
-                    </a>
-
-                </li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'customs_archive' %}active{% endif %}">
-
-                    <a href="{% url 'customs_archive' %}">
-
-                        <i class="fa-solid fa-box-archive"></i>
-
-                        <span>Customs Archive</span>
-
-                    </a>
-
-                </li>
-
-                {% elif is_finance %}
-
-                <!-- =========================================================
-
-                     4. FINANCE OFFICER MODULE (EXACTLY 4 BUTTONS ACCORDING TO SPEC)
-
-                     ========================================================= -->
-
-                <li class="nav-section-title">Finance & Accounts</li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-
-                    <a href="{% url 'dashboard' %}">
-
-                        <i class="fa-solid fa-gauge-high"></i>
-
-                        <span>Finance Dashboard</span>
-
-                    </a>
-
-                </li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'finance_pending_payments' or request.resolver_match.url_name == 'finance' %}active{% endif %}">
-
-                    <a href="{% url 'finance_pending_payments' %}">
-
-                        <i class="fa-solid fa-clock-rotate-left"></i>
-
-                        <span>Pending Payments</span>
-
-                        {% if global_pending_expenses %}
-
-                        <span class="nav-badge badge-rose">{{ global_pending_expenses }}</span>
-
-                        {% endif %}
-
-                    </a>
-
                 </li>
 
                 <li class="nav-item {% if request.resolver_match.url_name == 'finance_transactions' %}active{% endif %}">
-
                     <a href="{% url 'finance_transactions' %}">
-
-                        <i class="fa-solid fa-receipt"></i>
-
-                        <span>Transactions</span>
-
+                        <i class="fa-solid fa-clock-rotate-left" style="color:#475569;"></i>
+                        <span>Financial Transactions</span>
                     </a>
+                </li>
 
+                <li class="nav-item {% if request.resolver_match.url_name in 'operating_expenses,operating_expense_create,operating_expense_update' %}active{% endif %}">
+                    <a href="{% url 'operating_expenses' %}">
+                        <i class="fa-solid fa-money-bill-transfer" style="color:#E11D48;"></i>
+                        <span>Operating Expenses</span>
+                        <span class="nav-badge" style="background:#E11D48;color:#FFFFFF;font-weight:800;font-size:0.65rem;">NEW</span>
+                    </a>
+                </li>
+
+                <li class="nav-section-title" style="margin-top:0.75rem;font-size:0.68rem;letter-spacing:0.05em;color:#94A3B8;">HR &amp; Payroll</li>
+
+                <li class="nav-item {% if request.resolver_match.url_name in 'employees,employee_detail,employee_create,employee_update' %}active{% endif %}">
+                    <a href="{% url 'employees' %}">
+                        <i class="fa-solid fa-users" style="color:#0D9488;"></i>
+                        <span>Employees</span>
+                    </a>
+                </li>
+
+                <li class="nav-item {% if request.resolver_match.url_name in 'payroll,payroll_generate,payroll_update,payroll_delete,payslip' %}active{% endif %}">
+                    <a href="{% url 'payroll' %}">
+                        <i class="fa-solid fa-money-check-dollar" style="color:#7C3AED;"></i>
+                        <span>Salary Payroll</span>
+                        <span class="nav-badge" style="background:#7C3AED;color:#FFFFFF;font-weight:800;font-size:0.65rem;">NEW</span>
+                    </a>
+                </li>
+
+                <li class="nav-section-title" style="margin-top:0.75rem;font-size:0.68rem;letter-spacing:0.05em;color:#94A3B8;">Directory</li>
+
+                <li class="nav-item {% if request.resolver_match.url_name == 'customers_list' %}active{% endif %}">
+                    <a href="{% url 'customers_list' %}">
+                        <i class="fa-solid fa-building-user"></i>
+                        <span>Clients</span>
+                    </a>
+                </li>
+
+                {% elif is_ceo %}
+                <!-- ========================================================
+                     2. CEO / MANAGEMENT NAVIGATION
+                     ======================================================== -->
+                <li class="nav-section-title">Executive Command</li>
+
+                <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <a href="{% url 'dashboard' %}">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <span>Executive Dashboard</span>
+                    </a>
+                </li>
+
+                <li class="nav-item {% if request.resolver_match.url_name in 'jobs_list,job_detail' %}active{% endif %}">
+                    <a href="{% url 'jobs_list' %}">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                        <span>Shipments</span>
+                        {% if global_active_jobs %}
+                        <span class="nav-badge badge-blue">{{ global_active_jobs }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <li class="nav-item {% if request.resolver_match.url_name in 'finance_vehicles_out,finance_vehicles_out_export' %}active{% endif %}">
+                    <a href="{% url 'finance_vehicles_out' %}">
+                        <i class="fa-solid fa-table-list" style="color:#0284C7;"></i>
+                        <span>Vehicles Out Ledger</span>
+                        <span class="nav-badge" style="background:#0284C7;color:#FFFFFF;font-weight:800;font-size:0.65rem;">LEDGER</span>
+                    </a>
                 </li>
 
                 <li class="nav-item {% if request.resolver_match.url_name == 'finance_billing' %}active{% endif %}">
-
                     <a href="{% url 'finance_billing' %}">
-
-                        <i class="fa-solid fa-file-invoice-dollar"></i>
-
-                        <span>Billing & Invoices</span>
-
+                        <i class="fa-solid fa-file-invoice-dollar" style="color:#8B5CF6;"></i>
+                        <span>Invoices &amp; Billing</span>
                         {% if global_unpaid_invoices %}
-
-                        <span class="nav-badge badge-amber">{{ global_unpaid_invoices }}</span>
-
+                        <span class="nav-badge" style="background:#8B5CF6;color:#FFFFFF;">{{ global_unpaid_invoices }}</span>
                         {% endif %}
-
                     </a>
-
                 </li>
 
-                {% elif is_port %}
-
-                <!-- =========================================================
-
-                     7. FIELD AGENT / WHARFINGER MODULE (EXACTLY 3 BUTTONS ACCORDING TO SPEC)
-
-                     ========================================================= -->
-
-                <li class="nav-section-title">Port & Field Operations</li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'field_today_jobs' or request.resolver_match.url_name == 'field_mobile' %}active{% endif %}">
-
-                    <a href="{% url 'field_today_jobs' %}">
-
-                        <i class="fa-solid fa-list-check"></i>
-
-                        <span>Today's Jobs</span>
-
-                        {% if global_field_today_jobs %}
-
-                        <span class="nav-badge badge-teal">{{ global_field_today_jobs }}</span>
-
-                        {% endif %}
-
+                <li class="nav-item {% if request.resolver_match.url_name == 'operating_expenses' %}active{% endif %}">
+                    <a href="{% url 'operating_expenses' %}">
+                        <i class="fa-solid fa-money-bill-transfer" style="color:#E11D48;"></i>
+                        <span>Operating Expenses &amp; Revenue</span>
                     </a>
-
                 </li>
 
-                <li class="nav-item {% if request.resolver_match.url_name == 'field_updates' %}active{% endif %}">
-
-                    <a href="{% url 'field_updates' %}">
-
-                        <i class="fa-solid fa-pen-to-square"></i>
-
-                        <span>Updates</span>
-
+                <li class="nav-item {% if request.resolver_match.url_name in 'employees,employee_detail' %}active{% endif %}">
+                    <a href="{% url 'employees' %}">
+                        <i class="fa-solid fa-users" style="color:#0D9488;"></i>
+                        <span>Employees</span>
                     </a>
-
                 </li>
 
-                <li class="nav-item {% if request.resolver_match.url_name == 'field_issues' %}active{% endif %}">
-
-                    <a href="{% url 'field_issues' %}">
-
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-
-                        <span>Issues</span>
-
-                        {% if global_open_field_issues %}
-
-                        <span class="nav-badge badge-rose">{{ global_open_field_issues }}</span>
-
-                        {% endif %}
-
+                <li class="nav-item {% if request.resolver_match.url_name in 'payroll,payroll_generate,payroll_update,payroll_delete,payslip' %}active{% endif %}">
+                    <a href="{% url 'payroll' %}">
+                        <i class="fa-solid fa-money-check-dollar" style="color:#7C3AED;"></i>
+                        <span>Salary Payroll</span>
                     </a>
-
                 </li>
 
-                {% elif is_ceo or is_admin %}
+                <li class="nav-section-title" style="margin-top:0.75rem;font-size:0.68rem;letter-spacing:0.05em;color:#94A3B8;">Directory</li>
 
-                <!-- =========================================================
-
-                     DIRECTOR & EXECUTIVE CONSOLE (STREAMLINED 5 CORE MODULES)
-
-                     1. Dashboard
-
-                     2. Shipments (Jobs)
-
-                     3. Yard & In-Bond
-
-                     4. Finance & Accounts
-
-                     5. Settings
-
-                     ========================================================= -->
-
-                <li class="nav-section-title">{% if is_admin %}System Administration{% else %}Director &amp; Executive{% endif %}</li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-
-                    <a href="{% url 'dashboard' %}">
-
-                        <i class="fa-solid fa-chart-line"></i>
-
-                        <span>Dashboard</span>
-
+                <li class="nav-item {% if request.resolver_match.url_name == 'customers_list' %}active{% endif %}">
+                    <a href="{% url 'customers_list' %}">
+                        <i class="fa-solid fa-building-user"></i>
+                        <span>Clients</span>
                     </a>
-
                 </li>
 
-                <li class="nav-item {% if request.resolver_match.url_name == 'jobs_list' or request.resolver_match.url_name == 'job_detail' or request.resolver_match.url_name == 'job_create' or request.resolver_match.url_name == 'admin_operations' or request.resolver_match.url_name == 'container_tracking_list' %}active{% endif %}">
-
-                    <a href="{% url 'jobs_list' %}">
-
-                        <i class="fa-solid fa-boxes-stacked"></i>
-
-                        <span>Shipments</span>
-
-                        {% if global_active_jobs %}
-
-                        <span class="nav-badge badge-blue">{{ global_active_jobs }}</span>
-
-                        {% endif %}
-
-                    </a>
-
-                </li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'yard_operations' %}active{% endif %}">
-
-                    <a href="{% url 'yard_operations' %}">
-
-                        <i class="fa-solid fa-warehouse"></i>
-
-                        <span>Yard &amp; In-Bond</span>
-
-                        {% if global_bond_count %}
-
-                        <span class="nav-badge badge-amber">{{ global_bond_count }}</span>
-
-                        {% endif %}
-
-                    </a>
-
-                </li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'finance' or request.resolver_match.url_name == 'finance_pending_payments' or request.resolver_match.url_name == 'finance_transactions' or request.resolver_match.url_name == 'finance_billing' %}active{% endif %}">
-
-                    <a href="{% url 'finance' %}">
-
-                        <i class="fa-solid fa-file-invoice-dollar"></i>
-
-                        <span>Finance &amp; Accounts</span>
-
-                        {% if global_pending_expenses %}
-
-                        <span class="nav-badge badge-rose">{{ global_pending_expenses }}</span>
-
-                        {% endif %}
-
-                    </a>
-
-                </li>
-
-                {% if is_admin %}
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'system_settings' or request.resolver_match.url_name == 'audit_trail' or request.resolver_match.url_name == 'users_list' or request.resolver_match.url_name == 'user_profile' %}active{% endif %}">
-
+                <li class="nav-section-title" style="margin-top:0.75rem;font-size:0.68rem;letter-spacing:0.05em;color:#94A3B8;">Management</li>
+                <li class="nav-item {% if request.resolver_match.url_name in 'system_settings,audit_trail,users_list' %}active{% endif %}">
                     <a href="{% url 'system_settings' %}">
-
                         <i class="fa-solid fa-sliders"></i>
-
                         <span>Settings</span>
-
                     </a>
-
                 </li>
-
-                {% endif %}
 
                 {% else %}
-
-                <!-- FALLBACK FOR UNRECOGNIZED ROLES -->
-
-                <li class="nav-section-title">Core Operations</li>
+                <!-- ========================================================
+                     3. OPERATIONS NAVIGATION (DOC, CUSTOMS, PORT, YARD, OPS)
+                     100% ISOLATED: ZERO FINANCE MENUS, ZERO MANAGEMENT SETTINGS
+                     ======================================================== -->
+                <li class="nav-section-title">Clearing &amp; Operations</li>
 
                 <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-
                     <a href="{% url 'dashboard' %}">
-
-                        <i class="fa-solid fa-chart-line"></i>
-
+                        <i class="fa-solid fa-gauge-high"></i>
                         <span>Dashboard</span>
-
                     </a>
-
                 </li>
 
-                <li class="nav-item {% if request.resolver_match.url_name == 'jobs_list' %}active{% endif %}">
-
+                <li class="nav-item {% if request.resolver_match.url_name in 'jobs_list,job_detail' %}active{% endif %}">
                     <a href="{% url 'jobs_list' %}">
-
                         <i class="fa-solid fa-boxes-stacked"></i>
-
-                        <span>Jobs</span>
-
+                        <span>Shipments</span>
+                        {% if global_active_jobs %}
+                        <span class="nav-badge badge-blue">{{ global_active_jobs }}</span>
+                        {% endif %}
                     </a>
-
                 </li>
 
+                <li class="nav-item {% if request.resolver_match.url_name == 'job_create' %}active{% endif %}">
+                    <a href="{% url 'job_create' %}">
+                        <i class="fa-solid fa-file-circle-plus"></i>
+                        <span>+ New Intake</span>
+                    </a>
+                </li>
+
+                <li class="nav-section-title" style="margin-top:0.75rem;font-size:0.68rem;letter-spacing:0.05em;color:#94A3B8;">Workflow Stages (1–5)</li>
+
+                <!-- STAGE 1: NYARAKA & INTAKE -->
+                <li class="nav-item {% if request.resolver_match.url_name == 'document_register' %}active{% endif %}">
+                    <a href="{% url 'document_register' %}">
+                        <i class="fa-solid fa-folder-open" style="color:#F59E0B;"></i>
+                        <span>1. Documentation &amp; Intake</span>
+                        {% if global_stage_1_count %}
+                        <span class="nav-badge" style="background:#F59E0B;color:#FFFFFF;">{{ global_stage_1_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <!-- STAGE 2: CUSTOMS (TANSAD) -->
+                <li class="nav-item {% if request.resolver_match.url_name in 'stage_customs,customs_pending_declarations' %}active{% endif %}">
+                    <a href="{% url 'stage_customs' %}">
+                        <i class="fa-solid fa-stamp" style="color:#8B5CF6;"></i>
+                        <span>2. Customs (TANSAD)</span>
+                        {% if global_stage_2_count %}
+                        <span class="nav-badge" style="background:#8B5CF6;color:#FFFFFF;">{{ global_stage_2_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <!-- STAGE 3: PORT CLEARANCE & GATE EXIT -->
+                <li class="nav-item {% if request.resolver_match.url_name == 'stage_port' %}active{% endif %}">
+                    <a href="{% url 'stage_port' %}">
+                        <i class="fa-solid fa-anchor" style="color:#0284C7;"></i>
+                        <span>3. Port Clearance</span>
+                        {% if global_stage_3_count %}
+                        <span class="nav-badge" style="background:#0284C7;color:#FFFFFF;">{{ global_stage_3_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <!-- STAGE 4: YARD ARRIVALS -->
+                <li class="nav-item {% if request.resolver_match.url_name in 'stage_yard,yard_operations' %}active{% endif %}">
+                    <a href="{% url 'stage_yard' %}">
+                        <i class="fa-solid fa-warehouse" style="color:#0D9488;"></i>
+                        <span>4. Yard Arrivals</span>
+                        {% if global_stage_4_count %}
+                        <span class="nav-badge" style="background:#0D9488;color:#FFFFFF;">{{ global_stage_4_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <!-- STAGE 5: CUSTOMER HANDOVER -->
+                <li class="nav-item {% if request.resolver_match.url_name == 'stage_handover' %}active{% endif %}">
+                    <a href="{% url 'stage_handover' %}">
+                        <i class="fa-solid fa-handshake" style="color:#16A34A;"></i>
+                        <span>5. Customer Handover</span>
+                        {% if global_stage_5_count %}
+                        <span class="nav-badge" style="background:#16A34A;color:#FFFFFF;">{{ global_stage_5_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <li class="nav-section-title" style="margin-top:0.75rem;font-size:0.68rem;letter-spacing:0.05em;color:#94A3B8;">Directory</li>
+
+                <li class="nav-item {% if request.resolver_match.url_name == 'customers_list' %}active{% endif %}">
+                    <a href="{% url 'customers_list' %}">
+                        <i class="fa-solid fa-building-user"></i>
+                        <span>Clients</span>
+                    </a>
+                </li>
                 {% endif %}
-
-
-
-                <!-- =========================================================
-
-                     COMMUNICATION & TEAM CHAT (ACCESSIBLE TO ALL STAFF ROLES)
-
-                     ========================================================= -->
-
-                <li class="nav-section-title">Communication</li>
-
-                <li class="nav-item {% if request.resolver_match.url_name == 'internal_chat' %}active{% endif %}">
-
-                    <a href="{% url 'internal_chat' %}" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
-
-                        <div style="display:flex;align-items:center;gap:0.75rem;">
-
-                            <i class="fa-solid fa-comments"></i>
-
-                            <span>Team Chat / SMS</span>
-
-                        </div>
-
-                        <span id="globalChatSidebarBadge" class="nav-badge badge-rose" style="display:none;background:#EF4444;color:#fff;border-radius:999px;padding:2px 8px;font-size:0.72rem;font-weight:700;">0</span>
-
-                    </a>
-
-                </li>
-
             </ul>
 
 
@@ -903,14 +675,6 @@
                         <span>Live Sync</span>
                     </div>
 
-                    <a href="{% url 'internal_chat' %}" class="top-nav-btn chat-nav-trigger" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:#F1F5F9;color:#334155;text-decoration:none;transition:all 0.2s;" title="Team Chat & Live SMS">
-
-                        <i class="fa-solid fa-comments" style="font-size:1.15rem;"></i>
-
-                        <span id="globalChatNavBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#EF4444;color:#fff;font-size:0.68rem;font-weight:700;padding:2px 6px;border-radius:999px;border:2px solid #fff;box-shadow:0 2px 5px rgba(239,68,68,0.4);">0</span>
-
-                    </a>
-
                 </div>
 
             </header>
@@ -973,235 +737,13 @@
 
 
 
-    <!-- Global Floating Live Chat Notification Toast -->
-
-    <div id="chatToastNotification" style="position:fixed;bottom:24px;right:24px;z-index:99999;max-width:360px;background:#0F172A;color:#FFFFFF;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,0.3);padding:1rem 1.15rem;display:none;align-items:flex-start;gap:0.85rem;border:1px solid rgba(255,255,255,0.12);animation:slideUpToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
-
-        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg, #2563EB, #1D4ED8);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-weight:700;font-size:0.9rem;">
-
-            <i class="fa-solid fa-comment-dots"></i>
-
-        </div>
-
-        <div style="flex:1;min-width:0;">
-
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.2rem;">
-
-                <span id="toastSenderName" style="font-size:0.88rem;font-weight:700;color:#F8FAFC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
-
-                <span id="toastTime" style="font-size:0.72rem;color:#94A3B8;"></span>
-
-            </div>
-
-            <div id="toastMessageSnippet" style="font-size:0.8rem;color:#CBD5E1;line-height:1.35;margin-bottom:0.6rem;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;"></div>
-
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-
-                <a id="toastOpenLink" href="{% url 'internal_chat' %}" style="font-size:0.75rem;font-weight:700;color:#38BDF8;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;">
-
-                    <span>Open Conversation</span>
-
-                    <i class="fa-solid fa-arrow-right" style="font-size:0.68rem;"></i>
-
-                </a>
-
-                <button type="button" onclick="document.getElementById('chatToastNotification').style.display='none'" style="background:none;border:none;color:#94A3B8;cursor:pointer;font-size:0.75rem;padding:2px 4px;">Dismiss</button>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-
     <!-- Scripts -->
 
-    <script src="/static/js/app.js?v=20261101_v4"></script>
+    <script src="/static/js/app.js?v=20261109_v5"></script>
+
+
 
     <script>
-
-    (function() {
-
-        let lastNotifiedMsgId = null;
-
-
-
-        function playNotificationChime() {
-
-            try {
-
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-                const osc = ctx.createOscillator();
-
-                const gain = ctx.createGain();
-
-                osc.type = 'sine';
-
-                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-
-                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
-
-                gain.gain.setValueAtTime(0.12, ctx.currentTime);
-
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-
-                osc.connect(gain);
-
-                gain.connect(ctx.destination);
-
-                osc.start();
-
-                osc.stop(ctx.currentTime + 0.36);
-
-            } catch(e) {}
-
-        }
-
-
-
-        async function checkGlobalChatUnread() {
-
-            try {
-
-                const res = await fetch('/chat/api/unread/');
-
-                if (!res.ok) return;
-
-                const data = await res.json();
-
-                if (data.status !== 'success') return;
-
-
-
-                const count = data.total_unread || 0;
-
-                const navBadge = document.getElementById('globalChatNavBadge');
-
-                const sideBadge = document.getElementById('globalChatSidebarBadge');
-
-
-
-                if (navBadge) {
-
-                    if (count > 0) {
-
-                        navBadge.textContent = count > 99 ? '99+' : count;
-
-                        navBadge.style.display = 'inline-block';
-
-                    } else {
-
-                        navBadge.style.display = 'none';
-
-                    }
-
-                }
-
-
-
-                if (sideBadge) {
-
-                    if (count > 0) {
-
-                        sideBadge.textContent = count > 99 ? '99+' : count;
-
-                        sideBadge.style.display = 'inline-block';
-
-                    } else {
-
-                        sideBadge.style.display = 'none';
-
-                    }
-
-                }
-
-
-
-                if (data.latest_unread && data.latest_unread.id !== lastNotifiedMsgId) {
-
-                    const isChatPage = window.location.pathname.startsWith('/chat');
-
-                    const activeContactId = window.ACTIVE_CHAT_CONTACT_ID;
-
-                    
-
-                    if (!(isChatPage && activeContactId && parseInt(activeContactId) === parseInt(data.latest_unread.sender_id))) {
-
-                        if (lastNotifiedMsgId !== null) {
-
-                            playNotificationChime();
-
-                        }
-
-                        lastNotifiedMsgId = data.latest_unread.id;
-
-
-
-                        const toast = document.getElementById('chatToastNotification');
-
-                        const toastSender = document.getElementById('toastSenderName');
-
-                        const toastTime = document.getElementById('toastTime');
-
-                        const toastMsg = document.getElementById('toastMessageSnippet');
-
-                        const toastLink = document.getElementById('toastOpenLink');
-
-
-
-                        if (toast && toastSender && toastMsg) {
-
-                            toastSender.textContent = data.latest_unread.sender_name + ' (' + data.latest_unread.sender_role + ')';
-
-                            toastTime.textContent = data.latest_unread.time;
-
-                            toastMsg.textContent = data.latest_unread.snippet;
-
-                            toastLink.href = '/chat/?user=' + data.latest_unread.sender_id;
-
-                            toast.style.display = 'flex';
-
-
-
-                            setTimeout(() => {
-
-                                if (toast.style.display === 'flex') {
-
-                                    toast.style.display = 'none';
-
-                                }
-
-                            }, 7000);
-
-                        }
-
-                    } else {
-
-                        lastNotifiedMsgId = data.latest_unread.id;
-
-                    }
-
-                }
-
-            } catch (err) {}
-
-        }
-
-
-
-        document.addEventListener('DOMContentLoaded', () => {
-
-            checkGlobalChatUnread();
-
-            setInterval(checkGlobalChatUnread, 3500);
-
-        });
-
-    })();
-
-
 
     function toggleReceiptDropdown() {
 

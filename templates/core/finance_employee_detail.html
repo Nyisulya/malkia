@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ employee.full_name }} — Employee Profile | Malkia C&amp;F{% endblock %}
+
+{% block extra_css %}
+<style>
+    .employee-avatar-lg {
+        width: 72px; height: 72px; border-radius: 50%;
+        background: linear-gradient(135deg, #0F766E, #0284C7);
+        color: #FFFFFF; font-weight: 900; font-size: 1.35rem;
+        display: inline-flex; align-items: center; justify-content: center;
+        letter-spacing: 0.02em; flex-shrink: 0;
+    }
+    .profile-label {
+        font-size: 0.68rem; font-weight: 800; color: #94A3B8;
+        text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.15rem;
+    }
+    .profile-value { font-size: 0.86rem; font-weight: 700; color: #0F172A; word-break: break-word; }
+    .profile-item { padding: 0.55rem 0; border-bottom: 1px dashed #E2E8F0; }
+    .profile-item:last-child { border-bottom: none; }
+    .status-dot {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 999px;
+    }
+    .money-cell { font-variant-numeric: tabular-nums; white-space: nowrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1160px;margin:0 auto;padding-bottom:3rem;">
+
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;font-size:0.82rem;">
+        <a href="{% url 'employees' %}" style="color:#64748B;text-decoration:none;font-weight:700;">
+            <i class="fa-solid fa-arrow-left"></i> Employee Registry
+        </a>
+        <span style="color:#CBD5E1;">/</span>
+        <span style="color:#0F172A;font-weight:800;">{{ employee.full_name }}</span>
+    </div>
+
+    <!-- PROFILE HEADER -->
+    <div class="page-header-box">
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+            <span class="employee-avatar-lg">{{ employee.initials }}</span>
+            <div>
+                <h2 class="page-title" style="margin-bottom:0.25rem;">{{ employee.full_name }}</h2>
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;font-size:0.8rem;color:#64748B;font-weight:700;">
+                    <span>{{ employee.employee_number }}</span>
+                    <span style="color:#CBD5E1;">•</span>
+                    <span>{{ employee.position }}</span>
+                    <span style="color:#CBD5E1;">•</span>
+                    {% if employee.status == 'ACTIVE' or employee.status == 'ON_LEAVE' %}
+                    <span class="status-dot" style="background:#DCFCE7;color:#166534;"><i class="fa-solid fa-circle-check"></i> On Payroll</span>
+                    {% else %}
+                    <span class="status-dot" style="background:#F1F5F9;color:#64748B;"><i class="fa-solid fa-right-from-bracket"></i> Left</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+            <a href="{% url 'payroll' %}?month={{ today|date:'Y-m' }}" class="btn-header-action btn-outline">
+                <i class="fa-solid fa-money-check-dollar"></i> Payroll
+            </a>
+            <a href="{% url 'employees' %}?edit={{ employee.id }}" class="btn-header-action btn-primary">
+                <i class="fa-solid fa-pen"></i> Edit Employee
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));margin-bottom:1.5rem;">
+        <div class="kpi-card kpi-emerald">
+            <div class="kpi-header"><span class="kpi-title">Monthly Gross Salary</span><div class="kpi-icon-wrap"><i class="fa-solid fa-wallet"></i></div></div>
+            <div class="kpi-value">TSh {{ employee.monthly_gross|floatformat:0|intcomma }}</div>
+            <div class="kpi-meta"><span>Basic TSh {{ employee.basic_salary|floatformat:0|intcomma }} + allowances</span></div>
+        </div>
+        <div class="kpi-card kpi-blue">
+            <div class="kpi-header"><span class="kpi-title">Total Net Paid</span><div class="kpi-icon-wrap"><i class="fa-solid fa-circle-check"></i></div></div>
+            <div class="kpi-value">TSh {{ total_paid|floatformat:0|intcomma }}</div>
+            <div class="kpi-meta"><span>{{ payments_count }} salary payment{{ payments_count|pluralize }}</span></div>
+        </div>
+        <div class="kpi-card kpi-amber">
+            <div class="kpi-header"><span class="kpi-title">Gross Earnings Paid</span><div class="kpi-icon-wrap"><i class="fa-solid fa-chart-line"></i></div></div>
+            <div class="kpi-value">TSh {{ total_gross_paid|floatformat:0|intcomma }}</div>
+            <div class="kpi-meta"><span>Before deductions</span></div>
+        </div>
+        <div class="kpi-card kpi-cyan">
+            <div class="kpi-header"><span class="kpi-title">Service Length</span><div class="kpi-icon-wrap"><i class="fa-solid fa-hourglass-half"></i></div></div>
+            <div class="kpi-value">{{ service_years }}y {{ service_months }}m</div>
+            <div class="kpi-meta"><span>Joined {{ employee.date_joined|date:"d M Y" }}</span></div>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:minmax(0, 340px) minmax(0, 1fr);gap:1.25rem;align-items:start;" class="employee-detail-grid">
+        <!-- PROFILE DATA -->
+        <div class="card-panel" style="padding:1.25rem;">
+            <h3 style="margin:0 0 0.75rem 0;font-size:0.95rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
+                <i class="fa-solid fa-address-card" style="color:#0284C7;"></i> Full Staff Data
+            </h3>
+
+            <div class="profile-item"><div class="profile-label">Phone</div><div class="profile-value">{{ employee.phone|default:"—" }}</div></div>
+            <div class="profile-item"><div class="profile-label">NSSF Number</div><div class="profile-value" style="font-family:monospace;">{{ employee.nssf_number|default:"—" }}</div></div>
+            <div class="profile-item"><div class="profile-label">Bank</div><div class="profile-value">{{ employee.bank_name|default:"—" }}</div></div>
+            <div class="profile-item"><div class="profile-label">Bank Account Number</div><div class="profile-value" style="font-family:monospace;">{{ employee.bank_account_number|default:"—" }}</div></div>
+            <div class="profile-item"><div class="profile-label">Date Joined</div><div class="profile-value">{{ employee.date_joined|date:"d M Y" }}</div></div>
+            <div class="profile-item"><div class="profile-label">Monthly Gross</div><div class="profile-value" style="color:#047857;">TSh {{ employee.monthly_gross|floatformat:0|intcomma }}</div></div>
+        </div>
+
+        <!-- SALARY HISTORY -->
+        <div class="card-panel" style="padding:0;overflow:hidden;border:1px solid #E2E8F0;">
+            <div style="padding:1rem 1.25rem;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
+                <div>
+                    <h3 style="margin:0;font-size:0.95rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
+                        <i class="fa-solid fa-clock-rotate-left" style="color:#7C3AED;"></i> Salary History
+                    </h3>
+                    <p style="margin:0.2rem 0 0 0;font-size:0.76rem;color:var(--text-muted);">Every payroll month recorded for this employee.</p>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.8rem;text-align:left;">
+                    <thead>
+                        <tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;color:#64748B;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">
+                            <th style="padding:0.65rem 0.8rem;font-weight:800;">Period</th>
+                            <th style="padding:0.65rem 0.8rem;font-weight:800;text-align:right;">Gross</th>
+                            <th style="padding:0.65rem 0.8rem;font-weight:800;text-align:right;">Deductions</th>
+                            <th style="padding:0.65rem 0.8rem;font-weight:800;text-align:right;">Net Pay</th>
+                            <th style="padding:0.65rem 0.8rem;font-weight:800;">Status</th>
+                            <th style="padding:0.65rem 0.8rem;font-weight:800;text-align:right;">Payslip</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in payments %}
+                        <tr style="border-bottom:1px solid #F1F5F9;">
+                            <td style="padding:0.6rem 0.8rem;font-weight:800;color:#0F172A;white-space:nowrap;">{{ p.period|date:"M Y" }}</td>
+                            <td style="padding:0.6rem 0.8rem;text-align:right;color:#334155;" class="money-cell">TSh {{ p.gross_pay|floatformat:0|intcomma }}</td>
+                            <td style="padding:0.6rem 0.8rem;text-align:right;color:#B45309;" class="money-cell">TSh {{ p.total_deductions|floatformat:0|intcomma }}</td>
+                            <td style="padding:0.6rem 0.8rem;text-align:right;" class="money-cell"><strong style="color:#047857;">TSh {{ p.net_pay|floatformat:0|intcomma }}</strong></td>
+                            <td style="padding:0.6rem 0.8rem;">
+                                {% if p.status == 'PAID' %}
+                                <span class="badge-pill" style="background:#DCFCE7;color:#166534;font-weight:800;font-size:0.66rem;">Paid</span>
+                                {% elif p.status == 'CANCELLED' %}
+                                <span class="badge-pill" style="background:#F1F5F9;color:#64748B;font-weight:800;font-size:0.66rem;">Cancelled</span>
+                                {% else %}
+                                <span class="badge-pill" style="background:#FEF3C7;color:#92400E;font-weight:800;font-size:0.66rem;">Draft</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding:0.6rem 0.8rem;text-align:right;white-space:nowrap;">
+                                <a href="{% url 'payslip' p.id %}" target="_blank" rel="noopener" class="btn-header-action btn-outline" style="padding:0.3rem 0.55rem;font-size:0.7rem;">
+                                    <i class="fa-solid fa-print"></i> Payslip
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="padding:2rem 1rem;text-align:center;color:#94A3B8;">
+                                No salary records yet. Open Payroll to generate this month's salary.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media (max-width: 1000px) {
+        .employee-detail-grid { grid-template-columns: 1fr !important; }
+    }
+</style>
+{% endblock %}

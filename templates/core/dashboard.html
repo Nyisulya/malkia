@@ -9,116 +9,24 @@
 {% block content %}
 
 <div class="page-header-box">
-
     <div>
-
-        {% if is_doc %}
-
-        <h2 class="page-title"><i class="fa-solid fa-folder-open" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Documentation & Intake Command Center</h2>
-
-        <p class="page-subtitle">Real-time status of cargo documents intake, digital file opening, and customs handover.</p>
-
-        {% elif is_ops %}
-
-        <h2 class="page-title"><i class="fa-solid fa-clipboard-check" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Operations Command Center</h2>
-
-        <p class="page-subtitle">Active shipments monitoring, incoming intake approvals, port operations, and SLA control.</p>
-
-        {% elif is_clearing %}
-
-        <h2 class="page-title"><i class="fa-solid fa-stamp" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Customs Clearing & TANCIS Command Center</h2>
-
-        <p class="page-subtitle">Declaration lodgement, duty payment verification, and port release orders.</p>
-
-        {% elif is_port %}
-
-        <h2 class="page-title"><i class="fa-solid fa-anchor" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Port Operations & Field Command Center</h2>
-
-        <p class="page-subtitle">Vessel arrivals, physical verification, port wharfage invoices, and gate release.</p>
-
-        {% elif is_finance %}
-
-        <h2 class="page-title"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Finance & Accounts Command Center</h2>
-
-        <p class="page-subtitle">Disbursements, client invoicing, port fees reconciliation, and collections.</p>
-
-        {% else %}
-
-        <h2 class="page-title">CEO Operations & Financial Command Center</h2>
-
-        <p class="page-subtitle">Real-time status of shipments, port clearance, logistics pipeline, and profitability.</p>
-
-        {% endif %}
-
+        <h2 class="page-title"><i class="fa-solid fa-layer-group" style="color:var(--brand-primary);margin-right:0.4rem;"></i> Operations Command Center</h2>
+        <p class="page-subtitle">Real-time status of cargo operations, TRA Customs (TANSAD), port clearance, yard arrivals, and customer delivery.</p>
     </div>
-
     <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-
-        {% if is_ceo or is_admin or is_finance or is_ops %}
-
+        {% if can_view_financials %}
         <a href="{% url 'export_daily_report_excel' %}" class="btn-header-action btn-outline" style="background:#F0FDF4;border-color:#86EFAC;color:#166534;" title="Download Daily Excel Report (Daily Finance, Operations & CEO Summary)">
-
             <i class="fa-solid fa-file-excel" style="color:#16A34A;"></i> Export Daily Excel
-
         </a>
-
-
-
         {% endif %}
-
-        {% if is_clearing %}
-
-        <a href="{% url 'customs_assessments' %}?filter=awaiting" class="btn-header-action btn-outline">
-
-            <i class="fa-solid fa-stamp"></i> Assessments ({{ awaiting_assessment_count }})
-
-        </a>
-
-        <a href="{% url 'customs_pending_declarations' %}" class="btn-header-action btn-primary">
-
-            <i class="fa-solid fa-file-contract"></i> Pending Declarations
-
-        </a>
-
-        {% elif is_finance %}
-
-        <a href="{% url 'finance_pending_payments' %}" class="btn-header-action btn-outline">
-
-            <i class="fa-solid fa-clock-rotate-left"></i> Pending Payments ({{ pending_expenses|length }})
-
-        </a>
-
-        <a href="{% url 'finance_billing' %}" class="btn-header-action btn-primary">
-
-            <i class="fa-solid fa-file-invoice"></i> Billing & Invoices
-
-        </a>
-
-        {% else %}
-
         <a href="{% url 'jobs_list' %}?status=DELAYED" class="btn-header-action btn-outline" style="border-color:#FCA5A5;color:#DC2626;">
-
             <i class="fa-solid fa-triangle-exclamation"></i> Delayed ({{ delayed_jobs_count }})
-
         </a>
-
-        {% if is_doc %}
-
         <a href="{% url 'job_create' %}" class="btn-header-action btn-primary">
-
             <i class="fa-solid fa-plus"></i> Open New File
-
         </a>
-
-        {% endif %}
-
-        {% endif %}
-
     </div>
-
 </div>
-
-
 
 <!-- ==============================================================================
 
@@ -143,15 +51,13 @@
             </span>
 
             <a href="{% url 'dashboard' %}?preset=today" class="btn-header-action {% if preset == 'today' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
-
                 Today (Default)
-
             </a>
-
+            <a href="{% url 'dashboard' %}?preset=this_month" class="btn-header-action {% if preset == 'this_month' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
+                This Month
+            </a>
             <a href="{% url 'dashboard' %}?preset=this_year" class="btn-header-action {% if preset == 'this_year' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
-
                 This Year
-
             </a>
 
             <a href="{% url 'dashboard' %}?preset=last_year" class="btn-header-action {% if preset == 'last_year' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
@@ -242,27 +148,17 @@
 
 
 
-{% if is_ceo or is_admin %}
-
 <!-- ==============================================================================
-
-     EXECUTIVE KPIS (PERFECT BALANCED 3x3 GRID - 9 METRICS)
-
-     Row 1: Operational Status (Active, Completed, Delayed)
-
-     Row 2: Pipeline Locations (Port, TRA, In-Bond Storage)
-
-     Row 3: Financial Health (Total Revenue, Direct Expenses, Net Profit Margin)
-
+     UNIFIED OPERATIONS PIPELINE KPIS (6 BALANCED METRICS FOR ALL STAFF)
+     Stage 1-5 Pipeline: Active -> TRA Customs -> Port Clearance -> Yard -> Handover -> Delayed
      ============================================================================== -->
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:1.15rem;margin-bottom:1.5rem;">
 
-<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1.15rem;margin-bottom:1.5rem;">
-
-    <!-- 1. Active Jobs -->
+    <!-- 1. Active Shipments -->
     <div class="kpi-card kpi-blue" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('ACTIVE');" style="cursor:pointer;" title="Click to filter Active Shipments below">
         <div class="kpi-header">
-            <span class="kpi-title">Active Jobs</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-boxes-stacked"></i></div>
+            <span class="kpi-title">Active Shipments</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-car-side"></i></div>
         </div>
         <div class="kpi-value">{{ active_jobs_count }}</div>
         <div class="kpi-meta">
@@ -270,22 +166,58 @@
         </div>
     </div>
 
-    <!-- 2. Completed Jobs -->
+    <!-- 2. TRA Customs (TANSAD) -->
+    <div class="kpi-card kpi-purple" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('TRA');" style="border-left:4px solid #8B5CF6;cursor:pointer;" title="Click to filter Jobs at TRA below">
+        <div class="kpi-header">
+            <span class="kpi-title">TRA Customs (TANSAD)</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp" style="color:#8B5CF6;"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#6D28D9;">{{ pulse_tra_count }}</div>
+        <div class="kpi-meta">
+            <span>Stage 2 &bull; TANSAD declaration</span>
+        </div>
+    </div>
+
+    <!-- 3. Port Clearance & Gate Exit -->
+    <div class="kpi-card kpi-cyan" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('PORT');" style="cursor:pointer;" title="Click to filter Jobs at Port below">
+        <div class="kpi-header">
+            <span class="kpi-title">Port Clearance &amp; Gate</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-anchor"></i></div>
+        </div>
+        <div class="kpi-value">{{ pulse_port_count }}</div>
+        <div class="kpi-meta">
+            <span>Stage 3 &bull; D/O, inspection &amp; gate exit</span>
+        </div>
+    </div>
+
+    <!-- 4. Malkia Yard / Office -->
+    <div class="kpi-card" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('YARD');" style="border-left:4px solid #D97706;background:#FFFBEB;cursor:pointer;" title="Click to filter Yard Arrivals below">
+        <div class="kpi-header">
+            <span class="kpi-title" style="color:#B45309;">At Malkia Yard</span>
+            <div class="kpi-icon-wrap" style="color:#D97706;background:#FEF3C7;"><i class="fa-solid fa-warehouse"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#92400E;">{{ pulse_yard_count }}</div>
+        <div class="kpi-meta" style="color:#B45309;">
+            <span>Stage 4 &bull; Arrived at yard/office</span>
+        </div>
+    </div>
+
+    <!-- 5. Delivered & Completed -->
     <div class="kpi-card kpi-emerald" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('COMPLETED');" style="cursor:pointer;" title="Click to filter Completed Shipments below">
         <div class="kpi-header">
-            <span class="kpi-title">Completed Jobs</span>
+            <span class="kpi-title">Delivered &amp; Handed Over</span>
             <div class="kpi-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
         </div>
         <div class="kpi-value">{{ completed_jobs_count }}</div>
         <div class="kpi-meta">
-            <span class="trend-positive"><i class="fa-solid fa-award"></i> Successfully delivered &bull; <u style="font-size:0.7rem;">View below</u></span>
+            <span class="trend-positive"><i class="fa-solid fa-award"></i> Stage 5 &bull; Handover &amp; POD</span>
         </div>
     </div>
 
-    <!-- 3. Delayed Jobs -->
+    <!-- 6. Delayed / Bottlenecks -->
     <div class="kpi-card kpi-rose" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('DELAYED');" style="cursor:pointer;" title="Click to filter Delayed Shipments below">
         <div class="kpi-header">
-            <span class="kpi-title">Delayed Jobs</span>
+            <span class="kpi-title">Delayed / Needs Action</span>
             <div class="kpi-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
         </div>
         <div class="kpi-value">{{ delayed_jobs_count }}</div>
@@ -294,679 +226,51 @@
         </div>
     </div>
 
-    <!-- 4. Jobs at Port -->
-    <div class="kpi-card kpi-cyan" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('PORT');" style="cursor:pointer;" title="Click to filter Jobs at Port below">
+</div>
+
+<!-- ==============================================================================
+     EXECUTIVE FINANCIAL HEALTH ROW (CEO, ADMIN & FINANCE ONLY)
+     Confidential: Hidden from ground operations and documentation officers
+     ============================================================================== -->
+{% if can_view_financials %}
+<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1.15rem;margin-bottom:1.5rem;">
+    <!-- Total Revenue -->
+    <div class="kpi-card kpi-emerald" style="border-top:3px solid #10B981;">
         <div class="kpi-header">
-            <span class="kpi-title">Jobs at Port</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-anchor"></i></div>
-        </div>
-        <div class="kpi-value">{{ jobs_at_port }}</div>
-        <div class="kpi-meta">
-            <span>TPA / TICTS / ICD operations</span>
-        </div>
-    </div>
-
-    <!-- 5. Jobs at TRA -->
-    <div class="kpi-card kpi-purple" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('TRA');" style="border-left:4px solid #8B5CF6;cursor:pointer;" title="Click to filter Jobs at TRA below">
-        <div class="kpi-header">
-            <span class="kpi-title">Jobs at TRA</span>
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp" style="color:#8B5CF6;"></i></div>
-        </div>
-        <div class="kpi-value" style="color:#6D28D9;">{{ jobs_at_tra }}</div>
-        <div class="kpi-meta">
-            <span>TANCIS customs clearance</span>
-        </div>
-    </div>
-
-    <!-- 6. In-Bond Storage (Customs Locked / Yard) -->
-    <div class="kpi-card" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('BOND');" style="border-left:4px solid #D97706;background:#FFFBEB;cursor:pointer;" title="Click to filter In-Bond Yard Shipments below">
-        <div class="kpi-header">
-            <span class="kpi-title" style="color:#B45309;">In-Bond Storage</span>
-            <div class="kpi-icon-wrap" style="color:#D97706;background:#FEF3C7;"><i class="fa-solid fa-shield-halved"></i></div>
-        </div>
-        <div class="kpi-value" style="color:#92400E;">{{ in_bond_count }}</div>
-        <div class="kpi-meta" style="color:#B45309;">
-            <a href="{% url 'yard_operations' %}" onclick="event.stopPropagation();" style="text-decoration:none;color:#B45309;font-weight:700;">
-                <i class="fa-solid fa-warehouse"></i> Customs Locked &bull; Yard
-            </a>
-        </div>
-    </div>
-
-    <!-- 7. Total Revenue -->
-
-    <div class="kpi-card kpi-emerald">
-
-        <div class="kpi-header">
-
             <span class="kpi-title">Total Revenue</span>
-
             <div class="kpi-icon-wrap"><i class="fa-solid fa-money-bill-wave"></i></div>
-
         </div>
-
         <div class="kpi-value">TSh {{ total_revenue|floatformat:0 }}</div>
-
         <div class="kpi-meta">
-
             <span>Contracted billing amount</span>
-
         </div>
-
     </div>
 
-
-
-    <!-- 8. Expenses -->
-
-    <div class="kpi-card kpi-rose">
-
+    <!-- Expenses -->
+    <div class="kpi-card kpi-rose" style="border-top:3px solid #EF4444;">
         <div class="kpi-header">
-
-            <span class="kpi-title">Expenses</span>
-
+            <span class="kpi-title">Direct Expenses</span>
             <div class="kpi-icon-wrap"><i class="fa-solid fa-receipt"></i></div>
-
         </div>
-
         <div class="kpi-value">TSh {{ total_expenses|floatformat:0 }}</div>
-
         <div class="kpi-meta">
-
             <span>Approved operational disbursements</span>
-
         </div>
-
     </div>
 
-
-
-    <!-- 9. Net Position -->
-
-    <div class="kpi-card kpi-blue">
-
+    <!-- Net Position -->
+    <div class="kpi-card kpi-blue" style="border-top:3px solid #3B82F6;">
         <div class="kpi-header">
-
-            <span class="kpi-title">Net Position</span>
-
+            <span class="kpi-title">Net Operating Margin</span>
             <div class="kpi-icon-wrap"><i class="fa-solid fa-chart-line"></i></div>
-
         </div>
-
         <div class="kpi-value">TSh {{ gross_margin|floatformat:0 }}</div>
-
         <div class="kpi-meta">
-
             <span class="trend-positive"><i class="fa-solid fa-arrow-trend-up"></i> {{ gross_margin_pct }}% Operating Margin</span>
-
         </div>
-
     </div>
-
 </div>
-
-{% elif is_ops %}
-
-<!-- 6 KPIS FOR OPERATIONS OFFICER (ACCORDING TO SPEC) -->
-
-<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));margin-bottom:1.5rem;">
-
-    <div class="kpi-card kpi-blue">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Active Jobs</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-boxes-stacked"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ active_jobs_count }}</div>
-
-        <div class="kpi-meta">
-
-            <span class="trend-positive"><i class="fa-solid fa-circle-check"></i> {{ completed_jobs_count }} Delivered</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-emerald">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">New Files</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-inbox"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ new_files_count }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Incoming intakes awaiting review</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-cyan">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Pending Files</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-folder-open"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ pending_files_count }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Stage 2 digital file opening</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-amber">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Jobs at TRA</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ jobs_at_tra }}</div>
-
-        <div class="kpi-meta">
-
-            <span>TANCIS declaration & duty</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-blue">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Jobs at Port</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-anchor"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ jobs_at_port }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Verification, DO & release</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-rose">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Delayed Jobs</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ delayed_jobs_count }}</div>
-
-        <div class="kpi-meta">
-
-            <span style="color:#DC2626;font-weight:700;">Exceeded SLA targets</span>
-
-        </div>
-
-    </div>
-
-</div>
-
-{% elif is_clearing %}
-
-<!-- 4 KPIS FOR CUSTOMS DECLARER (ACCORDING TO SPEC) -->
-
-<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));margin-bottom:1.5rem;">
-
-    <div class="kpi-card kpi-amber">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Pending Declarations</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-file-contract"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ pending_declarations_count }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Awaiting TANCIS lodgement</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-blue">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Awaiting Assessment</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-hourglass-half"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ awaiting_assessment_count }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Lodged in TANCIS, awaiting TRA</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-emerald">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Assessed</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ assessed_declarations_count }}</div>
-
-        <div class="kpi-meta">
-
-            <span class="trend-positive"><i class="fa-solid fa-circle-check"></i> Duty notices issued</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-rose">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Jobs Requiring Attention</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ customs_attention_count }}</div>
-
-        <div class="kpi-meta">
-
-            <span style="color:#DC2626;font-weight:700;">Customs bottlenecks / delayed</span>
-
-        </div>
-
-    </div>
-
-</div>
-
-{% elif is_finance %}
-
-<!-- 5 KPIS FOR FINANCE OFFICER (ACCORDING TO SPEC) -->
-
-<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));margin-bottom:1.5rem;">
-
-    <div class="kpi-card kpi-emerald">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Daily Income</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-arrow-down-left"></i></div>
-
-        </div>
-
-        <div class="kpi-value">TSh {{ daily_income|floatformat:0 }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Collected / billed today</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-rose">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Daily Expenses</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-arrow-up-right"></i></div>
-
-        </div>
-
-        <div class="kpi-value">TSh {{ daily_expenses|floatformat:0 }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Disbursed & approved today</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-blue">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Net Position</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-sack-dollar"></i></div>
-
-        </div>
-
-        <div class="kpi-value">TSh {{ gross_margin|floatformat:0 }}</div>
-
-        <div class="kpi-meta">
-
-            <span class="trend-positive"><i class="fa-solid fa-chart-line"></i> {{ gross_margin_pct }}% Operating Margin</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-amber">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Pending Payments</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-clock-rotate-left"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ pending_expenses|length }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Vouchers awaiting payout</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-cyan">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Outstanding Client Balances</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-
-        </div>
-
-        <div class="kpi-value">TSh {{ outstanding_receivables|floatformat:0 }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Pending collection from clients</span>
-
-        </div>
-
-    </div>
-
-</div>
-
-{% else %}
-
-<!-- TOP KPI CARDS (Role-Based Pulse) -->
-
-<div class="kpi-grid">
-
-    <div class="kpi-card kpi-blue">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Active Shipments</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-ship"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ active_jobs_count }}</div>
-
-        <div class="kpi-meta">
-
-            <span class="trend-positive"><i class="fa-solid fa-circle-check"></i> {{ completed_jobs_count }} Delivered</span> &bull; <span>Total {{ active_jobs_count|add:completed_jobs_count }}</span>
-
-        </div>
-
-    </div>
-
-
-
-    {% if can_view_financials %}
-
-    <div class="kpi-card kpi-emerald">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Gross Profit Margin</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-sack-dollar"></i></div>
-
-        </div>
-
-        <div class="kpi-value">TSh {{ gross_margin|floatformat:0 }}</div>
-
-        <div class="kpi-meta">
-
-            <span class="trend-positive"><i class="fa-solid fa-arrow-trend-up"></i> {{ gross_margin_pct }}% Margin</span> on TSh {{ total_revenue|floatformat:0 }}
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-amber">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Client Receivables</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-
-        </div>
-
-        <div class="kpi-value">TSh {{ outstanding_receivables|floatformat:0 }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Pending collection across active accounts</span>
-
-        </div>
-
-    </div>
-
-    {% elif is_doc %}
-
-    <!-- 4 KPIS FOR DOCUMENTATION OFFICER SPEC -->
-
-    <div class="kpi-card kpi-emerald">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Nyaraka Zilizopokelewa Leo</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-calendar-day"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ docs_received_today }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Documents received today</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-amber">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Handed to Customs</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-folder-open"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ pending_file_opening }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Stage 2 files awaiting TANESW/TBS declaration</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-cyan">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Processed Documents</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-file-circle-check"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ completed_documents_count }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Completed / stored in digital vault</span>
-
-        </div>
-
-    </div>
-
-    {% else %}
-
-    <!-- Operational Metrics for Field / Port Staff -->
-
-    <div class="kpi-card kpi-emerald">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Documents Intake (Stage 1)</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-inbox"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ stage_1_count }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Shipments in document intake & verification</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-amber">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Declaration (Stage 2)</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-folder-plus"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ stage_2_count }}</div>
-
-        <div class="kpi-meta">
-
-            <span>Files awaiting TANESW/TBS declaration</span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="kpi-card kpi-cyan">
-
-        <div class="kpi-header">
-
-            <span class="kpi-title">Port & Haulage</span>
-
-            <div class="kpi-icon-wrap"><i class="fa-solid fa-truck-ramp-box"></i></div>
-
-        </div>
-
-        <div class="kpi-value">{{ containers_at_port }} Port / {{ in_transit_count }} Transit</div>
-
-        <div class="kpi-meta">
-
-            <span>Dar es Salaam Port & ICD facilities</span>
-
-        </div>
-
-    </div>
-
-    {% endif %}
-
-</div>
-
 {% endif %}
-
-
 
 <!-- BOTTLENECKS & OVERDUE ALERT WIDGET -->
 
@@ -1395,9 +699,9 @@
                 <i class="fa-solid fa-anchor" style="color:#0284C7;font-size:0.72rem;"></i> At Port
                 <span style="background:#E0F2FE;color:#0369A1;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_port_count|default:jobs_at_port }}</span>
             </button>
-            <button type="button" data-pulse-filter="BOND" onclick="window.filterTrackingPulse('BOND')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:all 0.15s;">
-                <i class="fa-solid fa-warehouse" style="color:#D97706;font-size:0.72rem;"></i> In-Bond / Yard
-                <span style="background:#FEF3C7;color:#B45309;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_bond_count|default:in_bond_count }}</span>
+            <button type="button" data-pulse-filter="YARD" onclick="window.filterTrackingPulse('YARD')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:all 0.15s;">
+                <i class="fa-solid fa-warehouse" style="color:#D97706;font-size:0.72rem;"></i> At Yard
+                <span style="background:#FEF3C7;color:#B45309;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_yard_count }}</span>
             </button>
             {% endif %}
             <button type="button" data-pulse-filter="DELAYED" onclick="window.filterTrackingPulse('DELAYED')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:all 0.15s;">
@@ -1598,17 +902,17 @@
 
             var statusMatch = true;
             if (filter === 'ACTIVE') {
-                statusMatch = (status === 'ACTIVE');
+                statusMatch = (status === 'ACTIVE' || status === 'DELAYED');
             } else if (filter === 'COMPLETED') {
                 statusMatch = (status === 'COMPLETED');
             } else if (filter === 'DELAYED') {
                 statusMatch = (status === 'DELAYED');
             } else if (filter === 'TRA') {
-                statusMatch = (status !== 'COMPLETED' && (stage === 2 || stage === 3 || stage === 4));
+                statusMatch = (status !== 'COMPLETED' && stage === 2);
             } else if (filter === 'PORT') {
-                statusMatch = (status !== 'COMPLETED' && (stage === 5 || stage === 6 || stage === 7));
-            } else if (filter === 'BOND') {
-                statusMatch = (status !== 'COMPLETED' && (mode === 'BOND' || stage === 8));
+                statusMatch = (status !== 'COMPLETED' && stage === 3);
+            } else if (filter === 'YARD' || filter === 'BOND') {
+                statusMatch = (status !== 'COMPLETED' && stage === 4);
             }
 
             var queryMatch = !query || searchBlob.indexOf(query) !== -1;

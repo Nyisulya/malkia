@@ -222,7 +222,7 @@
                     <h4 style="font-family:var(--font-heading);font-size:1.1rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
                         Step 1: TRA Verification
                     </h4>
-                    <span style="font-size:0.8rem;color:var(--text-muted);">Thibitisha ukaguzi wa TRA (Simple Verify) ili gari liende hatua ya Gate Exit</span>
+                    <span style="font-size:0.8rem;color:var(--text-muted);">Verify TRA Physical Inspection to proceed to Port Exit</span>
                 </div>
             </div>
             {% if selected_job.current_stage_number > 5 %}
@@ -236,7 +236,7 @@
             <input type="hidden" name="verification_outcome" value="PASSED">
 
             <div style="margin-bottom:0.85rem;">
-                <input type="text" name="findings" class="form-control" placeholder="Maelezo mafupi kama yapo (Optional)..." style="font-size:0.86rem;padding:0.6rem 0.75rem;">
+                <input type="text" name="findings" class="form-control" placeholder="Brief notes if any (Optional)..." style="font-size:0.86rem;padding:0.6rem 0.75rem;">
             </div>
 
             {% if verification_done %}
@@ -266,7 +266,7 @@
                     <h4 style="font-family:var(--font-heading);font-size:1.1rem;font-weight:800;color:var(--brand-navy-900);margin:0;">
                         Step 2: Simple Verify &amp; Port Exit (Dispatch to Yard)
                     </h4>
-                    <span style="font-size:0.8rem;color:var(--text-muted);">Bonyeza Verify kuthibitisha gari limetoka Bandarini / ICD kwenda Malkia Yard</span>
+                    <span style="font-size:0.8rem;color:var(--text-muted);">Confirm vehicle exit from Port/ICD to Malkia Yard</span>
                 </div>
             </div>
             {% if selected_job.vehicle_dispatched_to_office %}

@@ -12,6 +12,13 @@ def global_stats(request):
         overdue_stages_count = JobStageInstance.objects.filter(
             status__in=['IN_PROGRESS', 'DELAYED', 'BLOCKED']
         ).count()
+
+        # 5-Stage Operational Pipeline Counts
+        stage_1_count = JobShipment.objects.filter(current_stage_number=1, status__in=['ACTIVE', 'DELAYED']).count()
+        stage_2_count = JobShipment.objects.filter(current_stage_number=2, status__in=['ACTIVE', 'DELAYED']).count()
+        stage_3_count = JobShipment.objects.filter(current_stage_number=3, status__in=['ACTIVE', 'DELAYED']).count()
+        stage_4_count = JobShipment.objects.filter(current_stage_number=4, status__in=['ACTIVE', 'DELAYED']).count()
+        stage_5_count = JobShipment.objects.filter(current_stage_number=5, status__in=['ACTIVE', 'DELAYED']).count()
         pending_intakes_count = JobShipment.objects.filter(
             current_stage_number__in=[1, 2], status__in=['ACTIVE', 'DELAYED']
         ).count()
@@ -41,14 +48,9 @@ def global_stats(request):
         pending_receipts_count = pending_receipts_jobs.count()
         yard_ready_count = JobShipment.objects.filter(
             vehicle_arrived_at_office=True,
-            clearance_mode='DIRECT',
             status__in=['ACTIVE', 'DELAYED']
         ).count()
-        bond_count = JobShipment.objects.filter(
-            vehicle_arrived_at_office=True,
-            clearance_mode='BOND',
-            status__in=['ACTIVE', 'DELAYED']
-        ).count()
+        bond_count = 0
 
         # User profile & RBAC flags
         user_role = None
@@ -65,58 +67,57 @@ def global_stats(request):
 
         if request.user.is_authenticated:
             user_role = get_user_role(request.user)
-            if hasattr(request.user, 'profile'):
-                user_role_display = request.user.profile.get_role_display()
-            elif request.user.is_superuser:
-                user_role_display = "Super Administrator"
 
-            is_ceo = (user_role == UserRole.CEO)
-            is_ops = (user_role == UserRole.OPERATIONS_MGR)
+            is_ceo = (user_role in [UserRole.CEO, UserRole.ADMIN] or request.user.is_superuser)
             is_finance = (user_role == UserRole.FINANCE)
-            is_clearing = (user_role == UserRole.CLEARING_OFFICER)
-            is_doc = (user_role == UserRole.DOC_OFFICER)
-            is_port = (user_role == UserRole.PORT_OFFICER)
-            is_dispatch = False
-            is_driver = False
-            is_admin = (user_role == UserRole.ADMIN or request.user.is_superuser)
-            if is_ceo and not is_admin:
-                # CEO only gets badged for vouchers verified by Finance awaiting CEO payout
+            is_ops = (not is_ceo and not is_finance) # Everyone else belongs to OPERATIONS
+
+            if is_ceo:
+                user_role_display = "CEO / Management"
+            elif is_finance:
+                user_role_display = "Finance / Accountant"
+            else:
+                user_role_display = "Operations"
+
+            is_clearing = is_ops
+            is_doc = is_ops
+            is_port = is_ops
+            is_dispatch = is_ops
+            is_driver = is_ops
+            is_admin = is_ceo
+
+            if is_ceo:
+                # CEO gets badged for vouchers verified by Finance awaiting CEO payout
                 pending_expenses_count = ExpenseVoucher.objects.filter(approval_status='VERIFIED', is_paid=False).count()
             elif is_finance:
                 # Finance gets badged for field requests needing review & audit
                 pending_expenses_count = ExpenseVoucher.objects.filter(approval_status='REQUESTED').count()
 
-            if is_port:
-                field_today_jobs_count = JobShipment.objects.filter(
-                    status__in=['ACTIVE', 'DELAYED']
-                ).filter(Q(port_officer=request.user) | Q(port_officer__isnull=True)).count()
-            elif is_driver:
-                driver_active_jobs_count = JobShipment.objects.filter(
-                    driver=request.user, status__in=['ACTIVE', 'DELAYED']
-                ).count()
-            elif is_ops or is_ceo or is_admin:
-                field_today_jobs_count = JobShipment.objects.filter(
-                    status__in=['ACTIVE', 'DELAYED'],
-                    current_stage_number__in=[5, 8, 10]
-                ).count()
-                today_staff_present = StaffAttendance.objects.filter(
-                    date=timezone.now().date(), status__in=['PRESENT', 'LATE']
-                ).count()
+            field_today_jobs_count = JobShipment.objects.filter(
+                status__in=['ACTIVE', 'DELAYED']
+            ).count()
+            today_staff_present = StaffAttendance.objects.filter(
+                date=timezone.now().date(), status__in=['PRESENT', 'LATE']
+            ).count()
 
-        is_manager = (is_ops or is_ceo or is_admin)
-        can_manage_finance = (is_finance or is_admin or is_ceo)
-        can_view_financials = (is_finance or is_ceo or is_admin or is_ops)
-        can_create_shipment = (is_doc or is_ops) and not is_ceo
-        can_view_audit = (is_ceo or is_ops or is_finance or is_admin)
-        can_manage_users = (is_ceo or is_admin)
-        can_edit = not is_ceo
-        is_read_only = is_ceo
-
-        can_view_all_stages = (is_ceo or is_ops or is_admin)
+        is_manager = (is_ops or is_ceo)
+        can_manage_finance = (is_finance or is_ceo)
+        can_view_financials = (is_finance or is_ceo)
+        can_create_shipment = (is_ops or is_ceo)
+        can_view_audit = (is_ceo or is_finance)
+        can_manage_users = is_ceo
+        can_edit = True
+        is_read_only = False
+        can_view_all_stages = (is_ops or is_ceo)
 
         return {
             'global_total_staff_count': total_staff_count,
             'global_active_jobs': active_jobs_count,
+            'global_stage_1_count': stage_1_count,
+            'global_stage_2_count': stage_2_count,
+            'global_stage_3_count': stage_3_count,
+            'global_stage_4_count': stage_4_count,
+            'global_stage_5_count': stage_5_count,
             'global_pending_expenses': pending_expenses_count,
             'global_unpaid_invoices': unpaid_invoices_count,
             'global_pending_intakes': pending_intakes_count,

@@ -108,19 +108,9 @@
                             </span>
                         </div>
                         <div>
-                            {% if job.clearance_mode == 'BOND' %}
-                            <span class="badge-pill" style="background:#FEF3C7;color:#92400E;font-size:0.68rem;font-weight:800;">
-                                <i class="fa-solid fa-warehouse"></i> In-Bond
-                            </span>
-                            {% elif job.clearance_mode == 'EX_BOND' %}
-                            <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;font-size:0.68rem;font-weight:800;">
-                                <i class="fa-solid fa-unlock-keyhole"></i> Ex-Bond
-                            </span>
-                            {% else %}
                             <span class="badge-pill" style="background:#ECFDF5;color:#065F46;font-size:0.68rem;font-weight:800;">
-                                <i class="fa-solid fa-money-bill-transfer"></i> Direct Duty
+                                <i class="fa-solid fa-ship"></i> Direct Clearance
                             </span>
-                            {% endif %}
                         </div>
                     </td>
 

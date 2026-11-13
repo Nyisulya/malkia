@@ -1,0 +1,1035 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Accountant Dashboard - Financial Command Center | Malkia Cargo Waves{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fin-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 1.15rem 1.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .fin-card-blue {
+        border-left: 4px solid #2563EB;
+    }
+
+    .fin-card-amber {
+        border-left: 4px solid #F59E0B;
+    }
+
+    .fin-card-red {
+        border-left: 4px solid #DC2626;
+    }
+
+    .fin-card-green {
+        border-left: 4px solid #059669;
+    }
+
+    .fin-table-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    .fin-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.82rem;
+    }
+
+    .fin-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 15;
+        background: #0F172A;
+        color: #F8FAFC;
+        padding: 0.75rem 0.75rem;
+        font-weight: 700;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-right: 1px solid #1E293B;
+        border-bottom: 2px solid #334155;
+        text-align: center;
+    }
+
+    .fin-table tbody td {
+        padding: 0.65rem 0.75rem;
+        border-bottom: 1px solid #E2E8F0;
+        border-right: 1px solid #F1F5F9;
+        vertical-align: middle;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .fin-table tbody tr:hover {
+        background: #E2F3F0 !important;
+    }
+
+    .num-col {
+        text-align: right;
+        font-family: var(--font-mono, monospace);
+    }
+
+    .text-center-col {
+        text-align: center;
+    }
+
+    .badge-pill-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+
+    .badge-costed {
+        background: #ECFDF5;
+        color: #065F46;
+        border: 1px solid #A7F3D0;
+    }
+
+    .badge-pending-cost {
+        background: #FEF3C7;
+        color: #92400E;
+        border: 1px solid #FDE68A;
+    }
+
+    .category-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.65rem 0;
+        border-bottom: 1px solid #F1F5F9;
+        font-size: 0.82rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding-bottom: 3rem;">
+
+    <!-- TOP GREETING & HEADER -->
+    <div class="page-header-box"
+        style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                <span
+                    style="display: inline-flex; align-items: center; gap: 0.35rem; color: #059669; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;">
+                    <i class="fa-solid fa-calculator"></i> Finance &amp; Accounts
+                </span>
+            </div>
+            <h2 class="page-title"
+                style="font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                Accountant Dashboard
+            </h2>
+            <p class="page-subtitle" style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.25rem;">
+                Vehicles Out Direct Disbursements &amp; Clearance Costing.
+            </p>
+        </div>
+
+        <!-- HEADER ACTIONS -->
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <!-- EXPORT EXCEL BUTTON -->
+            <a href="{% url 'finance_vehicles_out_export' %}?{% if date_from and date_to %}date_from={{ date_from }}&date_to={{ date_to }}{% elif selected_period == 'all' %}year=all{% else %}year={{ current_year }}{% endif %}"
+                class="btn-header-action"
+                style="background: #059669; color: #FFFFFF; font-weight: 800; border: none; padding: 0.45rem 1rem; border-radius: 10px; display: inline-flex; align-items: center; gap: 0.45rem; text-decoration: none; font-size: 0.82rem; box-shadow: 0 2px 4px rgba(5,150,105,0.2);">
+                <i class="fa-solid fa-file-excel"></i> Export Excel
+            </a>
+
+            <!-- FULL LEDGER LINK -->
+            <a href="{% url 'finance_vehicles_out' %}" class="btn-header-action btn-outline"
+                style="font-size: 0.82rem; padding: 0.45rem 0.9rem; border-radius: 10px; text-decoration: none; font-weight: 700;">
+                <i class="fa-solid fa-table-list"></i> Full Ledger
+            </a>
+        </div>
+    </div>
+
+    <!-- SMART DATE FILTER TOOLBAR (From Date - To Date & Presets) -->
+    <div
+        style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 0.85rem 1.15rem; margin-bottom: 1.35rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <form method="GET" action=""
+            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.85rem;">
+
+            <!-- Quick Preset Tabs -->
+            <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                <span
+                    style="font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #64748B; margin-right: 0.25rem;">
+                    <i class="fa-solid fa-calendar-days" style="color: #059669;"></i> Period:
+                </span>
+                <a href="?period=today"
+                    class="btn-header-action {% if selected_period == 'today' %}btn-primary{% else %}btn-outline{% endif %}"
+                    style="font-size: 0.78rem; padding: 0.32rem 0.75rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
+                    Today
+                </a>
+                <a href="?period=this_month"
+                    class="btn-header-action {% if selected_period == 'this_month' %}btn-primary{% else %}btn-outline{% endif %}"
+                    style="font-size: 0.78rem; padding: 0.32rem 0.75rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
+                    This Month
+                </a>
+                <a href="?period=this_year"
+                    class="btn-header-action {% if selected_period == 'this_year' %}btn-primary{% else %}btn-outline{% endif %}"
+                    style="font-size: 0.78rem; padding: 0.32rem 0.75rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
+                    Year {{ current_year }}
+                </a>
+                <a href="?period=all"
+                    class="btn-header-action {% if selected_period == 'all' %}btn-primary{% else %}btn-outline{% endif %}"
+                    style="font-size: 0.78rem; padding: 0.32rem 0.75rem; border-radius: 8px; text-decoration: none; font-weight: 700;">
+                    All Time
+                </a>
+            </div>
+
+            <!-- Custom Date Range Form (From: [date] To: [date]) -->
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                    <label
+                        style="font-size: 0.75rem; font-weight: 800; color: #64748B; text-transform: uppercase;">From:</label>
+                    <input type="date" name="date_from" value="{{ date_from }}" required
+                        style="padding: 0.35rem 0.6rem; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 0.8rem; background: #F8FAFC; color: #0F172A; font-weight: 600; outline: none;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                    <label
+                        style="font-size: 0.75rem; font-weight: 800; color: #64748B; text-transform: uppercase;">To:</label>
+                    <input type="date" name="date_to" value="{{ date_to }}" required
+                        style="padding: 0.35rem 0.6rem; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 0.8rem; background: #F8FAFC; color: #0F172A; font-weight: 600; outline: none;">
+                </div>
+                <button type="submit" class="btn-header-action btn-primary"
+                    style="padding: 0.4rem 0.95rem; font-size: 0.8rem; border-radius: 8px; font-weight: 800; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;">
+                    <i class="fa-solid fa-filter"></i> Filter
+                </button>
+                {% if selected_period == 'custom' or selected_period == 'today' or date_from %}
+                <a href="?period=this_year" class="btn-header-action btn-outline"
+                    style="padding: 0.4rem 0.75rem; font-size: 0.78rem; border-radius: 8px; color: #DC2626; border-color: #FECACA; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem;"
+                    title="Reset to This Year">
+                    <i class="fa-solid fa-rotate-left"></i> Reset
+                </a>
+                {% endif %}
+            </div>
+        </form>
+
+        <!-- Active Filter Indicator Banner -->
+        <div
+            style="margin-top: 0.65rem; padding-top: 0.55rem; border-top: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; font-size: 0.78rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="color: #64748B;">Showing data for:</span>
+                <strong
+                    style="color: #059669; background: #ECFDF5; padding: 0.2rem 0.6rem; border-radius: 6px; border: 1px solid #A7F3D0;">
+                    <i class="fa-solid fa-clock"></i> {{ filter_label }}
+                </strong>
+                <span style="color: #94A3B8;">&bull; <strong>{{ total_vehicles }}</strong> vehicle{{ total_vehicles|pluralize }} in range</span>
+            </div>
+            <div>
+                <a href="{% url 'finance_vehicles_out_export' %}?{% if date_from and date_to %}date_from={{ date_from }}&date_to={{ date_to }}{% elif selected_period == 'all' %}year=all{% else %}year={{ current_year }}{% endif %}"
+                    style="color: #059669; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem;">
+                    <i class="fa-solid fa-file-excel"></i> Export filtered data (.xlsx)
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5 EXECUTIVE FINANCIAL KPI CARDS -->
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+
+        <!-- CARD 1: MALKIA AGENCY REVENUE -->
+        <div class="fin-card fin-card-green">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span
+                    style="font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em;">Malkia
+                    Agency Revenue</span>
+                <span
+                    style="width: 32px; height: 32px; border-radius: 8px; background: #ECFDF5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                </span>
+            </div>
+            <div style="font-size: 1.55rem; font-weight: 900; color: #059669; margin: 0.35rem 0 0.2rem 0;">
+                TSh {{ sum_agent_fee|floatformat:0|intcomma }}
+            </div>
+            <div style="font-size: 0.72rem; color: #047857; font-weight: 700;">
+                <i class="fa-solid fa-arrow-trend-up"></i> Company Clearance Earnings
+            </div>
+        </div>
+
+        <!-- CARD 2: OPERATING OVERHEADS & SALARIES -->
+        <div class="fin-card" style="border-left: 4px solid #F59E0B;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span
+                    style="font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em;">Salaries
+                    &amp; Overheads</span>
+                <span
+                    style="width: 32px; height: 32px; border-radius: 8px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                </span>
+            </div>
+            <div style="font-size: 1.55rem; font-weight: 900; color: #B45309; margin: 0.35rem 0 0.2rem 0;">
+                TSh {{ total_company_costs|floatformat:0|intcomma }}
+            </div>
+            <div style="font-size: 0.71rem; color: #64748B; font-weight: 600;">
+                Salaries {{ sum_salaries_paid|floatformat:0|intcomma }} &bull; Office {{ sum_office_expenses|floatformat:0|intcomma }}
+            </div>
+        </div>
+
+        <!-- CARD 3: NET COMPANY PROFIT / (LOSS) -->
+        <div class="fin-card"
+            style="border-left: 4px solid {% if net_profit >= 0 %}#10B981{% else %}#EF4444{% endif %};">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span
+                    style="font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em;">Net
+                    Company Profit</span>
+                <span
+                    style="width: 32px; height: 32px; border-radius: 8px; background: {% if net_profit >= 0 %}#DCFCE7; color: #166534;{% else %}#FEE2E2; color: #DC2626;{% endif %} display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                    <i
+                        class="fa-solid {% if net_profit >= 0 %}fa-scale-balanced{% else %}fa-arrow-trend-down{% endif %}"></i>
+                </span>
+            </div>
+            <div
+                style="font-size: 1.55rem; font-weight: 900; color: {% if net_profit >= 0 %}#047857{% else %}#DC2626{% endif %}; margin: 0.35rem 0 0.2rem 0;">
+                TSh {{ net_profit|floatformat:0|intcomma }}
+            </div>
+            <div
+                style="font-size: 0.71rem; font-weight: 700; color: {% if net_profit >= 0 %}#059669{% else %}#DC2626{% endif %};">
+                {% if net_profit >= 0 %}<i class="fa-solid fa-circle-check"></i> Net Operational Surplus{% else %}<i
+                    class="fa-solid fa-circle-exclamation"></i> Net Operating Deficit{% endif %}
+            </div>
+        </div>
+
+        <!-- CARD 4: PORT & CUSTOMS DISBURSEMENTS -->
+        <div class="fin-card fin-card-red">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span
+                    style="font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em;">Office
+                    Client Disbursements</span>
+                <span
+                    style="width: 32px; height: 32px; border-radius: 8px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                    <i class="fa-solid fa-receipt"></i>
+                </span>
+            </div>
+            <div style="font-size: 1.55rem; font-weight: 900; color: #DC2626; margin: 0.35rem 0 0.2rem 0;">
+                TSh {{ sum_direct_costs|floatformat:0|intcomma }}
+            </div>
+            <div style="font-size: 0.71rem; color: #64748B; font-weight: 600;">
+                D/O, Port &amp; Fuel (Excl. TRA Duty)
+            </div>
+        </div>
+
+        <!-- CARD 5: CLIENT INVOICES & RECEIVABLES -->
+        <div class="fin-card" style="border-left: 4px solid #6366F1;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span
+                    style="font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em;">Invoiced
+                    &amp; Receivables</span>
+                <span
+                    style="width: 32px; height: 32px; border-radius: 8px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                </span>
+            </div>
+            <div style="font-size: 1.55rem; font-weight: 900; color: #4338CA; margin: 0.35rem 0 0.2rem 0;">
+                TSh {{ total_invoiced|floatformat:0|intcomma }}
+            </div>
+            <div style="font-size: 0.71rem; color: #64748B; font-weight: 700;">
+                <span style="color:#16A34A;">Paid: TSh {{ total_collected|floatformat:0|intcomma }}</span> &bull; <span
+                    style="color:#DC2626;">Due: TSh {{ total_due|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FULL-WIDTH VEHICLES DIRECT COSTING WORKSPACE -->
+    <div class="fin-table-card" id="accountantVehiclesCard" data-async-container style="width: 100%;">
+
+        <!-- CARD HEADER & SEARCH -->
+        <div
+            style="padding: 1rem 1.25rem; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; background: #F8FAFC;">
+            <div>
+                <h3
+                    style="font-size: 1.05rem; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 0.45rem;">
+                    <i class="fa-solid fa-list-check" style="color: #0284C7;"></i> Vehicles Direct Costing Ledger
+                </h3>
+                <div style="font-size: 0.75rem; color: #64748B; margin-top: 0.25rem;">
+                    Total CIF Value: <strong style="color: #B45309;">${{ sum_cif_usd|floatformat:2|intcomma }}</strong>
+                    &bull;
+                    {{ total_vehicles }} Units (<span style="color: #059669; font-weight: 700;">{{ costed_count }}
+                        Costed</span> · <span style="color: #0284C7; font-weight: 700;">{{ in_progress_count }} In
+                        Progress</span> · <span style="color: #D97706; font-weight: 700;">{{ uncosted_count }}
+                        Pending</span>)
+                </div>
+            </div>
+
+            <!-- SEARCH INPUT -->
+            <form method="GET" action="" style="display: flex; gap: 0.4rem;">
+                <input type="hidden" name="period" value="{{ selected_period }}">
+                <input type="text" name="q" value="{{ search_q }}" placeholder="Search BL, Chassis, Vehicle..."
+                    class="form-control" style="height: 34px; font-size: 0.78rem; width: 220px; border-radius: 8px;">
+                <button type="submit" class="btn-header-action btn-outline"
+                    style="height: 34px; font-size: 0.78rem; padding: 0 0.65rem;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- TABLE WRAPPER -->
+        <div style="overflow: auto; max-height: 60vh; position: relative;">
+            <table class="fin-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="width: 105px;">DATE</th>
+                        <th style="width: 140px;">JOB NO</th>
+                        <th style="width: 150px;">BL NO</th>
+                        <th style="width: 175px; text-align: right;">OFFICE DISBURSEMENTS (TSH)</th>
+                        <th style="width: 140px; text-align: right; background: #064E3B; color: #A7F3D0;">AGENT FEE</th>
+                        <th style="width: 110px; text-align: center;">STATUS</th>
+                        <th style="width: 220px; text-align: center;">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in recent_jobs %}
+                    <tr>
+                        <td class="text-center-col" style="color: #64748B; font-weight: 600; font-size: 0.8rem;">
+                            {{ job.created_at|date:"d.m.Y" }}
+                        </td>
+                        <td class="text-center-col"
+                            title="{{ job.vehicle_make }} {{ job.vehicle_model }} ({{ job.registration_year|default:'—' }})">
+                            <span
+                                style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A; font-size: 0.84rem; background: #F8FAFC; padding: 2px 6px; border-radius: 4px; border: 1px solid #E2E8F0;">
+                                {{ job.job_number }}
+                            </span>
+                        </td>
+                        <td class="text-center-col" title="Client: {{ job.customer.company_name|default:'—' }}">
+                            <span
+                                style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0284C7; font-size: 0.84rem;">
+                                {{ job.bl_number|default:"—" }}
+                            </span>
+                        </td>
+                        <td class="num-col" style="font-weight: 800; color: #DC2626; font-size: 0.88rem;">
+                            {{ job.total_direct_costs|floatformat:2|intcomma }}
+                        </td>
+                        <td class="num-col"
+                            style="font-weight: 800; color: #059669; background: #ECFDF5; font-size: 0.88rem;">
+                            {{ job.cost_agent_fee|floatformat:2|intcomma }}
+                        </td>
+                        <!-- DEDICATED STATUS COLUMN -->
+                        <td style="text-align: center; vertical-align: middle;">
+                            {% if job.costing_status == 'FULLY_COSTED' %}
+                            <span class="badge-pill-status badge-costed"
+                                style="font-size: 0.72rem; padding: 3px 8px; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                <i class="fa-solid fa-circle-check"></i> Costed
+                            </span>
+                            {% elif job.costing_status == 'IN_PROGRESS' %}
+                            <span class="badge-pill-status"
+                                style="background: #E0F2FE; color: #0284C7; border: 1px solid #BAE6FD; font-size: 0.72rem; padding: 3px 8px; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                <i class="fa-solid fa-spinner fa-spin" style="font-size: 0.65rem;"></i> In Progress
+                            </span>
+                            {% else %}
+                            <span class="badge-pill-status badge-pending-cost"
+                                style="font-size: 0.72rem; padding: 3px 8px; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                <i class="fa-solid fa-clock"></i> Pending
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- DEDICATED ACTIONS COLUMN -->
+                        <td style="text-align: center; vertical-align: middle;">
+                            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; flex-wrap: nowrap;">
+                                <!-- VIEW EYE BUTTON -->
+                                <button type="button"
+                                    onclick="openBreakdownModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{% if job.costing_status == "FULLY_COSTED" %}Costed{% elif job.costing_status == "IN_PROGRESS" %}In Progress{% else %}Pending{% endif %}', '', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}')"
+                                    class="btn-header-action"
+                                    style="font-size: 0.75rem; padding: 0.32rem 0.55rem; background: #F1F5F9; color: #0F172A; border: 1px solid #CBD5E1; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;"
+                                    title="View Full Cost Breakdown">
+                                    <i class="fa-solid fa-eye" style="color: #0284C7;"></i>
+                                </button>
+
+                                <!-- ENTER / EDIT COSTS BUTTON -->
+                                <button type="button"
+                                    onclick="openCostModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:"" }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}')"
+                                    style="font-size: 0.75rem; padding: 0.32rem 0.65rem; {% if job.costing_status == 'FULLY_COSTED' %}background: #059669;{% elif job.costing_status == 'IN_PROGRESS' %}background: #0284C7;{% else %}background: #D97706;{% endif %} color: #FFFFFF; border: none; border-radius: 6px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.28rem;">
+                                    {% if job.costing_status == 'FULLY_COSTED' %}
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                                    {% elif job.costing_status == 'IN_PROGRESS' %}
+                                    <i class="fa-solid fa-pen-to-square"></i> + Update
+                                    {% else %}
+                                    <i class="fa-solid fa-plus"></i> Cost
+                                    {% endif %}
+                                </button>
+
+                                <!-- INVOICE SHORTCUT -->
+                                {% if job.latest_invoice %}
+                                <a href="{% url 'print_invoice' job.latest_invoice.id %}" target="_blank"
+                                    class="badge-pill"
+                                    style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-size: 0.72rem; padding: 3px 8px; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;"
+                                    title="View / Print Invoice {{ job.latest_invoice.invoice_number }}">
+                                    <i class="fa-solid fa-file-invoice"></i> {{ job.latest_invoice.invoice_number }}
+                                </a>
+                                {% elif job.cost_agent_fee > 0 or job.total_direct_costs > 0 %}
+                                <a href="{% url 'print_job_invoice' job.id %}" target="_blank"
+                                    class="badge-pill"
+                                    style="background: #ECFDF5; color: #047857; border: 1px solid #6EE7B7; font-size: 0.72rem; padding: 3px 8px; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;"
+                                    title="Tengeneza na Chapisha Invoice kwa ajili ya gari hili">
+                                    <i class="fa-solid fa-file-invoice-dollar"></i> + Invoice
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2.5rem 1rem; color: #64748B;">
+                            <div style="font-size: 1.8rem; color: #CBD5E1; margin-bottom: 0.4rem;"><i
+                                    class="fa-solid fa-car-side"></i></div>
+                            <div style="font-weight: 700; color: #1E293B;">No vehicle records for this period</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PAGINATION CONTROLS -->
+        {% include 'includes/pagination.html' with page_obj=page_obj extra_querystring=extra_querystring item_label="vehicles" %}
+
+        <!-- CARD FOOTER ACTION -->
+        <div
+            style="padding: 0.65rem 1.25rem; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: flex-end;">
+            <a href="{% url 'finance_vehicles_out' %}"
+                style="font-size: 0.8rem; font-weight: 800; color: #0284C7; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+                <span>View Full Vehicles Out Ledger</span> <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM WORKSPACE PANELS: BREAKDOWNS, VOUCHERS & TOOLS -->
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; margin-top: 1.5rem; align-items: stretch;">
+
+        <!-- CARD 1: COST BREAKDOWN BY CATEGORY -->
+        <div class="fin-card" style="margin-bottom: 0;">
+            <div
+                style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 0.65rem;">
+                <span
+                    style="font-weight: 800; font-size: 0.88rem; color: #0F172A; text-transform: uppercase; letter-spacing: 0.03em;">
+                    <i class="fa-solid fa-chart-pie" style="color: #7C3AED; margin-right: 0.35rem;"></i> Direct Cost
+                    Breakdown
+                </span>
+                <span style="font-size: 0.72rem; color: #64748B; font-weight: 600;">Disbursements</span>
+            </div>
+
+            <div class="category-row">
+                <span style="color: #64748B; font-weight: 700;">1. Customs Duty (Client Pays Direct via Control
+                    #):</span>
+                <span style="font-family: var(--font-mono, monospace); font-weight: 700; color: #64748B;">TSh {{ sum_duty|floatformat:0|intcomma }}</span>
+            </div>
+
+            <div class="category-row">
+                <span style="color: #475569; font-weight: 700;">2. Shipping Line (D/O):</span>
+                <span style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A;">TSh {{ sum_do|floatformat:0|intcomma }}</span>
+            </div>
+
+            <div class="category-row">
+                <span style="color: #475569; font-weight: 700;">3. Wharfage &amp; TISS (Port):</span>
+                <span style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A;">TSh {{ sum_wharfage_total|floatformat:0|intcomma }}</span>
+            </div>
+
+            <div class="category-row">
+                <span style="color: #475569; font-weight: 700;">4. Port / ICD Handling:</span>
+                <span style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A;">TSh {{ sum_handling|floatformat:0|intcomma }}</span>
+            </div>
+
+            <div class="category-row">
+                <span style="color: #475569; font-weight: 700;">5. Transport &amp; Delivery:</span>
+                <span style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A;">TSh {{ sum_transport|floatformat:0|intcomma }}</span>
+            </div>
+
+            <div class="category-row">
+                <span style="color: #475569; font-weight: 700;">6. Fuel:</span>
+                <span style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A;">TSh {{ sum_fuel|floatformat:0|intcomma }}</span>
+            </div>
+
+            <div class="category-row" style="border-bottom: none;">
+                <span style="color: #475569; font-weight: 700;">7. Ferry &amp; Facilitation:</span>
+                <span style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A;">TSh {{ sum_ferry_facil|floatformat:0|intcomma }}</span>
+            </div>
+
+            <div
+                style="background: #F8FAFC; border-radius: 8px; padding: 0.65rem 0.85rem; margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; border: 1px solid #E2E8F0;">
+                <span style="font-weight: 800; font-size: 0.8rem; color: #0F172A;">TOTAL DISBURSEMENTS:</span>
+                <span
+                    style="font-family: var(--font-mono, monospace); font-weight: 900; font-size: 0.95rem; color: #DC2626;">TSh
+                    {{ sum_direct_costs|floatformat:0|intcomma }}</span>
+            </div>
+        </div>
+
+        <!-- CARD 2: ACCOUNTANT QUICK TOOLS -->
+        <div class="fin-card"
+            style="margin-bottom: 0; background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); color: #FFFFFF;">
+            <div
+                style="font-weight: 800; font-size: 0.88rem; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-briefcase" style="color: #38BDF8;"></i> Quick Actions &amp; Navigation
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.55rem;">
+                <a href="{% url 'finance_vehicles_out' %}"
+                    style="display: flex; align-items: center; gap: 0.65rem; background: rgba(255,255,255,0.08); padding: 0.65rem 0.85rem; border-radius: 8px; color: #FFFFFF; text-decoration: none; font-size: 0.82rem; font-weight: 700; transition: background 0.15s;">
+                    <i class="fa-solid fa-table-list" style="color: #38BDF8;"></i> Vehicles Out Master Ledger
+                </a>
+                <a href="{% url 'finance_vehicles_out_export' %}?year={{ current_year }}"
+                    style="display: flex; align-items: center; gap: 0.65rem; background: rgba(255,255,255,0.08); padding: 0.65rem 0.85rem; border-radius: 8px; color: #FFFFFF; text-decoration: none; font-size: 0.82rem; font-weight: 700; transition: background 0.15s;">
+                    <i class="fa-solid fa-file-excel" style="color: #10B981;"></i> Export Vehicles Out (.xlsx)
+                </a>
+                <a href="{% url 'finance_billing' %}"
+                    style="display: flex; align-items: center; gap: 0.65rem; background: rgba(255,255,255,0.08); padding: 0.65rem 0.85rem; border-radius: 8px; color: #FFFFFF; text-decoration: none; font-size: 0.82rem; font-weight: 700; transition: background 0.15s;">
+                    <i class="fa-solid fa-file-invoice-dollar" style="color: #FBBF24;"></i> Client Billing &amp; Invoices
+                </a>
+                <a href="{% url 'operating_expenses' %}"
+                    style="display: flex; align-items: center; gap: 0.65rem; background: rgba(255,255,255,0.08); padding: 0.65rem 0.85rem; border-radius: 8px; color: #FFFFFF; text-decoration: none; font-size: 0.82rem; font-weight: 700; transition: background 0.15s;">
+                    <i class="fa-solid fa-money-bill-transfer" style="color: #F43F5E;"></i> Operating Expenses
+                </a>
+                <a href="{% url 'finance_transactions' %}"
+                    style="display: flex; align-items: center; gap: 0.65rem; background: rgba(255,255,255,0.08); padding: 0.65rem 0.85rem; border-radius: 8px; color: #FFFFFF; text-decoration: none; font-size: 0.82rem; font-weight: 700; transition: background 0.15s;">
+                    <i class="fa-solid fa-clock-rotate-left" style="color: #A78BFA;"></i> Financial Transactions
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================================================================= -->
+<!-- MODAL: DETAILED VEHICLE COST BREAKDOWN (VIEW ONLY / QUICK AUDIT) -->
+<!-- ================================================================= -->
+<div id="breakdownModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+    <div
+        style="background: #FFFFFF; border-radius: 16px; max-width: 620px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #CBD5E1;">
+        <!-- HEADER -->
+        <div
+            style="padding: 1.15rem 1.5rem; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; background: #0F172A; border-radius: 16px 16px 0 0; color: #FFFFFF;">
+            <div>
+                <div
+                    style="font-size: 0.72rem; font-weight: 800; color: #38BDF8; text-transform: uppercase; letter-spacing: 0.04em;">
+                    Vehicle Clearance Cost Breakdown</div>
+                <h3 id="bdVehicleTitle"
+                    style="font-size: 1.15rem; font-weight: 800; color: #FFFFFF; margin: 0.15rem 0 0 0;"></h3>
+            </div>
+            <button type="button" onclick="closeBreakdownModal()"
+                style="background: transparent; border: none; font-size: 1.4rem; color: #94A3B8; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+
+        <div style="padding: 1.25rem 1.5rem;">
+            <!-- META BADGES (REF, CHASSIS, STATUS) -->
+            <div
+                style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1.15rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                    <div style="font-size: 0.7rem; color: #64748B; font-weight: 700;">BL / CHASSIS:</div>
+                    <div id="bdChassisRef"
+                        style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A; font-size: 0.85rem;">
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size: 0.7rem; color: #64748B; font-weight: 700;">INVOICE CIF:</div>
+                    <div id="bdInvoiceVal" style="font-weight: 800; color: #B45309; font-size: 0.88rem;"></div>
+                </div>
+                <div id="bdStatusBadge"></div>
+            </div>
+
+            <!-- INFORMATIONAL: TRA CUSTOMS DUTY STRIP -->
+            <div
+                style="background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 10px; padding: 0.65rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <div style="font-size: 0.72rem; font-weight: 800; color: #475569; text-transform: uppercase;">
+                        <i class="fa-solid fa-building-columns" style="color: #64748B;"></i> TRA Customs Duty (Client
+                        Direct)
+                    </div>
+                    <div style="font-size: 0.68rem; color: #94A3B8;">Client pays TRA directly via Control # &bull;
+                        Not a company expense</div>
+                </div>
+                <div id="bdDutyVal"
+                    style="font-family: var(--font-mono, monospace); font-weight: 800; font-size: 0.92rem; color: #475569;">
+                    —</div>
+            </div>
+
+            <!-- ITEMIZED TABLE -->
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                <thead>
+                    <tr style="background: #F1F5F9; border-bottom: 2px solid #CBD5E1;">
+                        <th style="text-align: left; padding: 0.45rem 0.65rem; color: #475569; font-weight: 800;">OFFICE
+                            EXPENSE / REVENUE ITEM</th>
+                        <th style="text-align: right; padding: 0.45rem 0.65rem; color: #475569; font-weight: 800;">
+                            AMOUNT (TSH)</th>
+                    </tr>
+                </thead>
+                <tbody id="bdItemsList">
+                    <!-- Injected dynamically -->
+                </tbody>
+            </table>
+
+            <!-- TOTALS HIGHLIGHT BOX -->
+            <div
+                style="margin-top: 1rem; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 0.85rem 1.15rem; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <div style="font-size: 0.72rem; font-weight: 700; color: #92400E; text-transform: uppercase;">Office
+                        Disbursements (Excl. Duty):</div>
+                    <div id="bdDirectTotal" style="font-weight: 800; font-size: 0.95rem; color: #78350F;">TSh 0.00</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.72rem; font-weight: 800; color: #047857; text-transform: uppercase;">Grand
+                        Total (Payout):</div>
+                    <div id="bdGrandTotal" style="font-weight: 900; font-size: 1.15rem; color: #047857;">TSh 0.00</div>
+                </div>
+            </div>
+
+            <!-- DOC LINKS -->
+            <div id="bdDocButtons" style="margin-top: 0.85rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div
+            style="padding: 0.85rem 1.5rem; background: #F8FAFC; border-top: 1px solid #E2E8F0; border-radius: 0 0 16px 16px; display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" onclick="closeBreakdownModal()" class="btn-header-action btn-outline"
+                style="font-size: 0.82rem; padding: 0.4rem 0.95rem;">
+                Close
+            </button>
+            <button type="button" id="bdEditBtn" class="btn-header-action btn-primary"
+                style="font-size: 0.82rem; padding: 0.4rem 1.15rem; font-weight: 800; background: #0284C7; color: #FFFFFF; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;">
+                <i class="fa-solid fa-pen-to-square"></i> Enter / Edit Costs
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================= -->
+<!-- MODAL: ENTER / EDIT VEHICLE COSTS (DIRECT PAYMENT EXPENSES) -->
+<!-- ================================================================= -->
+<div id="costModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+    <div
+        style="background: #FFFFFF; border-radius: 16px; max-width: 680px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #CBD5E1;">
+
+        <!-- MODAL HEADER -->
+        <div
+            style="padding: 1.15rem 1.5rem; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; background: #F8FAFC; border-radius: 16px 16px 0 0;">
+            <div>
+                <div style="font-size: 0.76rem; font-weight: 800; color: #0284C7; text-transform: uppercase;">Direct
+                    Costing Entry (Accountant)</div>
+                <h3 id="modalVehicleTitle"
+                    style="font-size: 1.15rem; font-weight: 800; color: #0F172A; margin: 0.15rem 0 0 0;">
+                    Vehicle Direct Costing
+                </h3>
+            </div>
+            <button type="button" onclick="closeCostModal()"
+                style="background: transparent; border: none; font-size: 1.4rem; color: #64748B; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+
+        <!-- FORM -->
+        <form id="costForm" method="POST" action="">
+            {% csrf_token %}
+            <div style="padding: 1.25rem 1.5rem;">
+
+                <!-- VEHICLE BADGE & DOCUMENT SHORTCUTS -->
+                <div
+                    style="background: #F1F5F9; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <div style="font-size: 0.72rem; color: #64748B; font-weight: 700;">CHASSIS / BL:</div>
+                        <div id="modalChassisRef"
+                            style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A; font-size: 0.88rem;">
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.72rem; color: #64748B; font-weight: 700;">INVOICE VALUE ($):</div>
+                        <div id="modalInvoiceVal" style="font-weight: 800; color: #B45309; font-size: 0.88rem;"></div>
+                    </div>
+                    <div id="modalDocButtons" style="display: flex; gap: 0.4rem;">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- 1. TRA CUSTOMS DUTY (INFORMATIONAL • PAID DIRECT BY CLIENT VIA CONTROL #) -->
+                <div
+                    style="background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1.15rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                    <div>
+                        <div
+                            style="font-weight: 800; font-size: 0.8rem; color: #475569; display: flex; align-items: center; gap: 0.35rem;">
+                            <i class="fa-solid fa-building-columns" style="color: #64748B;"></i> TRA Customs Duty (Client Pays Directly via Control #)
+                        </div>
+                        <div style="font-size: 0.7rem; color: #94A3B8; margin-top: 0.15rem;">
+                            Informational only — Client settles TRA directly via Control #; not included in Malkia disbursements.
+                        </div>
+                    </div>
+                    <div style="width: 190px; flex-shrink: 0;">
+                        <input type="number" step="0.01" name="cost_duty" id="f_duty" class="form-control"
+                            placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 700; height: 36px; text-align: right; background: #FFFFFF; font-size: 0.85rem;">
+                    </div>
+                </div>
+
+                <!-- SECTION HEADER: OFFICE DISBURSEMENTS -->
+                <div
+                    style="font-size: 0.78rem; font-weight: 800; color: #0284C7; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.35rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 0.35rem;">
+                    <i class="fa-solid fa-receipt"></i> Office Disbursements (Direct Client Costs Advanced by Malkia)
+                </div>
+
+                <!-- 9 OFFICE EXPENSE FIELDS GRID -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">1. D/O (Shipping Line)
+                            TSh</label>
+                        <input type="number" step="0.01" name="cost_do" id="f_do" class="form-control cost-input"
+                            placeholder="0.00" oninput="calcModalTotals()" style="font-weight: 700; height: 38px;">
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">2. Wharfage (TPA Port)
+                            TSh</label>
+                        <input type="number" step="0.01" name="cost_wharfage" id="f_wharfage"
+                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 700; height: 38px;">
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">3. Tiss Wharfage
+                            TSh</label>
+                        <input type="number" step="0.01" name="cost_tiss_wharfage" id="f_tiss"
+                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 700; height: 38px;">
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">4. Handling (ICD / Port)
+                            TSh</label>
+                        <input type="number" step="0.01" name="cost_handling" id="f_handling"
+                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 700; height: 38px;">
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">5. Facilitation TSh</label>
+                        <input type="number" step="0.01" name="cost_facilitation" id="f_facil"
+                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 700; height: 38px;">
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">6. Transport TSh</label>
+                        <input type="number" step="0.01" name="cost_transport" id="f_transport"
+                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 700; height: 38px;">
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #047857;">7. Agent Fee (Malkia
+                            Agency) TSh *</label>
+                        <input type="number" step="0.01" name="cost_agent_fee" id="f_agent_fee"
+                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 800; color: #047857; background: #ECFDF5; height: 38px;">
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">8. Fuel TSh</label>
+                        <input type="number" step="0.01" name="cost_fuel" id="f_fuel" class="form-control cost-input"
+                            placeholder="0.00" oninput="calcModalTotals()" style="font-weight: 700; height: 38px;">
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">9. Ferry Charges
+                            TSh</label>
+                        <input type="number" step="0.01" name="cost_ferry_charges" id="f_ferry"
+                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 700; height: 38px;">
+                    </div>
+
+                    <!-- 10. OTHER / EXTRA COSTS & DESCRIPTION -->
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #7C3AED;">10. Other / Extra Costs
+                            TSh</label>
+                        <input type="number" step="0.01" name="cost_other" id="f_other" class="form-control cost-input"
+                            placeholder="0.00" oninput="calcModalTotals()" style="font-weight: 700; height: 38px;">
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #64748B;">Other Cost
+                            Description</label>
+                        <input type="text" name="cost_other_description" id="f_other_desc" class="form-control"
+                            placeholder="e.g. TBS, Demurrage, Storage, ICD fine..."
+                            style="font-size: 0.8rem; height: 38px;">
+                    </div>
+
+                </div>
+
+                <!-- LIVE TOTAL PREVIEW IN MODAL -->
+                <div
+                    style="margin-top: 1.15rem; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 0.85rem 1.15rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 0.72rem; font-weight: 700; color: #92400E; text-transform: uppercase;">
+                            Office Disbursements (Excl. Duty):</div>
+                        <div id="modalSubtotal" style="font-weight: 800; font-size: 0.95rem; color: #78350F;">TSh 0.00
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.72rem; font-weight: 800; color: #047857; text-transform: uppercase;">
+                            Grand Total (Incl. Fee):</div>
+                        <div id="modalGrandTotal" style="font-weight: 900; font-size: 1.15rem; color: #047857;">TSh 0.00
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- MODAL FOOTER -->
+            <div
+                style="padding: 1rem 1.5rem; background: #F8FAFC; border-top: 1px solid #E2E8F0; border-radius: 0 0 16px 16px; display: flex; justify-content: flex-end; gap: 0.65rem;">
+                <button type="button" onclick="closeCostModal()" class="btn-header-action btn-outline"
+                    style="font-size: 0.84rem; padding: 0.45rem 1rem;">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-header-action"
+                    style="font-size: 0.84rem; padding: 0.45rem 1.35rem; background: #059669; color: #FFFFFF; font-weight: 800; border: none; border-radius: 8px;">
+                    <i class="fa-solid fa-check"></i> Save Costs
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openBreakdownModal(jobId, blNumber, make, model, year, chassis, clientName, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, statusText, statusBadgeClass, blUrl, invUrl) {
+        document.getElementById('bdVehicleTitle').innerText = `${make} ${model} (${year || 'Year —'})`;
+        document.getElementById('bdChassisRef').innerText = `BL: ${blNumber} • Chassis: ${chassis || '—'}`;
+        document.getElementById('bdInvoiceVal').innerText = parseFloat(cifUsd || 0) > 0 ? `$${parseFloat(cifUsd).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '—';
+
+        const fmt = n => parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+        // Display TRA Duty in its dedicated informational strip (completely separate from office disbursements)
+        document.getElementById('bdDutyVal').innerText = parseFloat(duty || 0) > 0 ? 'TSh ' + fmt(duty) : '—';
+
+        // Status Badge
+        let badgeColor = statusText === 'Costed' ? '#059669' : (statusText === 'In Progress' ? '#0284C7' : '#D97706');
+        let badgeBg = statusText === 'Costed' ? '#D1FAE5' : (statusText === 'In Progress' ? '#E0F2FE' : '#FEF3C7');
+        document.getElementById('bdStatusBadge').innerHTML = `<span style="font-size: 0.75rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; background: ${badgeBg}; color: ${badgeColor};">${statusText}</span>`;
+
+        const items = [
+            { name: '1. Shipping Line D/O', amount: doCost },
+            { name: '2. Wharfage (TPA Port)', amount: wharfage },
+            { name: '3. Tiss Wharfage', amount: tiss },
+            { name: '4. Handling (ICD / Port)', amount: handling },
+            { name: '5. Facilitation', amount: facil },
+            { name: '6. Transport', amount: trans },
+            { name: '7. Fuel (Mafuta)', amount: fuel },
+            { name: '8. Ferry Charges', amount: ferry },
+            { name: `9. Other / Extra Costs${otherDesc ? ' (' + otherDesc + ')' : ''}`, amount: other },
+            { name: '10. Malkia Agency Fee (Revenue)', amount: agentFee, isFee: true },
+        ];
+
+        let rowsHtml = '';
+        let directTotal = 0;
+        items.forEach(it => {
+            const amt = parseFloat(it.amount || 0);
+            if (!it.isFee) directTotal += amt;
+            const color = amt > 0 ? (it.isFee ? '#059669' : '#0F172A') : '#94A3B8';
+            const bg = it.isFee ? '#ECFDF5' : 'transparent';
+            const weight = amt > 0 ? '700' : '500';
+            rowsHtml += `
+            <tr style="border-bottom: 1px solid #F1F5F9; background: ${bg};">
+                <td style="padding: 0.45rem 0.65rem; font-weight: ${weight}; color: ${it.isFee ? '#047857' : '#334155'};">${it.name}</td>
+                <td style="padding: 0.45rem 0.65rem; text-align: right; font-family: var(--font-mono, monospace); font-weight: ${weight}; color: ${color};">${amt > 0 ? 'TSh ' + fmt(amt) : '—'}</td>
+            </tr>
+        `;
+        });
+        document.getElementById('bdItemsList').innerHTML = rowsHtml;
+
+        const grandTotal = directTotal + parseFloat(agentFee || 0);
+        document.getElementById('bdDirectTotal').innerText = 'TSh ' + fmt(directTotal);
+        document.getElementById('bdGrandTotal').innerText = 'TSh ' + fmt(grandTotal);
+
+        // Doc links
+        let docsHtml = '';
+        if (blUrl) docsHtml += `<a href="${blUrl}" target="_blank" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 700; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; border-radius: 5px; text-decoration: none;"><i class="fa-solid fa-file-pdf"></i> View BL</a>`;
+        if (invUrl) docsHtml += `<a href="${invUrl}" target="_blank" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 700; background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; border-radius: 5px; text-decoration: none;"><i class="fa-solid fa-receipt"></i> View Invoice</a>`;
+        document.getElementById('bdDocButtons').innerHTML = docsHtml;
+
+        // Connect Edit button to openCostModal directly
+        document.getElementById('bdEditBtn').onclick = function () {
+            closeBreakdownModal();
+            openCostModal(jobId, blNumber, make, model, year, chassis, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, blUrl, invUrl);
+        };
+
+        document.getElementById('breakdownModal').style.display = 'flex';
+    }
+
+    function closeBreakdownModal() {
+        document.getElementById('breakdownModal').style.display = 'none';
+    }
+
+    function openCostModal(jobId, blNumber, make, model, year, chassis, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, blUrl, invUrl) {
+        document.getElementById('modalVehicleTitle').innerText = `${make} ${model} (${year || 'Year —'})`;
+        document.getElementById('modalChassisRef').innerText = `BL: ${blNumber} | Chassis: ${chassis}`;
+        document.getElementById('modalInvoiceVal').innerText = `$${parseFloat(cifUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+        let docHtml = '';
+        if (blUrl) {
+            docHtml += `<a href="${blUrl}" target="_blank" style="padding: 2px 6px; font-size: 0.7rem; font-weight: 700; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE; border-radius: 4px; text-decoration: none;"><i class="fa-solid fa-file-pdf"></i> View BL</a>`;
+        }
+        if (invUrl) {
+            docHtml += `<a href="${invUrl}" target="_blank" style="padding: 2px 6px; font-size: 0.7rem; font-weight: 700; background:#FEF3C7; color:#B45309; border:1px solid #FDE68A; border-radius: 4px; text-decoration: none;"><i class="fa-solid fa-receipt"></i> View Invoice</a>`;
+        }
+        document.getElementById('modalDocButtons').innerHTML = docHtml;
+
+        document.getElementById('f_duty').value = duty > 0 ? duty : '';
+        document.getElementById('f_do').value = doCost > 0 ? doCost : '';
+        document.getElementById('f_wharfage').value = wharfage > 0 ? wharfage : '';
+        document.getElementById('f_tiss').value = tiss > 0 ? tiss : '';
+        document.getElementById('f_handling').value = handling > 0 ? handling : '';
+        document.getElementById('f_facil').value = facil > 0 ? facil : '';
+        document.getElementById('f_transport').value = trans > 0 ? trans : '';
+        document.getElementById('f_agent_fee').value = agentFee > 0 ? agentFee : '';
+        document.getElementById('f_fuel').value = fuel > 0 ? fuel : '';
+        document.getElementById('f_ferry').value = ferry > 0 ? ferry : '';
+        document.getElementById('f_other').value = other > 0 ? other : '';
+        document.getElementById('f_other_desc').value = otherDesc || '';
+
+        document.getElementById('costForm').action = `/finance/vehicles-out/${jobId}/update-costs/`;
+
+        calcModalTotals();
+        const modal = document.getElementById('costModal');
+        modal.style.display = 'flex';
+    }
+
+    function closeCostModal() {
+        document.getElementById('costModal').style.display = 'none';
+    }
+
+    function calcModalTotals() {
+        const val = id => parseFloat(document.getElementById(id)?.value || 0) || 0;
+
+        // Exclude TRA Duty from Office Disbursements calculation (Client pays direct via Control #)
+        const directCosts = val('f_do') + val('f_wharfage') + val('f_tiss') + val('f_handling') + val('f_facil') + val('f_transport') + val('f_fuel') + val('f_ferry') + val('f_other');
+        const agentFee = val('f_agent_fee');
+        const grandTotal = directCosts + agentFee;
+
+        document.getElementById('modalSubtotal').innerText = 'TSh ' + directCosts.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('modalGrandTotal').innerText = 'TSh ' + grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 });
+    }
+
+    window.addEventListener('click', function (e) {
+        const costModal = document.getElementById('costModal');
+        if (e.target === costModal) {
+            closeCostModal();
+        }
+        const bdModal = document.getElementById('breakdownModal');
+        if (e.target === bdModal) {
+            closeBreakdownModal();
+        }
+    });
+</script>
+{% endblock %}

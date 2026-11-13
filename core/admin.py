@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     UserProfile, Customer, WorkflowStageDefinition, JobShipment,
     JobStageInstance, JobDocument, ExpenseVoucher, ClientInvoice,
-    ClientPayment, AuditLog
+    ClientPayment, AuditLog, OperatingExpenseCategory, OperatingExpense,
+    Employee, SalaryPayment
 )
 
 @admin.register(UserProfile)
@@ -61,6 +62,31 @@ class ClientInvoiceAdmin(admin.ModelAdmin):
 class ClientPaymentAdmin(admin.ModelAdmin):
     list_display = ('invoice', 'amount', 'payment_date', 'payment_method', 'payment_reference')
     search_fields = ('invoice__invoice_number', 'payment_reference')
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = ('employee_number', 'full_name', 'position', 'department', 'employment_type', 'status', 'basic_salary', 'allowances')
+    list_filter = ('status', 'employment_type', 'department')
+    search_fields = ('employee_number', 'full_name', 'position', 'phone', 'nida_number', 'nssf_number')
+
+@admin.register(SalaryPayment)
+class SalaryPaymentAdmin(admin.ModelAdmin):
+    list_display = ('employee', 'period', 'basic_salary', 'allowances', 'paye', 'nssf', 'wcf', 'sdl', 'salary_advance', 'loan_deduction', 'status', 'payment_date')
+    list_filter = ('status', 'period', 'payment_method')
+    search_fields = ('employee__full_name', 'employee__employee_number', 'payment_reference')
+
+@admin.register(OperatingExpenseCategory)
+class OperatingExpenseCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'is_active', 'created_by', 'created_at')
+    list_filter = ('is_active',)
+    search_fields = ('name', 'description')
+
+@admin.register(OperatingExpense)
+class OperatingExpenseAdmin(admin.ModelAdmin):
+    list_display = ('date', 'category', 'payee', 'amount', 'payment_method', 'payment_reference', 'recorded_by')
+    list_filter = ('payment_method', 'category', 'date')
+    search_fields = ('payee', 'payment_reference', 'description', 'category__name')
+    date_hierarchy = 'date'
 
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):

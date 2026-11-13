@@ -342,12 +342,12 @@ window.loadPageSeamlessly = async function(url, pushState = true) {
             setTimeout(() => {
                 syncExtraCss(doc);
                 currentContent.innerHTML = newContent.innerHTML;
+                window.closeAllModals();
                 executeScripts(currentContent);
                 syncExtraJs(doc);
                 currentContent.style.opacity = '1';
 
                 rebindDynamicElements();
-                window.closeAllModals();
 
                 window.scrollTo({ top: 0, behavior: 'instant' });
             }, 80);

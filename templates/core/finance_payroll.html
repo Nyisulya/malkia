@@ -1,0 +1,708 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Salary Payroll — {{ selected_month_label }} | Malkia C&amp;F{% endblock %}
+
+{% block extra_css %}
+<style>
+    .money-cell { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+    .deduction-line { font-size: 0.7rem; color: #94A3B8; white-space: nowrap; }
+    .salary-total-box {
+        background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;
+        padding: 0.75rem 1rem; display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: center;
+    }
+    .salary-total-box .label { font-size: 0.68rem; font-weight: 800; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .salary-total-box .value { font-size: 0.95rem; font-weight: 900; }
+    .status-dot {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        font-size: 0.68rem; font-weight: 800; padding: 0.18rem 0.55rem; border-radius: 999px; white-space: nowrap;
+    }
+    .payroll-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        text-align: left;
+    }
+    .payroll-table th {
+        background: #007A64;
+        color: #FFFFFF;
+        font-weight: 800;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0.75rem 0.85rem;
+        border: none;
+        white-space: nowrap;
+    }
+    .payroll-table td {
+        padding: 0.85rem 0.85rem;
+        font-size: 0.82rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #F1F5F9;
+        color: #1E293B;
+    }
+    .payroll-table tbody tr:hover {
+        background-color: #F8FAFC;
+    }
+    @media print {
+        .no-print { display: none !important; }
+        .app-sidebar, .app-topbar, .top-navbar { display: none !important; }
+        body { background: #FFFFFF !important; }
+        .page-header-box .btn-header-action { display: none !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1280px;margin:0 auto;padding-bottom:3rem;">
+
+    <div class="page-header-box">
+        <div>
+            <h2 class="page-title">
+                <i class="fa-solid fa-money-check-dollar" style="color:var(--brand-primary);margin-right:0.4rem;"></i>
+                Salary Payroll — {{ selected_month_label }}
+            </h2>
+            <p class="page-subtitle">
+                Generate salaries for all staff, enter deductions, mark payments and print payslips. Paid salaries post automatically into Operating Expenses.
+            </p>
+        </div>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
+            <input type="month" class="form-control" value="{{ month_key }}" style="max-width:180px;padding:0.55rem 0.8rem;font-size:0.82rem;" onchange="window.location.href='{% url 'payroll' %}?month=' + this.value;" title="Change payroll month">
+            <a href="{% url 'employees' %}" class="btn-header-action btn-outline">
+                <i class="fa-solid fa-users"></i> Employees
+            </a>
+            <a href="{% url 'payroll_export_excel' %}?month={{ month_key }}" class="btn-header-action btn-outline no-print" style="color:#047857;border-color:#A7F3D0;background:#F0FDF4;" title="Export to Excel matching office format">
+                <i class="fa-solid fa-file-excel" style="color:#10B981;"></i> Export Excel
+            </a>
+            <button type="button" class="btn-header-action btn-outline no-print" onclick="window.print()">
+                <i class="fa-solid fa-print"></i> Print
+            </button>
+            <form action="{% url 'payroll_generate' %}" method="POST" style="margin:0;" class="no-print">
+                {% csrf_token %}
+                <input type="hidden" name="month" value="{{ month_key }}">
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Payroll
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));margin-bottom:1.5rem;">
+        <div class="kpi-card kpi-blue">
+            <div class="kpi-header"><span class="kpi-title">Gross Payroll — {{ selected_month_label }}</span><div class="kpi-icon-wrap"><i class="fa-solid fa-wallet"></i></div></div>
+            <div class="kpi-value">TSh {{ totals.gross|floatformat:0|intcomma }}</div>
+            <div class="kpi-meta"><span>Basic + allowances for {{ salaries|length }} record{{ salaries|length|pluralize }}</span></div>
+        </div>
+        <div class="kpi-card kpi-amber">
+            <div class="kpi-header"><span class="kpi-title">Total Deductions</span><div class="kpi-icon-wrap"><i class="fa-solid fa-scissors"></i></div></div>
+            <div class="kpi-value">TSh {{ totals.deductions|floatformat:0|intcomma }}</div>
+            <div class="kpi-meta"><span>PAYE, NSSF, advances &amp; others</span></div>
+        </div>
+        <div class="kpi-card kpi-emerald">
+            <div class="kpi-header"><span class="kpi-title">Net Payroll</span><div class="kpi-icon-wrap"><i class="fa-solid fa-money-bill-transfer"></i></div></div>
+            <div class="kpi-value">TSh {{ totals.net|floatformat:0|intcomma }}</div>
+            <div class="kpi-meta"><span>Amount payable to staff</span></div>
+        </div>
+        <div class="kpi-card kpi-cyan">
+            <div class="kpi-header"><span class="kpi-title">Already Paid</span><div class="kpi-icon-wrap"><i class="fa-solid fa-circle-check"></i></div></div>
+            <div class="kpi-value">TSh {{ totals.paid|floatformat:0|intcomma }}</div>
+            <div class="kpi-meta"><span>Posted to operating expenses</span></div>
+        </div>
+        <div class="kpi-card kpi-rose">
+            <div class="kpi-header"><span class="kpi-title">Pending Payment</span><div class="kpi-icon-wrap"><i class="fa-solid fa-hourglass-half"></i></div></div>
+            <div class="kpi-value">TSh {{ totals.pending|floatformat:0|intcomma }}</div>
+            <div class="kpi-meta"><span>Drafts not yet marked paid</span></div>
+        </div>
+    </div>
+
+    <div style="font-size:0.76rem;color:#64748B;margin:-0.75rem 0 1.25rem 0;display:flex;gap:1.5rem;flex-wrap:wrap;">
+        <span><i class="fa-solid fa-building-columns" style="color:#0F766E;"></i> <strong>Employer statutory costs ({{ selected_month_label }}):</strong> WCF 0.5% = TSh {{ totals.wcf|floatformat:0|intcomma }} · SDL 3.5% = TSh {{ totals.sdl|floatformat:0|intcomma }}</span>
+        <span style="color:#94A3B8;">Recorded for reporting — not deducted from staff net pay.</span>
+    </div>
+
+    {% if pending_employees %}
+    <div class="card-panel" style="padding:1rem 1.25rem;margin-bottom:1.5rem;border-left:4px solid #D97706;background:#FFFBEB;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;">
+            <div>
+                <strong style="font-size:0.88rem;color:#92400E;"><i class="fa-solid fa-triangle-exclamation"></i> {{ pending_employees|length }} staff on payroll without a salary record for {{ selected_month_label }}</strong>
+                <div style="font-size:0.78rem;color:#B45309;margin-top:0.2rem;">
+                    {% for emp in pending_employees|slice:":8" %}{{ emp.full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if pending_employees|length > 8 %} +{{ pending_employees|length|add:"-8" }} more{% endif %}
+                </div>
+            </div>
+            <form action="{% url 'payroll_generate' %}" method="POST" style="margin:0;" class="no-print">
+                {% csrf_token %}
+                <input type="hidden" name="month" value="{{ month_key }}">
+                <button type="submit" class="btn-header-action btn-primary" style="background:#D97706;border-color:#D97706;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Missing
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- PAYROLL TABLE -->
+    <div class="card-panel" style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
+        <div style="padding:1rem 1.25rem;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+            <div>
+                <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
+                    <i class="fa-solid fa-list-check" style="color:var(--brand-primary);"></i> Salary Register — {{ selected_month_label }}
+                </h3>
+                <p style="margin:0.25rem 0 0 0;font-size:0.8rem;color:var(--text-muted);">
+                    Streamlined monthly salary register. Click the Eye icon (<i class="fa-solid fa-eye" style="color:#0F766E;"></i>) to view full breakdown (NSSF, PAYE, Loans, Advances, and Bank details).
+                </p>
+            </div>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+                <span style="font-size:0.75rem;font-weight:800;color:#0F766E;background:#CCFBF1;padding:0.25rem 0.65rem;border-radius:999px;">
+                    <i class="fa-solid fa-users"></i> {{ salaries|length }} Record{% if salaries|length != 1 %}s{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table class="payroll-table">
+                <thead>
+                    <tr>
+                        <th style="width:45px;text-align:center;">#</th>
+                        <th style="text-align:left;">EMPLOYEE</th>
+                        <th style="text-align:right;">GROSS SALARY</th>
+                        <th style="text-align:right;">TOTAL DEDUCTIONS</th>
+                        <th style="text-align:right;">NET PAY</th>
+                        <th style="width:115px;text-align:center;">STATUS</th>
+                        <th style="width:170px;text-align:center;" class="no-print">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in salaries %}
+                    <tr>
+                        <td style="text-align:center;font-weight:700;color:#64748B;">{{ forloop.counter }}</td>
+                        <td>
+                            <a href="{% url 'employee_detail' s.employee.id %}" style="font-weight:800;color:#0F172A;text-decoration:none;display:inline-block;">{{ s.employee.full_name|upper }}</a>
+                            <div style="font-size:0.72rem;color:#64748B;margin-top:2px;">
+                                {{ s.employee.position|default:"Staff Member" }}
+                                {% if s.employee.bank_account_number %}
+                                <span style="color:#94A3B8;">•</span> <span style="font-family:monospace;">{{ s.employee.bank_name|default:'Bank' }}: {{ s.employee.bank_account_number }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td style="text-align:right;">
+                            <div style="font-weight:800;color:#0F172A;font-size:0.86rem;">TSh {{ s.gross_pay|floatformat:0|intcomma }}</div>
+                            <div style="font-size:0.7rem;color:#64748B;">
+                                Base: {{ s.basic_salary|floatformat:0|intcomma }}
+                                {% if s.allowances and s.allowances > 0 %} + Allw: {{ s.allowances|floatformat:0|intcomma }}{% endif %}
+                            </div>
+                        </td>
+                        <td style="text-align:right;">
+                            <div style="font-weight:800;color:#DC2626;font-size:0.86rem;">- TSh {{ s.total_deductions|floatformat:0|intcomma }}</div>
+                            <div style="font-size:0.7rem;color:#94A3B8;">
+                                NSSF: {{ s.nssf|floatformat:0|intcomma }} • PAYE: {{ s.paye|floatformat:0|intcomma }}
+                                {% if s.salary_advance and s.salary_advance > 0 %} • Adv: {{ s.salary_advance|floatformat:0|intcomma }}{% endif %}
+                                {% if s.loan_deduction and s.loan_deduction > 0 %} • Loan: {{ s.loan_deduction|floatformat:0|intcomma }}{% endif %}
+                            </div>
+                        </td>
+                        <td style="text-align:right;">
+                            <div style="font-weight:900;color:#047857;font-size:0.96rem;">TSh {{ s.net_pay|floatformat:0|intcomma }}</div>
+                        </td>
+                        <td style="text-align:center;">
+                            {% if s.status == 'PAID' %}
+                            <span class="status-dot" style="background:#DCFCE7;color:#166534;"><i class="fa-solid fa-circle-check"></i> Paid</span>
+                            <div style="font-size:0.68rem;color:#94A3B8;margin-top:0.15rem;">{{ s.payment_date|date:"d M Y"|default:"" }}</div>
+                            {% elif s.status == 'CANCELLED' %}
+                            <span class="status-dot" style="background:#F1F5F9;color:#64748B;"><i class="fa-solid fa-ban"></i> Cancelled</span>
+                            {% else %}
+                            <span class="status-dot" style="background:#FEF3C7;color:#92400E;"><i class="fa-solid fa-hourglass-half"></i> Draft</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:center;white-space:nowrap;" class="no-print">
+                            <button type="button" class="btn-header-action btn-outline" style="padding:0.32rem 0.52rem;font-size:0.74rem;color:#0F766E;border-color:#99F6E4;background:#F0FDFA;" title="View Salary Breakdown" onclick="showSalaryDetails({
+                                name: '{{ s.employee.full_name|escapejs }}',
+                                position: '{{ s.employee.position|default:''|escapejs }}',
+                                empId: '{{ s.employee.employee_id|default:''|escapejs }}',
+                                month: '{{ selected_month_label|escapejs }}',
+                                bank: '{{ s.employee.bank_name|default:'—'|escapejs }}',
+                                accountNo: '{{ s.employee.bank_account_number|default:'—'|escapejs }}',
+                                nssfNo: '{{ s.employee.nssf_number|default:'—'|escapejs }}',
+                                baseSalary: '{{ s.basic_salary|floatformat:2|intcomma }}',
+                                allowances: '{{ s.allowances|floatformat:2|intcomma }}',
+                                grossPay: '{{ s.gross_pay|floatformat:2|intcomma }}',
+                                nssf: '{{ s.nssf|floatformat:2|intcomma }}',
+                                taxable: '{{ s.taxable_amount|floatformat:2|intcomma }}',
+                                paye: '{{ s.paye|floatformat:2|intcomma }}',
+                                wcf: '{{ s.wcf|floatformat:2|intcomma }}',
+                                sdl: '{{ s.sdl|floatformat:2|intcomma }}',
+                                advance: '{{ s.salary_advance|floatformat:2|intcomma }}',
+                                loan: '{{ s.loan_deduction|floatformat:2|intcomma }}',
+                                other: '{{ s.other_deductions|floatformat:2|intcomma }}',
+                                totalDeductions: '{{ s.total_deductions|floatformat:2|intcomma }}',
+                                netPay: '{{ s.net_pay|floatformat:2|intcomma }}',
+                                status: '{{ s.status }}',
+                                paymentDate: '{{ s.payment_date|date:'d M Y'|default:'' }}',
+                                editUrl: '{% url 'payroll' %}?month={{ month_key }}&edit={{ s.id }}',
+                                payslipUrl: '{% url 'payslip' s.id %}'
+                            })">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <a href="{% url 'payroll' %}?month={{ month_key }}&edit={{ s.id }}" class="btn-header-action btn-outline" style="padding:0.32rem 0.52rem;font-size:0.74rem;" title="Edit salary / deductions">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            <a href="{% url 'payslip' s.id %}" target="_blank" rel="noopener" class="btn-header-action btn-outline" style="padding:0.32rem 0.52rem;font-size:0.74rem;color:#0284C7;border-color:#BAE6FD;" title="Open payslip">
+                                <i class="fa-solid fa-print"></i>
+                            </a>
+                            <form action="{% url 'payroll_delete' s.id %}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this salary record?\n\n{{ s.employee.full_name|escapejs }} — {{ selected_month_label|escapejs }}: net TSh {{ s.net_pay|floatformat:0 }}\n\nIf it was paid, the linked operating expense will also be removed.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-header-action btn-outline" style="padding:0.32rem 0.52rem;font-size:0.74rem;color:#B91C1C;border-color:#FECACA;" title="Delete record">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="padding:2.5rem 1rem;text-align:center;color:#94A3B8;">
+                            <i class="fa-solid fa-money-check-dollar" style="font-size:2rem;display:block;margin-bottom:0.6rem;color:#CBD5E1;"></i>
+                            No salary records for {{ selected_month_label }}.
+                            <div style="margin-top:0.5rem;">
+                                <a href="{% url 'employees' %}" class="btn-header-action btn-outline">Add employees first</a>
+                                <form action="{% url 'payroll_generate' %}" method="POST" style="display:inline;margin:0;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="month" value="{{ month_key }}">
+                                    <button type="submit" class="btn-header-action btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Payroll</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Statutory Notes Bottom Box -->
+        <div style="padding:0.75rem 1.25rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;font-size:0.78rem;">
+            <div style="font-weight:800;color:#334155;">Statutory Rates:</div>
+            <span style="background:#DBEAFE;color:#1E40AF;padding:0.2rem 0.6rem;border-radius:6px;font-weight:700;">NSSF: 10% (Gross)</span>
+            <span style="background:#DBEAFE;color:#1E40AF;padding:0.2rem 0.6rem;border-radius:6px;font-weight:700;">WCF: 0.5% (Employer)</span>
+            <span style="background:#DBEAFE;color:#1E40AF;padding:0.2rem 0.6rem;border-radius:6px;font-weight:700;">SDL: 3.5% (Employer)</span>
+            <span style="color:#64748B;font-size:0.74rem;">PAYE: TRA Monthly Progressive Tax Bands (Taxable = Gross - NSSF)</span>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT SALARY MODAL -->
+<div id="salaryModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:680px;">
+        <form action="{% if editing %}{% url 'payroll_update' editing.id %}{% else %}#{% endif %}" method="POST" id="salaryForm">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">{% if editing %}{{ editing.employee.full_name }} — {{ selected_month_label }}{% else %}Salary Record{% endif %}</h3>
+                    <p style="font-size:0.8rem;color:var(--text-muted);margin:0.2rem 0 0 0;">
+                        Enter details matching the office payroll sheet. Status set to <strong>Paid</strong> posts net pay directly to Operating Expenses.
+                    </p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('salaryModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Base Salary (TSh) *</label>
+                        <input type="number" step="0.01" min="0" name="basic_salary" id="salBasic" class="form-control" required value="{% if editing %}{{ editing.basic_salary|floatformat:2 }}{% endif %}">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Allowance (TSh)</label>
+                        <input type="number" step="0.01" min="0" name="allowances" id="salAllow" class="form-control" value="{% if editing %}{{ editing.allowances|floatformat:2 }}{% else %}0{% endif %}">
+                    </div>
+                </div>
+
+                <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+                    <div>
+                        <strong style="font-size:0.82rem;color:#166534;"><i class="fa-solid fa-wand-magic-sparkles"></i> Automatic Statutory Calculations</strong>
+                        <div style="font-size:0.72rem;color:#15803D;">NSSF (10%) and PAYE (TRA) calculate automatically from Gross. You do NOT need to enter them manually.</div>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.78rem;font-weight:700;color:#166534;cursor:pointer;margin:0;">
+                        <input type="checkbox" id="autoCalcToggle" checked onchange="handleAutoToggle()">
+                        Auto-calculate
+                    </label>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>NSSF Amount — 10% (TSh) <span style="font-size:0.68rem;color:#0F766E;font-weight:700;">(Auto 10%)</span></label>
+                        <input type="number" step="0.01" min="0" name="nssf" id="salNssf" class="form-control" value="{% if editing %}{{ editing.nssf|floatformat:2 }}{% else %}0{% endif %}">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>PAYEE / PAYE (TSh) <span style="font-size:0.68rem;color:#0F766E;font-weight:700;">(TRA Tax Bands)</span></label>
+                        <input type="number" step="0.01" min="0" name="paye" id="salPaye" class="form-control" value="{% if editing %}{{ editing.paye|floatformat:2 }}{% else %}0{% endif %}">
+                    </div>
+                </div>
+
+                <input type="hidden" name="wcf" id="salWcf" value="{% if editing %}{{ editing.wcf|floatformat:2 }}{% else %}0{% endif %}">
+                <input type="hidden" name="sdl" id="salSdl" value="{% if editing %}{{ editing.sdl|floatformat:2 }}{% else %}0{% endif %}">
+
+                <!-- SEPARATE ADVANCE AND LOAN -->
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Salary Advance (TSh)</label>
+                        <input type="number" step="0.01" min="0" name="salary_advance" id="salAdvance" class="form-control" value="{% if editing %}{{ editing.salary_advance|floatformat:2 }}{% else %}0{% endif %}">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Loan Deduction (TSh)</label>
+                        <input type="number" step="0.01" min="0" name="loan_deduction" id="salLoan" class="form-control" value="{% if editing %}{{ editing.loan_deduction|floatformat:2 }}{% else %}0{% endif %}">
+                    </div>
+                </div>
+
+                <input type="hidden" name="other_deductions" id="salOther" value="{% if editing %}{{ editing.other_deductions|floatformat:2 }}{% else %}0{% endif %}">
+                <input type="hidden" name="deduction_notes" value="{% if editing %}{{ editing.deduction_notes }}{% endif %}">
+
+                <!-- LIVE CALCULATED SUMMARY -->
+                <div class="salary-total-box" style="margin:0.9rem 0;justify-content:space-between;">
+                    <div><div class="label">Gross Salary</div><div class="value" id="calcGross" style="color:#0F766E;">TSh 0.00</div></div>
+                    <div><div class="label">Taxable Amount</div><div class="value" id="calcTaxable" style="color:#1E293B;">TSh 0.00</div></div>
+                    <div><div class="label">Total Deductions</div><div class="value" id="calcDeductions" style="color:#B45309;">TSh 0.00</div></div>
+                    <div><div class="label">Net Pay</div><div class="value" id="calcNet" style="color:#047857;font-size:1.1rem;">TSh 0.00</div></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Status *</label>
+                        <select name="status" id="salStatus" class="form-control" onchange="togglePaymentFields()">
+                            {% for code, label in status_choices %}
+                            <option value="{{ code }}" {% if editing and editing.status == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Payment Date <span id="payDateHint" style="color:#B91C1C;font-weight:700;"></span></label>
+                        <input type="date" name="payment_date" class="form-control" value="{% if editing and editing.payment_date %}{{ editing.payment_date|date:'Y-m-d' }}{% else %}{{ payment_default_date|date:'Y-m-d' }}{% endif %}">
+                    </div>
+                </div>
+                <input type="hidden" name="payment_method" value="{% if editing %}{{ editing.payment_method }}{% else %}BANK{% endif %}">
+                <div class="form-group">
+                    <label>Payment Reference / Bank Slip #</label>
+                    <input type="text" name="payment_reference" class="form-control" placeholder="e.g. CRDB-SAL-1026" value="{% if editing %}{{ editing.payment_reference }}{% endif %}">
+                </div>
+                <input type="hidden" name="notes" value="{% if editing %}{{ editing.notes }}{% endif %}">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('salaryModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary">
+                    <i class="fa-solid fa-circle-check"></i> Save Salary Record
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- SALARY BREAKDOWN DETAIL MODAL -->
+<div id="salaryDetailModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:680px;border-radius:12px;overflow:hidden;">
+        <div class="modal-header" style="background:#0F172A;color:#FFFFFF;padding:1.1rem 1.4rem;">
+            <div>
+                <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:#38BDF8;font-weight:800;" id="detMonth">MONTH</div>
+                <h3 class="modal-title" id="detName" style="color:#FFFFFF;font-size:1.15rem;margin:0.2rem 0 0 0;">EMPLOYEE NAME</h3>
+                <div style="font-size:0.8rem;color:#94A3B8;margin-top:0.2rem;" id="detRole">Position</div>
+            </div>
+            <button type="button" class="modal-close-btn" style="color:#94A3B8;font-size:1.5rem;" onclick="closeModal('salaryDetailModal')">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:1.25rem 1.4rem;background:#F8FAFC;">
+            
+            <!-- Quick Chips -->
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.1rem;align-items:center;">
+                <span id="detStatusBadge" class="status-dot" style="padding:0.25rem 0.75rem;font-size:0.75rem;">Status</span>
+                <span style="background:#FFFFFF;border:1px solid #E2E8F0;padding:0.25rem 0.65rem;border-radius:6px;font-size:0.75rem;color:#334155;">
+                    <i class="fa-solid fa-building-columns" style="color:#0F766E;"></i> <strong id="detBank">Bank</strong>: <span id="detAccount">Acc</span>
+                </span>
+                <span style="background:#FFFFFF;border:1px solid #E2E8F0;padding:0.25rem 0.65rem;border-radius:6px;font-size:0.75rem;color:#334155;">
+                    <i class="fa-solid fa-id-card" style="color:#D97706;"></i> <strong>NSSF No</strong>: <span id="detNssfNo">—</span>
+                </span>
+            </div>
+
+            <!-- 2 Column Breakdown Grid -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.9rem;margin-bottom:1rem;">
+                <!-- Earnings Card -->
+                <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:0.9rem 1rem;">
+                    <div style="font-size:0.75rem;font-weight:800;color:#0F766E;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.6rem;display:flex;align-items:center;gap:0.4rem;">
+                        <i class="fa-solid fa-coins"></i> Earnings &amp; Allowances
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;padding:0.3rem 0;color:#475569;border-bottom:1px dashed #F1F5F9;">
+                        <span>Basic Salary:</span>
+                        <strong id="detBase" style="color:#0F172A;">TSh 0</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;padding:0.3rem 0;color:#475569;border-bottom:1px dashed #F1F5F9;">
+                        <span>Allowances:</span>
+                        <strong id="detAllow" style="color:#0F172A;">TSh 0</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.85rem;padding:0.5rem 0 0.1rem 0;margin-top:0.3rem;border-top:1px solid #CBD5E1;">
+                        <span style="font-weight:800;color:#0F172A;">Gross Salary:</span>
+                        <strong id="detGross" style="color:#0F766E;font-size:0.92rem;">TSh 0</strong>
+                    </div>
+                </div>
+
+                <!-- Personal Deductions Card -->
+                <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:0.9rem 1rem;">
+                    <div style="font-size:0.75rem;font-weight:800;color:#DC2626;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.6rem;display:flex;align-items:center;gap:0.4rem;">
+                        <i class="fa-solid fa-scissors"></i> Personal Deductions
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;padding:0.3rem 0;color:#475569;border-bottom:1px dashed #F1F5F9;">
+                        <span>Salary Advance:</span>
+                        <strong id="detAdvance" style="color:#DC2626;">TSh 0</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;padding:0.3rem 0;color:#475569;border-bottom:1px dashed #F1F5F9;">
+                        <span>Loan Deduction:</span>
+                        <strong id="detLoan" style="color:#DC2626;">TSh 0</strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;padding:0.3rem 0;color:#475569;border-bottom:1px dashed #F1F5F9;">
+                        <span>Other Deductions:</span>
+                        <strong id="detOther" style="color:#DC2626;">TSh 0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statutory Deductions Card -->
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:0.9rem 1rem;margin-bottom:1rem;">
+                <div style="font-size:0.75rem;font-weight:800;color:#2563EB;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.6rem;display:flex;align-items:center;gap:0.4rem;">
+                    <i class="fa-solid fa-landmark"></i> Statutory Deductions &amp; Taxes
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;font-size:0.8rem;">
+                    <div>
+                        <div style="display:flex;justify-content:space-between;padding:0.25rem 0;color:#475569;border-bottom:1px dashed #F1F5F9;">
+                            <span>NSSF (10% Employee):</span>
+                            <strong id="detNssf" style="color:#DC2626;">TSh 0</strong>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:0.25rem 0;color:#475569;border-bottom:1px dashed #F1F5F9;">
+                            <span>Taxable Amount:</span>
+                            <strong id="detTaxable" style="color:#0F172A;">TSh 0</strong>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:0.25rem 0;color:#475569;">
+                            <span>PAYE (TRA Income Tax):</span>
+                            <strong id="detPaye" style="color:#DC2626;">TSh 0</strong>
+                        </div>
+                    </div>
+                    <div style="background:#F8FAFC;padding:0.6rem 0.8rem;border-radius:6px;border:1px solid #E2E8F0;">
+                        <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;">Employer Contributions (Company Cost):</div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.76rem;margin-top:0.35rem;color:#475569;">
+                            <span>WCF (0.5%):</span>
+                            <strong id="detWcf" style="color:#0F766E;">TSh 0</strong>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.76rem;margin-top:0.2rem;color:#475569;">
+                            <span>SDL (3.5%):</span>
+                            <strong id="detSdl" style="color:#0F766E;">TSh 0</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Net Pay Box -->
+            <div style="background:#ECFDF5;border:1.5px solid #10B981;border-radius:10px;padding:0.9rem 1.25rem;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="font-size:0.75rem;font-weight:800;text-transform:uppercase;color:#047857;letter-spacing:0.04em;">
+                        Total Deductions
+                    </div>
+                    <div style="font-size:0.95rem;font-weight:900;color:#DC2626;margin-top:0.2rem;" id="detTotalDeductions">
+                        - TSh 0
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:0.75rem;font-weight:800;text-transform:uppercase;color:#047857;letter-spacing:0.04em;">
+                        Net Payable (NET PAY)
+                    </div>
+                    <div style="font-size:1.4rem;font-weight:900;color:#047857;margin-top:0.1rem;" id="detNetPay">
+                        TSh 0
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-footer" style="padding:0.85rem 1.4rem;background:#FFFFFF;border-top:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+            <button type="button" class="btn-header-action btn-outline" onclick="closeModal('salaryDetailModal')">Close</button>
+            <div style="display:flex;gap:0.6rem;">
+                <a href="#" id="detEditBtn" class="btn-header-action btn-outline" style="padding:0.45rem 0.85rem;font-size:0.78rem;">
+                    <i class="fa-solid fa-pen"></i> Edit Record
+                </a>
+                <a href="#" id="detPayslipBtn" target="_blank" rel="noopener" class="btn-header-action btn-primary" style="padding:0.45rem 0.95rem;font-size:0.78rem;">
+                    <i class="fa-solid fa-print"></i> Open Payslip
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function parseMoney(id) {
+        const el = document.getElementById(id);
+        const v = el ? parseFloat(el.value) : 0;
+        return isNaN(v) ? 0 : v;
+    }
+    function formatTsh(v) {
+        return 'TSh ' + (Math.round(v * 100) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function recalcSalary() {
+        const basic = parseMoney('salBasic');
+        const allow = parseMoney('salAllow');
+        const gross = basic + allow;
+        const nssf = parseMoney('salNssf');
+        const paye = parseMoney('salPaye');
+        const advance = parseMoney('salAdvance');
+        const loan = parseMoney('salLoan');
+        const other = parseMoney('salOther');
+
+        const taxable = Math.max(0, gross - nssf);
+        const deductions = nssf + paye + advance + loan + other;
+        const net = gross - deductions;
+
+        const g = document.getElementById('calcGross');
+        const t = document.getElementById('calcTaxable');
+        const d = document.getElementById('calcDeductions');
+        const n = document.getElementById('calcNet');
+        if (g) g.textContent = formatTsh(gross);
+        if (t) t.textContent = formatTsh(taxable);
+        if (d) d.textContent = formatTsh(deductions);
+        if (n) {
+            n.textContent = formatTsh(net);
+            n.style.color = net < 0 ? '#B91C1C' : '#047857';
+        }
+    }
+    function computePayeTz(taxable) {
+        const brackets = [[270000, 0], [520000, 0.08], [760000, 0.20], [1000000, 0.25], [Infinity, 0.30]];
+        let tax = 0;
+        let lower = 0;
+        for (const [upper, rate] of brackets) {
+            if (taxable > lower) {
+                tax += (Math.min(taxable, upper) - lower) * rate;
+                lower = upper;
+            }
+        }
+        return Math.round(tax * 100) / 100;
+    }
+    function setMoney(id, v) {
+        const el = document.getElementById(id);
+        if (el) el.value = (Math.round(v * 100) / 100).toFixed(2);
+    }
+    function autoFillStatutory() {
+        const gross = parseMoney('salBasic') + parseMoney('salAllow');
+        const nssf = gross * 0.10;
+        const taxable = gross - nssf;
+        setMoney('salNssf', nssf);
+        setMoney('salPaye', computePayeTz(taxable));
+        setMoney('salWcf', gross * 0.005);
+        setMoney('salSdl', gross * 0.035);
+        recalcSalary();
+    }
+    function togglePaymentFields() {
+        const status = document.getElementById('salStatus');
+        const hint = document.getElementById('payDateHint');
+        if (!status || !hint) return;
+        hint.textContent = status.value === 'PAID' ? '(required)' : '';
+    }
+
+    function showSalaryDetails(d) {
+        document.getElementById('detMonth').textContent = d.month;
+        document.getElementById('detName').textContent = d.name;
+        document.getElementById('detRole').textContent = d.position + (d.empId ? ' • ID: ' + d.empId : '');
+        
+        const badge = document.getElementById('detStatusBadge');
+        if (d.status === 'PAID') {
+            badge.className = 'status-dot';
+            badge.style.background = '#DCFCE7';
+            badge.style.color = '#166534';
+            badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Paid ' + (d.paymentDate ? '(' + d.paymentDate + ')' : '');
+        } else if (d.status === 'CANCELLED') {
+            badge.className = 'status-dot';
+            badge.style.background = '#F1F5F9';
+            badge.style.color = '#64748B';
+            badge.innerHTML = '<i class="fa-solid fa-ban"></i> Cancelled';
+        } else {
+            badge.className = 'status-dot';
+            badge.style.background = '#FEF3C7';
+            badge.style.color = '#92400E';
+            badge.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> Draft';
+        }
+
+        document.getElementById('detBank').textContent = d.bank;
+        document.getElementById('detAccount').textContent = d.accountNo;
+        document.getElementById('detNssfNo').textContent = d.nssfNo;
+
+        document.getElementById('detBase').textContent = 'TSh ' + d.baseSalary;
+        document.getElementById('detAllow').textContent = 'TSh ' + d.allowances;
+        document.getElementById('detGross').textContent = 'TSh ' + d.grossPay;
+
+        document.getElementById('detAdvance').textContent = 'TSh ' + d.advance;
+        document.getElementById('detLoan').textContent = 'TSh ' + d.loan;
+        document.getElementById('detOther').textContent = 'TSh ' + d.other;
+
+        document.getElementById('detNssf').textContent = 'TSh ' + d.nssf;
+        document.getElementById('detTaxable').textContent = 'TSh ' + d.taxable;
+        document.getElementById('detPaye').textContent = 'TSh ' + d.paye;
+        document.getElementById('detWcf').textContent = 'TSh ' + d.wcf;
+        document.getElementById('detSdl').textContent = 'TSh ' + d.sdl;
+
+        document.getElementById('detTotalDeductions').textContent = '- TSh ' + d.totalDeductions;
+        document.getElementById('detNetPay').textContent = 'TSh ' + d.netPay;
+
+        document.getElementById('detEditBtn').href = d.editUrl;
+        document.getElementById('detPayslipBtn').href = d.payslipUrl;
+
+        openModal('salaryDetailModal');
+    }
+
+    function handleAutoToggle() {
+        const auto = document.getElementById('autoCalcToggle');
+        if (auto && auto.checked) {
+            autoFillStatutory();
+        }
+    }
+
+    function onGrossChanged() {
+        const auto = document.getElementById('autoCalcToggle');
+        if (!auto || auto.checked) {
+            autoFillStatutory();
+        } else {
+            recalcSalary();
+        }
+    }
+
+    (function initPayrollForm() {
+        const basicEl = document.getElementById('salBasic');
+        const allowEl = document.getElementById('salAllow');
+        if (basicEl) basicEl.addEventListener('input', onGrossChanged);
+        if (allowEl) allowEl.addEventListener('input', onGrossChanged);
+
+        ['salAdvance', 'salLoan'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', recalcSalary);
+        });
+
+        ['salNssf', 'salPaye'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', function() {
+                    const auto = document.getElementById('autoCalcToggle');
+                    if (auto) auto.checked = false;
+                    recalcSalary();
+                });
+            }
+        });
+
+        // If basic is entered but NSSF & PAYE are 0, immediately auto-compute
+        const basic = parseMoney('salBasic');
+        const nssf = parseMoney('salNssf');
+        const paye = parseMoney('salPaye');
+        if (basic > 0 && nssf === 0 && paye === 0) {
+            autoFillStatutory();
+        } else {
+            recalcSalary();
+        }
+
+        togglePaymentFields();
+        {% if editing %}
+        if (window.openModal) {
+            openModal('salaryModal');
+        } else {
+            document.addEventListener('DOMContentLoaded', function () { openModal('salaryModal'); });
+        }
+        {% endif %}
+    })();
+</script>
+{% endblock %}

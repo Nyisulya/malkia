@@ -81,234 +81,813 @@
 
 
             <!-- Title & Status Badges -->
-
-
-
             <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
-
-
-
                 <h2 style="font-size:1.5rem;font-weight:900;color:var(--brand-navy-900);letter-spacing:-0.02em;margin:0;font-family:monospace;">
-
-
-
                     {% if is_ceo or is_admin %}{{ job.job_number }}{% else %}BL: {{ job.staff_file_name }}{% endif %}
-
-
-
                 </h2>
 
-
-
-
-
-
-
-                {% if job.bl_number %}
-
-
-
-                <span style="font-size:0.84rem;background:#EFF6FF;color:#1D4ED8;padding:0.2rem 0.55rem;border-radius:6px;font-family:monospace;font-weight:800;border:1px solid #BFDBFE;">
-
-
-
-                    B/L: {{ job.bl_number }}
-
-
-
+                {% if job.chassis_number %}
+                <span style="font-size:0.84rem;background:#F8FAFC;color:#0F172A;padding:0.25rem 0.6rem;border-radius:6px;font-family:monospace;font-weight:800;border:1px solid #CBD5E1;">
+                    <i class="fa-solid fa-car" style="color:#0284C7;margin-right:0.25rem;"></i>Chassis: {{ job.chassis_number }}
                 </span>
-
-
-
                 {% endif %}
 
-
-
-
-
-
-
-                {% if job.clearance_mode == 'BOND' %}
-
-
-
-                <span class="badge-pill" style="background:#FEF3C7;color:#92400E;border:1.5px solid #F59E0B;font-weight:800;font-size:0.76rem;">
-
-
-
-                    <i class="fa-solid fa-warehouse"></i> TRA: IN-BOND
-
-
-
+                <span style="font-size:0.84rem;background:#F0FDF4;color:#166534;padding:0.25rem 0.6rem;border-radius:6px;font-weight:800;border:1px solid #BBF7D0;">
+                    <i class="fa-solid fa-user-tie" style="margin-right:0.25rem;"></i>{{ job.customer.company_name }}
                 </span>
 
-
-
-                {% elif job.clearance_mode == 'EX_BOND' %}
-
-
-
-                <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;border:1.5px solid #60A5FA;font-weight:800;font-size:0.76rem;">
-
-
-
-                    <i class="fa-solid fa-unlock-keyhole"></i> TRA: EX-BOND
-
-
-
-                </span>
-
-
-
-                {% else %}
-
-
-
-                <span class="badge-pill" style="background:#ECFDF5;color:#065F46;border:1.5px solid #10B981;font-weight:800;font-size:0.76rem;">
-
-
-
-                    <i class="fa-solid fa-money-bill-transfer"></i> TRA: DIRECT PAYMENT
-
-
-
-                </span>
-
-
-
-                {% endif %}
-
-
-
-
-
-
+                <span class="badge-pill" style="background:#ECFDF5;color:#065F46;border:1.5px solid #10B981;font-weight:800;font-size:0.76rem;"><i class="fa-solid fa-ship"></i> Direct Port Clearance</span>
 
                 <span class="badge-pill {% if job.status == 'DELAYED' %}badge-delayed{% elif job.status == 'COMPLETED' %}badge-completed{% else %}badge-active{% endif %}" style="font-size:0.76rem;font-weight:700;">
-
-
-
                     <span class="badge-dot"></span> {{ job.get_status_display }}
-
-
-
                 </span>
-
-
-
-
-
-
-
-                <span class="badge-pill" style="background:#F1F5F9;color:#334155;border:1px solid #CBD5E1;font-weight:700;font-size:0.76rem;">
-
-
-
-                    <i class="fa-solid fa-location-dot" style="color:var(--brand-primary);"></i> Step {{ completed_milestones_count }}/{{ milestones|length }}: {{ job.current_stage_display_name }}
-
-
-
-                </span>
-
-
-
-
-
-
 
                 {% if job.box_number %}
-
-
-
                 <span class="badge-pill" style="background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;font-weight:700;font-size:0.76rem;">
-
-
-
                     <i class="fa-solid fa-box-archive"></i> Box: {{ job.box_number }}
-
-
-
                 </span>
-
-
-
                 {% endif %}
-
-
-
             </div>
-
-
-
         </div>
-
-
-
-
-
-
 
         <!-- Executive Quick Actions -->
         <div style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
-            <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:800;padding:0.45rem 0.85rem;border-radius:8px;font-size:0.82rem;box-shadow:0 2px 4px rgba(22,163,74,0.25);">
-                <i class="fa-solid fa-route"></i> Track ({{ milestones|length }} Steps)
-            </a>
-
-            {% if not is_ceo and request.user.profile.role != 'CEO' %}
-            <a href="{% url 'print_combined_pack' job.id %}" target="_blank" class="btn-header-action" style="background:#0F172A;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:700;padding:0.45rem 0.8rem;border-radius:8px;font-size:0.82rem;">
-                <i class="fa-solid fa-file-pdf" style="color:#38BDF8;"></i> File Pack
-            </a>
+            {% if job.status != 'COMPLETED' %}
+            <form action="{% url 'advance_stage' job.id %}" method="POST" style="display:inline;" onsubmit="return confirm('Confirm: Complete Stage {{ job.current_stage_number }} ({{ job.current_stage_display_name }})?');">
+                {% csrf_token %}
+                <button type="submit" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:0.55rem 1.25rem;border-radius:8px;display:inline-flex;align-items:center;gap:0.5rem;font-size:0.86rem;cursor:pointer;box-shadow:0 2px 6px rgba(22,163,74,0.35);">
+                    <i class="fa-solid fa-circle-check"></i> Complete Stage: {{ job.current_stage_number }}. {{ job.current_stage_display_name }} (Approve)
+                </button>
+            </form>
+            {% else %}
+            <span class="badge-pill" style="background:#DCFCE7;color:#166534;font-weight:800;font-size:0.85rem;padding:0.5rem 1rem;">
+                <i class="fa-solid fa-check-double"></i> File Completed
+            </span>
             {% endif %}
-
-            <a href="{% url 'print_job_invoice' job.id %}" target="_blank" class="btn-header-action" style="background:#FFFFFF;color:#1E293B;border:1px solid #CBD5E1;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:700;padding:0.45rem 0.8rem;border-radius:8px;font-size:0.82rem;">
-                <i class="fa-solid fa-print" style="color:#64748B;"></i> Invoice
-            </a>
-
-            {% if not is_ceo and request.user.profile.role != 'CEO' %}
-            <button type="button" class="btn-header-action" onclick="openModal('requestExpenseModal')" style="background:#0284C7;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:800;padding:0.45rem 0.85rem;border-radius:8px;font-size:0.82rem;cursor:pointer;" title="Log a field expense voucher">
-                <i class="fa-solid fa-plus-circle"></i> + Add Field Expense
-            </button>
-
-            <a href="{% url 'send_job_stage_email' job.id %}" class="btn-header-action" style="background:#2563EB;color:#FFFFFF;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;font-weight:700;padding:0.45rem 0.8rem;border-radius:8px;font-size:0.82rem;" title="Notify client">
-                <i class="fa-solid fa-paper-plane"></i> Notify
-            </a>
-            {% endif %}
-            {% if user_can_advance_current and job.status != 'COMPLETED' %}
-
-
-
-            <button type="button" class="btn-header-action" onclick="openModal('advanceStageModal')" style="background:#F59E0B;color:#78350F;border:none;font-weight:800;padding:0.45rem 0.8rem;border-radius:8px;display:inline-flex;align-items:center;gap:0.35rem;font-size:0.82rem;cursor:pointer;">
-
-
-
-                <i class="fa-solid fa-forward-step"></i> Advance Stage
-
-
-
-            </button>
-
-
-
-            {% endif %}
-
-
-
         </div>
-
-
-
     </div>
-
-
-
 </div>
 
 
+<!-- =========================================================================
+     SHIPMENT DOSSIER & DOCUMENT CENTER (PLACED RIGHT AT TOP FOR OPERATIONS)
+     ========================================================================= -->
+<div id="documentCenter" class="card-panel" style="padding:1.4rem 1.6rem;background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);margin-bottom:1.5rem;">
 
+    <!-- PART A: 1-CLICK PRINT OFFICIAL AUTHORIZATION LETTERS -->
+    <div style="background:linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);border:1.5px solid #86EFAC;border-radius:12px;padding:1.15rem 1.35rem;margin-bottom:1.4rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <div style="display:flex;align-items:center;gap:0.85rem;min-width:280px;flex:1;">
+                <div style="width:44px;height:44px;border-radius:10px;background:#16A34A;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;box-shadow:0 2px 6px rgba(22,163,74,0.3);">
+                    <i class="fa-solid fa-print"></i>
+                </div>
+                <div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                        <span style="font-size:0.72rem;background:#DCFCE7;color:#166534;font-weight:900;padding:2px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:0.04em;border:1px solid #BBF7D0;">
+                            Official Authorization Letters
+                        </span>
+                        <h3 style="margin:0;font-size:1.08rem;font-weight:900;color:#14532D;font-family:var(--font-heading);">
+                            1. Print Client Authorization Letters (TRA &amp; TBS)
+                        </h3>
+                    </div>
+                    <p style="margin:0.2rem 0 0 0;font-size:0.82rem;color:#166534;line-height:1.4;">
+                        Print these 2 official letters for the client to physically sign and company stamp, and collect Form C41 from TRA portal.
+                    </p>
+                </div>
+            </div>
 
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                <a href="{% url 'print_letters_pack' job.id %}" target="_blank" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;padding:0.6rem 1.25rem;font-size:0.88rem;font-weight:800;border-radius:8px;display:inline-flex;align-items:center;gap:0.45rem;box-shadow:0 3px 8px rgba(22,163,74,0.35);text-decoration:none;">
+                    <i class="fa-solid fa-print"></i> Print Both Letters (TRA + TBS Pack)
+                </a>
+                <a href="{% url 'print_tra_letter' job.id %}" target="_blank" class="btn-header-action" style="background:#FFFFFF;border:1px solid #CBD5E1;color:#0F172A;padding:0.6rem 0.85rem;font-size:0.82rem;font-weight:700;border-radius:8px;text-decoration:none;">
+                    TRA Letter
+                </a>
+                <a href="{% url 'print_tbs_letter' job.id %}" target="_blank" class="btn-header-action" style="background:#FFFFFF;border:1px solid #CBD5E1;color:#0F172A;padding:0.6rem 0.85rem;font-size:0.82rem;font-weight:700;border-radius:8px;text-decoration:none;">
+                    TBS Letter
+                </a>
+            </div>
+        </div>
+    </div>
 
+    <!-- PART B: ESSENTIAL SHIPMENT DOCUMENTS (8 NEATLY ARRANGED SLOTS) -->
+    <div style="margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;flex-wrap:wrap;gap:0.5rem;">
+            <div style="font-size:0.82rem;font-weight:800;color:#0F172A;text-transform:uppercase;letter-spacing:0.04em;">
+                <i class="fa-solid fa-folder-open" style="color:#0284C7;margin-right:0.35rem;"></i>
+                2. Required Documents (Shipment Paperwork)
+            </div>
+            <span style="font-size:0.74rem;color:var(--text-muted);">
+                {% if can_edit_documents %}
+                    Pakia au rekebisha nyaraka (Edit/Replace file anytime).
+                {% else %}
+                    Tazama (View) au pakua (Download) nyaraka za mteja.
+                {% endif %}
+            </span>
+        </div>
 
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:0.85rem;">
 
+            <!-- SLOT 1: TRA Authorization Letter -->
+            {% with doc=job.signed_tra_doc %}
+            <div style="background:#FFFFFF;border:1.5px solid {% if doc %}#86EFAC{% else %}#CBD5E1{% endif %};border-radius:12px;padding:0.95rem 1rem;display:flex;flex-direction:column;justify-content:space-between;gap:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;">
+                        <span class="badge-pill" style="font-size:0.65rem;font-weight:800;background:{% if doc %}#DCFCE7;color:#166534{% else %}#F1F5F9;color:#64748B{% endif %};">
+                            TRA CUSTOMS
+                        </span>
+                        {% if doc %}
+                        <span style="font-size:0.72rem;font-weight:800;color:#166534;display:inline-flex;align-items:center;gap:0.25rem;">
+                            <i class="fa-solid fa-circle-check"></i> Uploaded
+                        </span>
+                        {% else %}
+                        <span style="font-size:0.72rem;font-weight:700;color:#94A3B8;">
+                            <i class="fa-regular fa-clock"></i> Pending
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="font-weight:800;font-size:0.88rem;color:#0F172A;display:flex;align-items:center;gap:0.45rem;">
+                        <i class="fa-solid fa-file-signature" style="color:{% if doc %}#16A34A{% else %}#64748B{% endif %};"></i>
+                        1. TRA Authorization Letter
+                    </div>
+                    <div style="font-size:0.72rem;color:#64748B;margin-top:0.15rem;">
+                        Signed &amp; Stamped
+                    </div>
+                    {% if doc %}
+                    <div style="font-size:0.72rem;color:#166534;font-weight:700;margin-top:0.35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
+                        <i class="fa-solid fa-file-pdf"></i> {{ doc.title }} &bull; {{ doc.uploaded_at|date:"d M, H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {% if doc %}
+                    <div style="display:flex;gap:0.3rem;border-top:1px solid #F1F5F9;padding-top:0.5rem;align-items:center;flex-wrap:wrap;">
+                        <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="flex:1;min-width:60px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;" title="View File">
+                            <i class="fa-solid fa-eye"></i> View
+                        </a>
+                        <a href="{% url 'download_job_document' doc.id %}" class="btn-header-action btn-outline" style="flex:1;min-width:75px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;color:#0369A1;background:#F0F9FF;" title="Download File">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                        {% if can_edit_documents %}
+                        <button type="button" class="btn-header-action" onclick="openEditDocModal('{{ doc.id }}', '{{ doc.title|escapejs }}', '{{ doc.document_type }}')" style="background:#F8FAFC;border:1px solid #CBD5E1;color:#334155;font-size:0.72rem;padding:0.32rem 0.5rem;font-weight:700;" title="Edit / Replace File">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button type="button" class="btn-header-action" onclick="confirmDeleteDoc('{{ doc.id }}', '{{ doc.title|escapejs }}')" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;font-size:0.72rem;padding:0.32rem 0.45rem;" title="Delete Document">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                        {% if can_edit_documents %}
+                        <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="document_type" value="TRA_AUTH_SIGNED">
+                            <input type="hidden" name="title" value="1. TRA Authorization Letter (Signed &amp; Stamped)">
+                            <input type="file" name="file" id="slot_file_TRA_AUTH_SIGNED" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <button type="button" onclick="document.getElementById('slot_file_TRA_AUTH_SIGNED').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
+                                <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
+                                <span>Upload Scan</span>
+                            </button>
+                        </form>
+                        {% else %}
+                        <div style="background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;color:#94A3B8;font-size:0.76rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.35rem;">
+                            <i class="fa-regular fa-clock"></i> Pending Upload
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+
+            <!-- SLOT 2: TBS Inspection Letter -->
+            {% with doc=job.signed_tbs_doc %}
+            <div style="background:#FFFFFF;border:1.5px solid {% if doc %}#86EFAC{% else %}#CBD5E1{% endif %};border-radius:12px;padding:0.95rem 1rem;display:flex;flex-direction:column;justify-content:space-between;gap:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;">
+                        <span class="badge-pill" style="font-size:0.65rem;font-weight:800;background:{% if doc %}#DCFCE7;color:#166534{% else %}#F1F5F9;color:#64748B{% endif %};">
+                            TBS STANDARDS
+                        </span>
+                        {% if doc %}
+                        <span style="font-size:0.72rem;font-weight:800;color:#166534;display:inline-flex;align-items:center;gap:0.25rem;">
+                            <i class="fa-solid fa-circle-check"></i> Uploaded
+                        </span>
+                        {% else %}
+                        <span style="font-size:0.72rem;font-weight:700;color:#94A3B8;">
+                            <i class="fa-regular fa-clock"></i> Pending
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="font-weight:800;font-size:0.88rem;color:#0F172A;display:flex;align-items:center;gap:0.45rem;">
+                        <i class="fa-solid fa-file-shield" style="color:{% if doc %}#16A34A{% else %}#64748B{% endif %};"></i>
+                        2. TBS Inspection Letter
+                    </div>
+                    <div style="font-size:0.72rem;color:#64748B;margin-top:0.15rem;">
+                        Signed &amp; Stamped
+                    </div>
+                    {% if doc %}
+                    <div style="font-size:0.72rem;color:#166534;font-weight:700;margin-top:0.35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
+                        <i class="fa-solid fa-file-pdf"></i> {{ doc.title }} &bull; {{ doc.uploaded_at|date:"d M, H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {% if doc %}
+                    <div style="display:flex;gap:0.3rem;border-top:1px solid #F1F5F9;padding-top:0.5rem;align-items:center;flex-wrap:wrap;">
+                        <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="flex:1;min-width:60px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;" title="View File">
+                            <i class="fa-solid fa-eye"></i> View
+                        </a>
+                        <a href="{% url 'download_job_document' doc.id %}" class="btn-header-action btn-outline" style="flex:1;min-width:75px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;color:#0369A1;background:#F0F9FF;" title="Download File">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                        {% if can_edit_documents %}
+                        <button type="button" class="btn-header-action" onclick="openEditDocModal('{{ doc.id }}', '{{ doc.title|escapejs }}', '{{ doc.document_type }}')" style="background:#F8FAFC;border:1px solid #CBD5E1;color:#334155;font-size:0.72rem;padding:0.32rem 0.5rem;font-weight:700;" title="Edit / Replace File">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button type="button" class="btn-header-action" onclick="confirmDeleteDoc('{{ doc.id }}', '{{ doc.title|escapejs }}')" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;font-size:0.72rem;padding:0.32rem 0.45rem;" title="Delete Document">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                        {% if can_edit_documents %}
+                        <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="document_type" value="TBS_SIGNED">
+                            <input type="hidden" name="title" value="2. TBS Inspection Letter (Signed &amp; Stamped)">
+                            <input type="file" name="file" id="slot_file_TBS_SIGNED" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <button type="button" onclick="document.getElementById('slot_file_TBS_SIGNED').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
+                                <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
+                                <span>Upload Scan</span>
+                            </button>
+                        </form>
+                        {% else %}
+                        <div style="background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;color:#94A3B8;font-size:0.76rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.35rem;">
+                            <i class="fa-regular fa-clock"></i> Pending Upload
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+
+            <!-- SLOT 3: Form C41 (Customs) -->
+            {% with doc=job.c41_doc %}
+            <div style="background:#FFFFFF;border:1.5px solid {% if doc %}#86EFAC{% else %}#CBD5E1{% endif %};border-radius:12px;padding:0.95rem 1rem;display:flex;flex-direction:column;justify-content:space-between;gap:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;">
+                        <span class="badge-pill" style="font-size:0.65rem;font-weight:800;background:{% if doc %}#DCFCE7;color:#166534{% else %}#F1F5F9;color:#64748B{% endif %};">
+                            TRA TANCIS
+                        </span>
+                        {% if doc %}
+                        <span style="font-size:0.72rem;font-weight:800;color:#166534;display:inline-flex;align-items:center;gap:0.25rem;">
+                            <i class="fa-solid fa-circle-check"></i> Uploaded
+                        </span>
+                        {% else %}
+                        <span style="font-size:0.72rem;font-weight:700;color:#94A3B8;">
+                            <i class="fa-regular fa-clock"></i> Pending
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="font-weight:800;font-size:0.88rem;color:#0F172A;display:flex;align-items:center;gap:0.45rem;">
+                        <i class="fa-solid fa-file-lines" style="color:{% if doc %}#16A34A{% else %}#64748B{% endif %};"></i>
+                        3. Form C41 (Customs)
+                    </div>
+                    <div style="font-size:0.72rem;color:#64748B;margin-top:0.15rem;">
+                        from TRA Portal
+                    </div>
+                    {% if doc %}
+                    <div style="font-size:0.72rem;color:#166534;font-weight:700;margin-top:0.35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
+                        <i class="fa-solid fa-file-pdf"></i> {{ doc.title }} &bull; {{ doc.uploaded_at|date:"d M, H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {% if doc %}
+                    <div style="display:flex;gap:0.3rem;border-top:1px solid #F1F5F9;padding-top:0.5rem;align-items:center;flex-wrap:wrap;">
+                        <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="flex:1;min-width:60px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;" title="View File">
+                            <i class="fa-solid fa-eye"></i> View
+                        </a>
+                        <a href="{% url 'download_job_document' doc.id %}" class="btn-header-action btn-outline" style="flex:1;min-width:75px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;color:#0369A1;background:#F0F9FF;" title="Download File">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                        {% if can_edit_documents %}
+                        <button type="button" class="btn-header-action" onclick="openEditDocModal('{{ doc.id }}', '{{ doc.title|escapejs }}', '{{ doc.document_type }}')" style="background:#F8FAFC;border:1px solid #CBD5E1;color:#334155;font-size:0.72rem;padding:0.32rem 0.5rem;font-weight:700;" title="Edit / Replace File">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button type="button" class="btn-header-action" onclick="confirmDeleteDoc('{{ doc.id }}', '{{ doc.title|escapejs }}')" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;font-size:0.72rem;padding:0.32rem 0.45rem;" title="Delete Document">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                        {% if can_edit_documents %}
+                        <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="document_type" value="FORM_C41">
+                            <input type="hidden" name="title" value="3. Form C41 (Customs)">
+                            <input type="file" name="file" id="slot_file_FORM_C41" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <button type="button" onclick="document.getElementById('slot_file_FORM_C41').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
+                                <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
+                                <span>Upload Scan</span>
+                            </button>
+                        </form>
+                        {% else %}
+                        <div style="background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;color:#94A3B8;font-size:0.76rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.35rem;">
+                            <i class="fa-regular fa-clock"></i> Pending Upload
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+
+            <!-- SLOT 4: Bill of Lading (BL) -->
+            {% with doc=job.bl_doc %}
+            <div style="background:#FFFFFF;border:1.5px solid {% if doc %}#86EFAC{% else %}#CBD5E1{% endif %};border-radius:12px;padding:0.95rem 1rem;display:flex;flex-direction:column;justify-content:space-between;gap:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;">
+                        <span class="badge-pill" style="font-size:0.65rem;font-weight:800;background:{% if doc %}#DCFCE7;color:#166534{% else %}#F1F5F9;color:#64748B{% endif %};">
+                            SHIPPING BL
+                        </span>
+                        {% if doc %}
+                        <span style="font-size:0.72rem;font-weight:800;color:#166534;display:inline-flex;align-items:center;gap:0.25rem;">
+                            <i class="fa-solid fa-circle-check"></i> Uploaded
+                        </span>
+                        {% else %}
+                        <span style="font-size:0.72rem;font-weight:700;color:#94A3B8;">
+                            <i class="fa-regular fa-clock"></i> Pending
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="font-weight:800;font-size:0.88rem;color:#0F172A;display:flex;align-items:center;gap:0.45rem;">
+                        <i class="fa-solid fa-ship" style="color:{% if doc %}#16A34A{% else %}#64748B{% endif %};"></i>
+                        4. Bill of Lading (BL)
+                    </div>
+                    <div style="font-size:0.72rem;color:#64748B;margin-top:0.15rem;">
+                        Original or Seaway
+                    </div>
+                    {% if doc %}
+                    <div style="font-size:0.72rem;color:#166534;font-weight:700;margin-top:0.35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
+                        <i class="fa-solid fa-file-pdf"></i> {{ doc.title }} &bull; {{ doc.uploaded_at|date:"d M, H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {% if doc %}
+                    <div style="display:flex;gap:0.3rem;border-top:1px solid #F1F5F9;padding-top:0.5rem;align-items:center;flex-wrap:wrap;">
+                        <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="flex:1;min-width:60px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;" title="View File">
+                            <i class="fa-solid fa-eye"></i> View
+                        </a>
+                        <a href="{% url 'download_job_document' doc.id %}" class="btn-header-action btn-outline" style="flex:1;min-width:75px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;color:#0369A1;background:#F0F9FF;" title="Download File">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                        {% if can_edit_documents %}
+                        <button type="button" class="btn-header-action" onclick="openEditDocModal('{{ doc.id }}', '{{ doc.title|escapejs }}', '{{ doc.document_type }}')" style="background:#F8FAFC;border:1px solid #CBD5E1;color:#334155;font-size:0.72rem;padding:0.32rem 0.5rem;font-weight:700;" title="Edit / Replace File">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button type="button" class="btn-header-action" onclick="confirmDeleteDoc('{{ doc.id }}', '{{ doc.title|escapejs }}')" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;font-size:0.72rem;padding:0.32rem 0.45rem;" title="Delete Document">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                        {% if can_edit_documents %}
+                        <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="document_type" value="BILL_OF_LADING">
+                            <input type="hidden" name="title" value="4. Bill of Lading (BL)">
+                            <input type="file" name="file" id="slot_file_BILL_OF_LADING" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <button type="button" onclick="document.getElementById('slot_file_BILL_OF_LADING').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
+                                <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
+                                <span>Upload Scan</span>
+                            </button>
+                        </form>
+                        {% else %}
+                        <div style="background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;color:#94A3B8;font-size:0.76rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.35rem;">
+                            <i class="fa-regular fa-clock"></i> Pending Upload
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+
+            <!-- SLOT 5: Commercial Invoice -->
+            {% with doc=job.invoice_doc %}
+            <div style="background:#FFFFFF;border:1.5px solid {% if doc %}#86EFAC{% else %}#CBD5E1{% endif %};border-radius:12px;padding:0.95rem 1rem;display:flex;flex-direction:column;justify-content:space-between;gap:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;">
+                        <span class="badge-pill" style="font-size:0.65rem;font-weight:800;background:{% if doc %}#DCFCE7;color:#166534{% else %}#F1F5F9;color:#64748B{% endif %};">
+                            VALUATION
+                        </span>
+                        {% if doc %}
+                        <span style="font-size:0.72rem;font-weight:800;color:#166534;display:inline-flex;align-items:center;gap:0.25rem;">
+                            <i class="fa-solid fa-circle-check"></i> Uploaded
+                        </span>
+                        {% else %}
+                        <span style="font-size:0.72rem;font-weight:700;color:#94A3B8;">
+                            <i class="fa-regular fa-clock"></i> Pending
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="font-weight:800;font-size:0.88rem;color:#0F172A;display:flex;align-items:center;gap:0.45rem;">
+                        <i class="fa-solid fa-file-invoice" style="color:{% if doc %}#16A34A{% else %}#64748B{% endif %};"></i>
+                        5. Commercial Invoice
+                    </div>
+                    <div style="font-size:0.72rem;color:#64748B;margin-top:0.15rem;">
+                        CIF Valuation
+                    </div>
+                    {% if doc %}
+                    <div style="font-size:0.72rem;color:#166534;font-weight:700;margin-top:0.35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
+                        <i class="fa-solid fa-file-pdf"></i> {{ doc.title }} &bull; {{ doc.uploaded_at|date:"d M, H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {% if doc %}
+                    <div style="display:flex;gap:0.3rem;border-top:1px solid #F1F5F9;padding-top:0.5rem;align-items:center;flex-wrap:wrap;">
+                        <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="flex:1;min-width:60px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;" title="View File">
+                            <i class="fa-solid fa-eye"></i> View
+                        </a>
+                        <a href="{% url 'download_job_document' doc.id %}" class="btn-header-action btn-outline" style="flex:1;min-width:75px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;color:#0369A1;background:#F0F9FF;" title="Download File">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                        {% if can_edit_documents %}
+                        <button type="button" class="btn-header-action" onclick="openEditDocModal('{{ doc.id }}', '{{ doc.title|escapejs }}', '{{ doc.document_type }}')" style="background:#F8FAFC;border:1px solid #CBD5E1;color:#334155;font-size:0.72rem;padding:0.32rem 0.5rem;font-weight:700;" title="Edit / Replace File">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button type="button" class="btn-header-action" onclick="confirmDeleteDoc('{{ doc.id }}', '{{ doc.title|escapejs }}')" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;font-size:0.72rem;padding:0.32rem 0.45rem;" title="Delete Document">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                        {% if can_edit_documents %}
+                        <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="document_type" value="COMMERCIAL_INVOICE">
+                            <input type="hidden" name="title" value="5. Commercial Invoice">
+                            <input type="file" name="file" id="slot_file_COMMERCIAL_INVOICE" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <button type="button" onclick="document.getElementById('slot_file_COMMERCIAL_INVOICE').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
+                                <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
+                                <span>Upload Scan</span>
+                            </button>
+                        </form>
+                        {% else %}
+                        <div style="background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;color:#94A3B8;font-size:0.76rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.35rem;">
+                            <i class="fa-regular fa-clock"></i> Pending Upload
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+
+            <!-- SLOT 6: Packing List -->
+            {% with doc=job.packing_list_doc %}
+            <div style="background:#FFFFFF;border:1.5px solid {% if doc %}#86EFAC{% else %}#CBD5E1{% endif %};border-radius:12px;padding:0.95rem 1rem;display:flex;flex-direction:column;justify-content:space-between;gap:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;">
+                        <span class="badge-pill" style="font-size:0.65rem;font-weight:800;background:{% if doc %}#DCFCE7;color:#166534{% else %}#F1F5F9;color:#64748B{% endif %};">
+                            CARGO PKGS
+                        </span>
+                        {% if doc %}
+                        <span style="font-size:0.72rem;font-weight:800;color:#166534;display:inline-flex;align-items:center;gap:0.25rem;">
+                            <i class="fa-solid fa-circle-check"></i> Uploaded
+                        </span>
+                        {% else %}
+                        <span style="font-size:0.72rem;font-weight:700;color:#94A3B8;">
+                            <i class="fa-regular fa-clock"></i> Pending
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="font-weight:800;font-size:0.88rem;color:#0F172A;display:flex;align-items:center;gap:0.45rem;">
+                        <i class="fa-solid fa-boxes-stacked" style="color:{% if doc %}#16A34A{% else %}#64748B{% endif %};"></i>
+                        6. Packing List
+                    </div>
+                    <div style="font-size:0.72rem;color:#64748B;margin-top:0.15rem;">
+                        Weight &amp; Packages
+                    </div>
+                    {% if doc %}
+                    <div style="font-size:0.72rem;color:#166534;font-weight:700;margin-top:0.35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
+                        <i class="fa-solid fa-file-pdf"></i> {{ doc.title }} &bull; {{ doc.uploaded_at|date:"d M, H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {% if doc %}
+                    <div style="display:flex;gap:0.3rem;border-top:1px solid #F1F5F9;padding-top:0.5rem;align-items:center;flex-wrap:wrap;">
+                        <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="flex:1;min-width:60px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;" title="View File">
+                            <i class="fa-solid fa-eye"></i> View
+                        </a>
+                        <a href="{% url 'download_job_document' doc.id %}" class="btn-header-action btn-outline" style="flex:1;min-width:75px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;color:#0369A1;background:#F0F9FF;" title="Download File">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                        {% if can_edit_documents %}
+                        <button type="button" class="btn-header-action" onclick="openEditDocModal('{{ doc.id }}', '{{ doc.title|escapejs }}', '{{ doc.document_type }}')" style="background:#F8FAFC;border:1px solid #CBD5E1;color:#334155;font-size:0.72rem;padding:0.32rem 0.5rem;font-weight:700;" title="Edit / Replace File">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button type="button" class="btn-header-action" onclick="confirmDeleteDoc('{{ doc.id }}', '{{ doc.title|escapejs }}')" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;font-size:0.72rem;padding:0.32rem 0.45rem;" title="Delete Document">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                        {% if can_edit_documents %}
+                        <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="document_type" value="PACKING_LIST">
+                            <input type="hidden" name="title" value="6. Packing List">
+                            <input type="file" name="file" id="slot_file_PACKING_LIST" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <button type="button" onclick="document.getElementById('slot_file_PACKING_LIST').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
+                                <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
+                                <span>Upload Scan</span>
+                            </button>
+                        </form>
+                        {% else %}
+                        <div style="background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;color:#94A3B8;font-size:0.76rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.35rem;">
+                            <i class="fa-regular fa-clock"></i> Pending Upload
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+
+            <!-- SLOT 7: TBS Inspection Cert -->
+            {% with doc=job.tbs_cert_doc %}
+            <div style="background:#FFFFFF;border:1.5px solid {% if doc %}#86EFAC{% else %}#CBD5E1{% endif %};border-radius:12px;padding:0.95rem 1rem;display:flex;flex-direction:column;justify-content:space-between;gap:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;">
+                        <span class="badge-pill" style="font-size:0.65rem;font-weight:800;background:{% if doc %}#DCFCE7;color:#166534{% else %}#F1F5F9;color:#64748B{% endif %};">
+                            TBS CERT
+                        </span>
+                        {% if doc %}
+                        <span style="font-size:0.72rem;font-weight:800;color:#166534;display:inline-flex;align-items:center;gap:0.25rem;">
+                            <i class="fa-solid fa-circle-check"></i> Uploaded
+                        </span>
+                        {% else %}
+                        <span style="font-size:0.72rem;font-weight:700;color:#94A3B8;">
+                            <i class="fa-regular fa-clock"></i> Pending
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="font-weight:800;font-size:0.88rem;color:#0F172A;display:flex;align-items:center;gap:0.45rem;">
+                        <i class="fa-solid fa-vial-circle-check" style="color:{% if doc %}#16A34A{% else %}#64748B{% endif %};"></i>
+                        7. TBS Inspection Cert
+                    </div>
+                    <div style="font-size:0.72rem;color:#64748B;margin-top:0.15rem;">
+                        Standards Clearance
+                    </div>
+                    {% if doc %}
+                    <div style="font-size:0.72rem;color:#166534;font-weight:700;margin-top:0.35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
+                        <i class="fa-solid fa-file-pdf"></i> {{ doc.title }} &bull; {{ doc.uploaded_at|date:"d M, H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {% if doc %}
+                    <div style="display:flex;gap:0.3rem;border-top:1px solid #F1F5F9;padding-top:0.5rem;align-items:center;flex-wrap:wrap;">
+                        <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="flex:1;min-width:60px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;" title="View File">
+                            <i class="fa-solid fa-eye"></i> View
+                        </a>
+                        <a href="{% url 'download_job_document' doc.id %}" class="btn-header-action btn-outline" style="flex:1;min-width:75px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;color:#0369A1;background:#F0F9FF;" title="Download File">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                        {% if can_edit_documents %}
+                        <button type="button" class="btn-header-action" onclick="openEditDocModal('{{ doc.id }}', '{{ doc.title|escapejs }}', '{{ doc.document_type }}')" style="background:#F8FAFC;border:1px solid #CBD5E1;color:#334155;font-size:0.72rem;padding:0.32rem 0.5rem;font-weight:700;" title="Edit / Replace File">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button type="button" class="btn-header-action" onclick="confirmDeleteDoc('{{ doc.id }}', '{{ doc.title|escapejs }}')" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;font-size:0.72rem;padding:0.32rem 0.45rem;" title="Delete Document">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                        {% if can_edit_documents %}
+                        <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="document_type" value="TBS_CERT">
+                            <input type="hidden" name="title" value="7. TBS Inspection Cert">
+                            <input type="file" name="file" id="slot_file_TBS_CERT" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <button type="button" onclick="document.getElementById('slot_file_TBS_CERT').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
+                                <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
+                                <span>Upload Scan</span>
+                            </button>
+                        </form>
+                        {% else %}
+                        <div style="background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;color:#94A3B8;font-size:0.76rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.35rem;">
+                            <i class="fa-regular fa-clock"></i> Pending Upload
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+
+            <!-- SLOT 8: Export Certificate -->
+            {% with doc=job.export_cert_doc %}
+            <div style="background:#FFFFFF;border:1.5px solid {% if doc %}#86EFAC{% else %}#CBD5E1{% endif %};border-radius:12px;padding:0.95rem 1rem;display:flex;flex-direction:column;justify-content:space-between;gap:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;">
+                        <span class="badge-pill" style="font-size:0.65rem;font-weight:800;background:{% if doc %}#DCFCE7;color:#166534{% else %}#F1F5F9;color:#64748B{% endif %};">
+                            EXPORT ORIGIN
+                        </span>
+                        {% if doc %}
+                        <span style="font-size:0.72rem;font-weight:800;color:#166534;display:inline-flex;align-items:center;gap:0.25rem;">
+                            <i class="fa-solid fa-circle-check"></i> Uploaded
+                        </span>
+                        {% else %}
+                        <span style="font-size:0.72rem;font-weight:700;color:#94A3B8;">
+                            <i class="fa-regular fa-clock"></i> Pending
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="font-weight:800;font-size:0.88rem;color:#0F172A;display:flex;align-items:center;gap:0.45rem;">
+                        <i class="fa-solid fa-file-shield" style="color:{% if doc %}#16A34A{% else %}#64748B{% endif %};"></i>
+                        8. Export Certificate
+                    </div>
+                    <div style="font-size:0.72rem;color:#64748B;margin-top:0.15rem;">
+                        Certificate of Origin
+                    </div>
+                    {% if doc %}
+                    <div style="font-size:0.72rem;color:#166534;font-weight:700;margin-top:0.35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
+                        <i class="fa-solid fa-file-pdf"></i> {{ doc.title }} &bull; {{ doc.uploaded_at|date:"d M, H:i" }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {% if doc %}
+                    <div style="display:flex;gap:0.3rem;border-top:1px solid #F1F5F9;padding-top:0.5rem;align-items:center;flex-wrap:wrap;">
+                        <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="flex:1;min-width:60px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;" title="View File">
+                            <i class="fa-solid fa-eye"></i> View
+                        </a>
+                        <a href="{% url 'download_job_document' doc.id %}" class="btn-header-action btn-outline" style="flex:1;min-width:75px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;color:#0369A1;background:#F0F9FF;" title="Download File">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                        {% if can_edit_documents %}
+                        <button type="button" class="btn-header-action" onclick="openEditDocModal('{{ doc.id }}', '{{ doc.title|escapejs }}', '{{ doc.document_type }}')" style="background:#F8FAFC;border:1px solid #CBD5E1;color:#334155;font-size:0.72rem;padding:0.32rem 0.5rem;font-weight:700;" title="Edit / Replace File">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button type="button" class="btn-header-action" onclick="confirmDeleteDoc('{{ doc.id }}', '{{ doc.title|escapejs }}')" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;font-size:0.72rem;padding:0.32rem 0.45rem;" title="Delete Document">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                        {% if can_edit_documents %}
+                        <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="document_type" value="EXPORT_CERT">
+                            <input type="hidden" name="title" value="8. Export Certificate">
+                            <input type="file" name="file" id="slot_file_EXPORT_CERT" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <button type="button" onclick="document.getElementById('slot_file_EXPORT_CERT').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
+                                <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
+                                <span>Upload Scan</span>
+                            </button>
+                        </form>
+                        {% else %}
+                        <div style="background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;color:#94A3B8;font-size:0.76rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.35rem;">
+                            <i class="fa-regular fa-clock"></i> Pending Upload
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+
+        </div>
+    </div>
+
+    <!-- PART C: ADDITIONAL SCANNED DOCUMENTS (CHINI YAKE) -->
+    <div style="border-top:1px solid #F1F5F9;padding-top:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;flex-wrap:wrap;gap:0.5rem;">
+            <div>
+                <div style="font-size:0.82rem;font-weight:800;color:#0F172A;text-transform:uppercase;letter-spacing:0.04em;">
+                    <i class="fa-solid fa-paperclip" style="color:#0284C7;margin-right:0.35rem;"></i>
+                    3. Additional Scanned Documents ({{ job.other_documents|length }})
+                </div>
+                <div style="font-size:0.74rem;color:#64748B;">
+                    Any other client attachments (Tax Clearance, NIDA Copy, Delivery Order, Photos, etc.)
+                </div>
+            </div>
+
+            {% if can_edit_documents %}
+            <button type="button" onclick="openSimpleAddModal()" class="btn-header-action btn-primary" style="padding:0.5rem 1.15rem;font-size:0.82rem;font-weight:800;">
+                <i class="fa-solid fa-plus"></i> + Add Other Document
+            </button>
+            {% endif %}
+        </div>
+
+        {% if job.other_documents %}
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:0.85rem;">
+            {% for doc in job.other_documents %}
+            <div style="background:#FFFFFF;border:1.5px solid #E2E8F0;border-radius:10px;padding:0.85rem 1rem;display:flex;flex-direction:column;justify-content:space-between;gap:0.6rem;">
+                <div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem;">
+                        <span class="badge-pill" style="font-size:0.65rem;background:#E0F2FE;color:#0369A1;font-weight:800;">
+                            {{ doc.get_document_type_display }}
+                        </span>
+                        <span style="font-size:0.7rem;color:#64748B;">{{ doc.uploaded_at|date:"d M, H:i" }}</span>
+                    </div>
+                    <div style="font-weight:800;font-size:0.86rem;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
+                        <i class="fa-solid fa-file" style="color:#64748B;margin-right:0.3rem;"></i>{{ doc.title }}
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #F1F5F9;padding-top:0.45rem;gap:0.3rem;flex-wrap:wrap;">
+                    <div style="display:flex;gap:0.3rem;flex:1;">
+                        <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="font-size:0.72rem;padding:0.25rem 0.55rem;text-decoration:none;">
+                            <i class="fa-solid fa-eye"></i> View
+                        </a>
+                        <a href="{% url 'download_job_document' doc.id %}" class="btn-header-action btn-outline" style="font-size:0.72rem;padding:0.25rem 0.55rem;text-decoration:none;color:#0369A1;background:#F0F9FF;">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                    </div>
+                    {% if can_edit_documents %}
+                    <div style="display:flex;gap:0.3rem;">
+                        <button type="button" class="btn-header-action" onclick="openEditDocModal('{{ doc.id }}', '{{ doc.title|escapejs }}', '{{ doc.document_type }}')" style="background:#F1F5F9;border:1px solid #CBD5E1;color:#334155;font-size:0.72rem;padding:0.25rem 0.55rem;font-weight:700;">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button type="button" class="btn-header-action" onclick="confirmDeleteDoc('{{ doc.id }}', '{{ doc.title|escapejs }}')" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;font-size:0.72rem;padding:0.25rem 0.5rem;">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:8px;padding:1.15rem;text-align:center;color:#64748B;font-size:0.8rem;">
+            {% if can_edit_documents %}
+                No additional documents attached yet. Click <strong>+ Add Other Document</strong> above to attach extra files.
+            {% else %}
+                No additional client documents attached.
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- PART D: SAVE / FINALIZE DOCUMENT DOSSIER (CHINI KABISA YA NYARAKA) -->
+    {% if can_edit_documents %}
+    <div style="margin-top:1.4rem;padding-top:1.15rem;border-top:1.5px dashed #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;background:#F8FAFC;padding:1.1rem 1.35rem;border-radius:12px;border:1px solid #E2E8F0;">
+        <div style="display:flex;align-items:center;gap:0.85rem;min-width:280px;flex:1;">
+            <div style="width:44px;height:44px;border-radius:10px;background:{% if job.doc_intake_finalized %}#DCFCE7;color:#16A34A{% else %}#EFF6FF;color:#2563EB{% endif %};display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;">
+                <i class="fa-solid {% if job.doc_intake_finalized %}fa-circle-check{% else %}fa-floppy-disk{% endif %}"></i>
+            </div>
+            <div>
+                <div style="font-weight:900;font-size:0.98rem;color:#0F172A;display:flex;align-items:center;gap:0.5rem;">
+                    <span>Save Scanned Documents Dossier</span>
+                    {% if job.doc_intake_finalized %}
+                    <span style="font-size:0.7rem;background:#DCFCE7;color:#166534;padding:2px 8px;border-radius:6px;font-weight:800;">
+                        Saved &amp; Finalized
+                    </span>
+                    {% endif %}
+                </div>
+                <div style="font-size:0.77rem;color:#64748B;margin-top:0.2rem;line-height:1.4;">
+                    {% if job.doc_intake_finalized %}
+                        Nyaraka zimehifadhiwa kikamilifu{% if job.doc_received_at %} tarehe {{ job.doc_received_at|date:"d M Y, H:i" }}{% endif %}. Unaweza kubadili/kuedit faili lolote muda wowote hapo juu na panabadilika mfumo mzima.
+                    {% else %}
+                        Ukishamaliza kupakia faili zako zote za mteja hapo juu, bonyeza kitufe cha kuhifadhi ili kusave rasmi.
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <form action="{% url 'finalize_document_dossier' job.id %}" method="POST" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;padding:0.7rem 1.6rem;font-size:0.92rem;font-weight:900;border-radius:8px;display:inline-flex;align-items:center;gap:0.55rem;box-shadow:0 3px 8px rgba(22,163,74,0.35);cursor:pointer;">
+                <i class="fa-solid fa-floppy-disk"></i>
+                {% if job.doc_intake_finalized %}
+                    Update / Save Dossier
+                {% else %}
+                    Save Documents
+                {% endif %}
+            </button>
+        </form>
+    </div>
+    {% elif job.doc_intake_finalized %}
+    <div style="margin-top:1.25rem;padding:0.9rem 1.25rem;border-radius:10px;background:#F0FDF4;border:1.5px solid #BBF7D0;display:flex;align-items:center;gap:0.85rem;color:#166534;font-size:0.84rem;font-weight:700;">
+        <i class="fa-solid fa-circle-check" style="font-size:1.35rem;color:#16A34A;flex-shrink:0;"></i>
+        <div>
+            <div style="font-weight:800;font-size:0.9rem;">Document Dossier Officially Finalized</div>
+            <div style="font-size:0.75rem;color:#15803D;font-weight:500;margin-top:0.15rem;">
+                Nyaraka za jalada hili zimekaguliwa na kuhifadhiwa na Documentation Desk. Unazo ruhusa za kuangalia (View) na kupakua (Download).
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
 <!-- =========================================================================
      2. EXECUTIVE FINANCIAL COMMAND STRIP (4 HIGH-IMPACT KPI CARDS)
      ========================================================================= -->
@@ -539,7 +1118,7 @@
                 {% empty %}
                 <tr>
                     <td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:0.84rem;">
-                        Hakuna bili au matumizi yaliyolipwa bado kwa mzigo huu. Port Officer akijaza bili na Finance akailipia (Approve/Pay), itaonekana hapa moja kwa moja.
+                        No recorded billing or disbursements yet for this shipment. Invoices paid will appear here automatically.
                     </td>
                 </tr>
                 {% endfor %}
@@ -876,2216 +1455,229 @@
 
 
 
-<!-- =========================================================================
-
-
-
-     4. CONSIGNMENT & CUSTOMS PROFILE (2 CLEAN CARDS)
-
-
-
-     ========================================================================= -->
-
-
-
-<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(310px, 1fr));gap:0.85rem;margin-bottom:1.15rem;">
-
-
-
-    <!-- Consignee Profile -->
-
-
-
-    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1rem 1.15rem;box-shadow:var(--shadow-sm);">
-
-
-
-        <div style="display:flex;align-items:center;gap:0.45rem;margin-bottom:0.75rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.45rem;">
-
-
-
-            <div style="width:26px;height:26px;border-radius:6px;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:0.8rem;">
-
-
-
-                <i class="fa-solid fa-user-tie"></i>
-
-
-
-            </div>
-
-
-
-            <h4 style="margin:0;font-size:0.88rem;font-weight:800;color:var(--brand-navy-900);">Client &amp; Consignment Profile</h4>
-
-
-
-        </div>
-
-
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;font-size:0.82rem;">
-
-
-
-            <div>
-
-
-
-                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Client / Consignee</span>
-
-
-
-                <strong style="color:var(--brand-navy-900);font-size:0.88rem;">{{ job.customer.company_name }}</strong>
-
-
-
-                {% if job.customer.phone %}
-
-
-
-                <div style="margin-top:0.1rem;">
-
-
-
-                    <a href="tel:{{ job.customer.phone }}" style="color:#059669;text-decoration:none;font-weight:700;font-size:0.76rem;">
-
-
-
-                        <i class="fa-solid fa-phone"></i> {{ job.customer.phone }}
-
-
-
-                    </a>
-
-
-
-                </div>
-
-
-
-                {% endif %}
-
-
-
-            </div>
-
-
-
-            <div>
-
-
-
-                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Client TIN &amp; ID</span>
-
-
-
-                <div style="font-family:monospace;font-weight:700;color:#0F172A;">TIN: {{ job.customer.tin_number|default:"—" }}</div>
-
-
-
-                <div style="font-family:monospace;font-size:0.74rem;color:#64748B;">ID: {{ job.customer.id_number|default:"—" }}</div>
-
-
-
-            </div>
-
-
-
-            <div>
-
-
-
-                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Cargo / Vehicle</span>
-
-
-
-                <strong style="color:var(--brand-navy-900);">{{ job.cargo_description|default:"1 Motor Vehicle" }}</strong>
-
-
-
-            </div>
-
-
-
-            <div>
-
-
-
-                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Chassis Number</span>
-
-
-
-                <span style="font-family:monospace;font-weight:800;color:#0F172A;background:#F8FAFC;padding:0.15rem 0.4rem;border-radius:4px;border:1px solid #E2E8F0;font-size:0.78rem;">
-
-
-
-                    {{ job.chassis_number|default:"—" }}
-
-
-
-                </span>
-
-
-
-            </div>
-
-
-
-            <div>
-
-
-
-                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Bill of Lading (B/L)</span>
-
-
-
-                <span style="font-family:monospace;font-weight:800;color:var(--brand-primary);font-size:0.84rem;">{{ job.bl_number|default:"—" }}</span>
-
-
-
-            </div>
-
-
-
-            <div>
-
-
-
-                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Storage Box / Yard Bay</span>
-
-
-
-                <strong style="color:#166534;">{{ job.box_number|default:"Assigned upon completion" }}</strong>
-
-
-
-            </div>
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- Customs Summary -->
-
-
-
-    <div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1rem 1.15rem;box-shadow:var(--shadow-sm);">
-
-
-
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.45rem;">
-
-
-
-            <div style="display:flex;align-items:center;gap:0.45rem;">
-
-
-
-                <div style="width:26px;height:26px;border-radius:6px;background:#F0FDF4;color:#16A34A;display:flex;align-items:center;justify-content:center;font-size:0.8rem;">
-
-
-
-                    <i class="fa-solid fa-stamp"></i>
-
-
-
-                </div>
-
-
-
-                <h4 style="margin:0;font-size:0.88rem;font-weight:800;color:var(--brand-navy-900);">Customs &amp; Port Clearance</h4>
-
-
-
-            </div>
-
-
-
-            <span class="badge-pill" style="font-size:0.7rem;background:#F1F5F9;color:#475569;font-weight:700;">
-
-
-
-                {{ job.get_clearance_mode_display }}
-
-
-
-            </span>
-
-
-
-        </div>
-
-
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;font-size:0.82rem;">
-
-
-
-            <div>
-
-
-
-                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">TANSAD Entry #</span>
-
-
-
-                <strong style="font-family:monospace;font-size:0.88rem;color:#0F172A;">{{ job.declaration_number|default:"Not Yet Lodged" }}</strong>
-
-
-
-                {% if not is_ceo and request.user.profile.role != 'CEO' %}
-
-
-
-                <div style="margin-top:0.25rem;">
-
-
-
-                    {% if job.tra_status == 'LODGED_76H' %}
-
-
-
-                    <button type="button" class="btn-header-action btn-primary" onclick="openRecordOutcomeModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.declaration_number }}')" style="font-size:0.7rem;padding:0.2rem 0.5rem;background:#1E3A8A;">
-
-
-
-                        <i class="fa-solid fa-clipboard-check"></i> Outcome
-
-
-
-                    </button>
-
-
-
-                    {% else %}
-
-
-
-                    <button type="button" class="btn-header-action btn-outline" onclick="openLodgeTaneswModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}', '{{ job.customer.company_name|escapejs }}', '{{ job.declaration_number|default:'' }}')" style="font-size:0.7rem;padding:0.2rem 0.5rem;">
-
-
-
-                        <i class="fa-solid fa-stamp"></i> Lodge Entry
-
-
-
-                    </button>
-
-
-
-                    {% endif %}
-
-
-
-                </div>
-
-
-
-                {% endif %}
-
-
-
-            </div>
-
-
-
-            <div>
-
-
-
-                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Customs Assessment</span>
-
-
-
-                {% if job.clearance_mode == 'BOND' %}
-
-
-
-                <span class="badge-pill" style="background:#FEF3C7;color:#92400E;font-size:0.7rem;font-weight:800;">
-
-
-
-                    <i class="fa-solid fa-shield-halved"></i> Under Customs Bond (C41)
-
-
-
-                </span>
-
-
-
-                {% elif job.duty_control_number %}
-
-
-
-                <div style="font-family:monospace;font-weight:800;color:#0F172A;font-size:0.8rem;">GePG: {{ job.duty_control_number }}</div>
-
-
-
-                <div style="font-size:0.72rem;color:#059669;font-weight:700;">Duty: TSh {{ job.assessed_duty_amount|floatformat:2|intcomma }}</div>
-
-
-
-                {% else %}
-
-
-
-                <span style="color:#64748B;font-size:0.76rem;">Awaiting TRA Assessment</span>
-
-
-
-                {% endif %}
-
-
-
-            </div>
-
-
-
-            <div>
-
-
-
-                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">TBS Standards Clearance</span>
-
-
-
-                <strong style="color:{% if job.tbs_status == 'APPROVED' %}#16A34A{% elif job.tbs_status == 'QUERY' %}#DC2626{% else %}#D97706{% endif %};font-size:0.82rem;">
-
-
-
-                    {{ job.get_tbs_status_display }}
-
-
-
-                </strong>
-
-
-
-                {% if not is_ceo and request.user.profile.role != 'CEO' %}
-
-
-
-                <div style="margin-top:0.25rem;">
-
-
-
-                    <button type="button" class="btn-header-action btn-outline" onclick="openUpdateTbsModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.tbs_status }}', '{{ job.tbs_reference_no|default:''|escapejs }}', '{{ job.tbs_notes|default:''|escapejs }}')" style="font-size:0.7rem;padding:0.2rem 0.5rem;">
-
-
-
-                        <i class="fa-solid fa-pen-to-square"></i> Update TBS
-
-
-
-                    </button>
-
-
-
-                </div>
-
-
-
-                {% endif %}
-
-
-
-            </div>
-
-
-
-            <div>
-
-
-
-                <span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;font-weight:700;display:block;">Physical Original B/L</span>
-
-
-
-                {% if job.original_docs_dispatched_to_field %}
-
-
-
-                <span style="color:#059669;font-weight:700;font-size:0.76rem;">
-
-
-
-                    <i class="fa-solid fa-circle-check"></i> Dispatched to {{ job.original_docs_recipient }}
-
-
-
-                </span>
-
-
-
-                {% else %}
-
-
-
-                <span style="color:#64748B;font-size:0.76rem;">
-
-
-
-                    <i class="fa-solid fa-clock"></i> In Office
-
-
-
-                </span>
-
-
-
-                {% endif %}
-
-
-
-                {% if not is_ceo and request.user.profile.role != 'CEO' %}
-
-
-
-                <div style="margin-top:0.25rem;">
-
-
-
-                    <button type="button" class="btn-header-action btn-outline" onclick="openHandoverDocsModal('{{ job.id }}', '{{ job.job_number }}', '{{ job.bl_number }}')" style="font-size:0.7rem;padding:0.2rem 0.5rem;">
-
-
-
-                        <i class="fa-solid fa-hand-holding-hand"></i> Handover
-
-
-
-                    </button>
-
-
-
-                </div>
-
-
-
-                {% endif %}
-
-
-
-            </div>
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-</div>
-
-
-
-
 
 
 
 <!-- =========================================================================
-
-
-
-     5. ULTRA-COMPACT 9-STEP MILESTONE PIPELINE
-
-
-
+     SHIPMENT MILESTONES & WORKFLOW PROGRESS (MOVED TO BOTTOM, COMPACT)
      ========================================================================= -->
-
-
-
-<div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:0.85rem 1.15rem;margin-bottom:1.15rem;box-shadow:var(--shadow-sm);">
-
-
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.65rem;flex-wrap:wrap;gap:0.5rem;">
-
-
-
-        <div style="font-size:0.84rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
-
-
-
-            <i class="fa-solid fa-route" style="color:var(--brand-primary);"></i>
-
-
-
-            Vehicle Clearing Milestones: <span style="color:var(--brand-primary);">{{ completed_milestones_count }}/{{ milestones|length }} Completed</span>
-
-
-
+<div style="background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:1.15rem 1.35rem;margin-bottom:2rem;box-shadow:var(--shadow-sm);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.85rem;flex-wrap:wrap;gap:0.5rem;">
+        <div style="font-size:0.9rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.45rem;">
+            <i class="fa-solid fa-route" style="color:#16A34A;font-size:1.05rem;"></i>
+            Shipment Milestones: <span style="color:#16A34A;">{{ completed_milestones_count }}/{{ milestones|length }} Completed</span>
         </div>
-
-
-
-        <a href="{% url 'client_shipment_detail' job.id %}" style="font-size:0.76rem;color:#15803D;font-weight:800;text-decoration:none;">
-
-
-
-            Open Interactive Tracking &rarr;
-
-
-
-        </a>
-
-
-
+        <div>
+            <a href="{% url 'client_shipment_detail' job.id %}" target="_blank" style="font-size:0.76rem;color:#15803D;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:0.35rem;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Client Tracking View &rarr;
+            </a>
+        </div>
     </div>
-
-
-
-
-
-
 
     <!-- Stepper Single-Row Grid -->
-
-
-
-    <div style="display:grid;grid-template-columns:repeat({{ milestones|length }}, minmax(75px, 1fr));gap:0.35rem;overflow-x:auto;">
-
-
-
+    <div style="display:grid;grid-template-columns:repeat({{ milestones|length }}, minmax(80px, 1fr));gap:0.4rem;overflow-x:auto;padding-bottom:0.5rem;margin-bottom:0.9rem;border-bottom:1px solid #F1F5F9;">
         {% for m in milestones %}
-
-
-
         <div style="text-align:center;">
-
-
-
             <div style="width:26px;height:26px;border-radius:50%;margin:0 auto 0.25rem auto;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;
-
-
-
-                {% if m.done %}
-
-
-
-                background:#16A34A;color:#FFFFFF;
-
-
-
-                {% elif m.current %}
-
-
-
-                background:#2563EB;color:#FFFFFF;box-shadow:0 0 0 3px rgba(37,99,235,0.2);
-
-
-
-                {% else %}
-
-
-
-                background:#F1F5F9;color:#94A3B8;border:1px solid #CBD5E1;
-
-
-
-                {% endif %}">
-
-
-
+                {% if m.done %}background:#16A34A;color:#FFFFFF;
+                {% elif m.current %}background:#2563EB;color:#FFFFFF;box-shadow:0 0 0 3px rgba(37,99,235,0.25);
+                {% else %}background:#F1F5F9;color:#94A3B8;border:1px solid #CBD5E1;{% endif %}">
                 {% if m.done %}<i class="fa-solid fa-check"></i>{% else %}{{ m.id }}{% endif %}
-
-
-
             </div>
-
-
-
             <div style="font-size:0.68rem;font-weight:700;color:{% if m.done %}#166534{% elif m.current %}#1D4ED8{% else %}#64748B{% endif %};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ m.name }}">
-
-
-
                 {{ m.name }}
-
-
-
             </div>
-
-
-
         </div>
-
-
-
         {% endfor %}
-
-
-
     </div>
 
+    <!-- Compact Stage Cards (No long verbose text) -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:0.65rem;">
+        {% for m in milestones %}
+        <div style="border-radius:8px;padding:0.75rem 0.85rem;border:1px solid {% if m.done %}#BBF7D0;background:#F0FDF4;{% elif m.current %}#BFDBFE;background:#EFF6FF;box-shadow:0 0 0 2px rgba(37,99,235,0.18);{% else %}#E2E8F0;background:#FFFFFF;{% endif %}display:flex;flex-direction:column;justify-content:space-between;gap:0.45rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.35rem;">
+                <strong style="font-size:0.8rem;color:{% if m.done %}#166534{% elif m.current %}#1D4ED8{% else %}#1E293B{% endif %};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    {{ m.id }}. {{ m.name }}
+                </strong>
+                <span style="font-size:0.65rem;font-weight:700;padding:0.1rem 0.4rem;border-radius:999px;white-space:nowrap;
+                    {% if m.done %}background:#DCFCE7;color:#15803D;
+                    {% elif m.current %}background:#DBEAFE;color:#1D4ED8;
+                    {% else %}background:#F1F5F9;color:#64748B;{% endif %}">
+                    {% if m.done %}Completed{% elif m.current %}In Progress{% else %}Pending{% endif %}
+                </span>
+            </div>
 
+            <div style="font-size:0.72rem;color:#64748B;display:flex;justify-content:space-between;align-items:center;">
+                <span>Officer:</span>
+                <strong style="color:#0F172A;">{{ m.assigned_officer }}</strong>
+            </div>
 
+            {% if m.current and job.status != 'COMPLETED' %}
+            <form action="{% url 'advance_stage' job.id %}" method="POST" style="margin-top:0.25rem;" onsubmit="return confirm('Confirm: Complete Stage {{ job.current_stage_number }} ({{ job.current_stage_display_name }})?');">
+                {% csrf_token %}
+                <button type="submit" style="width:100%;background:#16A34A;color:#FFFFFF;border:none;border-radius:5px;padding:0.35rem 0.5rem;font-size:0.74rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:0.3rem;">
+                    <i class="fa-solid fa-circle-check"></i> Complete Stage
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
 </div>
-
-
-
-
 
 
 
 <!-- =========================================================================
-
-
-
-     6. FILE DOSSIER & DOCUMENTS
-
-
-
+     MODALS: SIMPLE ADD OTHER DOCUMENT, RENAME & DELETE
      ========================================================================= -->
 
-
-
-<div class="card-panel" style="padding:1.25rem 1.5rem;background:#FFFFFF;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);margin-bottom:2rem;">
-
-
-
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1.25rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.85rem;">
-
-
-
-        <div>
-
-
-
-            <div style="display:flex;align-items:center;gap:0.5rem;">
-
-
-
-                <div style="width:30px;height:30px;border-radius:8px;background:#F0FDF4;color:#16A34A;display:flex;align-items:center;justify-content:center;font-size:0.9rem;">
-
-
-
-                    <i class="fa-solid fa-folder-open"></i>
-
-
-
-                </div>
-
-
-
-                <h4 style="margin:0;font-size:1rem;font-weight:800;color:var(--brand-navy-900);">File Documents &amp; Dossier</h4>
-
-
-
-                <span class="badge-pill" style="background:#F1F5F9;color:#334155;font-size:0.72rem;font-weight:800;">
-
-
-
-                    {{ documents|length|add:2 }} Documents Available
-
-
-
-                </span>
-
-
-
-            </div>
-
-
-
-            <p style="margin:0.25rem 0 0 0;font-size:0.76rem;color:var(--text-muted);">
-
-
-
-                Official customs declarations, regulatory letters, and client shipping attachments.
-
-
-
-            </p>
-
-
-
-        </div>
-
-
-
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-
-
-
-            <a href="{% url 'print_combined_pack' job.id %}" target="_blank" class="btn-header-action" style="background:#0F172A;color:#FFFFFF;font-size:0.78rem;padding:0.45rem 0.85rem;border-radius:6px;text-decoration:none;">
-
-
-
-                <i class="fa-solid fa-print"></i> Print Unified File Pack
-
-
-
-            </a>
-
-
-
-            {% if not is_ceo and request.user.profile.role != 'CEO' %}
-
-
-
-            <button type="button" onclick="var el=document.getElementById('editFileDrawer'); el.style.display=(el.style.display==='none'?'block':'none');" class="btn-header-action btn-outline" style="font-size:0.78rem;padding:0.45rem 0.75rem;">
-
-
-
-                <i class="fa-solid fa-pen-to-square"></i> Edit Checklist / Add Scans
-
-
-
-            </button>
-
-
-
-            <button type="button" class="btn-header-action btn-primary" onclick="openModal('uploadDocModal')" style="font-size:0.78rem;padding:0.45rem 0.75rem;">
-
-
-
-                <i class="fa-solid fa-upload"></i> Upload Attachment
-
-
-
-            </button>
-
-
-
-            {% endif %}
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- Documents Grid -->
-
-
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:0.85rem;margin-bottom:1rem;">
-
-
-
-        <!-- Office Generated Doc 1: Form C41 -->
-
-
-
-        <div style="background:#FFFFFF;border:1.5px solid #BBF7D0;border-radius:10px;padding:0.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.6rem;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
-
-
-
-            <div style="display:flex;align-items:center;gap:0.65rem;overflow:hidden;">
-
-
-
-                <div style="width:36px;height:36px;border-radius:8px;background:#DCFCE7;color:#166534;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0;">
-
-
-
-                    <i class="fa-solid fa-stamp"></i>
-
-
-
-                </div>
-
-
-
-                <div style="overflow:hidden;">
-
-
-
-                    <span class="badge-pill" style="background:#DCFCE7;color:#166534;font-size:0.62rem;font-weight:800;">OFFICE GENERATED</span>
-
-
-
-                    <div style="font-weight:800;font-size:0.86rem;color:#0F172A;margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-
-
-
-                        TRA Authorization Letter
-
-
-
-                    </div>
-
-
-
-                </div>
-
-
-
-            </div>
-
-
-
-            <a href="{% url 'print_c41_document' job.id %}" target="_blank" class="btn-header-action btn-primary" style="background:#059669;border-color:#059669;font-size:0.74rem;padding:0.35rem 0.7rem;flex-shrink:0;">
-
-
-
-                <i class="fa-solid fa-print"></i> Print TRA Letter
-
-
-
-            </a>
-
-
-
-        </div>
-
-
-
-
-
-
-
-        <!-- Office Generated Doc 2: TBS Letter -->
-
-
-
-        <div style="background:#FFFFFF;border:1.5px solid #BFDBFE;border-radius:10px;padding:0.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.6rem;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
-
-
-
-            <div style="display:flex;align-items:center;gap:0.65rem;overflow:hidden;">
-
-
-
-                <div style="width:36px;height:36px;border-radius:8px;background:#DBEAFE;color:#1E40AF;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0;">
-
-
-
-                    <i class="fa-solid fa-file-contract"></i>
-
-
-
-                </div>
-
-
-
-                <div style="overflow:hidden;">
-
-
-
-                    <span class="badge-pill" style="background:#DBEAFE;color:#1E40AF;font-size:0.62rem;font-weight:800;">OFFICE GENERATED</span>
-
-
-
-                    <div style="font-weight:800;font-size:0.86rem;color:#0F172A;margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-
-
-
-                        TBS Authorization Letter
-
-
-
-                    </div>
-
-
-
-                </div>
-
-
-
-            </div>
-
-
-
-            <a href="{% url 'print_tbs_letter' job.id %}" target="_blank" class="btn-header-action btn-primary" style="background:#2563EB;border-color:#2563EB;font-size:0.74rem;padding:0.35rem 0.7rem;flex-shrink:0;">
-
-
-
-                <i class="fa-solid fa-print"></i> Print TBS Letter
-
-
-
-            </a>
-
-
-
-        </div>
-
-
-
-
-
-
-
-        <!-- Uploaded / Scanned Client Documents -->
-
-
-
-        {% for doc in documents %}
-
-
-
-        <div style="background:#FFFFFF;border:1.5px solid #E2E8F0;border-radius:10px;padding:0.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.6rem;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
-
-
-
-            <div style="display:flex;align-items:center;gap:0.65rem;overflow:hidden;">
-
-
-
-                <div style="width:36px;height:36px;border-radius:8px;background:#F1F5F9;color:#475569;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0;">
-
-
-
-                    <i class="fa-solid fa-file-pdf" style="color:#DC2626;"></i>
-
-
-
-                </div>
-
-
-
-                <div style="overflow:hidden;">
-
-
-
-                    <span class="badge-pill" style="background:#E0F2FE;color:#0369A1;font-size:0.62rem;font-weight:800;">{{ doc.get_document_type_display }}</span>
-
-
-
-                    <div style="font-weight:800;font-size:0.84rem;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:0.15rem;" title="{{ doc.title }}">
-
-
-
-                        {{ doc.title }}
-
-
-
-                    </div>
-
-
-
-                    {% if doc.uploaded_at %}
-
-
-
-                    <div style="font-size:0.68rem;color:var(--text-muted);margin-top:0.1rem;">{{ doc.uploaded_at|date:'d M Y' }}</div>
-
-
-
-                    {% endif %}
-
-
-
-                </div>
-
-
-
-            </div>
-
-
-
-            <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="font-size:0.74rem;padding:0.35rem 0.65rem;flex-shrink:0;">
-
-
-
-                <i class="fa-solid fa-eye"></i> View
-
-
-
-            </a>
-
-
-
-        </div>
-
-
-
-        {% endfor %}
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- Checklist Status Badges -->
-
-
-
-    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;">
-
-
-
-        <div style="font-size:0.76rem;color:var(--text-muted);font-weight:700;">
-
-
-
-            Original Documents Verified Checklist:
-
-
-
-        </div>
-
-
-
-        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-
-
-
-            <span class="badge-pill" style="font-size:0.7rem;{% if job.doc_bl_received %}background:#DCFCE7;color:#166534;{% else %}background:#F1F5F9;color:#94A3B8;{% endif %}">
-
-
-
-                <i class="fa-solid {% if job.doc_bl_received %}fa-check{% else %}fa-minus{% endif %}"></i> Bill of Lading
-
-
-
-            </span>
-
-
-
-            <span class="badge-pill" style="font-size:0.7rem;{% if job.doc_invoice_received %}background:#DCFCE7;color:#166534;{% else %}background:#F1F5F9;color:#94A3B8;{% endif %}">
-
-
-
-                <i class="fa-solid {% if job.doc_invoice_received %}fa-check{% else %}fa-minus{% endif %}"></i> Commercial Invoice
-
-
-
-            </span>
-
-
-
-            <span class="badge-pill" style="font-size:0.7rem;{% if job.doc_packing_list_received %}background:#DCFCE7;color:#166534;{% else %}background:#F1F5F9;color:#94A3B8;{% endif %}">
-
-
-
-                <i class="fa-solid {% if job.doc_packing_list_received %}fa-check{% else %}fa-minus{% endif %}"></i> Packing List
-
-
-
-            </span>
-
-
-
-            <span class="badge-pill" style="font-size:0.7rem;{% if job.doc_tbs_cert_received %}background:#DCFCE7;color:#166534;{% else %}background:#F1F5F9;color:#94A3B8;{% endif %}">
-
-
-
-                <i class="fa-solid {% if job.doc_tbs_cert_received %}fa-check{% else %}fa-minus{% endif %}"></i> TBS Certificate
-
-
-
-            </span>
-
-
-
-            <span class="badge-pill" style="font-size:0.7rem;{% if job.doc_export_cert_received %}background:#DCFCE7;color:#166534;{% else %}background:#F1F5F9;color:#94A3B8;{% endif %}">
-
-
-
-                <i class="fa-solid {% if job.doc_export_cert_received %}fa-check{% else %}fa-minus{% endif %}"></i> Export Cert
-
-
-
-            </span>
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- Checklist Drawer -->
-
-
-
-    <div id="editFileDrawer" style="display:none;background:#F8FAFC;border:1.5px dashed #0284C7;border-radius:10px;padding:1rem;margin-top:0.85rem;">
-
-
-
-        <form action="{% url 'update_doc_checklist' job.id %}" method="POST" enctype="multipart/form-data">
-
-
-
-            {% csrf_token %}
-
-
-
-            <div style="font-weight:800;font-size:0.86rem;color:#0F172A;margin-bottom:0.6rem;">
-
-
-
-                <i class="fa-solid fa-file-arrow-up" style="color:#0284C7;"></i> Add Scans &amp; Update Client Document Checklist
-
-
-
-            </div>
-
-
-
-            <div style="display:flex;align-items:center;gap:0.85rem;flex-wrap:wrap;margin-bottom:0.75rem;font-size:0.8rem;font-weight:700;">
-
-
-
-                <label style="display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;"><input type="checkbox" name="doc_bl_received" value="1" {% if job.doc_bl_received %}checked{% endif %}> 1. BL</label>
-
-
-
-                <label style="display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;"><input type="checkbox" name="doc_invoice_received" value="1" {% if job.doc_invoice_received %}checked{% endif %}> 2. Invoice</label>
-
-
-
-                <label style="display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;"><input type="checkbox" name="doc_packing_list_received" value="1" {% if job.doc_packing_list_received %}checked{% endif %}> 3. Packing List</label>
-
-
-
-                <label style="display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;"><input type="checkbox" name="doc_tbs_cert_received" value="1" {% if job.doc_tbs_cert_received %}checked{% endif %}> 4. TBS Cert</label>
-
-
-
-                <label style="display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;"><input type="checkbox" name="doc_export_cert_received" value="1" {% if job.doc_export_cert_received %}checked{% endif %}> 5. Export Cert</label>
-
-
-
-            </div>
-
-
-
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
-
-
-
-                <input type="file" name="scanned_documents" multiple accept=".pdf,image/*" class="form-control" style="max-width:320px;font-size:0.78rem;">
-
-
-
-                <button type="submit" class="btn-header-action btn-primary" style="font-size:0.8rem;">
-
-
-
-                    <i class="fa-solid fa-check"></i> Save Checklist &amp; Upload
-
-
-
-                </button>
-
-
-
-            </div>
-
-
-
-        </form>
-
-
-
-    </div>
-
-
-
-</div>
-
-
-
-
-
-
-
-<!-- 1. ADVANCE STAGE MODAL (WITH CONTROL GATE FOR DUTY PAYMENT) -->
-
-
-
-<div id="advanceStageModal" class="modal-overlay">
-
-
-
-    <div class="modal-card">
-
-
-
-        <form action="{% url 'advance_stage' job.id %}" method="POST" enctype="multipart/form-data">
-
-
-
-            {% csrf_token %}
-
-
-
-            <div class="modal-header">
-
-
-
-                <div>
-
-
-
-                    <h3 class="modal-title">Advance Stage: {{ job.current_stage_number }}. {{ job.current_stage_obj.name_en }}</h3>
-
-
-
-                    <p style="font-size:0.78rem;color:var(--text-muted);">{{ job.current_stage_obj.name_sw }} &bull; Target: {{ job.current_stage_obj.target_days }} Day(s)</p>
-
-
-
-                </div>
-
-
-
-                <button type="button" class="modal-close-btn" onclick="closeModal('advanceStageModal')">&times;</button>
-
-
-
-            </div>
-
-
-
-            <div class="modal-body">
-
-
-
-                <!-- STAGE 2: CUSTOMS DECLARATION (TANSAD) -->
-
-
-
-                {% if job.current_stage_number == 2 %}
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>TRA TANSAD Declaration Number</label>
-
-
-
-                    <input type="text" name="customs_doc_number" class="form-control" placeholder="e.g. 26DARIM4001928" value="{{ job.declaration_number }}" required>
-
-
-
-                </div>
-
-
-
-                {% endif %}
-
-
-
-
-
-
-
-                <!-- STAGE 3: TRA DUTY / IN-BOND CLEARANCE -->
-
-
-
-                {% if job.current_stage_number == 3 %}
-
-
-
-                {% if job.clearance_mode == 'BOND' %}
-
-
-
-                <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;">
-
-
-
-                    <div style="color:#B45309;font-weight:700;margin-bottom:0.35rem;">
-
-
-
-                        <i class="fa-solid fa-warehouse"></i> IN-BOND CARGO: Customs Duty Suspended
-
-
-
-                    </div>
-
-
-
-                    <p style="font-size:0.8rem;color:#92400E;margin-bottom:0.5rem;">
-
-
-
-                        Gari hili lipo chini ya mfumo wa bondi. Thibitisha TRA Removal Order (R/O) ili kuendelea.
-
-
-
-                    </p>
-
-
-
-                    <div class="form-group" style="margin-bottom:0;">
-
-
-
-                        <label>TRA Removal Order (R/O) Number *</label>
-
-
-
-                        <input type="text" name="payment_reference" class="form-control" placeholder="e.g. RO-2026-BOND-009" value="{{ job.duty_payment_reference|default:'RO-2026-BOND-APPROVED' }}" required>
-
-
-
-                    </div>
-
-
-
-                </div>
-
-
-
-                {% else %}
-
-
-
-                <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;">
-
-
-
-                    <div style="color:#B45309;font-weight:700;margin-bottom:0.35rem;">
-
-
-
-                        <i class="fa-solid fa-lock"></i> CRITICAL GATE: Uthibitisho wa Malipo ya Kodi ya Mteja (TRA GePG)
-
-
-
-                    </div>
-
-
-
-                    <p style="font-size:0.8rem;color:#92400E;margin-bottom:0.5rem;">
-
-
-
-                        Mteja <strong>{{ job.customer.company_name }}</strong> analipa kodi ya forodha ya TSh <strong>{{ job.assessed_duty_amount|floatformat:2 }}</strong> moja kwa moja TRA.
-
-
-
-                    </p>
-
-
-
-                    <div class="form-group" style="margin-top:0.75rem;">
-
-
-
-                        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-weight:700;color:#065F46;">
-
-
-
-                            <input type="checkbox" name="duty_paid_confirm" value="1" {% if job.duty_paid %}checked{% endif %} required>
-
-
-
-                            <span>Nathibitisha mteja amelipa kodi yote ya TRA ya TSh {{ job.assessed_duty_amount|floatformat:2 }}</span>
-
-
-
-                        </label>
-
-
-
-                    </div>
-
-
-
-                    <div class="form-group" style="margin-bottom:0.5rem;">
-
-
-
-                        <label>TRA E-Receipt / Bank Slip Reference # *</label>
-
-
-
-                        <input type="text" name="payment_reference" class="form-control" placeholder="e.g. TRA-ER-7788192" value="{{ job.duty_payment_reference }}" required>
-
-
-
-                    </div>
-
-
-
-                </div>
-
-
-
-                {% endif %}
-
-
-
-                {% endif %}
-
-
-
-
-
-
-
-                <!-- STAGE 4: DELIVERY ORDER (D/O) -->
-
-
-
-                {% if job.current_stage_number == 4 %}
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Shipping Line Delivery Order (DO) Number</label>
-
-
-
-                    <input type="text" name="customs_doc_number" class="form-control" placeholder="e.g. DO-MSC-89102" value="{{ job.delivery_order_number }}" required>
-
-
-
-                </div>
-
-
-
-                {% endif %}
-
-
-
-
-
-
-
-                <!-- STAGE 5: PHYSICAL VERIFICATION -->
-
-
-
-                {% if job.current_stage_number == 5 %}
-
-
-
-                <div style="background:#F0FDFA;border:1px solid #99F6E4;border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;">
-
-
-
-                    <div style="color:#0F766E;font-weight:700;margin-bottom:0.35rem;">
-
-
-
-                        <i class="fa-solid fa-clipboard-check"></i> Ukaguzi wa Forodha Bandarini / ICD (Verification)
-
-
-
-                    </div>
-
-
-
-                    <p style="font-size:0.8rem;color:#115E59;margin-bottom:0.5rem;">
-
-
-
-                        Thibitisha ukaguzi wa forodha na TBS umekamilika bila pingamizi.
-
-
-
-                    </p>
-
-
-
-                    <div class="form-group" style="margin-bottom:0;">
-
-
-
-                        <label>Verification Report / Inspector Findings Ref</label>
-
-
-
-                        <input type="text" name="customs_doc_number" class="form-control" placeholder="e.g. TRA-VERIFIED-PASSED" value="TRA-VERIFIED-PASSED" required>
-
-
-
-                    </div>
-
-
-
-                </div>
-
-
-
-                {% endif %}
-
-
-
-
-
-
-
-                <!-- STAGE 6: PORT & ICD CHARGES -->
-
-
-
-                {% if job.current_stage_number == 6 %}
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>TPA / TICTS / ICD Port Invoice Number</label>
-
-
-
-                    <input type="text" name="customs_doc_number" class="form-control" placeholder="e.g. TPA-INV-887192" value="{{ job.port_invoice_number }}" required>
-
-
-
-                </div>
-
-
-
-                {% endif %}
-
-
-
-
-
-
-
-                <!-- STAGE 7: GATE EXIT & VEHICLE INSPECTION -->
-
-
-
-                {% if job.current_stage_number == 7 %}
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Port Gate Pass Number</label>
-
-
-
-                    <input type="text" name="customs_doc_number" class="form-control" placeholder="e.g. TPA-GP-2026-9041" value="{{ job.gate_pass_number }}" required>
-
-
-
-                </div>
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Driver Jina (Gari Kupelekwa Yard ya Malkia)</label>
-
-
-
-                    <input type="text" name="truck_number" class="form-control" placeholder="e.g. Mohamed Said (Driver)" value="{{ job.vehicle_driver_name|default:'Mohamed Said (Driver)' }}">
-
-
-
-                </div>
-
-
-
-                {% endif %}
-
-
-
-
-
-
-
-                <!-- STAGE 8: MALKIA YARD ARRIVAL -->
-
-
-
-                {% if job.current_stage_number == 8 %}
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Yard Parking Bay / Box Location</label>
-
-
-
-                    <input type="text" name="customs_doc_number" class="form-control" placeholder="e.g. Bay A-04" value="{{ job.box_number|default:'Bay A-04' }}" required>
-
-
-
-                </div>
-
-
-
-                {% endif %}
-
-
-
-
-
-
-
-                <!-- STAGE 9: CUSTOMER HANDOVER & POD -->
-
-
-
-                {% if job.current_stage_number == 9 %}
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Customer / Consignee Receiver Name</label>
-
-
-
-                    <input type="text" name="received_by_name" class="form-control" placeholder="e.g. Mr. Rashid Juma" value="{{ job.received_by_name|default:job.customer.company_name }}" required>
-
-
-
-                </div>
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Upload Signed Proof of Delivery (POD) / Receipt</label>
-
-
-
-                    <input type="file" name="pod_file" class="form-control" accept="image/*,.pdf">
-
-
-
-                </div>
-
-
-
-                {% endif %}
-
-
-
-
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Stage Completion Notes / Remarks</label>
-
-
-
-                    <textarea name="remarks" class="form-control" placeholder="Add operational notes or confirmation details..."></textarea>
-
-
-
-                </div>
-
-
-
-
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Attach Supporting Document (Optional)</label>
-
-
-
-                    <input type="file" name="stage_document" class="form-control">
-
-
-
-                </div>
-
-
-
-            </div>
-
-
-
-            <div class="modal-footer">
-
-
-
-                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('advanceStageModal')">Cancel</button>
-
-
-
-                <button type="submit" class="btn-header-action btn-primary">
-
-
-
-                    <i class="fa-solid fa-check"></i> Complete & Advance to Next Stage
-
-
-
-                </button>
-
-
-
-            </div>
-
-
-
-        </form>
-
-
-
-    </div>
-
-
-
-</div>
-
-
-
-
-
-
-
-<!-- 2. REQUEST EXPENSE DISBURSEMENT MODAL -->
-
-
-
-<div id="requestExpenseModal" class="modal-overlay">
-
-
-
-    <div class="modal-card">
-
-
-
-        <form action="{% url 'expense_create' %}" method="POST" enctype="multipart/form-data">
-
-
-
-            {% csrf_token %}
-
-
-
-            <input type="hidden" name="job_id" value="{{ job.id }}">
-
-
-
-            <input type="hidden" name="next" value="job_detail">
-
-
-
-            <div class="modal-header">
-
-
-
-                <div>
-
-
-
-                    <h3 class="modal-title">Request Operational Expense Voucher</h3>
-
-
-
-                    <p style="font-size:0.78rem;color:var(--text-muted);">Linked directly to Job {{ job.job_number }} (Approval Matrix enforced)</p>
-
-
-
-                </div>
-
-
-
-                <button type="button" class="modal-close-btn" onclick="closeModal('requestExpenseModal')">&times;</button>
-
-
-
-            </div>
-
-
-
-            <div class="modal-body">
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Expense Category</label>
-
-
-
-                    <select name="category" class="form-control" required>
-
-
-
-                        {% for cat_val, cat_label in expense_categories %}
-
-
-
-                        <option value="{{ cat_val }}">{{ cat_label }}</option>
-
-
-
-                        {% endfor %}
-
-
-
-                    </select>
-
-
-
-                </div>
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Disbursement Amount (TSh)</label>
-
-
-
-                    <input type="number" step="0.01" name="amount" class="form-control" placeholder="e.g. 1500000" required>
-
-
-
-                    <small style="color:var(--text-muted);font-size:0.75rem;">
-
-
-
-                        &le; 500k: Operations Mgr &bull; 500k-2M: Finance Mgr &bull; &gt; 2M: CEO Approval
-
-
-
-                    </small>
-
-
-
-                </div>
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Payment Channel / Njia ya Malipo</label>
-
-
-
-                    <select name="payment_method" class="form-control">
-
-
-
-                        <option value="BANK">Bank Transfer / Cheque</option>
-
-
-
-                        <option value="CASH">Cashier Cash / Petty Cash</option>
-
-
-
-                        <option value="MOBILE_MONEY">Mobile Money (M-Pesa / TigoPesa)</option>
-
-
-
-                    </select>
-
-
-
-                </div>
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Detailed Purpose / Description</label>
-
-
-
-                    <textarea name="description" class="form-control" placeholder="Specify why this expense is needed for this consignment..." required></textarea>
-
-
-
-                </div>
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Supporting Receipt / Proforma Invoice (Optional)</label>
-
-
-
-                    <input type="file" name="receipt_file" class="form-control">
-
-
-
-                </div>
-
-
-
-            </div>
-
-
-
-            <div class="modal-footer">
-
-
-
-                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('requestExpenseModal')">Cancel</button>
-
-
-
-                <button type="submit" class="btn-header-action btn-primary">
-
-
-
-                    <i class="fa-solid fa-paper-plane"></i> Submit Expense Request
-
-
-
-                </button>
-
-
-
-            </div>
-
-
-
-        </form>
-
-
-
-    </div>
-
-
-
-</div>
-
-
-
-
-
-
-
-<!-- 3. UPLOAD DOCUMENT MODAL -->
-
-
-
-<div id="uploadDocModal" class="modal-overlay">
-
-
-
-    <div class="modal-card">
-
-
-
+<!-- 1. SIMPLE ADD OTHER DOCUMENT MODAL -->
+<div id="addOtherDocModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:480px;">
         <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data">
-
-
-
             {% csrf_token %}
-
-
-
+            <input type="hidden" name="document_type" value="OTHER">
             <div class="modal-header">
-
-
-
                 <div>
-
-
-
-                    <h3 class="modal-title">Upload Digital Document</h3>
-
-
-
-                    <p style="font-size:0.78rem;color:var(--text-muted);">Shipment Job {{ job.job_number }}</p>
-
-
-
+                    <h3 class="modal-title" style="margin:0;font-size:1.1rem;font-weight:800;color:#0F172A;">Add Other Document</h3>
+                    <p style="font-size:0.75rem;color:var(--text-muted);margin:0.15rem 0 0 0;">Upload any additional scanned paperwork</p>
                 </div>
-
-
-
-                <button type="button" class="modal-close-btn" onclick="closeModal('uploadDocModal')">&times;</button>
-
-
-
+                <button type="button" class="modal-close-btn" onclick="closeModal('addOtherDocModal')">&times;</button>
             </div>
 
-
-
-            <div class="modal-body">
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Document Classification</label>
-
-
-
-                    <select name="document_type" class="form-control" required>
-
-
-
-                        {% for type_val, type_label in doc_types %}
-
-
-
-                        <option value="{{ type_val }}">{{ type_label }}</option>
-
-
-
-                        {% endfor %}
-
-
-
-                    </select>
-
-
-
+            <div class="modal-body" style="padding:1.25rem 1.5rem;">
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label style="font-weight:700;font-size:0.82rem;color:#334155;">Document Name / Title <span style="color:#DC2626;">*</span></label>
+                    <input type="text" name="title" id="simpleDocTitleInput" class="form-control" placeholder="e.g. Tax Clearance, NIDA Copy, Delivery Order" style="font-size:0.88rem;" required>
                 </div>
 
-
-
-                <div class="form-group">
-
-
-
-                    <label>Document Title</label>
-
-
-
-                    <input type="text" name="title" class="form-control" placeholder="e.g. Original Bill of Lading BL-987" required>
-
-
-
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;color:#334155;">Select Scanned File <span style="color:#DC2626;">*</span></label>
+                    <input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp" class="form-control" style="font-size:0.85rem;" required>
                 </div>
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Select File (PDF, Image, Scanned Document)</label>
-
-
-
-                    <input type="file" name="file" class="form-control" required>
-
-
-
-                </div>
-
-
-
-                <div class="form-group">
-
-
-
-                    <label>Notes / File Description</label>
-
-
-
-                    <textarea name="notes" class="form-control" placeholder="Optional notes..."></textarea>
-
-
-
-                </div>
-
-
-
             </div>
 
-
-
-            <div class="modal-footer">
-
-
-
-                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('uploadDocModal')">Cancel</button>
-
-
-
-                <button type="submit" class="btn-header-action btn-primary">
-
-
-
-                    <i class="fa-solid fa-upload"></i> Upload to File
-
-
-
+            <div class="modal-footer" style="padding:0.85rem 1.5rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;justify-content:flex-end;gap:0.6rem;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('addOtherDocModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.45rem 1.25rem;">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload Document
                 </button>
-
-
-
             </div>
-
-
-
         </form>
-
-
-
     </div>
-
-
-
 </div>
 
+<!-- 2. EDIT / REPLACE DOCUMENT MODAL -->
+<div id="editDocModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:480px;">
+        <form id="editDocForm" method="POST" action="" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" style="margin:0;font-size:1.1rem;font-weight:800;color:#0F172A;display:flex;align-items:center;gap:0.45rem;">
+                        <i class="fa-solid fa-pen-to-square" style="color:#2563EB;"></i> Edit / Replace Document
+                    </h3>
+                    <p style="font-size:0.75rem;color:var(--text-muted);margin:0.2rem 0 0 0;">
+                        Rekebisha jina au pakia faili jipya kubadilisha popote linaposomwa mfumoni.
+                    </p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('editDocModal')">&times;</button>
+            </div>
 
+            <div class="modal-body" style="padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:1.1rem;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;color:#334155;margin-bottom:0.35rem;display:block;">
+                        Document Title / Jina la Nyaraka <span style="color:#DC2626;">*</span>
+                    </label>
+                    <input type="text" name="title" id="editDocTitleInput" class="form-control" style="font-size:0.88rem;font-weight:700;" required>
+                </div>
 
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="font-weight:700;font-size:0.82rem;color:#334155;margin-bottom:0.35rem;display:block;">
+                        Replace Scanned File / Badilisha Faili (PDF / Picha)
+                    </label>
+                    <input type="file" name="file" id="editDocFileInput" class="form-control" accept=".pdf,image/*" style="font-size:0.84rem;">
+                    <p style="font-size:0.73rem;color:#64748B;margin:0.35rem 0 0 0;">
+                        <i class="fa-solid fa-circle-info" style="color:#0284C7;"></i> Acha tupu kubaki na faili lililopo, au chagua jipya litakalobadilishwa mara moja kila mahali.
+                    </p>
+                </div>
+            </div>
 
+            <div class="modal-footer" style="padding:0.85rem 1.5rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;justify-content:flex-end;gap:0.6rem;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('editDocModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.5rem 1.4rem;font-weight:800;">
+                    <i class="fa-solid fa-check"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
+<!-- 3. CONFIRM DELETE DOCUMENT MODAL -->
+<div id="deleteDocModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:440px;">
+        <form id="deleteDocForm" method="POST" action="">
+            {% csrf_token %}
+            <div class="modal-header" style="border-bottom:1px solid #FEE2E2;background:#FEF2F2;">
+                <div>
+                    <h3 class="modal-title" style="margin:0;font-size:1.05rem;font-weight:800;color:#991B1B;">Delete Scanned Document</h3>
+                    <p style="font-size:0.75rem;color:#7F1D1D;margin:0.15rem 0 0 0;">This action cannot be undone.</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('deleteDocModal')">&times;</button>
+            </div>
+
+            <div class="modal-body" style="padding:1.25rem 1.5rem;">
+                <p style="font-size:0.86rem;color:#334155;margin:0 0 0.5rem 0;">
+                    Are you sure you want to permanently delete:
+                </p>
+                <div id="deleteDocTitleDisplay" style="font-weight:800;color:#0F172A;font-size:0.95rem;background:#F8FAFC;padding:0.65rem 0.85rem;border-radius:6px;border:1px solid #E2E8F0;">
+                    Document Name
+                </div>
+            </div>
+
+            <div class="modal-footer" style="padding:1rem 1.5rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;justify-content:flex-end;gap:0.6rem;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('deleteDocModal')">Cancel</button>
+                <button type="submit" class="btn-header-action" style="background:#DC2626;color:#FFFFFF;border:none;padding:0.5rem 1.25rem;font-weight:700;">
+                    <i class="fa-solid fa-trash-can"></i> Delete Document
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openSimpleAddModal() {
+        const titleInput = document.getElementById('simpleDocTitleInput');
+        if (titleInput) titleInput.value = '';
+        openModal('addOtherDocModal');
+    }
+
+    function openEditDocModal(docId, currentTitle, currentType) {
+        const form = document.getElementById('editDocForm');
+        const titleInput = document.getElementById('editDocTitleInput');
+        const fileInput = document.getElementById('editDocFileInput');
+
+        if (form) form.action = `/documents/${docId}/rename/`;
+        if (titleInput) titleInput.value = currentTitle;
+        if (fileInput) fileInput.value = '';
+
+        openModal('editDocModal');
+    }
+
+    function openRenameDocModal(docId, currentTitle, currentType) {
+        openEditDocModal(docId, currentTitle, currentType);
+    }
+
+    function confirmDeleteDoc(docId, docTitle) {
+        const form = document.getElementById('deleteDocForm');
+        const titleDisplay = document.getElementById('deleteDocTitleDisplay');
+
+        if (form) form.action = `/documents/${docId}/delete/`;
+        if (titleDisplay) titleDisplay.innerText = docTitle;
+
+        openModal('deleteDocModal');
+    }
+</script>
 
 
 <!-- 4. ADD CONTAINER MODAL -->

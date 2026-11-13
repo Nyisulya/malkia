@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Yard Inventory &amp; Customer Handover | Malkia C&amp;F{% endblock %}
+{% block title %}Arrived Vehicles from Port | Malkia C&amp;F{% endblock %}
 
 {% block content %}
 <div style="max-width:1200px;margin:0 auto;padding-bottom:3rem;">
@@ -9,10 +9,10 @@
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
         <div>
             <h2 style="font-family:var(--font-heading);font-size:1.45rem;font-weight:800;color:var(--brand-navy-900);letter-spacing:-0.02em;margin:0;">
-                <i class="fa-solid fa-warehouse" style="color:#0D9488;"></i> Yard Inventory &amp; Customer Handover
+                <i class="fa-solid fa-warehouse" style="color:#0D9488;"></i> Arrived Vehicles from Port
             </h2>
             <p style="font-size:0.85rem;color:var(--text-muted);margin:0.25rem 0 0 0;">
-                Automated port-cost compilation, in-bond vs direct release control, and customer vehicle handover.
+                Manage vehicles cleared from Dar Port, arrived at yard, and ready for customer handover.
             </p>
         </div>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
@@ -32,25 +32,15 @@
         <a href="?tab=ready" style="text-decoration:none;">
             <div class="card-panel" style="padding:1rem 1.15rem;border-left:4px solid #10B981;background:{% if tab == 'ready' or not tab %}#ECFDF5{% else %}#fff{% endif %};transition:all 0.2s;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-size:0.75rem;font-weight:800;color:#065F46;text-transform:uppercase;">Ready for Handover</span>
+                    <span style="font-size:0.75rem;font-weight:800;color:#065F46;text-transform:uppercase;">Arrived at Yard (Ready for Handover)</span>
                     <i class="fa-solid fa-key" style="color:#10B981;"></i>
                 </div>
                 <div style="font-size:1.75rem;font-weight:800;color:#047857;margin:0.35rem 0 0.15rem 0;">{{ ready_count }}</div>
-                <div style="font-size:0.72rem;color:#059669;font-weight:600;">Direct Clearance &bull; Ready for Customer</div>
+                <div style="font-size:0.72rem;color:#059669;font-weight:600;">Cleared from port &bull; Ready for Mteja</div>
             </div>
         </a>
 
-        <!-- IN-BOND STORAGE -->
-        <a href="?tab=bond" style="text-decoration:none;">
-            <div class="card-panel" style="padding:1rem 1.15rem;border-left:4px solid #F59E0B;background:{% if tab == 'bond' %}#FFFBEB{% else %}#fff{% endif %};transition:all 0.2s;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-size:0.75rem;font-weight:800;color:#92400E;text-transform:uppercase;">In-Bond Storage</span>
-                    <i class="fa-solid fa-lock" style="color:#F59E0B;"></i>
-                </div>
-                <div style="font-size:1.75rem;font-weight:800;color:#B45309;margin:0.35rem 0 0.15rem 0;">{{ bond_count }}</div>
-                <div style="font-size:0.72rem;color:#D97706;font-weight:600;">Customs Locked &bull; Duty Unpaid</div>
-            </div>
-        </a>
+        
 
         <!-- EN ROUTE FROM PORT -->
         <a href="?tab=en_route" style="text-decoration:none;">
@@ -85,9 +75,6 @@
             <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
                 <a href="?tab=ready" class="badge-pill {% if tab == 'ready' or not tab %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:700;">
                     <i class="fa-solid fa-key"></i> Ready for Handover ({{ ready_count }})
-                </a>
-                <a href="?tab=bond" class="badge-pill {% if tab == 'bond' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:700;">
-                    <i class="fa-solid fa-lock"></i> In-Bond Storage ({{ bond_count }})
                 </a>
                 <a href="?tab=en_route" class="badge-pill {% if tab == 'en_route' %}badge-active{% else %}badge-draft{% endif %}" style="text-decoration:none;padding:0.45rem 0.9rem;font-size:0.82rem;font-weight:700;">
                     <i class="fa-solid fa-truck-moving"></i> En Route ({{ en_route_count }})

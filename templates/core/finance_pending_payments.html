@@ -319,7 +319,7 @@
 {% endif %}
 
 <!-- PAYMENTS TABLE -->
-<div class="card-panel">
+<div class="card-panel" id="pendingPaymentsTableContainer" data-async-container>
     <div class="card-panel-header">
         <div>
             <h3 class="panel-title"><i class="fa-solid fa-file-invoice-dollar"></i> Operational Payment Requests</h3>
@@ -491,6 +491,8 @@
                 {% endfor %}
             </tbody>
         </table>
+        <!-- SMART PAGINATION FOR VOUCHERS -->
+        {% include 'includes/pagination.html' with page_obj=page_obj extra_querystring=extra_querystring item_label="vouchers" %}
     </div>
 </div>
 

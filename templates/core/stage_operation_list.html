@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ stage_title }} | Malkia Operations{% endblock %}
+
+{% block content %}
+<div style="max-width:1200px;margin:0 auto;padding-bottom:3rem;">
+
+    <!-- 1. PAGE HEADER -->
+    <div class="page-header-box" style="margin-bottom:1.5rem;">
+        <div>
+            <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem;">
+                <span style="background:{{ badge_bg }};color:#FFFFFF;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+                    <i class="fa-solid {{ stage_icon }}"></i>
+                </span>
+                <h2 class="page-title" style="margin:0;font-size:1.35rem;">{{ stage_title }}</h2>
+                <span style="background:#EFF6FF;color:#1D4ED8;font-weight:800;font-size:0.78rem;padding:0.2rem 0.65rem;border-radius:999px;border:1px solid #BFDBFE;">
+                    {{ total_count }} Active
+                </span>
+            </div>
+            <p class="page-subtitle" style="margin:0;color:#64748B;font-size:0.88rem;">
+                {{ stage_desc }}
+            </p>
+        </div>
+
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
+            <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline" style="font-size:0.8rem;padding:0.45rem 0.9rem;">
+                <i class="fa-solid fa-boxes-stacked"></i> All Shipments (Mizigo)
+            </a>
+            {% if stage_number == 1 %}
+            <a href="{% url 'job_create' %}" class="btn-header-action btn-primary" style="font-size:0.8rem;padding:0.45rem 0.9rem;">
+                <i class="fa-solid fa-plus"></i> Open New File
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 2. SEARCH & FILTER TOOLBAR -->
+    <div class="card-panel" style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1.25rem;box-shadow:var(--shadow-sm);">
+        <form method="GET" action="" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+            <div style="position:relative;flex:1;max-width:480px;min-width:260px;">
+                <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:0.85rem;"></i>
+                <input type="text" name="q" value="{{ search_q }}" placeholder="Search by B/L #, Chassis No, Client, Vehicle description..." 
+                       style="width:100%;padding:0.5rem 0.85rem 0.5rem 2.25rem;border:1px solid #CBD5E1;border-radius:8px;font-size:0.84rem;outline:none;">
+            </div>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+                {% if search_q %}
+                <a href="?" class="btn-header-action btn-outline" style="padding:0.45rem 0.8rem;font-size:0.8rem;">
+                    Clear Search
+                </a>
+                {% endif %}
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.45rem 1rem;font-size:0.8rem;">
+                    <i class="fa-solid fa-filter"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 3. MAIN WORKFLOW TABLE (1-CLICK FINISH) -->
+    <div class="card-panel" style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);">
+        <div style="padding:0.85rem 1.25rem;background:#F8FAFC;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-weight:800;font-size:0.84rem;color:#334155;text-transform:uppercase;letter-spacing:0.04em;">
+                <i class="fa-solid fa-list-check" style="color:var(--brand-primary);margin-right:0.35rem;"></i>
+                Magari Yaliyopo Hatua Hii ({{ total_count }})
+            </span>
+            <span style="font-size:0.75rem;color:#64748B;">
+                Bonyeza kitufe cha kijani kukamilisha na kusafirisha hatua mbele
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="modern-table" style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#F1F5F9;border-bottom:2px solid #CBD5E1;font-size:0.74rem;color:#475569;text-transform:uppercase;letter-spacing:0.04em;text-align:left;">
+                        <th style="padding:0.75rem 1rem;min-width:180px;">File No &amp; BL</th>
+                        <th style="padding:0.75rem 1rem;min-width:200px;">Client &amp; Contact</th>
+                        <th style="padding:0.75rem 1rem;min-width:220px;">Vehicle &amp; Chassis</th>
+                        <th style="padding:0.75rem 1rem;min-width:150px;">Status &amp; Time</th>
+                        <th style="padding:0.75rem 1rem;min-width:240px;text-align:right;">Action (1-Click Finish)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in jobs %}
+                    <tr style="border-bottom:1px solid #E2E8F0;transition:background 0.15s ease;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#FFFFFF'">
+                        
+                        <!-- 1. FILE NO & BL -->
+                        <td style="padding:0.85rem 1rem;vertical-align:middle;">
+                            <strong style="font-size:0.95rem;color:var(--brand-navy-900);">
+                                <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;" title="Open Job Dossier">
+                                    {{ job.job_number }}
+                                </a>
+                            </strong>
+                            <div style="font-size:0.84rem;color:#0F172A;font-weight:800;margin-top:0.15rem;font-family:monospace;">
+                                B/L: {{ job.bl_number|default:"—" }}
+                            </div>
+                        </td>
+
+                        <!-- 2. CLIENT & CONTACT -->
+                        <td style="padding:0.85rem 1rem;vertical-align:middle;">
+                            <strong style="color:#0F172A;font-size:0.88rem;display:block;">
+                                {{ job.customer.company_name }}
+                            </strong>
+                            <div style="font-size:0.75rem;color:#64748B;margin-top:0.2rem;">
+                                <i class="fa-solid fa-phone" style="color:#10B981;font-size:0.7rem;margin-right:0.25rem;"></i>{{ job.customer.phone }}
+                            </div>
+                        </td>
+
+                        <!-- 3. VEHICLE & CHASSIS -->
+                        <td style="padding:0.85rem 1rem;vertical-align:middle;">
+                            <div style="font-size:0.85rem;color:#1E293B;font-weight:700;">
+                                <i class="fa-solid fa-car-side" style="color:#0284C7;margin-right:0.35rem;"></i>
+                                {{ job.cargo_description|default:"Motor Vehicle" }}
+                            </div>
+                            {% if job.chassis_number %}
+                            <div style="font-family:monospace;font-size:0.78rem;color:#1D4ED8;background:#EFF6FF;padding:0.1rem 0.45rem;border-radius:4px;display:inline-block;margin-top:0.25rem;font-weight:700;">
+                                Chassis: {{ job.chassis_number }}
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <!-- 4. STATUS & TIME -->
+                        <td style="padding:0.85rem 1rem;vertical-align:middle;">
+                            <span style="display:inline-block;font-size:0.72rem;font-weight:800;padding:0.15rem 0.5rem;border-radius:999px;
+                                {% if job.status == 'DELAYED' %}background:#FEE2E2;color:#B91C1C;
+                                {% else %}background:#DCFCE7;color:#15803D;{% endif %}">
+                                {% if job.status == 'DELAYED' %}● DELAYED{% else %}● ON TRACK{% endif %}
+                            </span>
+                            <div style="font-size:0.72rem;color:#64748B;margin-top:0.25rem;">
+                                <i class="fa-regular fa-clock" style="font-size:0.68rem;"></i> {{ job.created_at|timesince }} ago
+                            </div>
+                        </td>
+
+                        <!-- 5. 1-CLICK ACTION BUTTON -->
+                        <td style="padding:0.85rem 1rem;vertical-align:middle;text-align:right;white-space:nowrap;">
+                            <div style="display:inline-flex;align-items:center;gap:0.45rem;">
+                                <form action="{% url 'advance_stage' job.id %}" method="POST" style="display:inline;" onsubmit="return confirm('{{ confirm_msg }}');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:0.45rem 0.95rem;border-radius:8px;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;box-shadow:0 2px 5px rgba(22,163,74,0.35);transition:all 0.15s;">
+                                        <i class="fa-solid fa-circle-check"></i> {{ finish_label }}
+                                    </button>
+                                </form>
+                                <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.45rem 0.75rem;font-size:0.8rem;font-weight:700;">
+                                    File &rarr;
+                                </a>
+                            </div>
+                        </td>
+
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="padding:3.5rem 1.5rem;text-align:center;color:#94A3B8;">
+                            <div style="width:54px;height:54px;border-radius:50%;background:#F1F5F9;color:#94A3B8;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 0.75rem auto;">
+                                <i class="fa-solid fa-circle-check" style="color:#10B981;"></i>
+                            </div>
+                            <strong style="color:#334155;font-size:1rem;display:block;margin-bottom:0.25rem;">
+                                Hakuna magari yaliyopo kwenye hatua hii kwa sasa!
+                            </strong>
+                            <p style="font-size:0.82rem;color:#64748B;margin:0;">
+                                Magari yote ya hatua hii yamekamilika au yanasubiri kuingia kutoka hatua iliyopita.
+                            </p>
+                            <div style="margin-top:1rem;">
+                                <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline" style="font-size:0.8rem;padding:0.45rem 0.95rem;">
+                                    <i class="fa-solid fa-boxes-stacked"></i> Tazama Mizigo Yote
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
