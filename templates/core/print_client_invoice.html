@@ -169,6 +169,13 @@
             margin-bottom: 1.25rem;
             font-size: 0.82rem;
         }
+        table.clean-table tbody {
+            counter-reset: item-row;
+        }
+        table.clean-table tbody tr td.row-num::before {
+            counter-increment: item-row;
+            content: counter(item-row);
+        }
         .clean-table th {
             background: #F1F5F9;
             color: #1E293B;
@@ -401,40 +408,64 @@
                 </tr>
             </thead>
             <tbody>
+                {% if invoice.amount_clearing_agency_fee > 0 %}
                 <tr>
-                    <td style="text-align:center;font-weight:700;">1</td>
+                    <td class="row-num" style="text-align:center;font-weight:700;"></td>
                     <td style="font-weight:700;">Clearing Agency Fee</td>
                     <td style="text-align:right;font-weight:800;">
-                        {{ invoice.amount_clearing_agency_fee|default:350000|floatformat:0 }}
+                        {{ invoice.amount_clearing_agency_fee|floatformat:0 }}
                     </td>
                 </tr>
+                {% endif %}
+                {% if invoice.amount_shipping_line_do > 0 %}
                 <tr>
-                    <td style="text-align:center;font-weight:700;">2</td>
+                    <td class="row-num" style="text-align:center;font-weight:700;"></td>
                     <td style="font-weight:700;">Shipping Line Delivery Order (D/O) Release</td>
                     <td style="text-align:right;font-weight:800;">
-                        {{ invoice.amount_shipping_line_do|default:0|floatformat:0 }}
+                        {{ invoice.amount_shipping_line_do|floatformat:0 }}
                     </td>
                 </tr>
+                {% endif %}
+                {% if invoice.amount_port_charges > 0 %}
                 <tr>
-                    <td style="text-align:center;font-weight:700;">3</td>
+                    <td class="row-num" style="text-align:center;font-weight:700;"></td>
                     <td style="font-weight:700;">Port Wharfage &amp; Terminal Handling (ICD)</td>
                     <td style="text-align:right;font-weight:800;">
-                        {{ invoice.amount_port_charges|default:0|floatformat:0 }}
+                        {{ invoice.amount_port_charges|floatformat:0 }}
                     </td>
                 </tr>
+                {% endif %}
+                {% if invoice.amount_transport > 0 %}
                 <tr>
-                    <td style="text-align:center;font-weight:700;">4</td>
+                    <td class="row-num" style="text-align:center;font-weight:700;"></td>
                     <td style="font-weight:700;">Vehicle Inspection &amp; Port-to-Yard Transfer</td>
                     <td style="text-align:right;font-weight:800;">
-                        {{ invoice.amount_transport|default:20000|floatformat:0 }}
+                        {{ invoice.amount_transport|floatformat:0 }}
                     </td>
                 </tr>
+                {% endif %}
                 {% if invoice.amount_duty_reimbursement > 0 %}
                 <tr>
-                    <td style="text-align:center;font-weight:700;">5</td>
+                    <td class="row-num" style="text-align:center;font-weight:700;"></td>
                     <td style="font-weight:700;">Customs Duty Advance (TRA TANCIS)</td>
                     <td style="text-align:right;font-weight:800;">
                         {{ invoice.amount_duty_reimbursement|floatformat:0 }}
+                    </td>
+                </tr>
+                {% endif %}
+                {% if invoice.amount_sundry_charges > 0 %}
+                <tr>
+                    <td class="row-num" style="text-align:center;font-weight:700;"></td>
+                    <td style="font-weight:700;">Sundry &amp; Other Logistics Charges</td>
+                    <td style="text-align:right;font-weight:800;">
+                        {{ invoice.amount_sundry_charges|floatformat:0 }}
+                    </td>
+                </tr>
+                {% endif %}
+                {% if invoice.total_amount <= 0 %}
+                <tr>
+                    <td colspan="3" style="text-align:center;color:#64748B;padding:1.5rem;">
+                        No billable charge items recorded on this invoice.
                     </td>
                 </tr>
                 {% endif %}

@@ -75,6 +75,7 @@ urlpatterns = [
     path('finance/accountant-board/', views.accountant_dashboard_view, name='accountant_dashboard'),
     path('finance/vehicles-out/', views.finance_vehicles_out_view, name='finance_vehicles_out'),
     path('finance/vehicles-out/<int:job_id>/update-costs/', views.finance_vehicles_out_update_cost_action, name='finance_vehicles_out_update_cost'),
+    path('finance/vehicles-out/<int:job_id>/invoice/', views.finance_invoice_generate_action, name='finance_invoice_generate'),
     path('finance/vehicles-out/export/', views.finance_vehicles_out_export_excel, name='finance_vehicles_out_export'),
     path('yard/', views.yard_operations_view, name='yard_operations'),
     path('yard/handover/<int:job_id>/', views.yard_handover_action, name='yard_handover_action'),

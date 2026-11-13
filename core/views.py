@@ -23403,8 +23403,25 @@ def finance_vehicles_out_update_cost_action(request, job_id):
         job.cost_agent_fee = parse_dec(request.POST.get('cost_agent_fee'))
         job.cost_fuel = parse_dec(request.POST.get('cost_fuel'))
         job.cost_ferry_charges = parse_dec(request.POST.get('cost_ferry_charges'))
-        job.cost_other = parse_dec(request.POST.get('cost_other'))
-        job.cost_other_description = request.POST.get('cost_other_description', '').strip()
+
+        # Parse extra costs if provided via dynamic list
+        extra_names = request.POST.getlist('extra_cost_names[]')
+        extra_amounts = request.POST.getlist('extra_cost_amounts[]')
+        if extra_names and extra_amounts:
+            extra_list = []
+            total_extra = Decimal('0')
+            for name, amt in zip(extra_names, extra_amounts):
+                name = name.strip()
+                amt_dec = parse_dec(amt)
+                if name or amt_dec > 0:
+                    extra_list.append({'name': name or 'Additional Cost', 'amount': float(amt_dec)})
+                    total_extra += amt_dec
+            job.cost_other = total_extra
+            import json
+            job.cost_other_description = json.dumps(extra_list) if extra_list else ''
+        else:
+            job.cost_other = parse_dec(request.POST.get('cost_other'))
+            job.cost_other_description = request.POST.get('cost_other_description', '').strip()
 
         # Also update commercial invoice price if modified
         if request.POST.get('cif_usd'):
@@ -23419,12 +23436,106 @@ def finance_vehicles_out_update_cost_action(request, job_id):
 
         job.save()
 
-        # Keep linked invoice synchronized with updated costs
-        if job.invoices.exists():
-            auto_compile_customer_final_bill(job)
-
         log_audit(request, "UPDATE_VEHICLE_COSTS", f"Updated direct costs for vehicle {job.job_number} (BL: {job.bl_number})")
         messages.success(request, f"Direct costs for {job.vehicle_make} {job.vehicle_model} ({job.bl_number}) saved successfully.")
+
+    redirect_url = request.META.get('HTTP_REFERER') or 'finance_vehicles_out'
+    return redirect(redirect_url)
+
+
+@role_required([UserRole.FINANCE, UserRole.CEO, UserRole.ADMIN])
+def finance_invoice_generate_action(request, job_id):
+    """
+    Dedicated action for Accountant to manually compose or customize a Client Invoice.
+    The accountant explicitly chooses which items to bill the client.
+    """
+    job = get_object_or_404(JobShipment, id=job_id)
+
+    if request.method == 'POST':
+        def parse_dec(val):
+            if not val:
+                return Decimal('0')
+            try:
+                cleaned = str(val).replace(',', '').replace('$', '').replace('TSh', '').strip()
+                return Decimal(cleaned) if cleaned else Decimal('0')
+            except Exception:
+                return Decimal('0')
+
+        # Line items from accountant
+        agency_fee = parse_dec(request.POST.get('amount_clearing_agency_fee'))
+        shipping_line = parse_dec(request.POST.get('amount_shipping_line_do'))
+        port_charges = parse_dec(request.POST.get('amount_port_charges'))
+        transport = parse_dec(request.POST.get('amount_transport'))
+        duty_reimb = parse_dec(request.POST.get('amount_duty_reimbursement'))
+        sundry = parse_dec(request.POST.get('amount_sundry_charges'))
+
+        total_bill = agency_fee + shipping_line + port_charges + transport + duty_reimb + sundry
+        notes = request.POST.get('notes', '').strip()
+
+        issue_date_str = request.POST.get('issue_date', '').strip()
+        due_date_str = request.POST.get('due_date', '').strip()
+
+        today = timezone.localdate()
+        try:
+            issue_date = datetime.strptime(issue_date_str, '%Y-%m-%d').date() if issue_date_str else today
+        except Exception:
+            issue_date = today
+
+        try:
+            due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else (issue_date + timedelta(days=14))
+        except Exception:
+            due_date = issue_date + timedelta(days=14)
+
+        invoice = job.latest_invoice
+        if not invoice:
+            inv_no = ClientInvoice.generate_next_invoice_number()
+            vehicle_name = f"{job.vehicle_make or ''} {job.vehicle_model or ''}".strip() or (job.cargo_description or job.chassis_number or 'Shipment')
+            if not notes:
+                notes = f"Customs Clearance & Port Disbursements for {vehicle_name} | Chassis: {job.chassis_number or '—'} | B/L: {job.bl_number}."
+            invoice = ClientInvoice.objects.create(
+                invoice_number=inv_no,
+                job=job,
+                customer=job.customer,
+                issue_date=issue_date,
+                due_date=due_date,
+                amount_clearing_agency_fee=agency_fee,
+                amount_shipping_line_do=shipping_line,
+                amount_port_charges=port_charges,
+                amount_transport=transport,
+                amount_sundry_charges=sundry,
+                amount_duty_reimbursement=duty_reimb,
+                total_amount=total_bill,
+                amount_paid=Decimal('0.00'),
+                status='ISSUED',
+                notes=notes
+            )
+            log_audit(request, "CREATE_INVOICE", f"Generated custom invoice {inv_no} for vehicle {job.job_number}", job=job)
+            messages.success(request, f"Invoice {inv_no} for {job.vehicle_make} {job.vehicle_model} generated successfully.")
+        else:
+            invoice.amount_clearing_agency_fee = agency_fee
+            invoice.amount_shipping_line_do = shipping_line
+            invoice.amount_port_charges = port_charges
+            invoice.amount_transport = transport
+            invoice.amount_sundry_charges = sundry
+            invoice.amount_duty_reimbursement = duty_reimb
+            invoice.total_amount = total_bill
+            invoice.issue_date = issue_date
+            invoice.due_date = due_date
+            if notes:
+                invoice.notes = notes
+            if invoice.amount_paid >= total_bill and total_bill > 0:
+                invoice.status = 'PAID'
+            elif invoice.amount_paid > 0:
+                invoice.status = 'PARTIALLY_PAID'
+            else:
+                invoice.status = 'ISSUED'
+            invoice.save()
+            log_audit(request, "UPDATE_INVOICE", f"Updated custom invoice {invoice.invoice_number} for vehicle {job.job_number}", job=job)
+            messages.success(request, f"Invoice {invoice.invoice_number} updated successfully.")
+
+        action_type = request.POST.get('action_type', 'save').strip()
+        if action_type == 'save_and_print':
+            return redirect('print_invoice', invoice_id=invoice.id)
 
     redirect_url = request.META.get('HTTP_REFERER') or 'finance_vehicles_out'
     return redirect(redirect_url)

@@ -542,21 +542,30 @@
                                     {% endif %}
                                 </button>
 
-                                <!-- INVOICE SHORTCUT -->
+                                <!-- CLIENT INVOICE ACTION (ACCOUNTANT CAN COMPOSE & PRINT) -->
                                 {% if job.latest_invoice %}
-                                <a href="{% url 'print_invoice' job.latest_invoice.id %}" target="_blank"
+                                <div style="display: inline-flex; align-items: center; gap: 3px;">
+                                    <a href="{% url 'print_invoice' job.latest_invoice.id %}" target="_blank"
+                                        class="badge-pill"
+                                        style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-size: 0.72rem; padding: 3px 8px; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;"
+                                        title="View / Print Invoice {{ job.latest_invoice.invoice_number }}">
+                                        <i class="fa-solid fa-file-invoice"></i> {{ job.latest_invoice.invoice_number }}
+                                    </a>
+                                    <button type="button"
+                                        onclick="openInvoiceModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.latest_invoice.amount_clearing_agency_fee|default:0 }}', '{{ job.latest_invoice.amount_shipping_line_do|default:0 }}', '{{ job.latest_invoice.amount_port_charges|default:0 }}', '{{ job.latest_invoice.amount_transport|default:0 }}', '{{ job.latest_invoice.amount_duty_reimbursement|default:0 }}', '{{ job.latest_invoice.amount_sundry_charges|default:0 }}', '{{ job.latest_invoice.notes|default:""|escapejs }}', '{{ job.latest_invoice.invoice_number }}', '{{ job.latest_invoice.issue_date|date:"Y-m-d" }}', '{{ job.latest_invoice.due_date|date:"Y-m-d" }}')"
+                                        style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 4px; padding: 2px 6px; color: #475569; cursor: pointer; font-size: 0.7rem;"
+                                        title="Customize / Edit Invoice">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                </div>
+                                {% else %}
+                                <button type="button"
+                                    onclick="openInvoiceModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.cost_agent_fee|default:350000 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|add:job.cost_handling|default:0 }}', '{{ job.cost_transport|default:0 }}', '0', '{{ job.cost_other|default:0 }}', '', '', '', '')"
                                     class="badge-pill"
-                                    style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-size: 0.72rem; padding: 3px 8px; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;"
-                                    title="View / Print Invoice {{ job.latest_invoice.invoice_number }}">
-                                    <i class="fa-solid fa-file-invoice"></i> {{ job.latest_invoice.invoice_number }}
-                                </a>
-                                {% elif job.cost_agent_fee > 0 or job.total_direct_costs > 0 %}
-                                <a href="{% url 'print_job_invoice' job.id %}" target="_blank"
-                                    class="badge-pill"
-                                    style="background: #ECFDF5; color: #047857; border: 1px solid #6EE7B7; font-size: 0.72rem; padding: 3px 8px; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;"
-                                    title="Tengeneza na Chapisha Invoice kwa ajili ya gari hili">
+                                    style="background: #ECFDF5; color: #047857; border: 1px solid #6EE7B7; font-size: 0.72rem; padding: 3px 8px; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem; cursor: pointer;"
+                                    title="Tengeneza Invoice maalum kwa ajili ya mteja huyu">
                                     <i class="fa-solid fa-file-invoice-dollar"></i> + Invoice
-                                </a>
+                                </button>
                                 {% endif %}
                             </div>
                         </td>
@@ -872,22 +881,29 @@
                             style="font-weight: 700; height: 38px;">
                     </div>
 
-                    <!-- 10. OTHER / EXTRA COSTS & DESCRIPTION -->
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #7C3AED;">10. Other / Extra Costs
-                            TSh</label>
-                        <input type="number" step="0.01" name="cost_other" id="f_other" class="form-control cost-input"
-                            placeholder="0.00" oninput="calcModalTotals()" style="font-weight: 700; height: 38px;">
+                </div>
+
+                <!-- DYNAMIC EXTRA / SPECIFIC CARGO COSTS SECTION WITH + BUTTON -->
+                <div style="margin-top: 1rem; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 10px; padding: 0.85rem 1rem;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
+                        <div>
+                            <span style="font-weight: 800; font-size: 0.82rem; color: #334155; text-transform: uppercase; display: flex; align-items: center; gap: 0.35rem;">
+                                <i class="fa-solid fa-boxes-stacked" style="color: #7C3AED;"></i> Additional Cargo Specific Costs
+                            </span>
+                            <div style="font-size: 0.7rem; color: #64748B;">Add any extra cargo-specific charges (e.g. TBS, Demurrage, Storage, Escort)</div>
+                        </div>
+                        <button type="button" onclick="addExtraCostRow()"
+                            style="background: #7C3AED; color: #FFFFFF; border: none; padding: 0.32rem 0.8rem; border-radius: 6px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 1px 2px rgba(124,58,237,0.2);">
+                            <i class="fa-solid fa-plus"></i> Add Item
+                        </button>
                     </div>
 
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #64748B;">Other Cost
-                            Description</label>
-                        <input type="text" name="cost_other_description" id="f_other_desc" class="form-control"
-                            placeholder="e.g. TBS, Demurrage, Storage, ICD fine..."
-                            style="font-size: 0.8rem; height: 38px;">
+                    <div id="extraCostsList" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <!-- Dynamic extra cost rows will appear here -->
                     </div>
 
+                    <input type="hidden" name="cost_other" id="f_other" value="0">
+                    <input type="hidden" name="cost_other_description" id="f_other_desc" value="">
                 </div>
 
                 <!-- LIVE TOTAL PREVIEW IN MODAL -->
@@ -925,7 +941,303 @@
     </div>
 </div>
 
+<!-- ================================================================= -->
+<!-- MODAL: GENERATE & CUSTOMIZE CLIENT INVOICE (ACCOUNTANT CONTROL) -->
+<!-- ================================================================= -->
+<div id="invoiceModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+    <div
+        style="background: #FFFFFF; border-radius: 16px; max-width: 640px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #CBD5E1;">
+        
+        <!-- HEADER -->
+        <div
+            style="padding: 1.15rem 1.5rem; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; background: #064E3B; border-radius: 16px 16px 0 0; color: #FFFFFF;">
+            <div>
+                <div style="font-size: 0.72rem; font-weight: 800; color: #A7F3D0; text-transform: uppercase; letter-spacing: 0.04em;">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Client Invoice Generation
+                </div>
+                <h3 id="invModalTitle" style="font-size: 1.15rem; font-weight: 800; color: #FFFFFF; margin: 0.15rem 0 0 0;">
+                    Generate Invoice
+                </h3>
+            </div>
+            <button type="button" onclick="closeInvoiceModal()"
+                style="background: transparent; border: none; font-size: 1.4rem; color: #A7F3D0; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+
+        <form id="invoiceForm" method="POST" action="">
+            {% csrf_token %}
+            <div style="padding: 1.25rem 1.5rem;">
+                
+                <!-- CLIENT & SHIPMENT INFO STRIP -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1.15rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <div style="font-size: 0.7rem; color: #64748B; font-weight: 700;">CLIENT:</div>
+                        <div id="invCustomerName" style="font-weight: 800; color: #0F172A; font-size: 0.88rem;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.7rem; color: #64748B; font-weight: 700;">BL / CHASSIS:</div>
+                        <div id="invRefDetails" style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A; font-size: 0.85rem;"></div>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.75rem; color: #64748B; margin-bottom: 0.85rem;">
+                    Select the specific items you want to bill this customer. Unchecked items or items with 0.00 will <strong>not</strong> appear on the client's invoice.
+                </div>
+
+                <!-- SELECTABLE BILLING ITEMS -->
+                <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+                    
+                    <!-- 1. AGENCY FEE -->
+                    <div style="display: grid; grid-template-columns: 28px 1fr 160px; gap: 0.65rem; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 0.55rem 0.85rem; border-radius: 8px;">
+                        <input type="checkbox" id="chk_inv_agency" checked onchange="toggleInvItem('chk_inv_agency', 'inv_agency')" style="width: 18px; height: 18px; cursor: pointer; accent-color: #059669;">
+                        <div>
+                            <label for="chk_inv_agency" style="font-weight: 800; font-size: 0.82rem; color: #0F172A; cursor: pointer; display: block; margin: 0;">1. Clearing Agency Fee</label>
+                            <span style="font-size: 0.7rem; color: #64748B;">Malkia company professional agency fee</span>
+                        </div>
+                        <input type="number" step="0.01" name="amount_clearing_agency_fee" id="inv_agency" class="form-control" style="font-weight: 800; font-size: 0.85rem; text-align: right; height: 34px;" oninput="calcInvoiceTotals()">
+                    </div>
+
+                    <!-- 2. SHIPPING LINE DO -->
+                    <div style="display: grid; grid-template-columns: 28px 1fr 160px; gap: 0.65rem; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 0.55rem 0.85rem; border-radius: 8px;">
+                        <input type="checkbox" id="chk_inv_do" checked onchange="toggleInvItem('chk_inv_do', 'inv_do')" style="width: 18px; height: 18px; cursor: pointer; accent-color: #059669;">
+                        <div>
+                            <label for="chk_inv_do" style="font-weight: 800; font-size: 0.82rem; color: #0F172A; cursor: pointer; display: block; margin: 0;">2. Shipping Line (D/O) Release</label>
+                            <span style="font-size: 0.7rem; color: #64748B;">Delivery order fee charged by shipping line</span>
+                        </div>
+                        <input type="number" step="0.01" name="amount_shipping_line_do" id="inv_do" class="form-control" style="font-weight: 800; font-size: 0.85rem; text-align: right; height: 34px;" oninput="calcInvoiceTotals()">
+                    </div>
+
+                    <!-- 3. PORT & WHARFAGE / HANDLING -->
+                    <div style="display: grid; grid-template-columns: 28px 1fr 160px; gap: 0.65rem; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 0.55rem 0.85rem; border-radius: 8px;">
+                        <input type="checkbox" id="chk_inv_port" checked onchange="toggleInvItem('chk_inv_port', 'inv_port')" style="width: 18px; height: 18px; cursor: pointer; accent-color: #059669;">
+                        <div>
+                            <label for="chk_inv_port" style="font-weight: 800; font-size: 0.82rem; color: #0F172A; cursor: pointer; display: block; margin: 0;">3. Port Wharfage &amp; Handling (ICD)</label>
+                            <span style="font-size: 0.7rem; color: #64748B;">TPA Wharfage, TISS &amp; inland container depot fees</span>
+                        </div>
+                        <input type="number" step="0.01" name="amount_port_charges" id="inv_port" class="form-control" style="font-weight: 800; font-size: 0.85rem; text-align: right; height: 34px;" oninput="calcInvoiceTotals()">
+                    </div>
+
+                    <!-- 4. TRANSPORT & TRANSFER -->
+                    <div style="display: grid; grid-template-columns: 28px 1fr 160px; gap: 0.65rem; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 0.55rem 0.85rem; border-radius: 8px;">
+                        <input type="checkbox" id="chk_inv_trans" checked onchange="toggleInvItem('chk_inv_trans', 'inv_trans')" style="width: 18px; height: 18px; cursor: pointer; accent-color: #059669;">
+                        <div>
+                            <label for="chk_inv_trans" style="font-weight: 800; font-size: 0.82rem; color: #0F172A; cursor: pointer; display: block; margin: 0;">4. Vehicle Inspection &amp; Transfer</label>
+                            <span style="font-size: 0.7rem; color: #64748B;">Driving/carrier transfer &amp; delivery to yard</span>
+                        </div>
+                        <input type="number" step="0.01" name="amount_transport" id="inv_trans" class="form-control" style="font-weight: 800; font-size: 0.85rem; text-align: right; height: 34px;" oninput="calcInvoiceTotals()">
+                    </div>
+
+                    <!-- 5. CUSTOMS DUTY (TRA) - OPTIONAL / ADVANCED -->
+                    <div style="display: grid; grid-template-columns: 28px 1fr 160px; gap: 0.65rem; align-items: center; background: #FFFBEB; border: 1px solid #FDE68A; padding: 0.55rem 0.85rem; border-radius: 8px;">
+                        <input type="checkbox" id="chk_inv_duty" onchange="toggleInvItem('chk_inv_duty', 'inv_duty')" style="width: 18px; height: 18px; cursor: pointer; accent-color: #D97706;">
+                        <div>
+                            <label for="chk_inv_duty" style="font-weight: 800; font-size: 0.82rem; color: #92400E; cursor: pointer; display: block; margin: 0;">5. Customs Duty Reimbursement (TRA)</label>
+                            <span style="font-size: 0.7rem; color: #B45309;">Include ONLY if Malkia advanced duty on behalf of client</span>
+                        </div>
+                        <input type="number" step="0.01" name="amount_duty_reimbursement" id="inv_duty" class="form-control" style="font-weight: 800; font-size: 0.85rem; text-align: right; height: 34px;" oninput="calcInvoiceTotals()">
+                    </div>
+
+                    <!-- 6. SUNDRY / EXTRA CHARGES -->
+                    <div style="display: grid; grid-template-columns: 28px 1fr 160px; gap: 0.65rem; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 0.55rem 0.85rem; border-radius: 8px;">
+                        <input type="checkbox" id="chk_inv_sundry" onchange="toggleInvItem('chk_inv_sundry', 'inv_sundry')" style="width: 18px; height: 18px; cursor: pointer; accent-color: #059669;">
+                        <div>
+                            <label for="chk_inv_sundry" style="font-weight: 800; font-size: 0.82rem; color: #0F172A; cursor: pointer; display: block; margin: 0;">6. Sundry / Other Specific Charges</label>
+                            <span style="font-size: 0.7rem; color: #64748B;">Any extra billable logistics or documentation charges</span>
+                        </div>
+                        <input type="number" step="0.01" name="amount_sundry_charges" id="inv_sundry" class="form-control" style="font-weight: 800; font-size: 0.85rem; text-align: right; height: 34px;" oninput="calcInvoiceTotals()">
+                    </div>
+
+                </div>
+
+                <!-- INVOICE TOTAL PREVIEW -->
+                <div style="margin-top: 1rem; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 10px; padding: 0.85rem 1.15rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 0.72rem; font-weight: 800; color: #047857; text-transform: uppercase;">
+                            TOTAL INVOICE AMOUNT PAYABLE:
+                        </div>
+                        <div style="font-size: 0.68rem; color: #065F46;">Sum of selected client billing items</div>
+                    </div>
+                    <div id="invTotalBillDisplay" style="font-weight: 900; font-size: 1.25rem; color: #047857; font-family: var(--font-mono, monospace);">
+                        TSh 0.00
+                    </div>
+                </div>
+
+                <!-- DATES & NOTES -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1rem;">
+                    <div>
+                        <label style="font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Issue Date:</label>
+                        <input type="date" name="issue_date" id="inv_issue_date" class="form-control" style="height: 34px; font-size: 0.8rem;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Payment Due Date:</label>
+                        <input type="date" name="due_date" id="inv_due_date" class="form-control" style="height: 34px; font-size: 0.8rem;">
+                    </div>
+                </div>
+
+                <div style="margin-top: 0.75rem;">
+                    <label style="font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Custom Notes / Remarks:</label>
+                    <textarea name="notes" id="inv_notes" rows="2" class="form-control" style="font-size: 0.8rem; resize: vertical;" placeholder="Optional invoice notes or payment instructions..."></textarea>
+                </div>
+
+            </div>
+
+            <!-- MODAL FOOTER -->
+            <div style="padding: 1rem 1.5rem; background: #F8FAFC; border-top: 1px solid #E2E8F0; border-radius: 0 0 16px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <button type="button" onclick="closeInvoiceModal()" class="btn-header-action btn-outline" style="font-size: 0.84rem; padding: 0.45rem 1rem;">
+                    Cancel
+                </button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="submit" name="action_type" value="save" class="btn-header-action btn-primary" style="font-size: 0.84rem; padding: 0.45rem 1.15rem; background: #0F172A; color: #FFFFFF; font-weight: 800; border: none; border-radius: 8px;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Invoice
+                    </button>
+                    <button type="submit" name="action_type" value="save_and_print" class="btn-header-action" style="font-size: 0.84rem; padding: 0.45rem 1.25rem; background: #059669; color: #FFFFFF; font-weight: 800; border: none; border-radius: 8px; box-shadow: 0 2px 4px rgba(5,150,105,0.25);">
+                        <i class="fa-solid fa-print"></i> Save &amp; Print
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ==========================================
+    // DYNAMIC EXTRA CARGO COSTS (+ BUTTON LOGIC)
+    // ==========================================
+    function addExtraCostRow(name = '', amount = '') {
+        const container = document.getElementById('extraCostsList');
+        const rowId = 'extra_row_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        const row = document.createElement('div');
+        row.id = rowId;
+        row.className = 'extra-cost-item';
+        row.style.cssText = 'display: grid; grid-template-columns: 1fr 140px 34px; gap: 0.5rem; align-items: center; background: #FFFFFF; padding: 0.35rem 0.5rem; border-radius: 8px; border: 1px solid #E2E8F0;';
+        
+        row.innerHTML = `
+            <input type="text" name="extra_cost_names[]" class="form-control extra-name-input" value="${escapeHtml(name)}" placeholder="Description (e.g. TBS, Storage, Crane...)" style="height: 32px; font-size: 0.8rem;" oninput="updateExtraCostsData()">
+            <input type="number" step="0.01" name="extra_cost_amounts[]" class="form-control extra-amt-input" value="${amount > 0 ? amount : ''}" placeholder="0.00" style="height: 32px; font-size: 0.8rem; font-weight: 800; text-align: right;" oninput="updateExtraCostsData()">
+            <button type="button" onclick="removeExtraCostRow('${rowId}')" style="background: #FFF1F2; color: #E11D48; border: 1px solid #FECDD3; border-radius: 6px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Remove this item">
+                <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i>
+            </button>
+        `;
+        container.appendChild(row);
+        updateExtraCostsData();
+    }
+
+    function removeExtraCostRow(rowId) {
+        const row = document.getElementById(rowId);
+        if (row) {
+            row.remove();
+            updateExtraCostsData();
+        }
+    }
+
+    function updateExtraCostsData() {
+        const names = document.querySelectorAll('.extra-name-input');
+        const amounts = document.querySelectorAll('.extra-amt-input');
+        let total = 0;
+        const items = [];
+        names.forEach((nameInput, i) => {
+            const n = nameInput.value.trim();
+            const a = parseFloat(amounts[i].value || 0) || 0;
+            if (n || a > 0) {
+                items.push({ name: n || 'Additional Cost', amount: a });
+                total += a;
+            }
+        });
+        const fOther = document.getElementById('f_other');
+        const fDesc = document.getElementById('f_other_desc');
+        if (fOther) fOther.value = total;
+        if (fDesc) fDesc.value = items.length > 0 ? JSON.stringify(items) : '';
+        calcModalTotals();
+    }
+
+    // ==========================================
+    // CLIENT INVOICE MODAL LOGIC
+    // ==========================================
+    function toggleInvItem(chkId, inputId) {
+        const chk = document.getElementById(chkId);
+        const input = document.getElementById(inputId);
+        if (!chk.checked) {
+            input.dataset.oldVal = input.value;
+            input.value = 0;
+            input.disabled = true;
+            input.style.background = '#F1F5F9';
+            input.style.color = '#94A3B8';
+        } else {
+            input.disabled = false;
+            input.value = input.dataset.oldVal && parseFloat(input.dataset.oldVal) > 0 ? input.dataset.oldVal : '';
+            input.style.background = '#FFFFFF';
+            input.style.color = '#0F172A';
+        }
+        calcInvoiceTotals();
+    }
+
+    function calcInvoiceTotals() {
+        const val = id => {
+            const el = document.getElementById(id);
+            if (!el || el.disabled) return 0;
+            return parseFloat(el.value || 0) || 0;
+        };
+        const total = val('inv_agency') + val('inv_do') + val('inv_port') + val('inv_trans') + val('inv_duty') + val('inv_sundry');
+        document.getElementById('invTotalBillDisplay').innerText = 'TSh ' + total.toLocaleString('en-US', { minimumFractionDigits: 2 });
+    }
+
+    function openInvoiceModal(jobId, blNumber, make, model, customer, agencyFee, doAmt, portAmt, transAmt, dutyAmt, sundryAmt, notes, invNumber, issueDate, dueDate) {
+        document.getElementById('invModalTitle').innerText = invNumber ? `Edit Invoice (${invNumber})` : `Generate Invoice — ${make} ${model}`;
+        document.getElementById('invCustomerName').innerText = customer || 'Direct Client';
+        document.getElementById('invRefDetails').innerText = `BL: ${blNumber}`;
+        document.getElementById('invoiceForm').action = `/finance/vehicles-out/${jobId}/invoice/`;
+
+        const setField = (chkId, inputId, amt) => {
+            const chk = document.getElementById(chkId);
+            const input = document.getElementById(inputId);
+            const num = parseFloat(amt || 0);
+            if (num > 0) {
+                chk.checked = true;
+                input.disabled = false;
+                input.value = num;
+                input.style.background = '#FFFFFF';
+                input.style.color = '#0F172A';
+            } else {
+                chk.checked = false;
+                input.value = 0;
+                input.disabled = true;
+                input.style.background = '#F1F5F9';
+                input.style.color = '#94A3B8';
+            }
+        };
+
+        setField('chk_inv_agency', 'inv_agency', agencyFee > 0 ? agencyFee : 350000);
+        setField('chk_inv_do', 'inv_do', doAmt);
+        setField('chk_inv_port', 'inv_port', portAmt);
+        setField('chk_inv_trans', 'inv_trans', transAmt);
+        setField('chk_inv_duty', 'inv_duty', dutyAmt);
+        setField('chk_inv_sundry', 'inv_sundry', sundryAmt);
+
+        // Dates
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('inv_issue_date').value = issueDate || today;
+        if (dueDate) {
+            document.getElementById('inv_due_date').value = dueDate;
+        } else {
+            const d = new Date();
+            d.setDate(d.getDate() + 14);
+            document.getElementById('inv_due_date').value = d.toISOString().split('T')[0];
+        }
+
+        document.getElementById('inv_notes').value = notes || '';
+        calcInvoiceTotals();
+        document.getElementById('invoiceModal').style.display = 'flex';
+    }
+
+    function closeInvoiceModal() {
+        document.getElementById('invoiceModal').style.display = 'none';
+    }
+
     function openBreakdownModal(jobId, blNumber, make, model, year, chassis, clientName, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, statusText, statusBadgeClass, blUrl, invUrl) {
         document.getElementById('bdVehicleTitle').innerText = `${make} ${model} (${year || 'Year —'})`;
         document.getElementById('bdChassisRef').innerText = `BL: ${blNumber} • Chassis: ${chassis || '—'}`;
@@ -933,7 +1245,7 @@
 
         const fmt = n => parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
-        // Display TRA Duty in its dedicated informational strip (completely separate from office disbursements)
+        // TRA Duty strip
         document.getElementById('bdDutyVal').innerText = parseFloat(duty || 0) > 0 ? 'TSh ' + fmt(duty) : '—';
 
         // Status Badge
@@ -941,7 +1253,7 @@
         let badgeBg = statusText === 'Costed' ? '#D1FAE5' : (statusText === 'In Progress' ? '#E0F2FE' : '#FEF3C7');
         document.getElementById('bdStatusBadge').innerHTML = `<span style="font-size: 0.75rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; background: ${badgeBg}; color: ${badgeColor};">${statusText}</span>`;
 
-        const items = [
+        const standardItems = [
             { name: '1. Shipping Line D/O', amount: doCost },
             { name: '2. Wharfage (TPA Port)', amount: wharfage },
             { name: '3. Tiss Wharfage', amount: tiss },
@@ -950,28 +1262,74 @@
             { name: '6. Transport', amount: trans },
             { name: '7. Fuel (Mafuta)', amount: fuel },
             { name: '8. Ferry Charges', amount: ferry },
-            { name: `9. Other / Extra Costs${otherDesc ? ' (' + otherDesc + ')' : ''}`, amount: other },
-            { name: '10. Malkia Agency Fee (Revenue)', amount: agentFee, isFee: true },
         ];
 
         let rowsHtml = '';
         let directTotal = 0;
-        items.forEach(it => {
+        standardItems.forEach(it => {
             const amt = parseFloat(it.amount || 0);
-            if (!it.isFee) directTotal += amt;
-            const color = amt > 0 ? (it.isFee ? '#059669' : '#0F172A') : '#94A3B8';
-            const bg = it.isFee ? '#ECFDF5' : 'transparent';
+            directTotal += amt;
+            const color = amt > 0 ? '#0F172A' : '#94A3B8';
             const weight = amt > 0 ? '700' : '500';
             rowsHtml += `
-            <tr style="border-bottom: 1px solid #F1F5F9; background: ${bg};">
-                <td style="padding: 0.45rem 0.65rem; font-weight: ${weight}; color: ${it.isFee ? '#047857' : '#334155'};">${it.name}</td>
+            <tr style="border-bottom: 1px solid #F1F5F9;">
+                <td style="padding: 0.45rem 0.65rem; font-weight: ${weight}; color: #334155;">${it.name}</td>
                 <td style="padding: 0.45rem 0.65rem; text-align: right; font-family: var(--font-mono, monospace); font-weight: ${weight}; color: ${color};">${amt > 0 ? 'TSh ' + fmt(amt) : '—'}</td>
             </tr>
-        `;
+            `;
         });
+
+        // Parse any dynamic extra costs
+        let parsedExtras = null;
+        if (otherDesc) {
+            try {
+                parsedExtras = JSON.parse(otherDesc);
+            } catch(e) {
+                parsedExtras = null;
+            }
+        }
+        if (Array.isArray(parsedExtras) && parsedExtras.length > 0) {
+            parsedExtras.forEach(ex => {
+                const exAmt = parseFloat(ex.amount || 0);
+                directTotal += exAmt;
+                rowsHtml += `
+                    <tr style="border-bottom: 1px solid #F1F5F9; background: #F5F3FF;">
+                        <td style="padding: 0.45rem 0.65rem; font-weight: 700; color: #7C3AED;">
+                            <i class="fa-solid fa-plus" style="font-size: 0.65rem;"></i> ${escapeHtml(ex.name)}
+                        </td>
+                        <td style="padding: 0.45rem 0.65rem; text-align: right; font-family: var(--font-mono, monospace); font-weight: 800; color: #7C3AED;">
+                            TSh ${fmt(exAmt)}
+                        </td>
+                    </tr>
+                `;
+            });
+        } else if (parseFloat(other || 0) > 0) {
+            const exAmt = parseFloat(other);
+            directTotal += exAmt;
+            rowsHtml += `
+                <tr style="border-bottom: 1px solid #F1F5F9; background: #F5F3FF;">
+                    <td style="padding: 0.45rem 0.65rem; font-weight: 700; color: #7C3AED;">
+                        <i class="fa-solid fa-plus" style="font-size: 0.65rem;"></i> Other / Extra (${escapeHtml(otherDesc || 'Sundry')})
+                    </td>
+                    <td style="padding: 0.45rem 0.65rem; text-align: right; font-family: var(--font-mono, monospace); font-weight: 800; color: #7C3AED;">
+                        TSh ${fmt(exAmt)}
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Agency fee row
+        const feeAmt = parseFloat(agentFee || 0);
+        rowsHtml += `
+            <tr style="border-bottom: 1px solid #F1F5F9; background: #ECFDF5;">
+                <td style="padding: 0.45rem 0.65rem; font-weight: 800; color: #047857;">Malkia Agency Fee (Revenue)</td>
+                <td style="padding: 0.45rem 0.65rem; text-align: right; font-family: var(--font-mono, monospace); font-weight: 800; color: #059669;">${feeAmt > 0 ? 'TSh ' + fmt(feeAmt) : '—'}</td>
+            </tr>
+        `;
+
         document.getElementById('bdItemsList').innerHTML = rowsHtml;
 
-        const grandTotal = directTotal + parseFloat(agentFee || 0);
+        const grandTotal = directTotal + feeAmt;
         document.getElementById('bdDirectTotal').innerText = 'TSh ' + fmt(directTotal);
         document.getElementById('bdGrandTotal').innerText = 'TSh ' + fmt(grandTotal);
 
@@ -994,6 +1352,9 @@
         document.getElementById('breakdownModal').style.display = 'none';
     }
 
+    // ==========================================
+    // COSTING ENTRY MODAL (WITH DYNAMIC ROWS)
+    // ==========================================
     function openCostModal(jobId, blNumber, make, model, year, chassis, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, blUrl, invUrl) {
         document.getElementById('modalVehicleTitle').innerText = `${make} ${model} (${year || 'Year —'})`;
         document.getElementById('modalChassisRef').innerText = `BL: ${blNumber} | Chassis: ${chassis}`;
@@ -1008,6 +1369,7 @@
         }
         document.getElementById('modalDocButtons').innerHTML = docHtml;
 
+        // Fill standard form fields
         document.getElementById('f_duty').value = duty > 0 ? duty : '';
         document.getElementById('f_do').value = doCost > 0 ? doCost : '';
         document.getElementById('f_wharfage').value = wharfage > 0 ? wharfage : '';
@@ -1018,12 +1380,28 @@
         document.getElementById('f_agent_fee').value = agentFee > 0 ? agentFee : '';
         document.getElementById('f_fuel').value = fuel > 0 ? fuel : '';
         document.getElementById('f_ferry').value = ferry > 0 ? ferry : '';
-        document.getElementById('f_other').value = other > 0 ? other : '';
-        document.getElementById('f_other_desc').value = otherDesc || '';
 
+        // Unpack dynamic extra costs
+        const extraList = document.getElementById('extraCostsList');
+        extraList.innerHTML = '';
+        let parsed = null;
+        if (otherDesc) {
+            try {
+                parsed = JSON.parse(otherDesc);
+            } catch (e) {
+                parsed = null;
+            }
+        }
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            parsed.forEach(item => addExtraCostRow(item.name, item.amount));
+        } else if (parseFloat(other || 0) > 0) {
+            addExtraCostRow(otherDesc || 'Additional Cost', other);
+        }
+
+        // Action URL
         document.getElementById('costForm').action = `/finance/vehicles-out/${jobId}/update-costs/`;
 
-        calcModalTotals();
+        updateExtraCostsData();
         const modal = document.getElementById('costModal');
         modal.style.display = 'flex';
     }
@@ -1035,7 +1413,7 @@
     function calcModalTotals() {
         const val = id => parseFloat(document.getElementById(id)?.value || 0) || 0;
 
-        // Exclude TRA Duty from Office Disbursements calculation (Client pays direct via Control #)
+        // Direct costs: 1 to 9 + extra costs
         const directCosts = val('f_do') + val('f_wharfage') + val('f_tiss') + val('f_handling') + val('f_facil') + val('f_transport') + val('f_fuel') + val('f_ferry') + val('f_other');
         const agentFee = val('f_agent_fee');
         const grandTotal = directCosts + agentFee;
@@ -1052,6 +1430,10 @@
         const bdModal = document.getElementById('breakdownModal');
         if (e.target === bdModal) {
             closeBreakdownModal();
+        }
+        const invModal = document.getElementById('invoiceModal');
+        if (e.target === invModal) {
+            closeInvoiceModal();
         }
     });
 </script>
