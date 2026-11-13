@@ -142,30 +142,6 @@
         </div>
     </div>
 
-    <!-- COMPACT EXECUTIVE SUMMARY BAR (1-LINE STRIP) -->
-    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 0.75rem 1.25rem; margin-bottom: 1.15rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-        <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
-            <div>
-                <span style="font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Total Vehicles:</span>
-                <span style="font-weight: 900; color: #0F172A; font-size: 1.05rem; margin-left: 0.35rem;">{{ total_vehicles }} <span style="font-size: 0.75rem; font-weight: 600; color: #64748B;">Units</span></span>
-            </div>
-            <div style="height: 20px; width: 1px; background: #E2E8F0;"></div>
-            <div>
-                <span style="font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Office Client Disbursements:</span>
-                <span style="font-family: var(--font-mono, monospace); font-weight: 900; color: #DC2626; font-size: 1.05rem; margin-left: 0.35rem;">TSh {{ sum_total_direct_costs|floatformat:0|intcomma }}</span>
-                <span style="font-size: 0.68rem; color: #94A3B8; font-weight: 700;">(D/O, Port, Fuel — Excl. TRA Duty)</span>
-            </div>
-            <div style="height: 20px; width: 1px; background: #E2E8F0;"></div>
-            <div>
-                <span style="font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Malkia Agency Revenue:</span>
-                <span style="font-family: var(--font-mono, monospace); font-weight: 900; color: #047857; font-size: 1.05rem; margin-left: 0.35rem;">TSh {{ sum_agent_fee|floatformat:0|intcomma }}</span>
-            </div>
-        </div>
-        <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: #EFF6FF; border: 1px solid #BFDBFE; padding: 0.3rem 0.65rem; border-radius: 6px; font-size: 0.72rem; color: #1E40AF; font-weight: 700;">
-            <i class="fa-solid fa-shield-halved" style="color: #2563EB;"></i> TRA Duty is paid directly by client via Control #
-        </div>
-    </div>
-
     <!-- STATUS FILTER TABS -->
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.85rem;">
         <div style="display: inline-flex; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 0.25rem; border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
