@@ -123,18 +123,7 @@
                             <label style="font-weight:800;font-size:0.82rem;color:var(--brand-navy-900);">
                                 Reference No (B/L Number) *
                             </label>
-                            <input type="text" name="bl_number" id="id_bl_number" required class="form-control" placeholder="e.g. MOLU18009368961" style="font-family:monospace;text-transform:uppercase;font-weight:800;height:42px;">
-                            <small style="font-size:0.7rem;color:var(--text-muted);">Printed at the top of Bill of Lading</small>
-                        </div>
-                        <div class="form-group" style="margin:0;">
-                            <label style="font-weight:800;font-size:0.82rem;color:var(--brand-navy-900);">
-                                Invoice Value ($ USD) *
-                            </label>
-                            <div style="position:relative;">
-                                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:900;color:var(--text-muted);font-size:0.95rem;">$</span>
-                                <input type="number" step="0.01" name="cif_usd" id="id_cif_usd" required class="form-control" placeholder="3970.00" style="padding-left:1.85rem;font-weight:800;color:#0F172A;height:42px;">
-                            </div>
-                            <small style="font-size:0.7rem;color:var(--text-muted);">Commercial Invoice total</small>
+                            <input type="text" name="bl_number" id="id_bl_number" required class="form-control" style="font-family:monospace;text-transform:uppercase;font-weight:800;height:42px;">
                         </div>
                     </div>
 
@@ -148,48 +137,13 @@
                                 <input type="text" name="chassis_number" id="id_chassis_number" required class="form-control" placeholder="e.g. ACA33-5176110" style="font-family:monospace;text-transform:uppercase;font-weight:800;height:42px;">
                                 <small style="font-size:0.7rem;color:var(--text-muted);">From BL &amp; Export Certificate</small>
                             </div>
-                            <div class="form-group" style="margin:0;">
-                                <label style="font-weight:800;font-size:0.82rem;color:var(--brand-navy-900);">
-                                    Make *
-                                </label>
-                                <input type="text" name="vehicle_make" id="id_vehicle_make" list="popular_makes" required class="form-control" placeholder="e.g. TOYOTA" style="text-transform:uppercase;font-weight:800;height:42px;" oninput="updateAutoCargoDesc()">
-                                <datalist id="popular_makes">
-                                    <option value="TOYOTA">
-                                    <option value="NISSAN">
-                                    <option value="HONDA">
-                                    <option value="MITSUBISHI">
-                                    <option value="SUBARU">
-                                    <option value="SUZUKI">
-                                    <option value="MAZDA">
-                                    <option value="MERCEDES-BENZ">
-                                    <option value="BMW">
-                                    <option value="LAND ROVER">
-                                    <option value="VOLKSWAGEN">
-                                    <option value="ISUZU">
-                                    <option value="HYUNDAI">
-                                    <option value="FORD">
-                                </datalist>
-                            </div>
-                            <div class="form-group" style="margin:0;">
-                                <label style="font-weight:800;font-size:0.82rem;color:var(--brand-navy-900);">
-                                    Model *
-                                </label>
-                                <input type="text" name="vehicle_model" id="id_vehicle_model" required class="form-control" placeholder="e.g. VANGUARD" style="text-transform:uppercase;font-weight:800;height:42px;" oninput="updateAutoCargoDesc()">
-                            </div>
-                            <div class="form-group" style="margin:0;">
-                                <label style="font-weight:800;font-size:0.82rem;color:var(--brand-navy-900);">
-                                    Registration Year *
-                                </label>
-                                <input type="number" name="registration_year" id="id_registration_year" min="1990" max="2035" required class="form-control" placeholder="e.g. 2008" style="font-weight:800;height:42px;" oninput="updateAutoCargoDesc()">
-                                <small style="font-size:0.7rem;color:var(--text-muted);">Year on Export Certificate</small>
-                            </div>
                         </div>
 
                         <div class="form-group" style="margin:0;">
                             <label style="font-weight:700;font-size:0.82rem;color:var(--text-muted);">
-                                Vehicle Summary (Auto-Filled):
+                                Vehicle Description (Optional):
                             </label>
-                            <input type="text" name="cargo_description" id="id_cargo_description" class="form-control" placeholder="e.g. TOYOTA VANGUARD 2008" style="background:#F1F5F9;color:#334155;font-weight:700;height:42px;" readonly>
+                            <input type="text" name="cargo_description" id="id_cargo_description" class="form-control" placeholder="e.g. TOYOTA VANGUARD 2008" style="text-transform:uppercase;color:#334155;font-weight:700;height:42px;">
                         </div>
                     </div>
 
@@ -198,24 +152,12 @@
                         <div class="form-grid" style="grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:0.95rem;">
                             <div class="form-group" style="margin:0;">
                                 <label style="font-weight:800;font-size:0.82rem;color:var(--brand-navy-900);">
-                                    Container No(s) *
-                                </label>
-                                <input type="text" name="container_numbers" id="id_container_numbers" class="form-control" placeholder="e.g. KMTCTA08431146" style="font-family:monospace;text-transform:uppercase;font-weight:800;height:42px;">
-                                <small style="font-size:0.7rem;color:var(--text-muted);">From Bill of Lading</small>
-                            </div>
-                            <div class="form-group" style="margin:0;">
-                                <label style="font-weight:800;font-size:0.82rem;color:var(--brand-navy-900);">
                                     Item / Cargo Description *
                                 </label>
                                 <input type="text" name="container_item_desc" id="id_container_item_desc" class="form-control" placeholder="e.g. LAYER POULTRY FARMING MACHINE" style="text-transform:uppercase;font-weight:800;height:42px;">
                             </div>
-                            <div class="form-group" style="margin:0;">
-                                <label style="font-weight:800;font-size:0.82rem;color:var(--brand-navy-900);">
-                                    Qty (Containers) *
-                                </label>
-                                <input type="number" name="container_qty" id="id_container_qty" min="1" value="1" class="form-control" style="font-weight:800;height:42px;">
-                            </div>
                         </div>
+                        <input type="hidden" name="container_qty" value="1">
                         <input type="hidden" name="container_size_type" value="40FT">
                     </div>
                 </div>
@@ -229,8 +171,8 @@
                     const btnC = document.getElementById('btnCargoContainer');
                     const icon = document.getElementById('cargoIconBadge');
 
-                    const vReq = ['id_chassis_number', 'id_vehicle_make', 'id_vehicle_model', 'id_registration_year'];
-                    const cReq = ['id_container_numbers', 'id_container_item_desc', 'id_container_qty'];
+                    const vReq = ['id_chassis_number'];
+                    const cReq = ['id_container_item_desc'];
 
                     modeInput.value = mode;
                     if (mode === 'container') {
@@ -256,16 +198,6 @@
                     }
                 }
 
-                function updateAutoCargoDesc() {
-                    const make = (document.getElementById('id_vehicle_make')?.value || '').trim();
-                    const model = (document.getElementById('id_vehicle_model')?.value || '').trim();
-                    const year = (document.getElementById('id_registration_year')?.value || '').trim();
-                    const descInput = document.getElementById('id_cargo_description');
-                    if (descInput) {
-                        const parts = [make, model, year].filter(Boolean);
-                        descInput.value = parts.join(' ').toUpperCase();
-                    }
-                }
                 </script>
 
 

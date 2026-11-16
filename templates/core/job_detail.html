@@ -177,13 +177,26 @@
                 <i class="fa-solid fa-folder-open" style="color:#0284C7;margin-right:0.35rem;"></i>
                 2. Required Documents (Shipment Paperwork)
             </div>
-            <span style="font-size:0.74rem;color:var(--text-muted);">
-                {% if can_edit_documents %}
-                    Pakia au rekebisha nyaraka (Edit/Replace file anytime).
-                {% else %}
-                    Tazama (View) au pakua (Download) nyaraka za mteja.
+            <div style="display:flex;align-items:center;gap:0.65rem;flex-wrap:wrap;">
+                <span style="font-size:0.74rem;color:var(--text-muted);">
+                    {% if can_edit_documents %}
+                        Pakia au rekebisha nyaraka (Edit/Replace file anytime).
+                    {% else %}
+                        Tazama (View) au pakua (Download) nyaraka za mteja.
+                    {% endif %}
+                </span>
+                {% if job.documents.exists %}
+                <button type="button" id="saveTancisFolderBtn" onclick="saveAllTancisDocsToFolder(this)" class="btn-header-action" style="background:#0284C7;color:#FFFFFF;border:none;font-size:0.75rem;padding:0.38rem 0.8rem;border-radius:7px;font-weight:800;display:inline-flex;align-items:center;gap:0.4rem;cursor:pointer;box-shadow:0 1px 3px rgba(2,132,199,0.28);" title="Save all TANCIS-numbered documents into a BL folder (choose a subfolder like Documents/TANCIS)">
+                    <i class="fa-solid fa-folder-plus"></i>
+                    <span>Save to Folder (TANCIS)</span>
+                </button>
+                <a href="{% url 'download_all_job_documents_zip' job.id %}" class="btn-header-action btn-outline" style="font-size:0.75rem;padding:0.36rem 0.7rem;border-radius:7px;font-weight:700;text-decoration:none;border-color:#CBD5E1;color:#0F172A;background:#F8FAFC;display:inline-flex;align-items:center;gap:0.35rem;" title="Download all TANCIS-numbered documents as a ZIP folder">
+                    <i class="fa-solid fa-file-zipper" style="color:#0284C7;"></i>
+                    <span>ZIP</span>
+                </a>
+                <span id="tancisFolderStatus" style="display:none;font-size:0.74rem;font-weight:700;"></span>
                 {% endif %}
-            </span>
+            </div>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:0.85rem;">
@@ -606,150 +619,6 @@
                             <input type="hidden" name="title" value="6. Packing List">
                             <input type="file" name="file" id="slot_file_PACKING_LIST" accept=".pdf,image/*" style="display:none;" onchange="stageSlotFile(this)">
                             <button type="button" onclick="document.getElementById('slot_file_PACKING_LIST').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
-                                <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
-                                <span>Upload Scan</span>
-                            </button>
-                        </form>
-                        {% else %}
-                        <div style="background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;color:#94A3B8;font-size:0.76rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.35rem;">
-                            <i class="fa-regular fa-clock"></i> Pending Upload
-                        </div>
-                        {% endif %}
-                    {% endif %}
-                </div>
-            </div>
-            {% endwith %}
-
-            <!-- SLOT 7: TBS Inspection Cert -->
-            {% with doc=job.tbs_cert_doc %}
-            <div style="background:#FFFFFF;border:1.5px solid {% if doc %}#86EFAC{% else %}#CBD5E1{% endif %};border-radius:12px;padding:0.95rem 1rem;display:flex;flex-direction:column;justify-content:space-between;gap:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-                <div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;">
-                        <span class="badge-pill" style="font-size:0.65rem;font-weight:800;background:{% if doc %}#DCFCE7;color:#166534{% else %}#F1F5F9;color:#64748B{% endif %};">
-                            TBS CERT
-                        </span>
-                        {% if doc %}
-                        <span style="font-size:0.72rem;font-weight:800;color:#166534;display:inline-flex;align-items:center;gap:0.25rem;">
-                            <i class="fa-solid fa-circle-check"></i> Uploaded
-                        </span>
-                        {% else %}
-                        <span style="font-size:0.72rem;font-weight:700;color:#94A3B8;">
-                            <i class="fa-regular fa-clock"></i> Pending
-                        </span>
-                        {% endif %}
-                    </div>
-                    <div style="font-weight:800;font-size:0.88rem;color:#0F172A;display:flex;align-items:center;gap:0.45rem;">
-                        <i class="fa-solid fa-vial-circle-check" style="color:{% if doc %}#16A34A{% else %}#64748B{% endif %};"></i>
-                        7. TBS Inspection Cert
-                    </div>
-                    <div style="font-size:0.72rem;color:#64748B;margin-top:0.15rem;">
-                        Standards Clearance
-                    </div>
-                    {% if doc %}
-                    <div style="font-size:0.72rem;color:#166534;font-weight:700;margin-top:0.35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
-                        <i class="fa-solid fa-file-pdf"></i> {{ doc.title }} &bull; {{ doc.uploaded_at|date:"d M, H:i" }}
-                    </div>
-                    {% endif %}
-                </div>
-
-                <div>
-                    {% if doc %}
-                    <div style="display:flex;gap:0.3rem;border-top:1px solid #F1F5F9;padding-top:0.5rem;align-items:center;flex-wrap:wrap;">
-                        <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="flex:1;min-width:60px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;" title="View File">
-                            <i class="fa-solid fa-eye"></i> View
-                        </a>
-                        <a href="{% url 'download_job_document' doc.id %}" class="btn-header-action btn-outline" style="flex:1;min-width:75px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;color:#0369A1;background:#F0F9FF;" title="Download File">
-                            <i class="fa-solid fa-download"></i> Download
-                        </a>
-                        {% if can_edit_documents %}
-                        <button type="button" class="btn-header-action" onclick="openEditDocModal('{{ doc.id }}', '{{ doc.title|escapejs }}', '{{ doc.document_type }}')" style="background:#F8FAFC;border:1px solid #CBD5E1;color:#334155;font-size:0.72rem;padding:0.32rem 0.5rem;font-weight:700;" title="Edit / Replace File">
-                            <i class="fa-solid fa-pen-to-square"></i> Edit
-                        </button>
-                        <button type="button" class="btn-header-action" onclick="confirmDeleteDoc('{{ doc.id }}', '{{ doc.title|escapejs }}')" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;font-size:0.72rem;padding:0.32rem 0.45rem;" title="Delete Document">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                        {% endif %}
-                    </div>
-                    {% else %}
-                        {% if can_edit_documents %}
-                        <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data" style="margin:0;">
-                            {% csrf_token %}
-                            <input type="hidden" name="document_type" value="TBS_CERT">
-                            <input type="hidden" name="title" value="7. TBS Inspection Cert">
-                            <input type="file" name="file" id="slot_file_TBS_CERT" accept=".pdf,image/*" style="display:none;" onchange="stageSlotFile(this)">
-                            <button type="button" onclick="document.getElementById('slot_file_TBS_CERT').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
-                                <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
-                                <span>Upload Scan</span>
-                            </button>
-                        </form>
-                        {% else %}
-                        <div style="background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;color:#94A3B8;font-size:0.76rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:0.35rem;">
-                            <i class="fa-regular fa-clock"></i> Pending Upload
-                        </div>
-                        {% endif %}
-                    {% endif %}
-                </div>
-            </div>
-            {% endwith %}
-
-            <!-- SLOT 8: Export Certificate -->
-            {% with doc=job.export_cert_doc %}
-            <div style="background:#FFFFFF;border:1.5px solid {% if doc %}#86EFAC{% else %}#CBD5E1{% endif %};border-radius:12px;padding:0.95rem 1rem;display:flex;flex-direction:column;justify-content:space-between;gap:0.75rem;box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-                <div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem;">
-                        <span class="badge-pill" style="font-size:0.65rem;font-weight:800;background:{% if doc %}#DCFCE7;color:#166534{% else %}#F1F5F9;color:#64748B{% endif %};">
-                            EXPORT ORIGIN
-                        </span>
-                        {% if doc %}
-                        <span style="font-size:0.72rem;font-weight:800;color:#166534;display:inline-flex;align-items:center;gap:0.25rem;">
-                            <i class="fa-solid fa-circle-check"></i> Uploaded
-                        </span>
-                        {% else %}
-                        <span style="font-size:0.72rem;font-weight:700;color:#94A3B8;">
-                            <i class="fa-regular fa-clock"></i> Pending
-                        </span>
-                        {% endif %}
-                    </div>
-                    <div style="font-weight:800;font-size:0.88rem;color:#0F172A;display:flex;align-items:center;gap:0.45rem;">
-                        <i class="fa-solid fa-file-shield" style="color:{% if doc %}#16A34A{% else %}#64748B{% endif %};"></i>
-                        8. Export Certificate
-                    </div>
-                    <div style="font-size:0.72rem;color:#64748B;margin-top:0.15rem;">
-                        Certificate of Origin
-                    </div>
-                    {% if doc %}
-                    <div style="font-size:0.72rem;color:#166534;font-weight:700;margin-top:0.35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ doc.title }}">
-                        <i class="fa-solid fa-file-pdf"></i> {{ doc.title }} &bull; {{ doc.uploaded_at|date:"d M, H:i" }}
-                    </div>
-                    {% endif %}
-                </div>
-
-                <div>
-                    {% if doc %}
-                    <div style="display:flex;gap:0.3rem;border-top:1px solid #F1F5F9;padding-top:0.5rem;align-items:center;flex-wrap:wrap;">
-                        <a href="{{ doc.file.url }}" target="_blank" class="btn-header-action btn-outline" style="flex:1;min-width:60px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;" title="View File">
-                            <i class="fa-solid fa-eye"></i> View
-                        </a>
-                        <a href="{% url 'download_job_document' doc.id %}" class="btn-header-action btn-outline" style="flex:1;min-width:75px;font-size:0.72rem;padding:0.32rem 0.45rem;justify-content:center;text-decoration:none;border-color:#CBD5E1;color:#0369A1;background:#F0F9FF;" title="Download File">
-                            <i class="fa-solid fa-download"></i> Download
-                        </a>
-                        {% if can_edit_documents %}
-                        <button type="button" class="btn-header-action" onclick="openEditDocModal('{{ doc.id }}', '{{ doc.title|escapejs }}', '{{ doc.document_type }}')" style="background:#F8FAFC;border:1px solid #CBD5E1;color:#334155;font-size:0.72rem;padding:0.32rem 0.5rem;font-weight:700;" title="Edit / Replace File">
-                            <i class="fa-solid fa-pen-to-square"></i> Edit
-                        </button>
-                        <button type="button" class="btn-header-action" onclick="confirmDeleteDoc('{{ doc.id }}', '{{ doc.title|escapejs }}')" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;font-size:0.72rem;padding:0.32rem 0.45rem;" title="Delete Document">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                        {% endif %}
-                    </div>
-                    {% else %}
-                        {% if can_edit_documents %}
-                        <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data" style="margin:0;">
-                            {% csrf_token %}
-                            <input type="hidden" name="document_type" value="EXPORT_CERT">
-                            <input type="hidden" name="title" value="8. Export Certificate">
-                            <input type="file" name="file" id="slot_file_EXPORT_CERT" accept=".pdf,image/*" style="display:none;" onchange="stageSlotFile(this)">
-                            <button type="button" onclick="document.getElementById('slot_file_EXPORT_CERT').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
                                 <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
                                 <span>Upload Scan</span>
                             </button>
@@ -1659,6 +1528,106 @@
 </div>
 
 <script>
+    async function saveAllTancisDocsToFolder(btn) {
+        const statusEl = document.getElementById('tancisFolderStatus');
+        const zipFallbackUrl = "{% url 'download_all_job_documents_zip' job.id %}";
+
+        if (!('showDirectoryPicker' in window)) {
+            if (statusEl) {
+                statusEl.style.display = 'inline';
+                statusEl.style.color = '#0369A1';
+                statusEl.textContent = 'Downloading ZIP folder...';
+            }
+            window.location.href = zipFallbackUrl;
+            return;
+        }
+
+        const links = Array.from(document.querySelectorAll('a[href*="/documents/"][href$="/download/"]'));
+        const uniqueUrls = Array.from(new Set(links.map(a => a.href)));
+        if (!uniqueUrls.length) {
+            if (statusEl) {
+                statusEl.style.display = 'inline';
+                statusEl.style.color = '#DC2626';
+                statusEl.textContent = 'No documents available to save.';
+            }
+            return;
+        }
+
+        const rawBl = "{{ job.bl_number|default:job.job_number|escapejs }}";
+        const blSlug = rawBl.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '') || 'JOB_{{ job.id }}';
+        const folderName = 'BL_' + blSlug;
+
+        let rootHandle;
+        try {
+            rootHandle = await window.showDirectoryPicker({
+                id: 'tancis-export',
+                mode: 'readwrite',
+                startIn: 'documents',
+            });
+        } catch (err) {
+            if (err && err.name === 'AbortError') return;
+            window.location.href = zipFallbackUrl;
+            return;
+        }
+
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        if (statusEl) {
+            statusEl.style.display = 'inline';
+            statusEl.style.color = '#0369A1';
+            statusEl.textContent = `Creating ${folderName}...`;
+        }
+
+        try {
+            const folderHandle = await rootHandle.getDirectoryHandle(folderName, { create: true });
+            const usedNames = new Set();
+            let savedCount = 0;
+
+            for (let i = 0; i < uniqueUrls.length; i++) {
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Saving ${i + 1}/${uniqueUrls.length}...</span>`;
+                const resp = await fetch(uniqueUrls[i], { credentials: 'same-origin' });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+                const disp = resp.headers.get('Content-Disposition') || '';
+                const match = disp.match(/filename="?([^"]+)"?/i);
+                let filename = match ? match[1].trim() : `document_${i + 1}.pdf`;
+
+                if (usedNames.has(filename)) {
+                    const dotIdx = filename.lastIndexOf('.');
+                    const stem = dotIdx > 0 ? filename.slice(0, dotIdx) : filename;
+                    const ext = dotIdx > 0 ? filename.slice(dotIdx) : '';
+                    let counter = 2;
+                    while (usedNames.has(`${stem}_${counter}${ext}`)) counter++;
+                    filename = `${stem}_${counter}${ext}`;
+                }
+                usedNames.add(filename);
+
+                const blob = await resp.blob();
+                const fileHandle = await folderHandle.getFileHandle(filename, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                savedCount++;
+            }
+
+            if (statusEl) {
+                statusEl.style.display = 'inline';
+                statusEl.style.color = '#16A34A';
+                statusEl.textContent = `Saved ${savedCount} file(s) in ${folderName}/`;
+            }
+        } catch (err) {
+            if (statusEl) {
+                statusEl.style.display = 'inline';
+                statusEl.style.color = '#DC2626';
+                statusEl.textContent = 'Save failed — try ZIP fallback.';
+            }
+            console.error('Save to folder error:', err);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    }
+
     function openSimpleAddModal() {
         const titleInput = document.getElementById('simpleDocTitleInput');
         if (titleInput) titleInput.value = '';

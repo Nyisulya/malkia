@@ -2444,7 +2444,7 @@ def job_create_view(request):
             vehicle_make = ''
             vehicle_model = ''
             registration_year = ''
-            container_numbers = request.POST.get('container_numbers', '').strip().upper()
+            container_numbers = request.POST.get('container_numbers', '').strip().upper() or bl_number
             try:
                 container_qty = max(1, int(request.POST.get('container_qty', 1) or 1))
             except (ValueError, TypeError):
@@ -10166,8 +10166,32 @@ def view_job_document_view(request, document_id):
 
 
 
-@login_required
+TANCIS_DOC_CODES = {
+    'COMMERCIAL_INVOICE': '100',
+    'BILL_OF_LADING': '101',
+    'PACKING_LIST': '102',
+    'FORM_C41': '115',
+    'TRA_AUTH_SIGNED': '137',
+    'TBS_SIGNED': '147',
+}
 
+
+def _get_tancis_filename(doc):
+    ext = os.path.splitext(doc.file.name)[1] or '.pdf'
+    code = TANCIS_DOC_CODES.get(doc.document_type)
+    if code:
+        return f"{code}{ext}"
+    doc_type_clean = (
+        doc.get_document_type_display()
+        .replace(' ', '_')
+        .replace('/', '_')
+        .replace('(', '')
+        .replace(')', '')
+    )
+    return f"{doc_type_clean}{ext}"
+
+
+@login_required
 def download_job_document_view(request, document_id):
 
     doc = get_object_or_404(JobDocument.objects.select_related('job'), id=document_id)
@@ -10182,17 +10206,7 @@ def download_job_document_view(request, document_id):
 
             content_type = 'application/octet-stream'
 
-        
-
-        ext = os.path.splitext(doc.file.name)[1] or '.pdf'
-
-        doc_type_clean = doc.get_document_type_display().replace(' ', '_').replace('/', '_').replace('(', '').replace(')', '')
-
-        bl_clean = (doc.job.bl_number or doc.job.job_number).replace('/', '_').replace(' ', '')
-
-        clean_filename = f"{doc_type_clean}_{bl_clean}{ext}"
-
-
+        clean_filename = _get_tancis_filename(doc)
 
         response = FileResponse(f, content_type=content_type)
 
@@ -10227,39 +10241,29 @@ def download_all_job_documents_zip_view(request, job_id):
 
 
     zip_buffer = io.BytesIO()
+    bl_slug = (job.bl_number or job.job_number).replace('/', '_').replace(' ', '')
+    seen_names = {}
 
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-
-        for idx, doc in enumerate(docs, 1):
-
+        for doc in docs:
             try:
-
-                ext = os.path.splitext(doc.file.name)[1] or '.pdf'
-
-                doc_type_clean = doc.get_document_type_display().replace(' ', '_').replace('/', '_').replace('(', '').replace(')', '')
-
-                bl_clean = (job.bl_number or job.job_number).replace('/', '_').replace(' ', '')
-
-                clean_name = f"{idx:02d}_{doc_type_clean}_{bl_clean}{ext}"
-
-                
+                base_name = _get_tancis_filename(doc)
+                if base_name in seen_names:
+                    seen_names[base_name] += 1
+                    stem, ext = os.path.splitext(base_name)
+                    arc_name = f"BL_{bl_slug}/{stem}_{seen_names[base_name]}{ext}"
+                else:
+                    seen_names[base_name] = 1
+                    arc_name = f"BL_{bl_slug}/{base_name}"
 
                 with doc.file.open('rb') as f:
-
                     file_content = f.read()
 
-                zip_file.writestr(clean_name, file_content)
-
+                zip_file.writestr(arc_name, file_content)
             except Exception as e:
-
                 print(f"[ZIP Pack Error on doc {doc.id}] {e}")
 
-
-
     zip_buffer.seek(0)
-
-    bl_slug = (job.bl_number or job.job_number).replace('/', '_').replace(' ', '')
-
     zip_filename = f"TANCIS_Documents_BL_{bl_slug}.zip"
 
 
@@ -23207,9 +23211,11 @@ def stage_pipeline_view(request, stage_number):
     stage_def = get_object_or_404(WorkflowStageDefinition, stage_number=stage_number)
     q = request.GET.get('q', '').strip()
 
+    from django.db.models import Case, When, BooleanField, Value
+
     jobs = JobShipment.objects.filter(
-        current_stage_number=stage_number,
-        status__in=['ACTIVE', 'DELAYED']
+        current_stage_number__gte=stage_number,
+        status__in=['ACTIVE', 'DELAYED', 'COMPLETED'],
     ).select_related('customer', 'documentation_officer', 'clearing_officer', 'port_officer')
 
     if q:
@@ -23220,6 +23226,14 @@ def stage_pipeline_view(request, stage_number):
             Q(customer__company_name__icontains=q) |
             Q(cargo_description__icontains=q)
         )
+
+    jobs = jobs.annotate(
+        stage_completed=Case(
+            When(Q(current_stage_number__gt=stage_number) | Q(status='COMPLETED'), then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField(),
+        )
+    ).order_by('stage_completed', '-updated_at', '-created_at')
 
     stage_specs = {
         1: {
@@ -23282,8 +23296,9 @@ def stage_pipeline_view(request, stage_number):
         'badge_bg': spec['badge_bg'],
         'finish_label': spec['finish_label'],
         'confirm_msg': spec['confirm_msg'],
-        'jobs': jobs.order_by('-created_at'),
+        'jobs': jobs,
         'search_q': q,
+        'active_count': jobs.filter(stage_completed=False).count(),
         'total_count': jobs.count(),
     }
     return render(request, 'core/stage_operation_list.html', context)

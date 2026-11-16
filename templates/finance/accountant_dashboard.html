@@ -458,17 +458,17 @@
         </div>
 
         <!-- TABLE WRAPPER -->
-        <div style="overflow: auto; max-height: 60vh; position: relative;">
+        <div style="overflow-x: auto; overflow-y: visible; position: relative;">
             <table class="fin-table" style="width: 100%;">
                 <thead>
                     <tr>
-                        <th style="width: 105px;">DATE</th>
-                        <th style="width: 140px;">JOB NO</th>
-                        <th style="width: 150px;">BL NO</th>
-                        <th style="width: 175px; text-align: right;">OFFICE DISBURSEMENTS (TSH)</th>
-                        <th style="width: 140px; text-align: right; background: #064E3B; color: #A7F3D0;">AGENT FEE</th>
-                        <th style="width: 110px; text-align: center;">STATUS</th>
-                        <th style="width: 220px; text-align: center;">ACTIONS</th>
+                        <th>DATE</th>
+                        <th>JOB NO</th>
+                        <th>BL NO</th>
+                        <th style="text-align: right;">OFFICE DISBURSEMENTS (TSH)</th>
+                        <th style="text-align: right; background: #064E3B; color: #A7F3D0;">AGENT FEE</th>
+                        <th style="text-align: center;">STATUS</th>
+                        <th style="text-align: center;">ACTIONS</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -518,13 +518,13 @@
                         </td>
 
                         <!-- DEDICATED ACTIONS COLUMN -->
-                        <td style="text-align: center; vertical-align: middle;">
-                            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; flex-wrap: nowrap;">
+                        <td style="text-align: left; vertical-align: middle;">
+                            <div style="display: flex; align-items: center; justify-content: flex-start; gap: 0.35rem; flex-wrap: wrap;">
                                 <!-- VIEW EYE BUTTON -->
                                 <button type="button"
                                     onclick="openBreakdownModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{% if job.costing_status == "FULLY_COSTED" %}Costed{% elif job.costing_status == "IN_PROGRESS" %}In Progress{% else %}Pending{% endif %}', '', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}')"
                                     class="btn-header-action"
-                                    style="font-size: 0.75rem; padding: 0.32rem 0.55rem; background: #F1F5F9; color: #0F172A; border: 1px solid #CBD5E1; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;"
+                                    style="height: 28px; width: 30px; padding: 0; font-size: 0.74rem; background: #F1F5F9; color: #0F172A; border: 1px solid #CBD5E1; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"
                                     title="View Full Cost Breakdown">
                                     <i class="fa-solid fa-eye" style="color: #0284C7;"></i>
                                 </button>
@@ -532,7 +532,7 @@
                                 <!-- ENTER / EDIT COSTS BUTTON -->
                                 <button type="button"
                                     onclick="openCostModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:"" }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}')"
-                                    style="font-size: 0.75rem; padding: 0.32rem 0.65rem; {% if job.costing_status == 'FULLY_COSTED' %}background: #059669;{% elif job.costing_status == 'IN_PROGRESS' %}background: #0284C7;{% else %}background: #D97706;{% endif %} color: #FFFFFF; border: none; border-radius: 6px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.28rem;">
+                                    style="height: 28px; min-width: 78px; padding: 0 0.6rem; font-size: 0.74rem; {% if job.costing_status == 'FULLY_COSTED' %}background: #059669;{% elif job.costing_status == 'IN_PROGRESS' %}background: #0284C7;{% else %}background: #D97706;{% endif %} color: #FFFFFF; border: none; border-radius: 6px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.28rem; white-space: nowrap; flex-shrink: 0;">
                                     {% if job.costing_status == 'FULLY_COSTED' %}
                                     <i class="fa-solid fa-pen-to-square"></i> Edit
                                     {% elif job.costing_status == 'IN_PROGRESS' %}
@@ -544,16 +544,15 @@
 
                                 <!-- CLIENT INVOICE ACTION (ACCOUNTANT CAN COMPOSE & PRINT) -->
                                 {% if job.latest_invoice %}
-                                <div style="display: inline-flex; align-items: center; gap: 3px;">
+                                <div style="display: inline-flex; align-items: center; gap: 0.25rem; flex-shrink: 0;">
                                     <a href="{% url 'print_invoice' job.latest_invoice.id %}" target="_blank"
-                                        class="badge-pill"
-                                        style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-size: 0.72rem; padding: 3px 8px; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem;"
+                                        style="height: 28px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; border-radius: 6px; font-size: 0.72rem; padding: 0 0.55rem; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap;"
                                         title="View / Print Invoice {{ job.latest_invoice.invoice_number }}">
                                         <i class="fa-solid fa-file-invoice"></i> {{ job.latest_invoice.invoice_number }}
                                     </a>
                                     <button type="button"
                                         onclick="openInvoiceModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.latest_invoice.amount_clearing_agency_fee|default:0 }}', '{{ job.latest_invoice.amount_shipping_line_do|default:0 }}', '{{ job.latest_invoice.amount_port_charges|default:0 }}', '{{ job.latest_invoice.amount_transport|default:0 }}', '{{ job.latest_invoice.amount_duty_reimbursement|default:0 }}', '{{ job.latest_invoice.amount_sundry_charges|default:0 }}', '{{ job.latest_invoice.notes|default:""|escapejs }}', '{{ job.latest_invoice.invoice_number }}', '{{ job.latest_invoice.issue_date|date:"Y-m-d" }}', '{{ job.latest_invoice.due_date|date:"Y-m-d" }}')"
-                                        style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 4px; padding: 2px 6px; color: #475569; cursor: pointer; font-size: 0.7rem;"
+                                        style="height: 28px; width: 28px; padding: 0; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; color: #475569; cursor: pointer; font-size: 0.7rem; display: inline-flex; align-items: center; justify-content: center;"
                                         title="Customize / Edit Invoice">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
@@ -561,8 +560,7 @@
                                 {% else %}
                                 <button type="button"
                                     onclick="openInvoiceModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.cost_agent_fee|default:350000 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|add:job.cost_handling|default:0 }}', '{{ job.cost_transport|default:0 }}', '0', '{{ job.cost_other|default:0 }}', '', '', '', '')"
-                                    class="badge-pill"
-                                    style="background: #ECFDF5; color: #047857; border: 1px solid #6EE7B7; font-size: 0.72rem; padding: 3px 8px; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem; cursor: pointer;"
+                                    style="height: 28px; background: #ECFDF5; color: #047857; border: 1px solid #6EE7B7; border-radius: 6px; font-size: 0.72rem; padding: 0 0.6rem; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem; cursor: pointer; white-space: nowrap; flex-shrink: 0;"
                                     title="Tengeneza Invoice maalum kwa ajili ya mteja huyu">
                                     <i class="fa-solid fa-file-invoice-dollar"></i> + Invoice
                                 </button>

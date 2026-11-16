@@ -14,7 +14,7 @@
                 </span>
                 <h2 class="page-title" style="margin:0;font-size:1.35rem;">{{ stage_title }}</h2>
                 <span style="background:#EFF6FF;color:#1D4ED8;font-weight:800;font-size:0.78rem;padding:0.2rem 0.65rem;border-radius:999px;border:1px solid #BFDBFE;">
-                    {{ total_count }} Active
+                    {{ active_count }} Active
                 </span>
             </div>
             <p class="page-subtitle" style="margin:0;color:#64748B;font-size:0.88rem;">
@@ -71,11 +71,11 @@
             <table class="modern-table" style="width:100%;border-collapse:collapse;">
                 <thead>
                     <tr style="background:#F1F5F9;border-bottom:2px solid #CBD5E1;font-size:0.74rem;color:#475569;text-transform:uppercase;letter-spacing:0.04em;text-align:left;">
-                        <th style="padding:0.75rem 1rem;min-width:180px;">File No &amp; BL</th>
-                        <th style="padding:0.75rem 1rem;min-width:200px;">Client &amp; Contact</th>
-                        <th style="padding:0.75rem 1rem;min-width:220px;">Vehicle &amp; Chassis</th>
-                        <th style="padding:0.75rem 1rem;min-width:150px;">Status &amp; Time</th>
-                        <th style="padding:0.75rem 1rem;min-width:240px;text-align:right;">Action (1-Click Finish)</th>
+                        <th>File No &amp; BL</th>
+                        <th>Client &amp; Contact</th>
+                        <th>Vehicle &amp; Chassis</th>
+                        <th>Status &amp; Time</th>
+                        <th style="text-align:right;">Action (1-Click Finish)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -119,11 +119,17 @@
 
                         <!-- 4. STATUS & TIME -->
                         <td style="padding:0.85rem 1rem;vertical-align:middle;">
+                            {% if job.stage_completed %}
+                            <span style="display:inline-block;font-size:0.72rem;font-weight:800;padding:0.15rem 0.55rem;border-radius:999px;background:#DCFCE7;color:#166534;">
+                                ✓ COMPLETED
+                            </span>
+                            {% else %}
                             <span style="display:inline-block;font-size:0.72rem;font-weight:800;padding:0.15rem 0.5rem;border-radius:999px;
                                 {% if job.status == 'DELAYED' %}background:#FEE2E2;color:#B91C1C;
                                 {% else %}background:#DCFCE7;color:#15803D;{% endif %}">
                                 {% if job.status == 'DELAYED' %}● DELAYED{% else %}● ON TRACK{% endif %}
                             </span>
+                            {% endif %}
                             <div style="font-size:0.72rem;color:#64748B;margin-top:0.25rem;" title="Entered stage">
                                 <i class="fa-regular fa-clock" style="font-size:0.68rem;"></i> {{ job.updated_at|default:job.created_at|timesince }} ago
                             </div>
@@ -132,12 +138,18 @@
                         <!-- 5. 1-CLICK ACTION BUTTON -->
                         <td style="padding:0.85rem 1rem;vertical-align:middle;text-align:right;white-space:nowrap;">
                             <div style="display:inline-flex;align-items:center;gap:0.45rem;">
+                                {% if job.stage_completed %}
+                                <span style="background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;font-weight:800;padding:0.4rem 0.85rem;border-radius:8px;font-size:0.78rem;display:inline-flex;align-items:center;gap:0.35rem;">
+                                    <i class="fa-solid fa-circle-check"></i> Completed
+                                </span>
+                                {% else %}
                                 <form action="{% url 'advance_stage' job.id %}" method="POST" style="display:inline;" onsubmit="return confirm('{{ confirm_msg }}');">
                                     {% csrf_token %}
                                     <button type="submit" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:0.45rem 0.95rem;border-radius:8px;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;box-shadow:0 2px 5px rgba(22,163,74,0.35);transition:all 0.15s;">
                                         <i class="fa-solid fa-circle-check"></i> {{ finish_label }}
                                     </button>
                                 </form>
+                                {% endif %}
                                 <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.45rem 0.75rem;font-size:0.8rem;font-weight:700;">
                                     File &rarr;
                                 </a>
