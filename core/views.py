@@ -22991,66 +22991,9 @@ STRICT RULES:
 
 
 
-        elif any(w in msg_lower for w in ['bond', 'inbond', 'in-bond', 'yadi', 'yard', 'hifadhi', 'storage', 'demurrage', 'faini']):
-
-
-
-            reply = (
-
-
-
-                "Kuhusu **Yadi ya In-Bond ya Malkia**:\n\n"
-
-
-
-                "Yadi yetu ya In-Bond ni suluhisho kubwa kwa waagizaji wa magari:\n"
-
-
-
-                "• **Hakuna Faini za Bandari (Zero Demurrage):** Tunahamisha gari lako kutoka bandarini na kuliweka kwenye yadi yetu chini ya dhamana ya forodha (customs bond).\n"
-
-
-
-                "• **Lipa Kodi Ukiwa Tayari:** Huna haja ya kuwa na hela yote ya kodi mara moja. Gari linakaa salama hadi utakapokuwa tayari kulipa TRA na kusajili.\n"
-
-
-
-                "• **Ulinzi wa 24/7:** Yadi yetu ina walinzi na kamera za CCTV masaa 24, na betri ya gari lako hutunzwa vizuri."
-
-
-
-            )
-
-
-
         elif any(w in msg_lower for w in ['usalama', 'safety', 'betri', 'battery', 'radio', 'redio', 'wizi', 'theft', 'taili', 'spare']):
-
-
-
             reply = (
-
-
-
-                "Kuhusu **Usalama wa Vifaa na Vipuri vya Gari Lako**:\n\n"
-
-
-
-                "Katika **Malkia Cargo Wave Limited**, tuna dhamana ya 100% ya usalama:\n"
-
-
-
-                "• Mara tu gari linaposhushwa toka melini (RORO), maafisa wetu hufanya ukaguzi mkali wa kina (Physical Verification).\n"
-
-
-
-                "• Tunakagua na kuweka rekodi ya: **Redio, Betri, Taili ya Akiba, Vioo vya pembeni (Side Mirrors), na vifaa vya kubadilishia taili**.\n"
-
-
-
-                "• Gari linafungwa muhuri na kusimamiwa hadi linapoingia kwenye yadi yetu au kukabidhiwa mikononi mwako. Hakuna kilio cha vifaa kuibiwa!"
-
-
-
+                "Katika **Malkia Cargo Wave Limited**, tunakagua na kutunza mizigo na magari yote kwa umakini wa hali ya juu kuanzia bandarini hadi kukabidhiwa mikononi mwako."
             )
 
 
@@ -23116,45 +23059,9 @@ STRICT RULES:
 
 
         else:
-
-
-
             reply = (
-
-
-
-                "Asante kwa kuwasiliana na Malkia Cargo Wave Limited! 👋\n\n"
-
-
-
-                "Sisi ni wataalamu wa kutoa magari bandarini Dar es Salaam, kuhifadhi magari kwenye Yadi ya In-Bond bila faini za bandari, na kusafirisha magari mikoani.\n\n"
-
-
-
-                "Je, una swali kuhusu:\n"
-
-
-
-                "1. Kodi na makadirio ya TRA?\n"
-
-
-
-                "2. Yadi yetu ya In-Bond?\n"
-
-
-
-                "3. Usalama wa vifaa vya gari lako?\n"
-
-
-
-                "4. Kufuatilia gari lako bandarini?\n\n"
-
-
-
-                "Tafadhali niambie au piga/WhatsApp **+255 787 367 474**!"
-
-
-
+                "Karibu **Malkia Cargo Wave Limited**! Tunashughulikia utoaji wa mizigo na magari bandarini Dar es Salaam. "
+                "Tuambie unahitaji msaada gani leo au wasiliana nasi kwa WhatsApp **+255 787 367 474**."
             )
 
 
