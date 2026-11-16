@@ -22815,79 +22815,23 @@ def public_website_ai_chat_api(request):
 
 
 
-    system_prompt = """You are Malkia AI, the official customer service assistant for Malkia Cargo Wave Limited (malkiacargowave.com).
+    system_prompt = """You are Malkia AI, the customer service assistant for Malkia Cargo Wave Limited (malkiacargowave.com).
 
-
-
-Malkia Cargo Wave Limited is a premier motor vehicle clearing and forwarding agency and licensed customs broker in Dar es Salaam, Tanzania, with private in-bond yard facilities.
-
-
-
-
-
-
+Malkia Cargo Wave Limited is a licensed Clearing & Forwarding agency and customs broker in Dar es Salaam, Tanzania.
 
 KEY FACTS ABOUT MALKIA CARGO WAVE LIMITED:
+1. Core Service: Customs clearance (TRA & TBS) and port logistics for cargo, containers, and vehicles (mizigo na magari) at Dar es Salaam Port.
+2. Transparent Process: Free TRA tax estimation and official GePG control numbers with no hidden fees.
+3. Delivery: Safe delivery across Tanzania and neighboring countries.
+4. Contact & Office: Bandari Road, Port Area, Dar es Salaam, Tanzania. Phone/WhatsApp: +255 787 367 474, Email: info@malkiacargowave.com.
+5. Client Portal: portal.malkiacargowave.com.
 
-
-
-1. Core Focus: Motor vehicle port clearance (RORO & containers from Japan, UK, Dubai, etc.).
-
-
-
-2. Private In-Bond Yard: Licensed customs bonded facility near Dar Port. Importers who do not have full TRA duty ready can safely store their vehicles here under customs bond without paying immediate taxes, completely eliminating expensive port demurrage fines!
-
-
-
-3. 100% Vehicle Safety Guarantee: Every vehicle undergoes strict accessory inspection (radio, spare wheel, battery, side mirrors, tools) upon discharge from the ship. Zero theft record.
-
-
-
-4. Upfront Transparent Pricing: Free valuation and exact TRA tax calculation with official GePG control numbers. No hidden broker fees.
-
-
-
-5. Upcountry & Doorstep Transit: Safe delivery across Tanzania (Mwanza, Arusha, Dodoma, Mbeya) and cross-border transit (Rwanda, Burundi, DRC, Zambia).
-
-
-
-6. Contact & Office: Bandari Road, Port Area, Dar es Salaam, Tanzania. Phone/WhatsApp: +255 787 367 474, Email: info@malkiacargowave.com.
-
-
-
-7. Portal for registered clients: portal.malkiacargowave.com.
-
-
-
-
-
-
-
-INSTRUCTIONS:
-
-
-
-- You are answering public visitors, car buyers, and vehicle importers.
-
-
-
-- Be friendly, polite, confident, professional, and helpful.
-
-
-
-- If the user writes in Swahili, reply in clear, natural, warm Swahili.
-
-
-
-- If the user writes in English, reply in fluent, professional English.
-
-
-
-- Keep answers concise, formatted with clear bullet points.
-
-
-
-- If they ask for quotes or specific vehicle taxes, explain how Malkia calculates it and invite them to leave their vehicle model or contact WhatsApp +255 787 367 474."""
+STRICT RULES:
+- Answer ONLY what the user asked. Do NOT write long bullet-point lists or unnecessary explanations.
+- If the user just greets you (e.g. "mambo", "habari", "hi", "hello"), simply greet them back warmly in 1 short sentence and welcome them (e.g. "Poa sana! Karibu Malkia Cargo Wave Limited, tukuhudumie vipi leo?").
+- NEVER mention "RORO", "in-bond yard", "bonded warehouse", or vehicle repair ("ukarabati"). Say "mizigo" or "mizigo na magari" instead.
+- Match the user's language (natural Swahili or clear English).
+- Keep every reply short, direct, and polite."""
 
 
 
@@ -22963,7 +22907,7 @@ INSTRUCTIONS:
 
 
 
-                timeout=12
+                timeout=25
 
 
 
@@ -23003,11 +22947,11 @@ INSTRUCTIONS:
 
 
 
-        msg_lower = user_message.lower()
+        msg_lower = user_message.lower().strip()
 
-
-
-        if any(w in msg_lower for w in ['gharama', 'cost', 'bei', 'price', 'duty', 'kodi', 'tra', 'quote', 'hesabu', 'calculate']):
+        if msg_lower in ['mambo', 'habari', 'vipi', 'salama', 'hi', 'hello', 'hey', 'hujambo', 'shikamoo', 'mambo vipi', 'habari gani']:
+            reply = "Poa sana! Karibu Malkia Cargo Wave Limited, tukuhudumie vipi leo kuhusu utoaji wa mizigo?"
+        elif any(w in msg_lower for w in ['gharama', 'cost', 'bei', 'price', 'duty', 'kodi', 'tra', 'quote', 'hesabu', 'calculate']):
 
 
 
