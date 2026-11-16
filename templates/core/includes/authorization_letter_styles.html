@@ -1,0 +1,249 @@
+* { box-sizing: border-box; }
+
+@page {
+    size: A4 portrait;
+    margin: 0;
+}
+
+body {
+    font-family: 'Times New Roman', Times, Georgia, serif;
+    background: #E2E8F0;
+    color: #000000;
+    margin: 0;
+    padding: 1.5rem 1rem 3rem 1rem;
+    line-height: 1.5;
+}
+
+.toolbar {
+    max-width: 210mm;
+    margin: 0 auto 1.25rem auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0F172A;
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    border-radius: 10px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    position: sticky;
+    top: 0.75rem;
+    z-index: 100;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-back { background: #334155; color: #fff; }
+.btn-back:hover { background: #475569; }
+.btn-print { background: #059669; color: #fff; font-size: 0.9rem; }
+.btn-print:hover { background: #047857; }
+.btn-sub { background: #1E293B; border: 1px solid #475569; color: #E2E8F0; font-size: 0.78rem; padding: 0.45rem 0.8rem; }
+.btn-sub:hover { background: #334155; color: #fff; }
+
+.page {
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto 2rem auto;
+    background: #FFFFFF;
+    padding: 18mm 22mm 16mm 22mm;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.page:last-child {
+    margin-bottom: 0;
+    page-break-after: auto;
+    break-after: auto;
+}
+
+.page-badge {
+    position: absolute;
+    top: 6mm;
+    left: 22mm;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.header-section {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    min-height: 70px;
+}
+
+.header-logo-box {
+    text-align: right;
+}
+
+.customer-logo {
+    max-height: 58px;
+    max-width: 120px;
+    display: block;
+    margin-left: auto;
+    margin-bottom: 0.85rem;
+    object-fit: contain;
+}
+
+.letter-date {
+    font-size: 11.5pt;
+    color: #000000;
+    font-weight: 700;
+}
+
+.recipient-box {
+    margin-top: 1.25rem;
+    margin-bottom: 1.75rem;
+    font-size: 11.5pt;
+    font-weight: 700;
+    color: #000000;
+    line-height: 1.6;
+}
+
+.salutation {
+    font-size: 11.5pt;
+    color: #000000;
+    margin-bottom: 0.75rem;
+}
+
+.subject-box {
+    text-align: center;
+    margin: 0.75rem 0 1.5rem 0;
+}
+
+.subject-title {
+    display: inline-block;
+    font-size: 12pt;
+    font-weight: 700;
+    color: #000000;
+    letter-spacing: 0.02em;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.letter-body {
+    font-size: 11.5pt;
+    color: #000000;
+    line-height: 1.65;
+    margin-bottom: 1.5rem;
+}
+
+.letter-body p {
+    margin: 0 0 1rem 0;
+}
+
+.signoff-section {
+    position: relative;
+    margin-top: 1.25rem;
+}
+
+.yours-faithfully {
+    font-size: 11.5pt;
+    color: #000000;
+}
+
+.stamp-sign-area {
+    position: relative;
+    min-height: 48px;
+    padding-top: 42px;
+    margin: 0.2rem 0 0.35rem 0;
+}
+
+.signature-line {
+    width: 220px;
+    border-bottom: 1.5px dotted #000000;
+}
+
+.digital-signature {
+    position: absolute;
+    left: 10px;
+    bottom: 4px;
+    max-height: 44px;
+    max-width: 150px;
+    display: block;
+    object-fit: contain;
+}
+
+.digital-stamp {
+    position: absolute;
+    left: 20px;
+    top: -14px;
+    max-height: 82px;
+    max-width: 82px;
+    opacity: 0.88;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.company-signee-name {
+    font-size: 11.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #000000;
+    position: relative;
+    z-index: 1;
+}
+
+.letterhead-footer-bar {
+    background: #F4D03F;
+    color: #1F4E5F;
+    font-family: 'Times New Roman', Times, Georgia, serif;
+    font-size: 10pt;
+    line-height: 1.35;
+    text-align: center;
+    padding: 0.45rem 1rem;
+    font-weight: 500;
+    margin-top: auto;
+}
+
+@media print {
+    html, body {
+        background: #FFFFFF !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 210mm !important;
+    }
+    .toolbar,
+    .page-badge {
+        display: none !important;
+    }
+    .page {
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        padding: 18mm 22mm 16mm 22mm !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    .letterhead-footer-bar {
+        background: #F4D03F !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}

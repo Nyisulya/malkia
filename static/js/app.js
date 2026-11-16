@@ -415,6 +415,7 @@ function setupGlobalFormInterceptor() {
     }, true);
 
     document.addEventListener('submit', async (e) => {
+        if (e.defaultPrevented) return;
         const form = e.target;
         if (!form || form.tagName !== 'FORM') return;
 

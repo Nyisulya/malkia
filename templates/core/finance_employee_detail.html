@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
-{% block title %}{{ employee.full_name }} — Employee Profile | Malkia C&amp;F{% endblock %}
+{% block title %}{% if employee %}{{ employee.full_name }} — Salary &amp; Profile{% else %}My Salary{% endif %} | Malkia C&amp;F{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -31,13 +31,35 @@
 <div style="max-width:1160px;margin:0 auto;padding-bottom:3rem;">
 
     <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;font-size:0.82rem;">
+        {% if is_self_salary_view %}
+        <a href="{% url 'my_profile' %}" style="color:#64748B;text-decoration:none;font-weight:700;">
+            <i class="fa-solid fa-arrow-left"></i> My Profile
+        </a>
+        <span style="color:#CBD5E1;">/</span>
+        <span style="color:#0F172A;font-weight:800;">My Salary &amp; Payslips</span>
+        {% else %}
         <a href="{% url 'employees' %}" style="color:#64748B;text-decoration:none;font-weight:700;">
             <i class="fa-solid fa-arrow-left"></i> Employee Registry
         </a>
         <span style="color:#CBD5E1;">/</span>
         <span style="color:#0F172A;font-weight:800;">{{ employee.full_name }}</span>
+        {% endif %}
     </div>
 
+    {% if not employee %}
+    <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;padding:3rem 2rem;text-align:center;box-shadow:0 2px 8px rgba(15,23,42,0.04);">
+        <div style="width:56px;height:56px;border-radius:50%;background:#FEF3C7;color:#D97706;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:1rem;">
+            <i class="fa-solid fa-link-slash"></i>
+        </div>
+        <h3 style="margin:0 0 0.5rem 0;font-size:1.15rem;font-weight:800;color:#0F172A;">Payroll Record Not Linked Yet</h3>
+        <p style="margin:0 auto 1.5rem auto;max-width:480px;font-size:0.88rem;color:#64748B;line-height:1.55;">
+            Your account (<strong>{{ request.user.get_full_name|default:request.user.username }}</strong>) has not been linked to an employee payroll record yet. Please ask Finance or Admin to link your account under <strong>Employees &rarr; Edit Employee</strong>.
+        </p>
+        <a href="{% url 'my_profile' %}" class="btn-header-action btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+            <i class="fa-solid fa-arrow-left"></i> Back to My Profile
+        </a>
+    </div>
+    {% else %}
     <!-- PROFILE HEADER -->
     <div class="page-header-box">
         <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
@@ -57,6 +79,7 @@
                 </div>
             </div>
         </div>
+        {% if not is_self_salary_view %}
         <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
             <a href="{% url 'payroll' %}?month={{ today|date:'Y-m' }}" class="btn-header-action btn-outline">
                 <i class="fa-solid fa-money-check-dollar"></i> Payroll
@@ -65,6 +88,7 @@
                 <i class="fa-solid fa-pen"></i> Edit Employee
             </a>
         </div>
+        {% endif %}
     </div>
 
     <!-- KPI -->
@@ -163,6 +187,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 
 <style>

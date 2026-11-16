@@ -119,7 +119,8 @@
             </div>
             <h2 class="page-title"
                 style="font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fa-solid fa-table-list" style="color: #059669;"></i> VEHICLES OUT {{ selected_year|upper }}
+                <i class="fa-solid fa-table-list" style="color: #059669;"></i>
+                {% if ledger_tab == 'containers' %}CONTAINERS OUT{% else %}VEHICLES OUT{% endif %} {{ selected_year|upper }}
             </h2>
             <p class="page-subtitle" style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.25rem;">
                 Direct disbursements, clearance costs, and agency fees master ledger.
@@ -128,8 +129,19 @@
 
         <!-- ACTION BUTTONS -->
         <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
+            <div style="display: inline-flex; background: #E2E8F0; padding: 3px; border-radius: 10px; gap: 3px;">
+                <a href="?tab=vehicles&year={{ selected_year }}"
+                    style="padding: 0.42rem 0.9rem; border-radius: 8px; font-size: 0.8rem; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; {% if ledger_tab != 'containers' %}background: #0F172A; color: #FFFFFF;{% else %}color: #475569;{% endif %}">
+                    <i class="fa-solid fa-car"></i> Vehicles Out
+                </a>
+                <a href="?tab=containers&year={{ selected_year }}"
+                    style="padding: 0.42rem 0.9rem; border-radius: 8px; font-size: 0.8rem; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; {% if ledger_tab == 'containers' %}background: #0F172A; color: #FFFFFF;{% else %}color: #475569;{% endif %}">
+                    <i class="fa-solid fa-boxes-stacked"></i> Containers Out
+                </a>
+            </div>
+
             <!-- EXPORT TO EXCEL BUTTON -->
-            <a href="{% url 'finance_vehicles_out_export' %}?{% if date_from and date_to %}date_from={{ date_from }}&date_to={{ date_to }}{% else %}year={{ selected_year }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}"
+            <a href="{% url 'finance_vehicles_out_export' %}?tab={{ ledger_tab }}&{% if date_from and date_to %}date_from={{ date_from }}&date_to={{ date_to }}{% else %}year={{ selected_year }}{% endif %}{% if search_q %}&q={{ search_q }}{% endif %}"
                 class="btn-header-action"
                 style="background: #059669; color: #FFFFFF; font-weight: 800; border: none; padding: 0.55rem 1.15rem; border-radius: 10px; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.25);">
                 <i class="fa-solid fa-file-excel" style="font-size: 1.05rem;"></i> Export to Excel (.xlsx)
@@ -171,13 +183,14 @@
         </div>
         
         <div style="font-size: 0.78rem; color: #64748B; font-weight: 600;">
-            Showing <strong style="color: #0F172A;">{{ jobs|length }}</strong> vehicle{{ jobs|length|pluralize }}
+            Showing <strong style="color: #0F172A;">{{ jobs|length }}</strong> {% if ledger_tab == 'containers' %}container{{ jobs|length|pluralize }}{% else %}vehicle{{ jobs|length|pluralize }}{% endif %}
         </div>
     </div>
 
     <!-- FILTER & SEARCH BAR -->
     <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 0.85rem 1.15rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
         <form method="GET" action="{% url 'finance_vehicles_out' %}" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem;">
+            <input type="hidden" name="tab" value="{{ ledger_tab|default:'vehicles' }}">
             <input type="hidden" name="status" value="{{ selected_status|default:'all' }}">
             <!-- YEAR PRESETS & CUSTOM RANGE -->
             <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
@@ -221,7 +234,7 @@
                 <div style="position: relative;">
                     <i class="fa-solid fa-magnifying-glass"
                         style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 0.85rem;"></i>
-                    <input type="text" name="q" value="{{ search_q }}" placeholder="Search Ref, Chassis, Make, Client..."
+                    <input type="text" name="q" value="{{ search_q }}" placeholder="{% if ledger_tab == 'containers' %}Search Container No, Item, BL, Client...{% else %}Search Ref, Chassis, Make, Client...{% endif %}"
                         class="form-control"
                         style="height: 34px; padding-left: 2rem; font-size: 0.82rem; width: 250px; border-radius: 8px;">
                 </div>
@@ -246,13 +259,18 @@
             <table class="vehicles-ledger-table" style="width: 100%;">
                 <thead>
                     <tr>
-                        <th style="width: 105px;">DATE IN</th>
-                        <th style="width: 140px;">JOB NO</th>
-                        <th style="width: 150px;">BL NO</th>
-                        <th style="width: 175px; text-align: right;">OFFICE DISBURSEMENTS (TSH)</th>
-                        <th style="width: 150px; text-align: right; background: #064E3B; color: #A7F3D0;">AGENT FEE</th>
-                        <th style="width: 110px; text-align: center;">STATUS</th>
-                        <th style="width: 220px; text-align: center;">ACTIONS</th>
+                        <th>DATE IN</th>
+                        {% if ledger_tab == 'containers' %}
+                        <th>CONTAINER NO</th>
+                        <th>ITEM / BL NO</th>
+                        {% else %}
+                        <th>JOB NO</th>
+                        <th>BL NO</th>
+                        {% endif %}
+                        <th style="text-align: right;">OFFICE DISBURSEMENTS (TSH)</th>
+                        <th style="text-align: right; background: #064E3B; color: #A7F3D0;">AGENCY FEE</th>
+                        <th style="text-align: center;">STATUS</th>
+                        <th style="text-align: center;">ACTIONS</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -261,6 +279,22 @@
                         <td class="text-center-col" style="color: #64748B; font-weight: 600; font-size: 0.8rem;">
                             {{ job.created_at|date:"d.m.Y" }}
                         </td>
+                        {% if ledger_tab == 'containers' %}
+                        <td class="text-center-col" title="Job: {{ job.job_number }} | Client: {{ job.customer.company_name|default:'—' }}">
+                            <span style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A; font-size: 0.82rem; background: #FEF3C7; padding: 2px 7px; border-radius: 5px; border: 1px solid #FDE68A;">
+                                {{ job.container_numbers|default:job.job_number }}
+                            </span>
+                            <span style="font-size: 0.7rem; font-weight: 800; color: #475569; margin-left: 3px;">&times;{{ job.container_qty|default:1 }}</span>
+                        </td>
+                        <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis;" title="{{ job.cargo_description }} | BL: {{ job.bl_number }}">
+                            <div style="font-weight: 800; color: #0F172A; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ job.cargo_description|default:"Containerized Cargo" }}
+                            </div>
+                            <div style="font-family: var(--font-mono, monospace); font-size: 0.72rem; font-weight: 700; color: #0284C7;">
+                                BL: {{ job.bl_number|default:"—" }}
+                            </div>
+                        </td>
+                        {% else %}
                         <td class="text-center-col" title="{{ job.vehicle_make }} {{ job.vehicle_model }} ({{ job.registration_year|default:'—' }})">
                             <span style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A; font-size: 0.84rem; background: #F8FAFC; padding: 2px 6px; border-radius: 4px; border: 1px solid #E2E8F0;">
                                 {{ job.job_number }}
@@ -271,6 +305,7 @@
                                 {{ job.bl_number|default:"—" }}
                             </span>
                         </td>
+                        {% endif %}
                         <td class="num-col" style="font-weight: 800; color: #DC2626; font-size: 0.9rem;">
                             {{ job.total_direct_costs|floatformat:2|intcomma }}
                         </td>
@@ -299,14 +334,14 @@
                             <div style="display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; flex-wrap: nowrap;">
                                 <!-- VIEW EYE BUTTON -->
                                 <button type="button" 
-                                    onclick="openBreakdownModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{% if job.costing_status == "FULLY_COSTED" %}Costed{% elif job.costing_status == "IN_PROGRESS" %}In Progress{% else %}Pending{% endif %}', '', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}')"
+                                    onclick="openBreakdownModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:job.cargo_description|default:""|escapejs }}', '{{ job.vehicle_model|default:""|escapejs }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:job.container_numbers|default:""|escapejs }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{% if job.costing_status == "FULLY_COSTED" %}Costed{% elif job.costing_status == "IN_PROGRESS" %}In Progress{% else %}Pending{% endif %}', '', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}', '{{ job.cost_container_deposit|default:0 }}', '{{ job.cost_shipping_fee|default:0 }}', '{{ job.cost_demurrage|default:0 }}', '{{ job.cost_storage|default:0 }}')"
                                     class="btn-header-action" style="font-size: 0.75rem; padding: 0.32rem 0.55rem; background: #F1F5F9; color: #0F172A; border: 1px solid #CBD5E1; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;" title="View Full Cost Breakdown">
                                     <i class="fa-solid fa-eye" style="color: #0284C7;"></i>
                                 </button>
 
                                 <!-- ENTER / EDIT COSTS BUTTON -->
                                 <button type="button" class="btn-header-action"
-                                    onclick="openCostModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:"" }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}')"
+                                    onclick="openCostModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:job.cargo_description|default:""|escapejs }}', '{{ job.vehicle_model|default:""|escapejs }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:job.container_numbers|default:""|escapejs }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}', '{{ job.cost_container_deposit|default:0 }}', '{{ job.cost_shipping_fee|default:0 }}', '{{ job.cost_demurrage|default:0 }}', '{{ job.cost_storage|default:0 }}')"
                                     style="font-size: 0.75rem; padding: 0.32rem 0.65rem; {% if job.costing_status == 'FULLY_COSTED' %}background: #059669;{% elif job.costing_status == 'IN_PROGRESS' %}background: #0284C7;{% else %}background: #D97706;{% endif %} color: #FFFFFF; border: none; border-radius: 6px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.28rem;">
                                     {% if job.costing_status == 'FULLY_COSTED' %}
                                     <i class="fa-solid fa-pen-to-square"></i> Edit
@@ -594,6 +629,36 @@
                             class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
                             style="font-weight: 700; height: 38px;">
                     </div>
+
+                    {% if ledger_tab == 'containers' %}
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">10. Container Deposit TSh</label>
+                        <input type="number" step="0.01" name="cost_container_deposit" id="f_container_deposit"
+                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 700; height: 38px;">
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">11. Shipping Fee TSh</label>
+                        <input type="number" step="0.01" name="cost_shipping_fee" id="f_shipping_fee"
+                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 700; height: 38px;">
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">12. Demurrage Charges TSh</label>
+                        <input type="number" step="0.01" name="cost_demurrage" id="f_demurrage"
+                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 700; height: 38px;">
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">13. Storage Charges TSh</label>
+                        <input type="number" step="0.01" name="cost_storage" id="f_storage"
+                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 700; height: 38px;">
+                    </div>
+                    {% endif %}
 
                 </div>
 
@@ -955,9 +1020,9 @@
     // ==========================================
     // VIEW BREAKDOWN MODAL
     // ==========================================
-    function openBreakdownModal(jobId, blNumber, make, model, year, chassis, clientName, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, statusText, statusBadgeClass, blUrl, invUrl) {
-        document.getElementById('bdVehicleTitle').innerText = `${make} ${model} (${year || 'Year —'})`;
-        document.getElementById('bdChassisRef').innerText = `BL: ${blNumber} • Chassis: ${chassis || '—'}`;
+    function openBreakdownModal(jobId, blNumber, make, model, year, chassis, clientName, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, statusText, statusBadgeClass, blUrl, invUrl, containerDeposit = 0, shippingFee = 0, demurrage = 0, storage = 0) {
+        document.getElementById('bdVehicleTitle').innerText = `${make} ${model} ${year ? '(' + year + ')' : ''}`.trim();
+        document.getElementById('bdChassisRef').innerText = `BL: ${blNumber} • Ref: ${chassis || '—'}`;
         document.getElementById('bdInvoiceVal').innerText = parseFloat(cifUsd || 0) > 0 ? `$${parseFloat(cifUsd).toLocaleString('en-US', {minimumFractionDigits: 2})}` : '—';
         
         const fmt = n => parseFloat(n || 0).toLocaleString('en-US', {minimumFractionDigits: 2});
@@ -979,6 +1044,10 @@
             { name: '6. Transport', amount: trans },
             { name: '7. Fuel (Mafuta)', amount: fuel },
             { name: '8. Ferry Charges', amount: ferry },
+            ...(parseFloat(containerDeposit || 0) > 0 ? [{ name: 'Container Deposit', amount: containerDeposit }] : []),
+            ...(parseFloat(shippingFee || 0) > 0 ? [{ name: 'Shipping Fee', amount: shippingFee }] : []),
+            ...(parseFloat(demurrage || 0) > 0 ? [{ name: 'Demurrage Charges', amount: demurrage }] : []),
+            ...(parseFloat(storage || 0) > 0 ? [{ name: 'Storage Charges', amount: storage }] : []),
         ];
 
         let rowsHtml = '';
@@ -1072,9 +1141,9 @@
     // ==========================================
     // COSTING ENTRY MODAL (WITH DYNAMIC ROWS)
     // ==========================================
-    function openCostModal(jobId, blNumber, make, model, year, chassis, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, blUrl, invUrl) {
-        document.getElementById('modalVehicleTitle').innerText = `${make} ${model} (${year || 'Year —'})`;
-        document.getElementById('modalChassisRef').innerText = `BL: ${blNumber} | Chassis: ${chassis}`;
+    function openCostModal(jobId, blNumber, make, model, year, chassis, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, blUrl, invUrl, containerDeposit = 0, shippingFee = 0, demurrage = 0, storage = 0) {
+        document.getElementById('modalVehicleTitle').innerText = `${make} ${model} ${year ? '(' + year + ')' : ''}`.trim();
+        document.getElementById('modalChassisRef').innerText = `BL: ${blNumber} | Ref: ${chassis || '—'}`;
         document.getElementById('modalInvoiceVal').innerText = `$${parseFloat(cifUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
         // Document links
@@ -1098,6 +1167,10 @@
         document.getElementById('f_agent_fee').value = agentFee > 0 ? agentFee : '';
         document.getElementById('f_fuel').value = fuel > 0 ? fuel : '';
         document.getElementById('f_ferry').value = ferry > 0 ? ferry : '';
+        if (document.getElementById('f_container_deposit')) document.getElementById('f_container_deposit').value = containerDeposit > 0 ? containerDeposit : '';
+        if (document.getElementById('f_shipping_fee')) document.getElementById('f_shipping_fee').value = shippingFee > 0 ? shippingFee : '';
+        if (document.getElementById('f_demurrage')) document.getElementById('f_demurrage').value = demurrage > 0 ? demurrage : '';
+        if (document.getElementById('f_storage')) document.getElementById('f_storage').value = storage > 0 ? storage : '';
 
         // Unpack dynamic extra costs
         const extraList = document.getElementById('extraCostsList');
@@ -1132,7 +1205,7 @@
         const val = id => parseFloat(document.getElementById(id)?.value || 0) || 0;
 
         // Direct costs: 1 to 9 + extra costs
-        const directCosts = val('f_do') + val('f_wharfage') + val('f_tiss') + val('f_handling') + val('f_facil') + val('f_transport') + val('f_fuel') + val('f_ferry') + val('f_other');
+        const directCosts = val('f_do') + val('f_wharfage') + val('f_tiss') + val('f_handling') + val('f_facil') + val('f_transport') + val('f_fuel') + val('f_ferry') + val('f_container_deposit') + val('f_shipping_fee') + val('f_demurrage') + val('f_storage') + val('f_other');
         const agentFee = val('f_agent_fee');
         const grandTotal = directCosts + agentFee;
 

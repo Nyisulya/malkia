@@ -1,0 +1,71 @@
+<div class="page">
+    {% if page_badge %}
+        <span class="page-badge">{{ page_badge }}</span>
+    {% endif %}
+
+    <div>
+        <div class="header-section">
+            <div class="header-logo-box">
+                {% if job.customer.logo_image %}
+                    <img src="{{ job.customer.logo_image.url }}" alt="{{ job.customer.company_name }}" class="customer-logo">
+                {% endif %}
+                <div class="letter-date">{{ today|date:"d/m/Y" }}</div>
+            </div>
+        </div>
+
+        <div class="recipient-box">
+            {% if letter_type == "TBS" %}
+                DIRECTOR GENERAL,<br>
+                TANZANIA BUREAU OF STANDARDS,<br>
+                P.O.BOX 9524,<br>
+                DAR ES SALAAM,<br>
+                TANZANIA.
+            {% else %}
+                TANZANIA REVENUE AUTHORITY,<br>
+                CUSTOMS AND EXCISE DEPARTMENT,<br>
+                P.O.BOX 9053,<br>
+                DAR ES SALAAM,<br>
+                TANZANIA.
+            {% endif %}
+        </div>
+
+        <div class="salutation">Dear Sir/Madam:</div>
+
+        <div class="subject-box">
+            <div class="subject-title">RE: AUTHORIZATION LETTER</div>
+        </div>
+
+        <div class="letter-body">
+            <p>Transportation Documents(s) Bill of lading <strong>{{ job.bl_number|default:job.job_number }}</strong></p>
+            <p>I authorized <strong>MALKIA CARGO WAVE LIMITED</strong> to clear above-mentioned goods on our behalf.</p>
+            <p>Please assist them accordingly.</p>
+        </div>
+
+        <div class="signoff-section">
+            <div class="yours-faithfully">Yours faithfully</div>
+
+            <div class="stamp-sign-area">
+                {% if job.customer.signature_image %}
+                    <img src="{{ job.customer.signature_image.url }}" alt="Signature" class="digital-signature">
+                {% endif %}
+                {% if job.customer.stamp_image %}
+                    <img src="{{ job.customer.stamp_image.url }}" alt="Stamp" class="digital-stamp">
+                {% endif %}
+                <div class="signature-line"></div>
+            </div>
+
+            <div class="company-signee-name">{{ job.customer.company_name|upper }}</div>
+        </div>
+    </div>
+
+    <div class="letterhead-footer-bar">
+        <div>
+            {{ job.customer.company_name }}{% if job.customer.physical_address %}, {{ job.customer.physical_address }}{% endif %}
+        </div>
+        {% if job.customer.email %}
+            <div>Email: {{ job.customer.email }}</div>
+        {% elif job.customer.phone %}
+            <div>Tel: {{ job.customer.phone }}</div>
+        {% endif %}
+    </div>
+</div>

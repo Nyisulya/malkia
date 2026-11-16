@@ -5,6 +5,7 @@
 {% block content %}
 <!-- Include html2canvas for instant high-definition PNG badge download -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <!-- BREADCRUMB & ACTION BAR -->
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.75rem;">
@@ -61,8 +62,8 @@
                     <!-- Top Lanyard & Header Ribbon -->
                     <div class="idcard-header-front" style="background:linear-gradient(135deg, #07132B 0%, #0F2552 40%, #1D4ED8 85%, #3B82F6 100%) !important;">
                         <div class="idcard-lanyard-slot" title="Lanyard Slot"></div>
-                        <div class="idcard-brand-logo" style="display:flex;align-items:center;justify-content:center;gap:0.4rem;">
-                            <img src="/static/images/malkia_logo_white.png" alt="MCW" style="height:22px;width:auto;border-radius:4px;background:#fff;padding:1px 3px;">
+                        <div class="idcard-brand-logo" style="display:flex;align-items:center;justify-content:center;gap:0.4rem;font-size:0.78rem;white-space:nowrap;">
+                            <img src="/static/images/malkia_logo_white.png" alt="MCW" style="height:22px;width:auto;border-radius:4px;background:#fff;padding:1px 3px;flex-shrink:0;">
                             <span>MALKIA CARGO WAVES LTD</span>
                         </div>
                         <div class="idcard-brand-sub" style="font-style:italic;color:#BAE6FD;">“Crossing borders with no limit”</div>
@@ -82,21 +83,21 @@
                         </div>
 
                         <h3 class="idcard-staff-name">{{ target_user.get_full_name|default:target_user.username }}</h3>
-                        <div class="idcard-staff-title" style="color:#2563EB !important;">{{ profile.title|default:profile.get_role_display }}</div>
+                        <div class="idcard-staff-title" style="color:#2563EB !important;font-weight:800;letter-spacing:0.04em;">{{ id_card_title }}</div>
 
                         <div class="idcard-staff-id-pill" style="background:#0F172A !important;color:#FFFFFF !important;">
                             <i class="fa-solid fa-id-badge" style="color:#38BDF8;"></i>
                             <span>{{ profile.employee_id|default:"MC-STAFF" }}</span>
                         </div>
 
-                        <div class="idcard-meta-grid">
-                            <div class="idcard-meta-box" style="background:rgba(241,245,249,0.9) !important;border:1px solid #E2E8F0 !important;">
+                        <div class="idcard-meta-grid" style="gap:0.45rem;">
+                            <div class="idcard-meta-box" style="background:rgba(241,245,249,0.9) !important;border:1px solid #E2E8F0 !important;padding:0.4rem 0.5rem;">
                                 <span class="idcard-meta-box-label">Department</span>
-                                <span class="idcard-meta-box-val">{{ profile.get_department_display|truncatechars:18 }}</span>
+                                <span class="idcard-meta-box-val" style="font-size:0.72rem;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.2;">{{ id_card_department }}</span>
                             </div>
-                            <div class="idcard-meta-box" style="background:rgba(241,245,249,0.9) !important;border:1px solid #E2E8F0 !important;">
+                            <div class="idcard-meta-box" style="background:rgba(241,245,249,0.9) !important;border:1px solid #E2E8F0 !important;padding:0.4rem 0.5rem;">
                                 <span class="idcard-meta-box-label">Station</span>
-                                <span class="idcard-meta-box-val">{{ profile.work_station|default:"Dar HQ"|truncatechars:16 }}</span>
+                                <span class="idcard-meta-box-val" style="font-size:0.72rem;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.2;">{{ id_card_station }}</span>
                             </div>
                         </div>
 
@@ -106,9 +107,9 @@
                             <div style="text-align:left;">
                                 <div style="background:#FFFFFF;padding:4px;border:1.5px solid #CBD5E1;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.06);display:inline-block;">
                                     {% if qr_code_b64 %}
-                                    <img src="data:image/png;base64,{{ qr_code_b64 }}" alt="QR Code" style="width:52px;height:52px;display:block;image-rendering:pixelated;">
+                                    <img src="data:image/png;base64,{{ qr_code_b64 }}" alt="QR Code" style="width:58px;height:58px;display:block;image-rendering:pixelated;">
                                     {% else %}
-                                    <div id="frontQrCode" style="width:52px;height:52px;"></div>
+                                    <div id="frontQrCode" style="width:58px;height:58px;"></div>
                                     {% endif %}
                                 </div>
                                 <div style="font-size:0.55rem;font-weight:800;color:#0F172A;letter-spacing:0.04em;text-transform:uppercase;margin-top:0.2rem;display:flex;align-items:center;gap:0.25rem;">
@@ -354,6 +355,20 @@ async function downloadCardImages() {
         triggerColorPrint();
     }
 }
+
+(function renderStaffQr() {
+    var qrEl = document.getElementById('frontQrCode');
+    if (qrEl && typeof QRCode !== 'undefined' && qrEl.children.length === 0) {
+        new QRCode(qrEl, {
+            text: "MALKIA CARGO WAVES LTD | {{ target_user.get_full_name|default:target_user.username|escapejs }} | {{ id_card_title|escapejs }} | ID: {{ profile.employee_id|default:'MC-STAFF'|escapejs }} | ACTIVE",
+            width: 58,
+            height: 58,
+            colorDark: "#0F172A",
+            colorLight: "#FFFFFF",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    }
+})();
 </script>
 
 {% endblock %}

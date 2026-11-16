@@ -152,7 +152,7 @@ class Customer(models.Model):
 
     company_name = models.CharField(max_length=200, verbose_name="Client Name")
     contact_person = models.CharField(max_length=150, blank=True)
-    phone = models.CharField(max_length=50, verbose_name="Phone No")
+    phone = models.CharField(max_length=50, blank=True, verbose_name="Phone No")
     email = models.EmailField(blank=True, verbose_name="Email")
     tin_number = models.CharField(max_length=50, blank=True, verbose_name="TIN")
     id_number = models.CharField(max_length=50, blank=True, verbose_name="ID Number (NIDA / Passport)")
@@ -275,6 +275,7 @@ class JobShipment(models.Model):
     shipment_type = models.CharField(max_length=30, choices=SHIPMENT_REGIMES, default='IMPORT', verbose_name="Shipment Regime / Type")
     customs_manifest_number = models.CharField(max_length=100, blank=True, verbose_name="Manifest / Rotational Number")
     container_numbers = models.TextField(blank=True, default='', help_text="Chassis or Container Numbers")
+    container_qty = models.PositiveIntegerField(default=1, verbose_name="Qty (Containers)")
     container_size_type = models.CharField(max_length=30, choices=CONTAINER_TYPES, default='RORO')
     vessel_name = models.CharField(max_length=150, blank=True, default='', help_text="Vessel name & voyage")
     voyage_number = models.CharField(max_length=50, blank=True)
@@ -300,6 +301,10 @@ class JobShipment(models.Model):
     cost_agent_fee = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Agent Fee (Malkia Agency)")
     cost_fuel = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Fuel (Mafuta)")
     cost_ferry_charges = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Ferry Charges")
+    cost_container_deposit = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Container Deposit")
+    cost_shipping_fee = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Shipping Fee")
+    cost_demurrage = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Demurrage Charges")
+    cost_storage = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Storage Charges")
     cost_other = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Other / Miscellaneous Costs (TBS, Demurrage, Storage, etc.)")
     cost_other_description = models.CharField(max_length=255, blank=True, verbose_name="Description for Other Costs")
 
@@ -482,6 +487,10 @@ class JobShipment(models.Model):
             (self.cost_transport or Decimal('0')) +
             (self.cost_fuel or Decimal('0')) +
             (self.cost_ferry_charges or Decimal('0')) +
+            (self.cost_container_deposit or Decimal('0')) +
+            (self.cost_shipping_fee or Decimal('0')) +
+            (self.cost_demurrage or Decimal('0')) +
+            (self.cost_storage or Decimal('0')) +
             (self.cost_other or Decimal('0'))
         )
 

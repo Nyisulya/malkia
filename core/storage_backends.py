@@ -174,3 +174,19 @@ class MalkiaDynamicR2Storage(FileSystemStorage):
                 pass
         return super().exists(name)
 
+    def delete(self, name):
+        if not name:
+            return
+        r2 = self._get_r2_storage()
+        if r2 is not None:
+            try:
+                r2.delete(name)
+            except Exception as e:
+                print(f"[Cloudflare R2 Delete Error] {e}")
+        local_path = os.path.join(settings.MEDIA_ROOT, name)
+        if os.path.exists(local_path):
+            try:
+                super().delete(name)
+            except Exception as e:
+                print(f"[Local Delete Error] {e}")
+

@@ -195,21 +195,37 @@
                 <button type="button" class="modal-close-btn" onclick="closeModal('employeeModal')">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="form-group" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:0.75rem 0.9rem;margin-bottom:1rem;">
+                    <label style="color:#1E3A8A;font-weight:800;">Select System Staff Account (Auto-Fill &amp; Link)</label>
+                    <select name="linked_user_id" id="linkedUserSelect" class="form-control" onchange="autoFillFromSystemUser(this)">
+                        <option value="">-- Manual Entry (Not Linked) --</option>
+                        {% for su in system_users %}
+                        <option value="{{ su.id }}"
+                            data-fullname="{{ su.get_full_name|default:su.username }}"
+                            data-phone="{{ su.profile.phone_number|default:'' }}"
+                            data-position="{{ su.profile.title|default:su.profile.get_role_display|default:'' }}"
+                            {% if editing and editing.user_id == su.id %}selected{% endif %}>
+                            {{ su.get_full_name|default:su.username }} ({{ su.username }}{% if su.email %} &bull; {{ su.email }}{% endif %})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group" style="flex:2;">
                         <label>Full Name *</label>
-                        <input type="text" name="full_name" class="form-control" required placeholder="e.g. Felician Joseph" value="{% if editing %}{{ editing.full_name }}{% endif %}">
+                        <input type="text" name="full_name" id="empFullNameInput" class="form-control" required placeholder="e.g. Felician Joseph" value="{% if editing %}{{ editing.full_name }}{% endif %}">
                     </div>
                     <div class="form-group" style="flex:1;">
                         <label>Phone Number</label>
-                        <input type="text" name="phone" class="form-control" placeholder="+255 7XX XXX XXX" value="{% if editing %}{{ editing.phone }}{% endif %}">
+                        <input type="text" name="phone" id="empPhoneInput" class="form-control" placeholder="+255 7XX XXX XXX" value="{% if editing %}{{ editing.phone }}{% endif %}">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group" style="flex:2;">
                         <label>Job Title / Position *</label>
-                        <input type="text" name="position" class="form-control" required placeholder="e.g. Clearing Officer" value="{% if editing %}{{ editing.position }}{% endif %}">
+                        <input type="text" name="position" id="empPositionInput" class="form-control" required placeholder="e.g. Clearing Officer" value="{% if editing %}{{ editing.position }}{% endif %}">
                     </div>
                     <div class="form-group" style="flex:1;">
                         <label>Basic Salary (TSh) *</label>
@@ -272,6 +288,17 @@
 
 {% block extra_js %}
 <script>
+    function autoFillFromSystemUser(sel) {
+        const opt = sel.options[sel.selectedIndex];
+        if (!opt || !opt.value) return;
+        const nameEl = document.getElementById('empFullNameInput');
+        const phoneEl = document.getElementById('empPhoneInput');
+        const posEl = document.getElementById('empPositionInput');
+        if (nameEl && opt.dataset.fullname) nameEl.value = opt.dataset.fullname;
+        if (phoneEl && opt.dataset.phone) phoneEl.value = opt.dataset.phone;
+        if (posEl && opt.dataset.position) posEl.value = opt.dataset.position;
+    }
+
     (function initEmployeeModal() {
         {% if editing %}
         if (window.openModal) {

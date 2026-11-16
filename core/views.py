@@ -2205,7 +2205,7 @@ def jobs_list_view(request):
 
 
 
-    can_view_financials = True
+    can_view_financials = (role in [UserRole.CEO, UserRole.ADMIN, UserRole.FINANCE] or request.user.is_superuser)
 
 
 
@@ -2438,51 +2438,39 @@ def job_create_view(request):
 
 
 
+        cargo_mode = request.POST.get('cargo_mode', 'vehicle').strip()
+        if cargo_mode == 'container':
+            chassis_number = ''
+            vehicle_make = ''
+            vehicle_model = ''
+            registration_year = ''
+            container_numbers = request.POST.get('container_numbers', '').strip().upper()
+            try:
+                container_qty = max(1, int(request.POST.get('container_qty', 1) or 1))
+            except (ValueError, TypeError):
+                container_qty = 1
+            container_size_type = request.POST.get('container_size_type', '40FT').strip()
+            if container_size_type not in dict(JobShipment.CONTAINER_TYPES):
+                container_size_type = '40FT'
+            cargo_description = request.POST.get('container_item_desc', '').strip().upper() or 'Containerized Cargo'
+        else:
+            container_numbers = chassis_number or bl_number
+            container_qty = 1
+            container_size_type = 'RORO'
+
         job = JobShipment.objects.create(
-
-
-
             job_number=job_number,
-
-
-
             customer=customer,
-
-
-
             bl_number=bl_number,
-
-
-
             chassis_number=chassis_number,
-
-
-
             vessel_name=vessel_name,
-
-
-
             shipping_line=shipping_line,
-
-
-
             port_of_origin=port_of_origin,
-
-
-
             shipment_type='BONDED_WH' if clearance_mode == 'BOND' else 'IMPORT',
-
-
-
             clearance_mode=clearance_mode,
-
-
-
-            container_numbers=chassis_number or bl_number,
-
-
-
-            container_size_type='RORO',
+            container_numbers=container_numbers,
+            container_qty=container_qty,
+            container_size_type=container_size_type,
 
 
 
@@ -8454,6 +8442,9 @@ def _parse_employee_form(request):
     if not position:
         errors.append("Job title / position is required.")
 
+    linked_user_id = request.POST.get('linked_user_id', '').strip()
+    linked_user = User.objects.filter(id=int(linked_user_id)).first() if linked_user_id.isdigit() else None
+
     data = {
         'full_name': full_name,
         'position': position,
@@ -8465,6 +8456,7 @@ def _parse_employee_form(request):
         'bank_account_number': request.POST.get('bank_account_number', '').strip(),
         'status': 'ACTIVE' if 'on_payroll' in request.POST else 'TERMINATED',
         'no_deductions': 'no_deductions' in request.POST,
+        'user': linked_user,
     }
     return data, errors
 
@@ -8511,6 +8503,7 @@ def employees_view(request):
         'status_filter': status_filter,
         'search_query': query,
         'editing': editing,
+        'system_users': User.objects.filter(is_active=True).select_related('profile').order_by('first_name', 'username'),
         'today': timezone.now().date(),
     })
 
@@ -8625,6 +8618,7 @@ def payroll_view(request):
         'payment_methods': OperatingExpense.PAYMENT_METHOD_CHOICES,
         'status_choices': SalaryPayment.STATUS_CHOICES,
         'editing': editing,
+        'system_users': User.objects.filter(is_active=True).select_related('profile').order_by('first_name', 'username'),
         'today': timezone.now().date(),
         'payment_default_date': month_end,
     })
@@ -8995,9 +8989,61 @@ def payroll_export_excel(request):
 
 
 @login_required
-@role_required(OPERATING_EXPENSE_ROLES)
+def my_salary_view(request):
+    """Self-service salary & payslip view for the logged-in employee."""
+    employee = Employee.objects.filter(user=request.user).first()
+    if not employee and request.user.email:
+        employee = Employee.objects.filter(email__iexact=request.user.email.strip(), user__isnull=True).first()
+        if employee:
+            employee.user = request.user
+            employee.save(update_fields=['user'])
+    if not employee:
+        full_name = (request.user.get_full_name() or '').strip()
+        if full_name:
+            employee = Employee.objects.filter(full_name__iexact=full_name, user__isnull=True).first()
+            if employee:
+                employee.user = request.user
+                employee.save(update_fields=['user'])
+
+    if not employee:
+        return render(request, 'core/finance_employee_detail.html', {
+            'employee': None,
+            'payments': [],
+            'total_paid': Decimal('0.00'),
+            'total_gross_paid': Decimal('0.00'),
+            'payments_count': 0,
+            'service_years': 0,
+            'service_months': 0,
+            'today': timezone.now().date(),
+            'is_self_salary_view': True,
+        })
+
+    payments = employee.salary_payments.all().order_by('-period')
+    paid = [p for p in payments if p.status == 'PAID']
+    today = timezone.now().date()
+    service_days = (today - employee.date_joined).days if employee.date_joined else 0
+    return render(request, 'core/finance_employee_detail.html', {
+        'employee': employee,
+        'payments': payments,
+        'total_paid': sum((p.net_pay for p in paid), Decimal('0.00')),
+        'total_gross_paid': sum((p.gross_pay for p in paid), Decimal('0.00')),
+        'payments_count': len(paid),
+        'service_years': max(service_days, 0) // 365,
+        'service_months': (max(service_days, 0) % 365) // 30,
+        'today': today,
+        'is_self_salary_view': True,
+    })
+
+
+@login_required
 def payslip_view(request, salary_id):
     salary = get_object_or_404(SalaryPayment.objects.select_related('employee'), id=salary_id)
+    role = get_user_role(request.user)
+    is_allowed_staff = (salary.employee.user_id == request.user.id)
+    is_finance_or_exec = (role in OPERATING_EXPENSE_ROLES or request.user.is_superuser)
+    if not (is_allowed_staff or is_finance_or_exec):
+        messages.error(request, "Permission denied: You can only view your own payslip.")
+        return redirect('my_profile')
     return render(request, 'core/print_payslip.html', {
         'salary': salary,
         'employee': salary.employee,
@@ -9811,10 +9857,106 @@ def payment_record_action(request):
 
 
 
+def _compress_pdf_if_needed(uploaded_file):
+    """
+    Compresses oversized PDF uploads (especially scanned PDFs) using PyMuPDF
+    before uploading to Cloudflare R2, keeping text & scans sharp.
+    """
+    if not uploaded_file or getattr(uploaded_file, 'size', 0) <= 300 * 1024:
+        return uploaded_file
+    try:
+        import pymupdf as fitz
+        from io import BytesIO
+        from django.core.files.uploadedfile import InMemoryUploadedFile
+
+        uploaded_file.seek(0)
+        raw_bytes = uploaded_file.read()
+        doc = fitz.open(stream=raw_bytes, filetype="pdf")
+        if doc.needs_pass:
+            doc.close()
+            uploaded_file.seek(0)
+            return uploaded_file
+
+        try:
+            doc.rewrite_images(
+                dpi_threshold=150,
+                dpi_target=120,
+                quality=75,
+                lossy=True,
+                lossless=True,
+                bitonal=True,
+            )
+        except Exception:
+            pass
+
+        out_bytes = doc.tobytes(garbage=4, deflate=True, clean=True)
+        doc.close()
+        if out_bytes and len(out_bytes) < len(raw_bytes):
+            buf = BytesIO(out_bytes)
+            return InMemoryUploadedFile(
+                buf, 'FileField', uploaded_file.name, 'application/pdf', len(out_bytes), None
+            )
+    except Exception:
+        pass
+    try:
+        uploaded_file.seek(0)
+    except Exception:
+        pass
+    return uploaded_file
+
+
+def _compress_image_if_needed(uploaded_file, max_dim=1800, quality=80):
+    """
+    Compresses oversized image (JPG/PNG/WEBP) or PDF uploads before saving
+    to Cloudflare R2 to reduce storage size and speed up viewing.
+    """
+    if not uploaded_file:
+        return uploaded_file
+    ext = os.path.splitext(getattr(uploaded_file, 'name', ''))[1].lower()
+    if ext == '.pdf':
+        return _compress_pdf_if_needed(uploaded_file)
+    if ext not in ('.jpg', '.jpeg', '.png', '.webp'):
+        return uploaded_file
+    if getattr(uploaded_file, 'size', 0) <= 300 * 1024:
+        return uploaded_file
+
+    try:
+        from io import BytesIO
+        from PIL import Image, ImageOps
+        from django.core.files.uploadedfile import InMemoryUploadedFile
+
+        uploaded_file.seek(0)
+        img = Image.open(uploaded_file)
+        img = ImageOps.exif_transpose(img)
+        if img.mode in ('RGBA', 'LA', 'P'):
+            bg = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'P':
+                img = img.convert('RGBA')
+            bg.paste(img, mask=img.split()[-1] if 'A' in img.mode else None)
+            img = bg
+        elif img.mode != 'RGB':
+            img = img.convert('RGB')
+
+        img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+        buf = BytesIO()
+        img.save(buf, format='JPEG', quality=quality, optimize=True)
+        new_size = buf.tell()
+        if new_size < uploaded_file.size:
+            buf.seek(0)
+            base_name = os.path.splitext(uploaded_file.name)[0]
+            return InMemoryUploadedFile(
+                buf, 'ImageField', f"{base_name}.jpg", 'image/jpeg', new_size, None
+            )
+    except Exception:
+        pass
+    try:
+        uploaded_file.seek(0)
+    except Exception:
+        pass
+    return uploaded_file
+
+
 @login_required
-
-
-
 def upload_document_action(request, job_id):
     if request.method == 'POST':
         job = get_object_or_404(JobShipment, id=job_id)
@@ -9872,6 +10014,7 @@ def upload_document_action(request, job_id):
             elif len(files) > 1:
                 doc_title = f"{title} - {f.name}"
 
+            f = _compress_image_if_needed(f)
             JobDocument.objects.create(
                 job=job,
                 document_type=effective_doc_type,
@@ -9902,6 +10045,75 @@ def upload_document_action(request, job_id):
 
     redirect_url = request.META.get('HTTP_REFERER') or f'/jobs/{job_id}/'
     return redirect(redirect_url)
+
+
+@login_required
+def upload_documents_batch_action(request, job_id):
+    """Uploads multiple staged documents in a single request and finalizes the dossier."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
+
+    job = get_object_or_404(JobShipment, id=job_id)
+    if not user_can_manage_docs(request.user, job):
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Ruksa imezuiwa: Ni Afisa Nyaraka (Documentation Officer) au Admin pekee anayeweza kupakia nyaraka.'
+        }, status=403)
+
+    files = request.FILES.getlist('files')
+    doc_types = request.POST.getlist('document_types')
+    titles = request.POST.getlist('titles')
+
+    if not files:
+        return JsonResponse({'status': 'error', 'message': 'Hakuna faili zilizochaguliwa.'}, status=400)
+
+    doc_type_dict = dict(JobDocument.DOC_TYPES)
+    doc_flag_map = {
+        'BILL_OF_LADING': 'doc_bl_received',
+        'COMMERCIAL_INVOICE': 'doc_invoice_received',
+        'PACKING_LIST': 'doc_packing_list_received',
+        'TBS_CERT': 'doc_tbs_cert_received',
+        'EXPORT_CERT': 'doc_export_cert_received',
+    }
+
+    uploaded_count = 0
+    for idx, f in enumerate(files):
+        raw_type = doc_types[idx].strip() if idx < len(doc_types) else 'OTHER'
+        if raw_type not in doc_type_dict:
+            raw_type = 'OTHER'
+
+        raw_title = titles[idx].strip() if idx < len(titles) else ''
+        if not raw_title:
+            if raw_type != 'OTHER' and raw_type in doc_type_dict:
+                raw_title = f"{doc_type_dict[raw_type]} ({f.name})"
+            else:
+                raw_title = f.name
+
+        f = _compress_image_if_needed(f)
+        JobDocument.objects.create(
+            job=job,
+            document_type=raw_type,
+            title=raw_title,
+            file=f,
+            uploaded_by=request.user,
+        )
+        uploaded_count += 1
+
+        if raw_type in doc_flag_map:
+            setattr(job, doc_flag_map[raw_type], True)
+
+    job.doc_intake_finalized = True
+    job.doc_received_at = timezone.now()
+    if not job.documentation_officer:
+        job.documentation_officer = request.user
+    job.save()
+
+    log_audit(request, "UPLOAD_DOCUMENT", f"Batch uploaded {uploaded_count} document(s) to Job {job.job_number}", job=job)
+    return JsonResponse({
+        'status': 'ok',
+        'uploaded': uploaded_count,
+        'message': f"Nyaraka {uploaded_count} zimepakiwa na kuhifadhiwa kikamilifu!"
+    })
 
 
 
@@ -17855,13 +18067,8 @@ def user_profile_view(request, user_id):
 
 
         'statuses': UserProfile.EMPLOYMENT_STATUS_CHOICES,
-
-
-
         'employment_types': UserProfile.EMPLOYMENT_TYPE_CHOICES,
-
-
-
+        'linked_employee': Employee.objects.filter(user=target_user).first() if request.user.id == target_user.id else None,
     }
 
 
@@ -18112,36 +18319,26 @@ def user_id_card_view(request, user_id):
 
     qr_code_b64 = generate_staff_qr_code(profile, target_user)
 
-
-
-
-
-
+    target_role = get_user_role(target_user)
+    if target_role == UserRole.CEO or target_user.is_superuser:
+        id_card_title = "CEO"
+        id_card_department = "Executive"
+    elif target_role == UserRole.FINANCE:
+        id_card_title = "ACCOUNTANT"
+        id_card_department = "Finance & Accounts"
+    else:
+        id_card_title = "OPERATION OFFICER"
+        id_card_department = "Operations"
 
     context = {
-
-
-
         'target_user': target_user,
-
-
-
         'profile': profile,
-
-
-
         'qr_code_b64': qr_code_b64,
-
-
-
+        'id_card_title': id_card_title,
+        'id_card_department': id_card_department,
+        'id_card_station': profile.work_station or "Dar es Salaam HQ",
         'is_self': (request.user.id == target_user.id),
-
-
-
         'is_management': is_management,
-
-
-
     }
 
 
@@ -23266,6 +23463,9 @@ def finance_vehicles_out_view(request):
     Displays all vehicles with commercial intake data and direct payment costs.
     """
     year_param = request.GET.get('year', '2026').strip()
+    ledger_tab = request.GET.get('tab', 'vehicles').strip().lower()
+    if ledger_tab not in ('vehicles', 'containers'):
+        ledger_tab = 'vehicles'
     q = request.GET.get('q', '').strip()
     date_from_str = request.GET.get('date_from', '').strip()
     date_to_str = request.GET.get('date_to', '').strip()
@@ -23284,6 +23484,10 @@ def finance_vehicles_out_view(request):
             parsed_date_to = None
 
     jobs = JobShipment.objects.all().select_related('customer').prefetch_related('documents').order_by('-created_at')
+    if ledger_tab == 'containers':
+        jobs = jobs.exclude(container_size_type='RORO')
+    else:
+        jobs = jobs.filter(container_size_type='RORO')
 
     if parsed_date_from or parsed_date_to:
         if parsed_date_from and parsed_date_to:
@@ -23300,6 +23504,8 @@ def finance_vehicles_out_view(request):
         jobs = jobs.filter(
             Q(bl_number__icontains=q) |
             Q(chassis_number__icontains=q) |
+            Q(container_numbers__icontains=q) |
+            Q(cargo_description__icontains=q) |
             Q(vehicle_make__icontains=q) |
             Q(vehicle_model__icontains=q) |
             Q(customer__company_name__icontains=q) |
@@ -23349,6 +23555,7 @@ def finance_vehicles_out_view(request):
 
     context = {
         'jobs': displayed_jobs,
+        'ledger_tab': ledger_tab,
         'total_vehicles': total_vehicles,
         'selected_year': year_param,
         'date_from': date_from_str,
@@ -23403,6 +23610,10 @@ def finance_vehicles_out_update_cost_action(request, job_id):
         job.cost_agent_fee = parse_dec(request.POST.get('cost_agent_fee'))
         job.cost_fuel = parse_dec(request.POST.get('cost_fuel'))
         job.cost_ferry_charges = parse_dec(request.POST.get('cost_ferry_charges'))
+        job.cost_container_deposit = parse_dec(request.POST.get('cost_container_deposit'))
+        job.cost_shipping_fee = parse_dec(request.POST.get('cost_shipping_fee'))
+        job.cost_demurrage = parse_dec(request.POST.get('cost_demurrage'))
+        job.cost_storage = parse_dec(request.POST.get('cost_storage'))
 
         # Parse extra costs if provided via dynamic list
         extra_names = request.POST.getlist('extra_cost_names[]')
@@ -23552,6 +23763,9 @@ def finance_vehicles_out_export_excel(request):
     from openpyxl.utils import get_column_letter
 
     year_param = request.GET.get('year', '2026').strip()
+    ledger_tab = request.GET.get('tab', 'vehicles').strip().lower()
+    if ledger_tab not in ('vehicles', 'containers'):
+        ledger_tab = 'vehicles'
     q = request.GET.get('q', '').strip()
     date_from_str = request.GET.get('date_from', '').strip()
     date_to_str = request.GET.get('date_to', '').strip()
@@ -23571,6 +23785,10 @@ def finance_vehicles_out_export_excel(request):
             parsed_date_to = None
 
     jobs = JobShipment.objects.all().select_related('customer').order_by('created_at')
+    if ledger_tab == 'containers':
+        jobs = jobs.exclude(container_size_type='RORO')
+    else:
+        jobs = jobs.filter(container_size_type='RORO')
 
     if parsed_date_from or parsed_date_to:
         if parsed_date_from and parsed_date_to:
@@ -23587,6 +23805,8 @@ def finance_vehicles_out_export_excel(request):
         jobs = jobs.filter(
             Q(bl_number__icontains=q) |
             Q(chassis_number__icontains=q) |
+            Q(container_numbers__icontains=q) |
+            Q(cargo_description__icontains=q) |
             Q(vehicle_make__icontains=q) |
             Q(vehicle_model__icontains=q) |
             Q(customer__company_name__icontains=q)
@@ -23604,150 +23824,244 @@ def finance_vehicles_out_export_excel(request):
 
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = f"VEHICLES OUT {year_param.upper()}"
+    is_containers = (ledger_tab == 'containers')
+    ws.title = f"{'CONTAINERS' if is_containers else 'VEHICLES'} OUT {year_param.upper()}"
     ws.views.sheetView[0].showGridLines = True
 
-    # 1. Top Super Header (Title banner)
-    ws.merge_cells('A1:R1')
-    title_cell = ws['A1']
-    title_cell.value = f"MALKIA CARGO WAVES LTD — VEHICLES OUT {year_param.upper()}"
-    title_cell.font = Font(name='Segoe UI', size=14, bold=True, color='FFFFFF')
-    title_cell.fill = PatternFill(start_color='0F172A', end_color='0F172A', fill_type='solid')
-    title_cell.alignment = Alignment(horizontal='center', vertical='center')
-    ws.row_dimensions[1].height = 36
+    if is_containers:
+        ws.merge_cells('A1:O1')
+        title_cell = ws['A1']
+        title_cell.value = f"CONTAINERS OUT {year_param.upper()}"
+        title_cell.font = Font(name='Segoe UI', size=14, bold=True, color='0F172A')
+        title_cell.fill = PatternFill(start_color='B45309', end_color='B45309', fill_type='solid')
+        title_cell.font = Font(name='Segoe UI', size=14, bold=True, color='FFFFFF')
+        title_cell.alignment = Alignment(horizontal='center', vertical='center')
+        ws.row_dimensions[1].height = 36
 
-    # 2. Column Headers (Row 2) - Matching User's Spreadsheet Exactly
-    headers = [
-        "DATE IN",
-        "REFERANCE NO",
-        "Registration Year",
-        "Make",
-        "Model",
-        "Chassis No.",
-        "CIF BUYING Price(USD)",
-        "INVOICE $",
-        "Duty",
-        "D/O",
-        "Wharfage",
-        "Tiss Wharfage",
-        "Handling",
-        "Facilitation",
-        "Transport",
-        "Agent Fee",
-        "FUEL",
-        "FERRY CHARGES",
-        "TOTAL EXPENSES (TSh)"
-    ]
+        headers = [
+            "S/N",
+            "DATE IN",
+            "CONTAINER NO",
+            "ITEM",
+            "QTY (CONTAINERS)",
+            "INVOICE",
+            "CONTAINER DEPOSIT",
+            "D/O",
+            "SHIPPING FEE",
+            "DEMURRAGE CHARGES",
+            "STORAGE CHARGES",
+            "WHARFAGE",
+            "HANDLING",
+            "FACILITATION",
+            "AGENCY FEE",
+        ]
+        header_fill = PatternFill(start_color='FDE68A', end_color='FDE68A', fill_type='solid')
+        header_font = Font(name='Segoe UI', size=10, bold=True, color='0F172A')
+        thin_border_side = Side(style='thin', color='CBD5E1')
+        cell_border = Border(left=thin_border_side, right=thin_border_side, top=thin_border_side, bottom=thin_border_side)
 
-    header_font = Font(name='Segoe UI', size=10, bold=True, color='0F172A')
-    header_fill = PatternFill(start_color='E2E8F0', end_color='E2E8F0', fill_type='solid')
-    thin_border_side = Side(style='thin', color='CBD5E1')
-    cell_border = Border(left=thin_border_side, right=thin_border_side, top=thin_border_side, bottom=thin_border_side)
+        ws.row_dimensions[2].height = 28
+        for col_idx, header_text in enumerate(headers, 1):
+            cell = ws.cell(row=2, column=col_idx, value=header_text)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            cell.border = cell_border
 
-    ws.row_dimensions[2].height = 28
-    for col_idx, header_text in enumerate(headers, 1):
-        cell = ws.cell(row=2, column=col_idx, value=header_text)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-        cell.border = cell_border
+        row_idx = 3
+        currency_fmt = '#,##0.00'
+        for sn, job in enumerate(jobs, 1):
+            ws.row_dimensions[row_idx].height = 22
+            date_str = job.created_at.strftime('%d.%m.%Y') if job.created_at else ''
+            row_values = [
+                (sn, 'center', None),
+                (date_str, 'center', None),
+                (job.container_numbers or job.bl_number or job.job_number, 'center', None),
+                (job.cargo_description or '', 'left', None),
+                (int(job.container_qty or 1), 'center', '0'),
+                (float(job.cif_usd or 0), 'right', currency_fmt),
+                (float(job.cost_container_deposit or 0), 'right', currency_fmt),
+                (float(job.cost_do or 0), 'right', currency_fmt),
+                (float(job.cost_shipping_fee or 0), 'right', currency_fmt),
+                (float(job.cost_demurrage or 0), 'right', currency_fmt),
+                (float(job.cost_storage or 0), 'right', currency_fmt),
+                (float(job.cost_wharfage or 0), 'right', currency_fmt),
+                (float(job.cost_handling or 0), 'right', currency_fmt),
+                (float(job.cost_facilitation or 0), 'right', currency_fmt),
+                (float(job.cost_agent_fee or 0), 'right', currency_fmt),
+            ]
+            row_fill = PatternFill(start_color='F8FAFC' if row_idx % 2 == 0 else 'FFFFFF', end_color='F8FAFC' if row_idx % 2 == 0 else 'FFFFFF', fill_type='solid')
+            for col_idx, (val, align, num_fmt) in enumerate(row_values, 1):
+                cell = ws.cell(row=row_idx, column=col_idx, value=val)
+                cell.font = Font(name='Segoe UI', size=9.5)
+                cell.fill = row_fill
+                cell.border = cell_border
+                cell.alignment = Alignment(horizontal=align, vertical='center')
+                if num_fmt and isinstance(val, (int, float)):
+                    cell.number_format = num_fmt
+            row_idx += 1
 
-    # 3. Data Rows
-    row_idx = 3
-    currency_fmt = '#,##0.00'
-    usd_fmt = '$#,##0.00'
+        ws.row_dimensions[row_idx].height = 26
+        total_fill = PatternFill(start_color='DCFCE7', end_color='DCFCE7', fill_type='solid')
+        double_bottom_border = Border(
+            left=thin_border_side, right=thin_border_side,
+            top=Side(style='thin', color='0F172A'),
+            bottom=Side(style='double', color='0F172A')
+        )
+        for col in range(1, len(headers) + 1):
+            c = ws.cell(row=row_idx, column=col)
+            c.fill = total_fill
+            c.border = double_bottom_border
+            c.font = Font(name='Segoe UI', size=10, bold=True)
+        ws.cell(row=row_idx, column=1, value="TOTAL").alignment = Alignment(horizontal='center', vertical='center')
+        if row_idx > 3:
+            for col_letter in ['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O']:
+                c = ws[f"{col_letter}{row_idx}"]
+                c.value = f"=SUM({col_letter}3:{col_letter}{row_idx-1})"
+                c.number_format = currency_fmt
+                c.alignment = Alignment(horizontal='right', vertical='center')
+    else:
+        # 1. Top Super Header (Title banner)
+        ws.merge_cells('A1:R1')
+        title_cell = ws['A1']
+        title_cell.value = f"MALKIA CARGO WAVES LTD — VEHICLES OUT {year_param.upper()}"
+        title_cell.font = Font(name='Segoe UI', size=14, bold=True, color='FFFFFF')
+        title_cell.fill = PatternFill(start_color='0F172A', end_color='0F172A', fill_type='solid')
+        title_cell.alignment = Alignment(horizontal='center', vertical='center')
+        ws.row_dimensions[1].height = 36
 
-    for job in jobs:
-        ws.row_dimensions[row_idx].height = 22
-        
-        date_str = job.created_at.strftime('%d.%m.%Y') if job.created_at else ''
-        ref_no = job.bl_number or job.job_number
-        reg_year = str(job.registration_year or '')
-        make = job.vehicle_make or ''
-        model = job.vehicle_model or ''
-        chassis = job.chassis_number or ''
-        cif_price = float(job.cif_usd or 0)
-        invoice_usd = float(job.cif_usd or 0)
-        duty = float(job.cost_duty or 0)
-        do_cost = float(job.cost_do or 0)
-        wharfage = float(job.cost_wharfage or 0)
-        tiss = float(job.cost_tiss_wharfage or 0)
-        handling = float(job.cost_handling or 0)
-        facil = float(job.cost_facilitation or 0)
-        trans = float(job.cost_transport or 0)
-        agent_fee = float(job.cost_agent_fee or 0)
-        fuel = float(job.cost_fuel or 0)
-        ferry = float(job.cost_ferry_charges or 0)
-        total_costs = float(job.total_disbursement_with_agent_fee)
-
-        row_values = [
-            (date_str, 'center', None),
-            (ref_no, 'center', None),
-            (reg_year, 'center', None),
-            (make, 'left', None),
-            (model, 'left', None),
-            (chassis, 'center', None),
-            (cif_price if cif_price > 0 else '', 'right', usd_fmt),
-            (invoice_usd if invoice_usd > 0 else '', 'right', usd_fmt),
-            (duty, 'right', currency_fmt),
-            (do_cost, 'right', currency_fmt),
-            (wharfage, 'right', currency_fmt),
-            (tiss, 'right', currency_fmt),
-            (handling, 'right', currency_fmt),
-            (facil, 'right', currency_fmt),
-            (trans, 'right', currency_fmt),
-            (agent_fee, 'right', currency_fmt),
-            (fuel, 'right', currency_fmt),
-            (ferry, 'right', currency_fmt),
-            (total_costs, 'right', currency_fmt),
+        # 2. Column Headers (Row 2) - Matching User's Spreadsheet Exactly
+        headers = [
+            "DATE IN",
+            "REFERANCE NO",
+            "Registration Year",
+            "Make",
+            "Model",
+            "Chassis No.",
+            "CIF BUYING Price(USD)",
+            "INVOICE $",
+            "Duty",
+            "D/O",
+            "Wharfage",
+            "Tiss Wharfage",
+            "Handling",
+            "Facilitation",
+            "Transport",
+            "Agent Fee",
+            "FUEL",
+            "FERRY CHARGES",
+            "TOTAL EXPENSES (TSh)"
         ]
 
-        # Zebra coloring for alternating rows
-        row_fill = PatternFill(start_color='F8FAFC' if row_idx % 2 == 0 else 'FFFFFF', end_color='F8FAFC' if row_idx % 2 == 0 else 'FFFFFF', fill_type='solid')
+        header_font = Font(name='Segoe UI', size=10, bold=True, color='0F172A')
+        header_fill = PatternFill(start_color='E2E8F0', end_color='E2E8F0', fill_type='solid')
+        thin_border_side = Side(style='thin', color='CBD5E1')
+        cell_border = Border(left=thin_border_side, right=thin_border_side, top=thin_border_side, bottom=thin_border_side)
 
-        for col_idx, (val, align, num_fmt) in enumerate(row_values, 1):
-            cell = ws.cell(row=row_idx, column=col_idx, value=val)
-            cell.font = Font(name='Segoe UI', size=9.5)
-            cell.fill = row_fill
+        ws.row_dimensions[2].height = 28
+        for col_idx, header_text in enumerate(headers, 1):
+            cell = ws.cell(row=2, column=col_idx, value=header_text)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
             cell.border = cell_border
-            cell.alignment = Alignment(horizontal=align, vertical='center')
-            if num_fmt and isinstance(val, (int, float)):
-                cell.number_format = num_fmt
 
-        row_idx += 1
+        # 3. Data Rows
+        row_idx = 3
+        currency_fmt = '#,##0.00'
+        usd_fmt = '$#,##0.00'
 
-    # 4. Totals Row
-    ws.row_dimensions[row_idx].height = 26
-    total_cell = ws.cell(row=row_idx, column=1, value="TOTAL")
-    total_cell.font = Font(name='Segoe UI', size=10, bold=True, color='0F172A')
-    total_cell.alignment = Alignment(horizontal='center', vertical='center')
-    
-    total_fill = PatternFill(start_color='FEF3C7', end_color='FEF3C7', fill_type='solid')
-    double_bottom_border = Border(
-        left=thin_border_side, right=thin_border_side,
-        top=Side(style='thin', color='0F172A'),
-        bottom=Side(style='double', color='0F172A')
-    )
+        for job in jobs:
+            ws.row_dimensions[row_idx].height = 22
+            
+            date_str = job.created_at.strftime('%d.%m.%Y') if job.created_at else ''
+            ref_no = job.bl_number or job.job_number
+            reg_year = str(job.registration_year or '')
+            make = job.vehicle_make or ''
+            model = job.vehicle_model or ''
+            chassis = job.chassis_number or ''
+            cif_price = float(job.cif_usd or 0)
+            invoice_usd = float(job.cif_usd or 0)
+            duty = float(job.cost_duty or 0)
+            do_cost = float(job.cost_do or 0)
+            wharfage = float(job.cost_wharfage or 0)
+            tiss = float(job.cost_tiss_wharfage or 0)
+            handling = float(job.cost_handling or 0)
+            facil = float(job.cost_facilitation or 0)
+            trans = float(job.cost_transport or 0)
+            agent_fee = float(job.cost_agent_fee or 0)
+            fuel = float(job.cost_fuel or 0)
+            ferry = float(job.cost_ferry_charges or 0)
+            total_costs = float(job.total_disbursement_with_agent_fee)
 
-    for col in range(1, len(headers) + 1):
-        c = ws.cell(row=row_idx, column=col)
-        c.fill = total_fill
-        c.border = double_bottom_border
-        c.font = Font(name='Segoe UI', size=10, bold=True)
+            row_values = [
+                (date_str, 'center', None),
+                (ref_no, 'center', None),
+                (reg_year, 'center', None),
+                (make, 'left', None),
+                (model, 'left', None),
+                (chassis, 'center', None),
+                (cif_price if cif_price > 0 else '', 'right', usd_fmt),
+                (invoice_usd if invoice_usd > 0 else '', 'right', usd_fmt),
+                (duty, 'right', currency_fmt),
+                (do_cost, 'right', currency_fmt),
+                (wharfage, 'right', currency_fmt),
+                (tiss, 'right', currency_fmt),
+                (handling, 'right', currency_fmt),
+                (facil, 'right', currency_fmt),
+                (trans, 'right', currency_fmt),
+                (agent_fee, 'right', currency_fmt),
+                (fuel, 'right', currency_fmt),
+                (ferry, 'right', currency_fmt),
+                (total_costs, 'right', currency_fmt),
+            ]
 
-    if row_idx > 3:
-        # Excel SUM formulas for numeric columns
-        for col_letter, num_fmt in [
-            ('G', usd_fmt), ('H', usd_fmt),
-            ('I', currency_fmt), ('J', currency_fmt), ('K', currency_fmt),
-            ('L', currency_fmt), ('M', currency_fmt), ('N', currency_fmt),
-            ('O', currency_fmt), ('P', currency_fmt), ('Q', currency_fmt),
-            ('R', currency_fmt), ('S', currency_fmt)
-        ]:
-            c = ws[f"{col_letter}{row_idx}"]
-            c.value = f"=SUM({col_letter}3:{col_letter}{row_idx-1})"
-            c.number_format = num_fmt
-            c.alignment = Alignment(horizontal='right', vertical='center')
+            # Zebra coloring for alternating rows
+            row_fill = PatternFill(start_color='F8FAFC' if row_idx % 2 == 0 else 'FFFFFF', end_color='F8FAFC' if row_idx % 2 == 0 else 'FFFFFF', fill_type='solid')
+
+            for col_idx, (val, align, num_fmt) in enumerate(row_values, 1):
+                cell = ws.cell(row=row_idx, column=col_idx, value=val)
+                cell.font = Font(name='Segoe UI', size=9.5)
+                cell.fill = row_fill
+                cell.border = cell_border
+                cell.alignment = Alignment(horizontal=align, vertical='center')
+                if num_fmt and isinstance(val, (int, float)):
+                    cell.number_format = num_fmt
+
+            row_idx += 1
+
+        # 4. Totals Row
+        ws.row_dimensions[row_idx].height = 26
+        total_cell = ws.cell(row=row_idx, column=1, value="TOTAL")
+        total_cell.font = Font(name='Segoe UI', size=10, bold=True, color='0F172A')
+        total_cell.alignment = Alignment(horizontal='center', vertical='center')
+        
+        total_fill = PatternFill(start_color='FEF3C7', end_color='FEF3C7', fill_type='solid')
+        double_bottom_border = Border(
+            left=thin_border_side, right=thin_border_side,
+            top=Side(style='thin', color='0F172A'),
+            bottom=Side(style='double', color='0F172A')
+        )
+
+        for col in range(1, len(headers) + 1):
+            c = ws.cell(row=row_idx, column=col)
+            c.fill = total_fill
+            c.border = double_bottom_border
+            c.font = Font(name='Segoe UI', size=10, bold=True)
+
+        if row_idx > 3:
+            # Excel SUM formulas for numeric columns
+            for col_letter, num_fmt in [
+                ('G', usd_fmt), ('H', usd_fmt),
+                ('I', currency_fmt), ('J', currency_fmt), ('K', currency_fmt),
+                ('L', currency_fmt), ('M', currency_fmt), ('N', currency_fmt),
+                ('O', currency_fmt), ('P', currency_fmt), ('Q', currency_fmt),
+                ('R', currency_fmt), ('S', currency_fmt)
+            ]:
+                c = ws[f"{col_letter}{row_idx}"]
+                c.value = f"=SUM({col_letter}3:{col_letter}{row_idx-1})"
+                c.number_format = num_fmt
+                c.alignment = Alignment(horizontal='right', vertical='center')
 
     # Auto-adjust column widths
     for col in ws.columns:
@@ -23763,7 +24077,7 @@ def finance_vehicles_out_export_excel(request):
     wb.save(output)
     output.seek(0)
 
-    filename = f"VEHICLES_OUT_{year_param.upper()}.xlsx"
+    filename = f"{'CONTAINERS' if is_containers else 'VEHICLES'}_OUT_{year_param.upper()}.xlsx"
     response = HttpResponse(
         output.getvalue(),
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -23799,7 +24113,7 @@ def rename_document_action(request, doc_id):
                     doc.file.delete(save=False)
                 except Exception:
                     pass
-            doc.file = new_file
+            doc.file = _compress_image_if_needed(new_file)
             doc.uploaded_at = timezone.now()
             doc.uploaded_by = request.user
             file_replaced = True
@@ -23848,6 +24162,18 @@ def delete_document_action(request, doc_id):
             except Exception:
                 pass
         doc.delete()
+        doc_flag_map = {
+            'BILL_OF_LADING': 'doc_bl_received',
+            'COMMERCIAL_INVOICE': 'doc_invoice_received',
+            'PACKING_LIST': 'doc_packing_list_received',
+            'TBS_CERT': 'doc_tbs_cert_received',
+            'EXPORT_CERT': 'doc_export_cert_received',
+        }
+        if doc.document_type in doc_flag_map:
+            flag = doc_flag_map[doc.document_type]
+            has_other = doc.job.documents.filter(document_type=doc.document_type).exists()
+            setattr(doc.job, flag, has_other)
+            doc.job.save(update_fields=[flag])
         log_audit(request, "DELETE_DOCUMENT", f"Deleted document '{doc_title}' from Job {job_number}", job=doc.job)
         messages.success(request, f"Document '{doc_title}' deleted successfully.")
 

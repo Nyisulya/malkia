@@ -124,8 +124,8 @@
                                 {% else %}background:#DCFCE7;color:#15803D;{% endif %}">
                                 {% if job.status == 'DELAYED' %}● DELAYED{% else %}● ON TRACK{% endif %}
                             </span>
-                            <div style="font-size:0.72rem;color:#64748B;margin-top:0.25rem;">
-                                <i class="fa-regular fa-clock" style="font-size:0.68rem;"></i> {{ job.created_at|timesince }} ago
+                            <div style="font-size:0.72rem;color:#64748B;margin-top:0.25rem;" title="Entered stage">
+                                <i class="fa-regular fa-clock" style="font-size:0.68rem;"></i> {{ job.updated_at|default:job.created_at|timesince }} ago
                             </div>
                         </td>
 

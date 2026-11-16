@@ -251,11 +251,19 @@
                     </a>
                 </li>
 
-                <li class="nav-item {% if request.resolver_match.url_name in 'finance_vehicles_out,finance_vehicles_out_export' %}active{% endif %}">
-                    <a href="{% url 'finance_vehicles_out' %}">
-                        <i class="fa-solid fa-table-list" style="color:#0284C7;"></i>
+                <li class="nav-item {% if request.resolver_match.url_name in 'finance_vehicles_out,finance_vehicles_out_export' and request.GET.tab != 'containers' %}active{% endif %}">
+                    <a href="{% url 'finance_vehicles_out' %}?tab=vehicles">
+                        <i class="fa-solid fa-car" style="color:#0284C7;"></i>
                         <span>Vehicles Out Ledger</span>
-                        <span class="nav-badge" style="background:#0284C7;color:#FFFFFF;font-weight:800;font-size:0.65rem;">LEDGER</span>
+                        <span class="nav-badge" style="background:#0284C7;color:#FFFFFF;font-weight:800;font-size:0.65rem;">VEHICLES</span>
+                    </a>
+                </li>
+
+                <li class="nav-item {% if request.resolver_match.url_name in 'finance_vehicles_out,finance_vehicles_out_export' and request.GET.tab == 'containers' %}active{% endif %}">
+                    <a href="{% url 'finance_vehicles_out' %}?tab=containers">
+                        <i class="fa-solid fa-boxes-stacked" style="color:#D97706;"></i>
+                        <span>Containers Out Ledger</span>
+                        <span class="nav-badge" style="background:#D97706;color:#FFFFFF;font-weight:800;font-size:0.65rem;">CONTAINERS</span>
                     </a>
                 </li>
 
@@ -333,11 +341,19 @@
                     </a>
                 </li>
 
-                <li class="nav-item {% if request.resolver_match.url_name in 'finance_vehicles_out,finance_vehicles_out_export' %}active{% endif %}">
-                    <a href="{% url 'finance_vehicles_out' %}">
-                        <i class="fa-solid fa-table-list" style="color:#0284C7;"></i>
+                <li class="nav-item {% if request.resolver_match.url_name in 'finance_vehicles_out,finance_vehicles_out_export' and request.GET.tab != 'containers' %}active{% endif %}">
+                    <a href="{% url 'finance_vehicles_out' %}?tab=vehicles">
+                        <i class="fa-solid fa-car" style="color:#0284C7;"></i>
                         <span>Vehicles Out Ledger</span>
-                        <span class="nav-badge" style="background:#0284C7;color:#FFFFFF;font-weight:800;font-size:0.65rem;">LEDGER</span>
+                        <span class="nav-badge" style="background:#0284C7;color:#FFFFFF;font-weight:800;font-size:0.65rem;">VEHICLES</span>
+                    </a>
+                </li>
+
+                <li class="nav-item {% if request.resolver_match.url_name in 'finance_vehicles_out,finance_vehicles_out_export' and request.GET.tab == 'containers' %}active{% endif %}">
+                    <a href="{% url 'finance_vehicles_out' %}?tab=containers">
+                        <i class="fa-solid fa-boxes-stacked" style="color:#D97706;"></i>
+                        <span>Containers Out Ledger</span>
+                        <span class="nav-badge" style="background:#D97706;color:#FFFFFF;font-weight:800;font-size:0.65rem;">CONTAINERS</span>
                     </a>
                 </li>
 

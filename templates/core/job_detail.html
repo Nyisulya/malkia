@@ -244,7 +244,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="document_type" value="TRA_AUTH_SIGNED">
                             <input type="hidden" name="title" value="1. TRA Authorization Letter (Signed &amp; Stamped)">
-                            <input type="file" name="file" id="slot_file_TRA_AUTH_SIGNED" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <input type="file" name="file" id="slot_file_TRA_AUTH_SIGNED" accept=".pdf,image/*" style="display:none;" onchange="stageSlotFile(this)">
                             <button type="button" onclick="document.getElementById('slot_file_TRA_AUTH_SIGNED').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
                                 <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
                                 <span>Upload Scan</span>
@@ -316,7 +316,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="document_type" value="TBS_SIGNED">
                             <input type="hidden" name="title" value="2. TBS Inspection Letter (Signed &amp; Stamped)">
-                            <input type="file" name="file" id="slot_file_TBS_SIGNED" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <input type="file" name="file" id="slot_file_TBS_SIGNED" accept=".pdf,image/*" style="display:none;" onchange="stageSlotFile(this)">
                             <button type="button" onclick="document.getElementById('slot_file_TBS_SIGNED').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
                                 <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
                                 <span>Upload Scan</span>
@@ -388,7 +388,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="document_type" value="FORM_C41">
                             <input type="hidden" name="title" value="3. Form C41 (Customs)">
-                            <input type="file" name="file" id="slot_file_FORM_C41" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <input type="file" name="file" id="slot_file_FORM_C41" accept=".pdf,image/*" style="display:none;" onchange="stageSlotFile(this)">
                             <button type="button" onclick="document.getElementById('slot_file_FORM_C41').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
                                 <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
                                 <span>Upload Scan</span>
@@ -460,7 +460,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="document_type" value="BILL_OF_LADING">
                             <input type="hidden" name="title" value="4. Bill of Lading (BL)">
-                            <input type="file" name="file" id="slot_file_BILL_OF_LADING" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <input type="file" name="file" id="slot_file_BILL_OF_LADING" accept=".pdf,image/*" style="display:none;" onchange="stageSlotFile(this)">
                             <button type="button" onclick="document.getElementById('slot_file_BILL_OF_LADING').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
                                 <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
                                 <span>Upload Scan</span>
@@ -532,7 +532,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="document_type" value="COMMERCIAL_INVOICE">
                             <input type="hidden" name="title" value="5. Commercial Invoice">
-                            <input type="file" name="file" id="slot_file_COMMERCIAL_INVOICE" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <input type="file" name="file" id="slot_file_COMMERCIAL_INVOICE" accept=".pdf,image/*" style="display:none;" onchange="stageSlotFile(this)">
                             <button type="button" onclick="document.getElementById('slot_file_COMMERCIAL_INVOICE').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
                                 <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
                                 <span>Upload Scan</span>
@@ -604,7 +604,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="document_type" value="PACKING_LIST">
                             <input type="hidden" name="title" value="6. Packing List">
-                            <input type="file" name="file" id="slot_file_PACKING_LIST" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <input type="file" name="file" id="slot_file_PACKING_LIST" accept=".pdf,image/*" style="display:none;" onchange="stageSlotFile(this)">
                             <button type="button" onclick="document.getElementById('slot_file_PACKING_LIST').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
                                 <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
                                 <span>Upload Scan</span>
@@ -676,7 +676,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="document_type" value="TBS_CERT">
                             <input type="hidden" name="title" value="7. TBS Inspection Cert">
-                            <input type="file" name="file" id="slot_file_TBS_CERT" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <input type="file" name="file" id="slot_file_TBS_CERT" accept=".pdf,image/*" style="display:none;" onchange="stageSlotFile(this)">
                             <button type="button" onclick="document.getElementById('slot_file_TBS_CERT').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
                                 <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
                                 <span>Upload Scan</span>
@@ -748,7 +748,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="document_type" value="EXPORT_CERT">
                             <input type="hidden" name="title" value="8. Export Certificate">
-                            <input type="file" name="file" id="slot_file_EXPORT_CERT" accept=".pdf,image/*" style="display:none;" onchange="this.form.submit()">
+                            <input type="file" name="file" id="slot_file_EXPORT_CERT" accept=".pdf,image/*" style="display:none;" onchange="stageSlotFile(this)">
                             <button type="button" onclick="document.getElementById('slot_file_EXPORT_CERT').click()" style="width:100%;border:1.5px dashed #94A3B8;background:#F8FAFC;border-radius:8px;padding:0.6rem 0.5rem;text-align:center;cursor:pointer;color:#334155;font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#EFF6FF';this.style.borderColor='#3B82F6';" onmouseout="this.style.background='#F8FAFC';this.style.borderColor='#94A3B8';">
                                 <i class="fa-solid fa-cloud-arrow-up" style="color:#0284C7;font-size:0.95rem;"></i>
                                 <span>Upload Scan</span>
@@ -786,6 +786,8 @@
             </button>
             {% endif %}
         </div>
+
+        <div id="stagedOtherDocsContainer" style="display:none;margin-bottom:0.85rem;"></div>
 
         {% if job.other_documents %}
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:0.85rem;">
@@ -863,17 +865,28 @@
             </div>
         </div>
 
-        <form action="{% url 'finalize_document_dossier' job.id %}" method="POST" style="margin:0;">
+        <form id="saveDossierForm" data-no-ajax="true" action="{% url 'finalize_document_dossier' job.id %}" method="POST" style="margin:0;">
             {% csrf_token %}
-            <button type="submit" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;padding:0.7rem 1.6rem;font-size:0.92rem;font-weight:900;border-radius:8px;display:inline-flex;align-items:center;gap:0.55rem;box-shadow:0 3px 8px rgba(22,163,74,0.35);cursor:pointer;">
+            <button type="submit" id="saveDocumentsBtn" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;padding:0.7rem 1.6rem;font-size:0.92rem;font-weight:900;border-radius:8px;display:inline-flex;align-items:center;gap:0.55rem;box-shadow:0 3px 8px rgba(22,163,74,0.35);cursor:pointer;">
                 <i class="fa-solid fa-floppy-disk"></i>
+                <span id="saveDocumentsBtnLabel">
                 {% if job.doc_intake_finalized %}
                     Update / Save Dossier
                 {% else %}
                     Save Documents
                 {% endif %}
+                </span>
             </button>
         </form>
+        <div id="batchUploadProgressWrap" style="display:none;width:100%;margin-top:0.25rem;">
+            <div style="display:flex;justify-content:space-between;font-size:0.76rem;font-weight:700;color:#0F172A;margin-bottom:0.25rem;">
+                <span id="batchUploadStatusText">Inapakia nyaraka...</span>
+                <span id="batchUploadPercentText">0%</span>
+            </div>
+            <div style="width:100%;height:8px;background:#E2E8F0;border-radius:999px;overflow:hidden;">
+                <div id="batchUploadProgressBar" style="width:0%;height:100%;background:#16A34A;transition:width 0.2s;"></div>
+            </div>
+        </div>
     </div>
     {% elif job.doc_intake_finalized %}
     <div style="margin-top:1.25rem;padding:0.9rem 1.25rem;border-radius:10px;background:#F0FDF4;border:1.5px solid #BBF7D0;display:flex;align-items:center;gap:0.85rem;color:#166534;font-size:0.84rem;font-weight:700;">
@@ -1534,13 +1547,13 @@
 <!-- 1. SIMPLE ADD OTHER DOCUMENT MODAL -->
 <div id="addOtherDocModal" class="modal-overlay">
     <div class="modal-card" style="max-width:480px;">
-        <form action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data">
+        <form id="addOtherDocForm" data-no-ajax="true" action="{% url 'upload_document' job.id %}" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="document_type" value="OTHER">
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title" style="margin:0;font-size:1.1rem;font-weight:800;color:#0F172A;">Add Other Document</h3>
-                    <p style="font-size:0.75rem;color:var(--text-muted);margin:0.15rem 0 0 0;">Upload any additional scanned paperwork</p>
+                    <p style="font-size:0.75rem;color:var(--text-muted);margin:0.15rem 0 0 0;">Chagua faili liwekwe kwenye foleni (itahifadhiwa ukibonyeza Save)</p>
                 </div>
                 <button type="button" class="modal-close-btn" onclick="closeModal('addOtherDocModal')">&times;</button>
             </div>
@@ -1553,14 +1566,14 @@
 
                 <div class="form-group" style="margin-bottom:0;">
                     <label style="font-weight:700;font-size:0.82rem;color:#334155;">Select Scanned File <span style="color:#DC2626;">*</span></label>
-                    <input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp" class="form-control" style="font-size:0.85rem;" required>
+                    <input type="file" name="file" id="simpleDocFileInput" accept=".pdf,.png,.jpg,.jpeg,.webp" class="form-control" style="font-size:0.85rem;" required>
                 </div>
             </div>
 
             <div class="modal-footer" style="padding:0.85rem 1.5rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;justify-content:flex-end;gap:0.6rem;">
                 <button type="button" class="btn-header-action btn-outline" onclick="closeModal('addOtherDocModal')">Cancel</button>
                 <button type="submit" class="btn-header-action btn-primary" style="padding:0.45rem 1.25rem;">
-                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload Document
+                    <i class="fa-solid fa-plus"></i> Add to Queue
                 </button>
             </div>
         </form>
@@ -1676,6 +1689,251 @@
         if (titleDisplay) titleDisplay.innerText = docTitle;
 
         openModal('deleteDocModal');
+    }
+
+    // =========================================================================
+    // BATCH / STAGED DOCUMENT UPLOAD + CLIENT-SIDE IMAGE COMPRESSION
+    // =========================================================================
+    var stagedSlotDocs = {};
+    var stagedOtherDocs = [];
+
+    function formatBytes(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    async function compressImageFile(file, maxDim = 1800, quality = 0.78) {
+        if (!file || !file.type || !file.type.startsWith('image/') || file.size <= 300 * 1024) {
+            return { file, savedBytes: 0 };
+        }
+        return new Promise((resolve) => {
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                let { width, height } = img;
+                if (width > maxDim || height > maxDim) {
+                    if (width >= height) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+                canvas.toBlob((blob) => {
+                    if (blob && blob.size < file.size) {
+                        const baseName = file.name.replace(/\.[^.]+$/, '');
+                        const compressed = new File([blob], baseName + '.jpg', { type: 'image/jpeg' });
+                        resolve({ file: compressed, savedBytes: file.size - compressed.size });
+                    } else {
+                        resolve({ file, savedBytes: 0 });
+                    }
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                resolve({ file, savedBytes: 0 });
+            };
+            img.src = url;
+        });
+    }
+
+    async function stageSlotFile(input) {
+        const rawFile = input.files && input.files[0];
+        if (!rawFile) return;
+
+        const form = input.form;
+        const docType = form.querySelector('input[name="document_type"]').value;
+        const title = form.querySelector('input[name="title"]').value;
+        const uploadBtn = form.querySelector('button[type="button"]');
+        if (uploadBtn) uploadBtn.style.display = 'none';
+
+        let preview = form.querySelector('.staged-slot-preview');
+        if (!preview) {
+            preview = document.createElement('div');
+            preview.className = 'staged-slot-preview';
+            form.appendChild(preview);
+        }
+        preview.style.cssText = 'border:1.5px solid #3B82F6;background:#EFF6FF;border-radius:8px;padding:0.55rem 0.65rem;font-size:0.74rem;color:#1E3A8A;';
+        preview.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Inapunguza ukubwa wa faili...';
+
+        const { file, savedBytes } = await compressImageFile(rawFile);
+        stagedSlotDocs[docType] = { file, docType, title, inputId: input.id };
+
+        const savedNote = savedBytes > 0
+            ? `<span style="color:#15803D;font-weight:700;"> (${formatBytes(rawFile.size)} &rarr; ${formatBytes(file.size)})</span>`
+            : ` (${formatBytes(file.size)})`;
+
+        preview.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.4rem;margin-bottom:0.4rem;">
+                <span style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${file.name}">
+                    <i class="fa-solid fa-clock" style="color:#2563EB;"></i> ${file.name}${savedNote}
+                </span>
+            </div>
+            <div style="display:flex;gap:0.35rem;">
+                <button type="button" onclick="document.getElementById('${input.id}').click()" style="flex:1;background:#FFFFFF;border:1px solid #93C5FD;color:#1D4ED8;border-radius:6px;padding:0.25rem 0.4rem;font-size:0.72rem;font-weight:700;cursor:pointer;">
+                    Badili
+                </button>
+                <button type="button" onclick="removeStagedSlot('${docType}')" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;border-radius:6px;padding:0.25rem 0.55rem;font-size:0.72rem;font-weight:700;cursor:pointer;">
+                    Ondoa
+                </button>
+            </div>
+        `;
+        updateSaveButtonState();
+    }
+
+    function removeStagedSlot(docType) {
+        const entry = stagedSlotDocs[docType];
+        if (!entry) return;
+        const input = document.getElementById(entry.inputId);
+        if (input) {
+            input.value = '';
+            const form = input.form;
+            const preview = form.querySelector('.staged-slot-preview');
+            if (preview) preview.remove();
+            const uploadBtn = form.querySelector('button[type="button"]');
+            if (uploadBtn) uploadBtn.style.display = 'flex';
+        }
+        delete stagedSlotDocs[docType];
+        updateSaveButtonState();
+    }
+
+    function renderStagedOtherDocs() {
+        const container = document.getElementById('stagedOtherDocsContainer');
+        if (!container) return;
+        if (stagedOtherDocs.length === 0) {
+            container.style.display = 'none';
+            container.innerHTML = '';
+            return;
+        }
+        container.style.display = 'grid';
+        container.style.gridTemplateColumns = 'repeat(auto-fit, minmax(260px, 1fr))';
+        container.style.gap = '0.75rem';
+        container.innerHTML = stagedOtherDocs.map((item, idx) => `
+            <div style="background:#EFF6FF;border:1.5px solid #93C5FD;border-radius:10px;padding:0.75rem 0.9rem;display:flex;justify-content:space-between;align-items:center;gap:0.6rem;">
+                <div style="min-width:0;flex:1;">
+                    <div style="font-size:0.68rem;font-weight:800;color:#1D4ED8;text-transform:uppercase;">Ready to Save</div>
+                    <div style="font-weight:800;font-size:0.84rem;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.title}</div>
+                    <div style="font-size:0.72rem;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.file.name} (${formatBytes(item.file.size)})</div>
+                </div>
+                <button type="button" onclick="removeStagedOther(${idx})" style="background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;border-radius:6px;padding:0.3rem 0.55rem;font-size:0.72rem;font-weight:700;cursor:pointer;">
+                    Ondoa
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function removeStagedOther(idx) {
+        stagedOtherDocs.splice(idx, 1);
+        renderStagedOtherDocs();
+        updateSaveButtonState();
+    }
+
+    function updateSaveButtonState() {
+        const label = document.getElementById('saveDocumentsBtnLabel');
+        if (!label) return;
+        const total = Object.keys(stagedSlotDocs).length + stagedOtherDocs.length;
+        if (total > 0) {
+            label.textContent = `Save & Upload (${total} ${total === 1 ? 'File' : 'Files'})`;
+        } else {
+            label.textContent = {% if job.doc_intake_finalized %}'Update / Save Dossier'{% else %}'Save Documents'{% endif %};
+        }
+    }
+
+    var addOtherForm = document.getElementById('addOtherDocForm');
+    if (addOtherForm) {
+        addOtherForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const titleEl = document.getElementById('simpleDocTitleInput');
+            const fileEl = document.getElementById('simpleDocFileInput');
+            const rawFile = fileEl && fileEl.files && fileEl.files[0];
+            if (!rawFile) return;
+
+            const { file } = await compressImageFile(rawFile);
+            stagedOtherDocs.push({
+                title: (titleEl.value || rawFile.name).trim(),
+                docType: 'OTHER',
+                file: file
+            });
+            fileEl.value = '';
+            titleEl.value = '';
+            closeModal('addOtherDocModal');
+            renderStagedOtherDocs();
+            updateSaveButtonState();
+        });
+    }
+
+    var saveDossierForm = document.getElementById('saveDossierForm');
+    if (saveDossierForm) {
+        saveDossierForm.addEventListener('submit', function (e) {
+            const items = [...Object.values(stagedSlotDocs), ...stagedOtherDocs];
+            if (items.length === 0) return; // normal dossier finalize POST
+
+            e.preventDefault();
+            const btn = document.getElementById('saveDocumentsBtn');
+            const label = document.getElementById('saveDocumentsBtnLabel');
+            const progressWrap = document.getElementById('batchUploadProgressWrap');
+            const progressBar = document.getElementById('batchUploadProgressBar');
+            const statusText = document.getElementById('batchUploadStatusText');
+            const percentText = document.getElementById('batchUploadPercentText');
+
+            if (btn) btn.disabled = true;
+            if (label) label.textContent = `Inapakia (${items.length})...`;
+            if (progressWrap) progressWrap.style.display = 'block';
+            if (statusText) statusText.textContent = `Inapakia nyaraka ${items.length} kwa pamoja...`;
+
+            const formData = new FormData();
+            const csrfToken = saveDossierForm.querySelector('input[name="csrfmiddlewaretoken"]').value;
+            items.forEach((item) => {
+                formData.append('files', item.file, item.file.name);
+                formData.append('document_types', item.docType);
+                formData.append('titles', item.title);
+            });
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', "{% url 'upload_documents_batch' job.id %}", true);
+            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+
+            xhr.upload.onprogress = function (ev) {
+                if (ev.lengthComputable) {
+                    const pct = Math.round((ev.loaded / ev.total) * 100);
+                    if (progressBar) progressBar.style.width = pct + '%';
+                    if (percentText) percentText.textContent = pct + '%';
+                    if (pct === 100 && statusText) {
+                        statusText.textContent = 'Inahifadhi kwenye Cloudflare R2...';
+                    }
+                }
+            };
+
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    if (statusText) statusText.textContent = 'Imekamilika! Inahifadhi...';
+                    window.location.href = "{% url 'job_detail' job.id %}#documentCenter";
+                    window.location.reload();
+                } else {
+                    alert('Kuna tatizo wakati wa kupakia nyaraka. Tafadhali jaribu tena.');
+                    if (btn) btn.disabled = false;
+                    updateSaveButtonState();
+                }
+            };
+
+            xhr.onerror = function () {
+                alert('Mtandao umekatika wakati wa kupakia. Tafadhali jaribu tena.');
+                if (btn) btn.disabled = false;
+                updateSaveButtonState();
+            };
+
+            xhr.send(formData);
+        });
     }
 </script>
 
