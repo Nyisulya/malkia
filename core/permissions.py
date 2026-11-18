@@ -1,32 +1,8 @@
 from functools import wraps
-from decimal import Decimal
 from django.shortcuts import redirect
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 from .models import UserRole
 
-def get_user_role(user):
-    if not user.is_authenticated:
-        return None
-    if user.is_superuser:
-        return UserRole.CEO
-    if hasattr(user, 'profile'):
-        role = user.profile.role
-        if role in [UserRole.CEO, UserRole.ADMIN]:
-            return UserRole.CEO
-        elif role == UserRole.FINANCE:
-            return UserRole.FINANCE
-        else:
-            return UserRole.OPERATIONS
-    return UserRole.OPERATIONS
-
-
-from functools import wraps
-from decimal import Decimal
-from django.shortcuts import redirect
-from django.contrib import messages
-from django.core.exceptions import PermissionDenied
-from .models import UserRole
 
 def get_user_role(user):
     if not user.is_authenticated:
@@ -63,7 +39,6 @@ def role_required(allowed_roles, redirect_url='dashboard'):
 
             user_role = get_user_role(request.user)
 
-            # Map legacy roles to primary roles for verification
             normalized_allowed = set()
             for r in allowed_roles:
                 if r in [UserRole.CEO, UserRole.ADMIN]:
@@ -75,7 +50,6 @@ def role_required(allowed_roles, redirect_url='dashboard'):
                     normalized_allowed.add(UserRole.OPERATIONS)
                     normalized_allowed.add(r)
 
-            # CEO has oversight across all business operations
             if user_role == UserRole.CEO:
                 return view_func(request, *args, **kwargs)
 
@@ -89,10 +63,6 @@ def role_required(allowed_roles, redirect_url='dashboard'):
 
 
 def can_approve_expense(user, voucher):
-    """
-    Checks if user is authorized to approve and disburse/release office funds.
-    Office funds are approved and released exclusively by the CEO (or Superuser/Admin).
-    """
     role = get_user_role(user)
     if role in [UserRole.CEO, UserRole.ADMIN] or user.is_superuser:
         return True
@@ -100,18 +70,11 @@ def can_approve_expense(user, voucher):
 
 
 def can_audit_expense(user, voucher=None):
-    """
-    Checks if user is authorized to audit & forward vouchers to CEO (Accountant bridge).
-    """
     role = get_user_role(user)
     return role in [UserRole.FINANCE, UserRole.CEO, UserRole.ADMIN] or user.is_superuser
 
 
 def can_advance_stage(user, stage_number):
-    """
-    Checks if user is authorized to advance a specific stage.
-    Operational staff and CEO can advance stages. Finance does not handle operational stage progression.
-    """
     if not user or not user.is_authenticated:
         return False
     role = get_user_role(user)
@@ -122,32 +85,14 @@ def can_advance_stage(user, stage_number):
 
 def user_can_manage_docs(user, job=None):
     """
-    Checks if a user is authorized to upload, edit, replace, or delete documents and save document dossiers.
-    Strictly limited to:
-    - Superusers / Administrators / CEO
-    - Assigned Documentation Officer for the job
-    - Users with DOC_OFFICER role or DOCUMENTATION department
-    Other operational staff (Customs Declarer, Port Wharfinger, Finance, Yard, Drivers) have read-only view/download access.
+    All operational staff (OPERATIONS) and administrators/CEO can upload, edit,
+    replace, or delete documents and save document dossiers. Finance has read-only access.
     """
     if not user or not user.is_authenticated:
         return False
     if user.is_superuser or user.is_staff:
         return True
-
-    if job and job.documentation_officer_id and job.documentation_officer_id == user.id:
-        return True
-
-    profile = getattr(user, 'profile', None)
-    if profile:
-        if profile.role in [UserRole.DOC_OFFICER, UserRole.ADMIN, UserRole.CEO, UserRole.OPERATIONS_MGR]:
-            return True
-        if profile.department in ['DOCUMENTATION', 'EXECUTIVE', 'ADMIN_IT']:
-            return True
-        if profile.role == UserRole.OPERATIONS and (not job or not job.documentation_officer_id):
-            if profile.department in ['DOCUMENTATION', 'OPERATIONS']:
-                return True
-
-    if user.username in ['doc_officer', 'test_doc_officer', 'admin']:
-        return True
-
-    return False
+    role = get_user_role(user)
+    if role == UserRole.FINANCE:
+        return False
+    return True
