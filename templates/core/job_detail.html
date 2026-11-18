@@ -166,6 +166,12 @@
                 <a href="{% url 'print_tbs_letter' job.id %}" target="_blank" class="btn-header-action" style="background:#FFFFFF;border:1px solid #CBD5E1;color:#0F172A;padding:0.6rem 0.85rem;font-size:0.82rem;font-weight:700;border-radius:8px;text-decoration:none;">
                     TBS Letter
                 </a>
+                <a href="{% url 'print_shipping_auth' job.id %}?line=PRIME" target="_blank" class="btn-header-action" style="background:#EFF6FF;border:1px solid #BFDBFE;color:#1D4ED8;padding:0.6rem 0.85rem;font-size:0.82rem;font-weight:700;border-radius:8px;text-decoration:none;" title="Print PRIME CONSOLIDATORS Authorization Letter">
+                    PRIME Letter
+                </a>
+                <a href="{% url 'print_shipping_auth' job.id %}?line=WOSAC" target="_blank" class="btn-header-action" style="background:#F0FDF4;border:1px solid #BBF7D0;color:#15803D;padding:0.6rem 0.85rem;font-size:0.82rem;font-weight:700;border-radius:8px;text-decoration:none;" title="Print WOSAC LIMITED Authorization Letter">
+                    WOSAC Letter
+                </a>
             </div>
         </div>
     </div>
@@ -1430,7 +1436,7 @@
             <div class="modal-body" style="padding:1.25rem 1.5rem;">
                 <div class="form-group" style="margin-bottom:1rem;">
                     <label style="font-weight:700;font-size:0.82rem;color:#334155;">Document Name / Title <span style="color:#DC2626;">*</span></label>
-                    <input type="text" name="title" id="simpleDocTitleInput" class="form-control" placeholder="e.g. Tax Clearance, NIDA Copy, Delivery Order" style="font-size:0.88rem;" required>
+                    <input type="text" name="title" id="simpleDocTitleInput" class="form-control" placeholder="e.g. 103, 125, Tax Clearance, Delivery Order" style="font-size:0.88rem;" required>
                 </div>
 
                 <div class="form-group" style="margin-bottom:0;">

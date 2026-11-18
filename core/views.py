@@ -92,7 +92,7 @@ from .models import (
 
 
 
-    ExpenseCategory, ClientInvoice, ClientPayment, OperatingExpenseCategory, OperatingExpense, Employee, SalaryPayment, AuditLog, FieldIssue, FleetVehicle,
+    ExpenseCategory, ClientInvoice, ClientPayment, OperatingExpenseCategory, OperatingExpense, OtherRevenue, Employee, SalaryPayment, AuditLog, FieldIssue, FleetVehicle,
 
 
 
@@ -373,19 +373,16 @@ def login_view(request):
 
 
 
-        # Standard Credentials Login
-
-
-
-        username = request.POST.get('username', '').strip()
-
-
-
+        # Standard Credentials Login (supports Username or Email)
+        username_input = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
+        auth_username = username_input
+        if '@' in username_input:
+            matched_user = User.objects.filter(email__iexact=username_input).first()
+            if matched_user:
+                auth_username = matched_user.username
 
-
-
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, username=auth_username, password=password)
 
 
 
@@ -556,6 +553,29 @@ def logout_view(request):
     return redirect('login')
 
 
+@login_required
+def change_password_view(request):
+    if request.method == 'POST':
+        current_pw = request.POST.get('current_password', '')
+        new_pw = request.POST.get('new_password', '').strip()
+        confirm_pw = request.POST.get('confirm_password', '').strip()
+        if not request.user.check_password(current_pw):
+            messages.error(request, "Current password is incorrect.")
+        elif len(new_pw) < 6:
+            messages.error(request, "New password must be at least 6 characters.")
+        elif new_pw != confirm_pw:
+            messages.error(request, "New passwords do not match.")
+        else:
+            request.user.set_password(new_pw)
+            request.user.save()
+            from django.contrib.auth import update_session_auth_hash
+            update_session_auth_hash(request, request.user)
+            log_audit(request, "PASSWORD_CHANGED", f"User {request.user.username} changed their own password.")
+            messages.success(request, "Password updated successfully!")
+            return redirect('dashboard')
+    return render(request, 'core/change_password.html')
+
+
 
 
 
@@ -625,6 +645,7 @@ def accountant_dashboard_view(request):
     jobs_qs = JobShipment.objects.all().select_related('customer').prefetch_related('documents', 'invoices')
     salaries_qs = SalaryPayment.objects.filter(status='PAID')
     expenses_qs = OperatingExpense.objects.all()
+    other_rev_qs = OtherRevenue.objects.all()
     invoices_qs = ClientInvoice.objects.all()
 
     if parsed_date_from or parsed_date_to:
@@ -633,18 +654,21 @@ def accountant_dashboard_view(request):
             jobs_qs = jobs_qs.filter(created_at__date__gte=parsed_date_from, created_at__date__lte=parsed_date_to)
             salaries_qs = salaries_qs.filter(payment_date__gte=parsed_date_from, payment_date__lte=parsed_date_to)
             expenses_qs = expenses_qs.filter(date__gte=parsed_date_from, date__lte=parsed_date_to)
+            other_rev_qs = other_rev_qs.filter(date__gte=parsed_date_from, date__lte=parsed_date_to)
             invoices_qs = invoices_qs.filter(issue_date__gte=parsed_date_from, issue_date__lte=parsed_date_to)
             filter_label = f"Custom ({parsed_date_from.strftime('%d %b %Y')} to {parsed_date_to.strftime('%d %b %Y')})"
         elif parsed_date_from:
             jobs_qs = jobs_qs.filter(created_at__date__gte=parsed_date_from)
             salaries_qs = salaries_qs.filter(payment_date__gte=parsed_date_from)
             expenses_qs = expenses_qs.filter(date__gte=parsed_date_from)
+            other_rev_qs = other_rev_qs.filter(date__gte=parsed_date_from)
             invoices_qs = invoices_qs.filter(issue_date__gte=parsed_date_from)
             filter_label = f"From {parsed_date_from.strftime('%d %b %Y')}"
         else:
             jobs_qs = jobs_qs.filter(created_at__date__lte=parsed_date_to)
             salaries_qs = salaries_qs.filter(payment_date__lte=parsed_date_to)
             expenses_qs = expenses_qs.filter(date__lte=parsed_date_to)
+            other_rev_qs = other_rev_qs.filter(date__lte=parsed_date_to)
             invoices_qs = invoices_qs.filter(issue_date__lte=parsed_date_to)
             filter_label = f"Up to {parsed_date_to.strftime('%d %b %Y')}"
     elif period == 'today':
@@ -652,12 +676,14 @@ def accountant_dashboard_view(request):
         jobs_qs = jobs_qs.filter(created_at__date=today_date)
         salaries_qs = salaries_qs.filter(payment_date=today_date)
         expenses_qs = expenses_qs.filter(date=today_date)
+        other_rev_qs = other_rev_qs.filter(date=today_date)
         invoices_qs = invoices_qs.filter(issue_date=today_date)
         filter_label = f"Today ({today_date.strftime('%d %b %Y')})"
     elif period == 'this_month':
         jobs_qs = jobs_qs.filter(created_at__year=current_year, created_at__month=now.month)
         salaries_qs = salaries_qs.filter(payment_date__year=current_year, payment_date__month=now.month)
         expenses_qs = expenses_qs.filter(date__year=current_year, date__month=now.month)
+        other_rev_qs = other_rev_qs.filter(date__year=current_year, date__month=now.month)
         invoices_qs = invoices_qs.filter(issue_date__year=current_year, issue_date__month=now.month)
         filter_label = f"This Month ({now.strftime('%B %Y')})"
     elif period == 'all':
@@ -667,6 +693,7 @@ def accountant_dashboard_view(request):
         jobs_qs = jobs_qs.filter(created_at__year=current_year)
         salaries_qs = salaries_qs.filter(payment_date__year=current_year)
         expenses_qs = expenses_qs.filter(date__year=current_year)
+        other_rev_qs = other_rev_qs.filter(date__year=current_year)
         invoices_qs = invoices_qs.filter(issue_date__year=current_year)
         filter_label = f"Year {current_year}"
 
@@ -722,11 +749,23 @@ def accountant_dashboard_view(request):
     office_expenses_qs = expenses_qs.exclude(category__name__icontains='Salary')
     sum_office_expenses = office_expenses_qs.aggregate(t=Sum('amount'))['t'] or Decimal('0.00')
 
+    # Other Revenue & Cash Inflows (Business Revenue counts in profit; Refunds & Boss Capital tracked separately)
+    other_rev_totals = other_rev_qs.aggregate(
+        business=Sum('amount', filter=Q(inflow_type='OTHER_REVENUE')),
+        refunds=Sum('returned_amount', filter=Q(inflow_type='CONTAINER_REFUND', deposit_status__in=['RETURNED_FULL', 'PARTIAL'])),
+        capital=Sum('amount', filter=Q(inflow_type='CAPITAL_INJECTION')),
+    )
+    sum_other_business_revenue = other_rev_totals['business'] or Decimal('0.00')
+    sum_container_refunds = other_rev_totals['refunds'] or Decimal('0.00')
+    sum_capital_injections = other_rev_totals['capital'] or Decimal('0.00')
+    total_other_inflows = sum_container_refunds + sum_capital_injections
+
     # Total Overheads & Salaries
     total_company_costs = sum_salaries_paid + sum_office_expenses
 
-    # Net Company Profit / Surplus = Malkia Agency Revenue - Salaries & Overheads
-    net_profit = sum_agent_fee - total_company_costs
+    # Total Company Revenue & Net Company Profit / Surplus
+    total_company_revenue = sum_agent_fee + sum_other_business_revenue
+    net_profit = total_company_revenue - total_company_costs
 
     # Invoices & Receivables
     all_period_invoices = list(invoices_qs)
@@ -762,6 +801,11 @@ def accountant_dashboard_view(request):
         'sum_cif_usd': sum_cif_usd,
         'sum_direct_costs': sum_direct_costs,
         'sum_agent_fee': sum_agent_fee,
+        'sum_other_business_revenue': sum_other_business_revenue,
+        'sum_container_refunds': sum_container_refunds,
+        'sum_capital_injections': sum_capital_injections,
+        'total_other_inflows': total_other_inflows,
+        'total_company_revenue': total_company_revenue,
         'sum_grand_total': sum_grand_total,
         # Executive Cards
         'total_company_costs': total_company_costs,
@@ -883,71 +927,47 @@ def dashboard_view(request):
 
 
 
-    elif preset == 'this_year':
-
-
-
-        date_from = date(today_date.year, 1, 1)
-
-
-
-        date_to = date(today_date.year, 12, 31)
-
-
-
-    elif preset == 'last_year':
-
-
-
-        date_from = date(today_date.year - 1, 1, 1)
-
-
-
-        date_to = date(today_date.year - 1, 12, 31)
-
-
-
-    elif preset == 'all':
-
-
-
-        date_from = None
-
-
-
-        date_to = None
-
-
-
-    else:
-
-
-
-        preset = 'today'
-
-
+    elif preset == 'today':
 
         date_from = today_date
 
+        date_to = today_date
 
+    elif preset == 'this_year':
+
+        date_from = date(today_date.year, 1, 1)
+
+        date_to = date(today_date.year, 12, 31)
+
+    elif preset == 'last_year':
+
+        date_from = date(today_date.year - 1, 1, 1)
+
+        date_to = date(today_date.year - 1, 12, 31)
+
+    elif preset == 'all':
+
+        date_from = None
+
+        date_to = None
+
+    else:
+
+        preset = 'this_month'
+
+        date_from = today_date.replace(day=1)
 
         date_to = today_date
 
-
-
-
-
-
-
     # Human-readable filter label
-
-
 
     if preset == 'today':
 
-
-
         filter_label = f"Today ({today_date.strftime('%d %b %Y')})"
+
+    elif preset == 'this_month':
+
+        filter_label = f"This Month ({today_date.strftime('%b %Y')})"
 
 
 
@@ -1514,14 +1534,17 @@ def dashboard_view(request):
     stage_3_count = jobs.filter(current_stage_number=3, status__in=['ACTIVE', 'DELAYED']).count()
     stage_4_count = jobs.filter(current_stage_number=4, status__in=['ACTIVE', 'DELAYED']).count()
     stage_5_count = jobs.filter(current_stage_number=5, status__in=['ACTIVE', 'DELAYED']).count()
+    stage_6_count = jobs.filter(current_stage_number=6, status__in=['ACTIVE', 'DELAYED']).count()
 
     pulse_tra_count = stage_2_count
     jobs_at_tra = stage_2_count
-    pulse_port_count = stage_3_count
-    jobs_at_port = stage_3_count
-    pulse_yard_count = stage_4_count
-    jobs_at_yard = stage_4_count
-    in_bond_count = stage_4_count
+    pulse_tbs_count = stage_3_count
+    jobs_at_tbs = stage_3_count
+    pulse_port_count = stage_4_count
+    jobs_at_port = stage_4_count
+    pulse_yard_count = stage_5_count
+    jobs_at_yard = stage_5_count
+    in_bond_count = stage_5_count
     pulse_completed_count = completed_jobs_count
     pulse_delayed_count = delayed_jobs_count
     can_view_financials = (role in [UserRole.CEO, UserRole.ADMIN, UserRole.FINANCE] or request.user.is_superuser)
@@ -1598,6 +1621,10 @@ def dashboard_view(request):
         'pulse_port_count': pulse_port_count,
 
         'pulse_tra_count': pulse_tra_count,
+        'pulse_tbs_count': pulse_tbs_count,
+        'jobs_at_tbs': jobs_at_tbs,
+        'stage_3_count': stage_3_count,
+        'stage_6_count': stage_6_count,
 
         'pulse_completed_count': pulse_completed_count,
 
@@ -1668,6 +1695,91 @@ def dashboard_view(request):
     }
 
 
+
+    if role == UserRole.CEO and not request.user.is_superuser:
+        ceo_period_jobs = list(all_jobs_raw.filter(created_at__date__range=(date_from, date_to))) if (date_from and date_to) else list(all_jobs_raw)
+        ceo_salaries_qs = SalaryPayment.objects.filter(status='PAID')
+        ceo_op_exp_qs = OperatingExpense.objects.exclude(category__name__icontains='Salary')
+        ceo_other_rev_qs = OtherRevenue.objects.all()
+        ceo_invoices_qs = ClientInvoice.objects.all()
+
+        if date_from and date_to:
+            ceo_salaries_qs = ceo_salaries_qs.filter(payment_date__range=(date_from, date_to))
+            ceo_op_exp_qs = ceo_op_exp_qs.filter(date__range=(date_from, date_to))
+            ceo_other_rev_qs = ceo_other_rev_qs.filter(date__range=(date_from, date_to))
+            ceo_invoices_qs = ceo_invoices_qs.filter(issue_date__range=(date_from, date_to))
+
+        sum_agent_fee = sum((j.cost_agent_fee or Decimal('0')) for j in ceo_period_jobs)
+        sum_direct_costs = sum(j.total_direct_costs for j in ceo_period_jobs)
+        sum_duty = sum((j.cost_duty or Decimal('0')) for j in ceo_period_jobs)
+        sum_do = sum((j.cost_do or Decimal('0')) for j in ceo_period_jobs)
+        sum_wharfage = sum((j.cost_wharfage or Decimal('0')) for j in ceo_period_jobs)
+        sum_tiss = sum((j.cost_tiss_wharfage or Decimal('0')) for j in ceo_period_jobs)
+        sum_handling = sum((j.cost_handling or Decimal('0')) for j in ceo_period_jobs)
+        sum_facilitation = sum((j.cost_facilitation or Decimal('0')) for j in ceo_period_jobs)
+        sum_transport = sum((j.cost_transport or Decimal('0')) for j in ceo_period_jobs)
+        sum_fuel = sum((j.cost_fuel or Decimal('0')) for j in ceo_period_jobs)
+        sum_ferry = sum((j.cost_ferry_charges or Decimal('0')) for j in ceo_period_jobs)
+
+        sum_salaries_paid = sum((s.net_pay or Decimal('0')) for s in ceo_salaries_qs)
+        sum_office_expenses = ceo_op_exp_qs.aggregate(t=Sum('amount'))['t'] or Decimal('0.00')
+        total_company_costs = sum_salaries_paid + sum_office_expenses
+
+        other_rev_totals = ceo_other_rev_qs.aggregate(
+            business=Sum('amount', filter=Q(inflow_type='OTHER_REVENUE')),
+            refunds=Sum('returned_amount', filter=Q(inflow_type='CONTAINER_REFUND', deposit_status__in=['RETURNED_FULL', 'PARTIAL'])),
+            capital=Sum('amount', filter=Q(inflow_type='CAPITAL_INJECTION')),
+        )
+        sum_other_business_revenue = other_rev_totals['business'] or Decimal('0.00')
+        sum_container_refunds = other_rev_totals['refunds'] or Decimal('0.00')
+        sum_capital_injections = other_rev_totals['capital'] or Decimal('0.00')
+        total_other_inflows = sum_container_refunds + sum_capital_injections
+
+        total_company_revenue = sum_agent_fee + sum_other_business_revenue
+        net_profit = total_company_revenue - total_company_costs
+
+        ceo_period_invoices = list(ceo_invoices_qs)
+        ceo_total_invoiced = sum((i.total_amount or Decimal('0')) for i in ceo_period_invoices)
+        ceo_total_collected = sum((i.amount_paid or Decimal('0')) for i in ceo_period_invoices)
+        ceo_total_due = max(Decimal('0'), ceo_total_invoiced - ceo_total_collected)
+
+        ceo_jobs_qs = jobs.exclude(job_number__icontains='TEST').exclude(customer__company_name__icontains='Test Logistics')
+        ceo_active_count = ceo_jobs_qs.filter(status__in=['ACTIVE', 'DELAYED']).count()
+        ceo_completed_count = ceo_jobs_qs.filter(status__in=['COMPLETED', 'CLOSED']).count()
+        ceo_all_count = ceo_jobs_qs.count()
+
+        context.update({
+            'total_company_revenue': total_company_revenue,
+            'sum_agent_fee': sum_agent_fee,
+            'sum_other_business_revenue': sum_other_business_revenue,
+            'total_company_costs': total_company_costs,
+            'sum_salaries_paid': sum_salaries_paid,
+            'sum_office_expenses': sum_office_expenses,
+            'net_profit': net_profit,
+            'sum_direct_costs': sum_direct_costs,
+            'total_invoiced': ceo_total_invoiced,
+            'total_collected': ceo_total_collected,
+            'total_due': ceo_total_due,
+            'total_other_inflows': total_other_inflows,
+            'sum_container_refunds': sum_container_refunds,
+            'sum_capital_injections': sum_capital_injections,
+            'sum_duty': sum_duty,
+            'sum_do': sum_do,
+            'sum_wharfage_total': sum_wharfage + sum_tiss,
+            'sum_handling': sum_handling,
+            'sum_transport': sum_transport,
+            'sum_fuel': sum_fuel,
+            'sum_ferry_facil': sum_ferry + sum_facilitation,
+            'ceo_jobs': ceo_jobs_qs.order_by('-created_at')[:30],
+            'ceo_active_count': ceo_active_count,
+            'ceo_completed_count': ceo_completed_count,
+            'ceo_all_count': ceo_all_count,
+            'pulse_tra_count': ceo_jobs_qs.filter(current_stage_number=2, status__in=['ACTIVE', 'DELAYED']).count(),
+            'pulse_tbs_count': ceo_jobs_qs.filter(current_stage_number=3, status__in=['ACTIVE', 'DELAYED']).count(),
+            'pulse_port_count': ceo_jobs_qs.filter(current_stage_number=4, status__in=['ACTIVE', 'DELAYED']).count(),
+            'pulse_yard_count': ceo_jobs_qs.filter(current_stage_number=5, status__in=['ACTIVE', 'DELAYED']).count(),
+        })
+        return render(request, 'core/ceo_dashboard.html', context)
 
     return render(request, 'core/dashboard.html', context)
 
@@ -2135,6 +2247,11 @@ def job_detail_view(request, job_id):
 
 
 
+    if role == UserRole.CEO and not request.user.is_superuser:
+        context['ceo_wharfage_total'] = (job.cost_wharfage or Decimal('0')) + (job.cost_tiss_wharfage or Decimal('0'))
+        context['ceo_ferry_facil'] = (job.cost_ferry_charges or Decimal('0')) + (job.cost_facilitation or Decimal('0'))
+        return render(request, 'core/ceo_job_detail.html', context)
+
     return render(request, 'core/job_detail.html', context)
 
 
@@ -2538,7 +2655,7 @@ def job_create_view(request):
 
 
 
-            clearing_officer=declarer,
+            clearing_officer=None,
 
 
 
@@ -3209,6 +3326,15 @@ def print_tbs_letter_view(request, job_id):
     return render(request, 'core/print_tbs_letter.html', {'job': job, 'today': timezone.now()})
 
 
+@login_required
+def print_shipping_auth_letter_view(request, job_id):
+    job = get_object_or_404(JobShipment.objects.select_related('customer'), id=job_id)
+    line = (request.GET.get('line') or 'PRIME').strip().upper()
+    if line not in ('PRIME', 'WOSAC', 'CUSTOM'):
+        line = 'PRIME'
+    return render(request, 'core/print_shipping_auth_letter.html', {'job': job, 'today': timezone.now(), 'shipping_line': line})
+
+
 
 
 
@@ -3290,15 +3416,92 @@ def print_combined_pack_view(request, job_id):
 
 
 
+def _can_assign_declarer(user):
+    return _can_assign_stage(user, 2)
+
+
+def _can_assign_stage(user, stage_number):
+    if not user or not user.is_authenticated:
+        return False
+    profile = getattr(user, 'profile', None)
+    if stage_number in (2, 3):
+        return bool(getattr(profile, 'can_assign_declaration', False))
+    if stage_number == 4:
+        return bool(getattr(profile, 'can_assign_port', False))
+    return False
+
+
+def _is_stage2_supervisor_viewer(user):
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    profile = getattr(user, 'profile', None)
+    return getattr(profile, 'role', None) in (UserRole.CEO, UserRole.ADMIN, UserRole.OPERATIONS_MGR)
+
+
+def _assign_stage_officer(request, job_id, stage_number, field_name, default_redirect):
+    if request.method != 'POST':
+        return redirect(default_redirect)
+    if not _can_assign_stage(request.user, stage_number):
+        messages.error(request, "Huna ruhusa ya kugawa kazi za hatua hii.")
+        return redirect(request.META.get('HTTP_REFERER') or default_redirect)
+
+    job = get_object_or_404(JobShipment, id=job_id)
+    officer_id = (request.POST.get('declarer_id') or '').strip()
+    if officer_id:
+        officer = get_object_or_404(User, id=officer_id, is_active=True)
+        setattr(job, field_name, officer)
+        job.save(update_fields=[field_name, 'updated_at'])
+        officer_name = officer.get_full_name() or officer.username
+        log_audit(request, "ASSIGN_STAGE_OFFICER", f"Assigned Stage {stage_number} to {officer_name} for {job.job_number}", job=job)
+        messages.success(request, f"Kazi {job.job_number} imepangiwa {officer_name}.")
+    else:
+        setattr(job, field_name, None)
+        job.save(update_fields=[field_name, 'updated_at'])
+        log_audit(request, "UNASSIGN_STAGE_OFFICER", f"Cleared Stage {stage_number} assignment for {job.job_number}", job=job)
+        messages.info(request, f"Kazi {job.job_number} imewekwa Unassigned.")
+
+    return redirect(request.META.get('HTTP_REFERER') or default_redirect)
+
+
 @login_required
+def assign_declarer_view(request, job_id):
+    return _assign_stage_officer(request, job_id, 2, 'clearing_officer', 'stage_customs')
 
 
+@login_required
+def assign_tbs_officer_view(request, job_id):
+    return _assign_stage_officer(request, job_id, 3, 'tbs_officer', 'stage_tbs')
 
+
+@login_required
+def assign_port_officer_view(request, job_id):
+    return _assign_stage_officer(request, job_id, 4, 'port_officer', 'stage_port')
+
+
+@login_required
 def advance_stage_action(request, job_id):
     if request.method == 'POST':
         job = get_object_or_404(JobShipment, id=job_id)
         current_stage = job.stages.filter(stage_number=job.current_stage_number).first()
         now = timezone.now()
+
+        if job.current_stage_number in (2, 3, 4):
+            stage_map = {
+                2: ('clearing_officer', 'stage_customs'),
+                3: ('tbs_officer', 'stage_tbs'),
+                4: ('port_officer', 'stage_port'),
+            }
+            officer_field, default_redir = stage_map[job.current_stage_number]
+            assigned_officer = getattr(job, officer_field)
+            if not assigned_officer:
+                messages.error(request, "Kazi hii bado haijapangiwa afisa. Mkuu wa hatua hii anatakiwa aigawe kwanza.")
+                return redirect(request.META.get('HTTP_REFERER') or default_redir)
+            if assigned_officer.id != request.user.id:
+                assigned_name = assigned_officer.get_full_name() or assigned_officer.username
+                messages.error(request, f"Kazi hii imepangiwa {assigned_name}. Yeye ndiye anayepaswa kubonyeza Complete.")
+                return redirect(request.META.get('HTTP_REFERER') or default_redir)
 
         # Update stage-specific attributes automatically without requiring any form input
         if job.current_stage_number == 1:
@@ -3306,21 +3509,27 @@ def advance_stage_action(request, job_id):
             if not job.file_opened_at:
                 job.file_opened_at = now
         elif job.current_stage_number == 2:
-            job.clearing_officer = request.user
+            if not job.clearing_officer:
+                job.clearing_officer = request.user
             if not job.tanesw_lodged_at:
                 job.tanesw_lodged_at = now
         elif job.current_stage_number == 3:
+            if not job.tbs_officer:
+                job.tbs_officer = request.user
+        elif job.current_stage_number == 4:
             # Port Clearance & Gate Exit: consolidates D/O, Physical Verification, Port/ICD, Gate Exit
+            if not job.port_officer:
+                job.port_officer = request.user
             job.vehicle_inspection_done = True
             job.vehicle_inspection_at = now
             job.vehicle_inspection_by = request.user
             job.vehicle_dispatched_to_office = True
             job.vehicle_dispatched_at = now
-        elif job.current_stage_number == 4:
+        elif job.current_stage_number == 5:
             # Vehicle Arrival at Yard / Office
             job.vehicle_arrived_at_office = True
             job.vehicle_arrived_at = now
-        elif job.current_stage_number >= 5:
+        elif job.current_stage_number >= 6:
             # Customer Handover
             if not job.received_by_name:
                 job.received_by_name = job.customer.company_name
@@ -3339,7 +3548,7 @@ def advance_stage_action(request, job_id):
         user_name = request.user.get_full_name() or request.user.username
 
         # Advance to next stage or finish
-        if job.current_stage_number < 5:
+        if job.current_stage_number < 6:
             completed_num = job.current_stage_number
             next_num = completed_num + 1
             job.current_stage_number = next_num
@@ -7678,17 +7887,54 @@ def finance_transactions_view(request):
 
 
 
-    total_income = ClientPayment.objects.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    client_income_total = ClientPayment.objects.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    other_rev_inflow_qs = OtherRevenue.objects.filter(
+        Q(inflow_type__in=['OTHER_REVENUE', 'CAPITAL_INJECTION']) |
+        Q(inflow_type='CONTAINER_REFUND', deposit_status__in=['RETURNED_FULL', 'PARTIAL'])
+    ).select_related('job', 'job__customer', 'recorded_by').order_by('-date', '-id')
+    if query:
+        other_rev_inflow_qs = other_rev_inflow_qs.filter(
+            Q(source__icontains=query) |
+            Q(description__icontains=query) |
+            Q(job__bl_number__icontains=query) |
+            Q(job__job_number__icontains=query)
+        )
+    if method_filter:
+        other_rev_inflow_qs = other_rev_inflow_qs.filter(payment_method=method_filter)
 
+    other_income_total = OtherRevenue.objects.aggregate(
+        total=Sum('returned_amount', filter=Q(inflow_type='CONTAINER_REFUND', deposit_status__in=['RETURNED_FULL', 'PARTIAL']))
+    )['total'] or Decimal('0.00')
+    other_income_total += OtherRevenue.objects.filter(inflow_type__in=['OTHER_REVENUE', 'CAPITAL_INJECTION']).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    total_income = client_income_total + other_income_total
 
+    op_exp_qs = OperatingExpense.objects.exclude(category__name__icontains='Salary').select_related('category', 'recorded_by').order_by('-date', '-id')
+    sal_exp_qs = SalaryPayment.objects.filter(status='PAID').select_related('employee', 'recorded_by').order_by('-payment_date', '-id')
+    if query:
+        op_exp_qs = op_exp_qs.filter(Q(payee__icontains=query) | Q(description__icontains=query) | Q(category__name__icontains=query))
+        sal_exp_qs = sal_exp_qs.filter(Q(employee__full_name__icontains=query))
+    if method_filter:
+        op_exp_qs = op_exp_qs.filter(payment_method=method_filter)
+        sal_exp_qs = sal_exp_qs.filter(payment_method=method_filter)
 
-    total_expenses = ExpenseVoucher.objects.filter(is_paid=True).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    paid_voucher_job_ids = set(ExpenseVoucher.objects.filter(is_paid=True).values_list('job_id', flat=True))
+    job_disb_qs = JobShipment.objects.exclude(id__in=paid_voucher_job_ids).select_related('customer').order_by('-updated_at', '-id')
+    if query:
+        job_disb_qs = job_disb_qs.filter(
+            Q(job_number__icontains=query) |
+            Q(bl_number__icontains=query) |
+            Q(customer__company_name__icontains=query) |
+            Q(chassis_number__icontains=query)
+        )
+    job_disb_list = [j for j in job_disb_qs if (j.total_direct_costs or Decimal('0')) > 0]
 
-
+    voucher_exp_total = ExpenseVoucher.objects.filter(is_paid=True).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    op_exp_total = OperatingExpense.objects.exclude(category__name__icontains='Salary').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    sal_exp_total = sum((s.net_pay or Decimal('0')) for s in SalaryPayment.objects.filter(status='PAID'))
+    job_disb_total = sum(j.total_direct_costs for j in JobShipment.objects.exclude(id__in=paid_voucher_job_ids))
+    total_expenses = voucher_exp_total + op_exp_total + sal_exp_total + job_disb_total
 
     total_duty_settled = JobShipment.objects.filter(duty_paid=True).aggregate(total=Sum('assessed_duty_amount'))['total'] or Decimal('0.00')
-
-
 
     net_cashflow = total_income - total_expenses
 
@@ -7824,6 +8070,29 @@ def finance_transactions_view(request):
 
             })
 
+        for rev in other_rev_inflow_qs:
+            inflow_amt = rev.returned_amount if rev.inflow_type == 'CONTAINER_REFUND' else rev.amount
+            if not inflow_amt or inflow_amt <= 0:
+                continue
+            transactions.append({
+                'id': f"REV-{rev.id}",
+                'date': rev.date,
+                'type': 'INCOME',
+                'title': f"{rev.get_inflow_type_display()}: {rev.description or rev.source}",
+                'reference': rev.payment_reference or '—',
+                'method': rev.get_payment_method_display(),
+                'method_code': rev.payment_method,
+                'related_doc': rev.job.bl_number if rev.job else 'General',
+                'related_job': rev.job.job_number if rev.job else '—',
+                'amount': inflow_amt,
+                'receipt_url': rev.receipt_file.url if rev.receipt_file else None,
+                'recorded_by': rev.recorded_by.get_full_name() if rev.recorded_by else "Accounts",
+                'receipt_no': f"INFLOW/{rev.date.year}/{rev.id:04d}",
+                'customer_name': rev.source,
+                'bl_number': rev.job.bl_number if rev.job else '',
+                'chassis_number': '',
+            })
+
 
 
 
@@ -7935,6 +8204,75 @@ def finance_transactions_view(request):
 
 
             })
+
+        for op in op_exp_qs:
+            transactions.append({
+                'id': f"OP-{op.id}",
+                'date': op.date,
+                'type': 'EXPENSE',
+                'title': f"{op.category.name}: {op.payee}",
+                'reference': op.payment_reference or '—',
+                'method': op.get_payment_method_display(),
+                'method_code': op.payment_method,
+                'related_doc': 'Office Expense',
+                'related_job': '—',
+                'amount': op.amount,
+                'receipt_url': op.receipt_file.url if op.receipt_file else None,
+                'recorded_by': op.recorded_by.get_full_name() if op.recorded_by else "Accounts",
+                'voucher_no': f"OP/{op.date.year}/{op.id:04d}",
+                'category_name': op.category.name,
+                'description': op.description or op.category.name,
+                'customer_name': op.payee,
+                'bl_number': '',
+                'chassis_number': '',
+            })
+
+        for sal in sal_exp_qs:
+            s_date = sal.payment_date or sal.period
+            transactions.append({
+                'id': f"SAL-{sal.id}",
+                'date': s_date,
+                'type': 'EXPENSE',
+                'title': f"Salary Paid: {sal.employee.full_name}",
+                'reference': sal.payment_reference or 'Payroll',
+                'method': sal.get_payment_method_display(),
+                'method_code': sal.payment_method,
+                'related_doc': sal.period.strftime('%b %Y'),
+                'related_job': 'Payroll',
+                'amount': sal.net_pay,
+                'receipt_url': None,
+                'recorded_by': sal.recorded_by.get_full_name() if sal.recorded_by else "Accounts",
+                'voucher_no': f"PAY/{s_date.year}/{sal.id:04d}",
+                'category_name': 'Salary Payroll',
+                'description': f"Net salary for {sal.period.strftime('%B %Y')}",
+                'customer_name': sal.employee.full_name,
+                'bl_number': '',
+                'chassis_number': '',
+            })
+
+        if not method_filter or method_filter == 'BANK':
+            for j in job_disb_list:
+                j_date = (j.updated_at or j.created_at).date()
+                transactions.append({
+                    'id': f"JOB-{j.id}",
+                    'date': j_date,
+                    'type': 'EXPENSE',
+                    'title': f"Direct Job Disbursements (D/O, Port, Transport): {j.customer.company_name}",
+                    'reference': j.job_number,
+                    'method': 'Bank / Cash Disbursement',
+                    'method_code': 'BANK',
+                    'related_doc': j.job_number,
+                    'related_job': j.job_number,
+                    'amount': j.total_direct_costs,
+                    'receipt_url': None,
+                    'recorded_by': "Accounts",
+                    'voucher_no': j.job_number,
+                    'category_name': 'Direct Job Disbursements',
+                    'description': f"D/O, Wharfage, Handling, Transport & Port costs for {j.bl_number or j.job_number}",
+                    'customer_name': j.customer.company_name,
+                    'bl_number': j.bl_number or j.job_number,
+                    'chassis_number': j.chassis_number,
+                })
 
 
 
@@ -8074,7 +8412,15 @@ def finance_transactions_view(request):
 
 
 
-    transactions.sort(key=lambda x: x['date'], reverse=True)
+    def _tx_sort_key(item):
+        d = item['date']
+        if hasattr(d, 'date'):
+            d = d.date()
+        raw_id = str(item.get('id', '0'))
+        num_id = int(raw_id.split('-')[-1]) if raw_id.split('-')[-1].isdigit() else 0
+        return (d, num_id)
+
+    transactions.sort(key=_tx_sort_key, reverse=True)
 
 
 
@@ -8389,6 +8735,221 @@ def operating_expense_category_toggle_action(request, category_id):
         log_audit(request, "OPERATING_EXPENSE_CATEGORY_TOGGLED", f"Expense category '{category.name}' {state}.")
         messages.success(request, f"Category '{category.name}' {state}.")
     return _operating_expenses_redirect(request.POST.get('return_month', '').strip())
+
+
+def _other_revenues_redirect(month_param=''):
+    if month_param:
+        return redirect(f"{reverse('other_revenues')}?month={month_param}")
+    return redirect('other_revenues')
+
+
+def _parse_other_revenue_form(request, is_update=False):
+    date_str = request.POST.get('date', '').strip()
+    inflow_type = request.POST.get('inflow_type', 'OTHER_REVENUE').strip()
+    amount_raw = request.POST.get('amount', '0').replace(',', '').strip()
+    deposit_status = request.POST.get('deposit_status', 'PENDING').strip()
+    returned_raw = request.POST.get('returned_amount', '0').replace(',', '').strip()
+    source = request.POST.get('source', '').strip()
+    job_id = request.POST.get('job_id', '').strip()
+    payment_method = request.POST.get('payment_method', 'BANK').strip()
+    payment_reference = request.POST.get('payment_reference', '').strip()
+    description = request.POST.get('description', '').strip()
+    receipt_file = request.FILES.get('receipt_file')
+
+    if inflow_type not in dict(OtherRevenue.INFLOW_TYPE_CHOICES):
+        inflow_type = 'OTHER_REVENUE'
+    if deposit_status not in dict(OtherRevenue.DEPOSIT_STATUS_CHOICES):
+        deposit_status = 'PENDING'
+    if payment_method not in dict(OperatingExpense.PAYMENT_METHOD_CHOICES):
+        payment_method = 'BANK'
+
+    try:
+        amount = Decimal(amount_raw)
+    except Exception:
+        return None, "Please enter a valid numeric amount."
+    if amount <= 0:
+        return None, "Amount must be greater than zero."
+
+    returned_amount = Decimal('0')
+    if inflow_type == 'CONTAINER_REFUND':
+        if not is_update and 'deposit_status' not in request.POST:
+            deposit_status = 'PENDING'
+            returned_amount = Decimal('0')
+        elif deposit_status == 'RETURNED_FULL':
+            returned_amount = amount
+        elif deposit_status == 'PARTIAL':
+            try:
+                returned_amount = Decimal(returned_raw)
+            except Exception:
+                return None, "Please enter a valid returned amount."
+            if returned_amount <= 0 or returned_amount >= amount:
+                return None, "For Partial refund, returned amount must be greater than 0 and less than the deposit."
+        else:
+            returned_amount = Decimal('0')
+    else:
+        deposit_status = 'RETURNED_FULL'
+        returned_amount = amount
+
+    if not source:
+        if inflow_type == 'CONTAINER_REFUND':
+            source = 'Shipping Line'
+        elif inflow_type == 'CAPITAL_INJECTION':
+            source = 'Boss / Director'
+        else:
+            source = 'Other Source'
+
+    try:
+        rev_date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else timezone.localdate()
+    except ValueError:
+        return None, "Invalid date format."
+
+    job_obj = None
+    if job_id.isdigit():
+        job_obj = JobShipment.objects.filter(id=int(job_id)).first()
+
+    return {
+        'date': rev_date,
+        'inflow_type': inflow_type,
+        'amount': amount,
+        'deposit_status': deposit_status,
+        'returned_amount': returned_amount,
+        'source': source,
+        'job': job_obj,
+        'payment_method': payment_method,
+        'payment_reference': payment_reference,
+        'description': description,
+        'receipt_file': receipt_file,
+    }, None
+
+
+@login_required
+@role_required(OPERATING_EXPENSE_ROLES)
+def other_revenues_view(request):
+    month_param = request.GET.get('month', '').strip()
+    inflow_type_filter = request.GET.get('inflow_type', '').strip()
+    q = request.GET.get('q', '').strip()
+
+    today = timezone.localdate()
+    if month_param == 'all':
+        selected_month = None
+        month_label = 'All Time'
+    else:
+        try:
+            selected_month = datetime.strptime(month_param, '%Y-%m').date().replace(day=1) if month_param else today.replace(day=1)
+        except ValueError:
+            selected_month = today.replace(day=1)
+        month_label = selected_month.strftime('%B %Y')
+
+    revenues = OtherRevenue.objects.select_related('job', 'recorded_by')
+    if selected_month:
+        revenues = revenues.filter(date__year=selected_month.year, date__month=selected_month.month)
+    if inflow_type_filter in dict(OtherRevenue.INFLOW_TYPE_CHOICES):
+        revenues = revenues.filter(inflow_type=inflow_type_filter)
+    if q:
+        revenues = revenues.filter(
+            Q(source__icontains=q) |
+            Q(payment_reference__icontains=q) |
+            Q(description__icontains=q) |
+            Q(job__bl_number__icontains=q) |
+            Q(job__job_number__icontains=q)
+        )
+
+    totals = revenues.aggregate(
+        total_all=Sum('returned_amount', filter=Q(inflow_type='OTHER_REVENUE') | Q(inflow_type='CAPITAL_INJECTION') | Q(inflow_type='CONTAINER_REFUND', deposit_status__in=['RETURNED_FULL', 'PARTIAL'])),
+        total_business=Sum('amount', filter=Q(inflow_type='OTHER_REVENUE')),
+        total_refunds=Sum('returned_amount', filter=Q(inflow_type='CONTAINER_REFUND', deposit_status__in=['RETURNED_FULL', 'PARTIAL'])),
+        total_capital=Sum('amount', filter=Q(inflow_type='CAPITAL_INJECTION')),
+    )
+
+    context = {
+        'revenues': revenues,
+        'selected_month': selected_month,
+        'month_param': 'all' if month_param == 'all' else (selected_month.strftime('%Y-%m') if selected_month else ''),
+        'month_label': month_label,
+        'inflow_type_filter': inflow_type_filter,
+        'search_q': q,
+        'inflow_choices': OtherRevenue.INFLOW_TYPE_CHOICES,
+        'payment_methods': OperatingExpense.PAYMENT_METHOD_CHOICES,
+        'total_inflows': totals['total_all'] or Decimal('0'),
+        'total_business_revenue': totals['total_business'] or Decimal('0'),
+        'total_container_refunds': totals['total_refunds'] or Decimal('0'),
+        'total_capital_injections': totals['total_capital'] or Decimal('0'),
+        'recent_jobs': JobShipment.objects.exclude(container_size_type='RORO').select_related('customer').order_by('-created_at')[:300],
+        'today_str': today.strftime('%Y-%m-%d'),
+    }
+    return render(request, 'core/finance_other_revenues.html', context)
+
+
+@login_required
+@role_required(OPERATING_EXPENSE_ROLES)
+def other_revenue_create_action(request):
+    if request.method != 'POST':
+        return redirect('other_revenues')
+
+    data, error = _parse_other_revenue_form(request)
+    if error:
+        messages.error(request, error)
+        return _other_revenues_redirect(request.POST.get('return_month', '').strip())
+
+    rev = OtherRevenue.objects.create(recorded_by=request.user, **data)
+    if rev.inflow_type == 'CONTAINER_REFUND' and rev.job and (rev.job.cost_container_deposit or 0) == 0:
+        rev.job.cost_container_deposit = rev.amount
+        rev.job.save(update_fields=['cost_container_deposit', 'updated_at'])
+    log_audit(
+        request,
+        "OTHER_REVENUE_CREATED",
+        f"{rev.get_inflow_type_display()}: TSh {rev.amount:,.2f} from {rev.source} on {rev.date}",
+        job=rev.job,
+    )
+    messages.success(request, f"Recorded TSh {rev.amount:,.2f} ({rev.get_inflow_type_display()}) successfully.")
+    next_url = request.POST.get('next_url', '').strip()
+    if next_url and next_url.startswith('/'):
+        return redirect(next_url)
+    return _other_revenues_redirect(rev.date.strftime('%Y-%m'))
+
+
+@login_required
+@role_required(OPERATING_EXPENSE_ROLES)
+def other_revenue_update_action(request, revenue_id):
+    rev = get_object_or_404(OtherRevenue, id=revenue_id)
+    if request.method != 'POST':
+        return redirect('other_revenues')
+
+    data, error = _parse_other_revenue_form(request, is_update=True)
+    if error:
+        messages.error(request, error)
+        return _other_revenues_redirect(request.POST.get('return_month', '').strip())
+
+    for field, value in data.items():
+        if field == 'receipt_file' and value is None:
+            continue
+        setattr(rev, field, value)
+    rev.save()
+    if rev.inflow_type == 'CONTAINER_REFUND' and rev.job and (rev.job.cost_container_deposit or 0) == 0:
+        rev.job.cost_container_deposit = rev.amount
+        rev.job.save(update_fields=['cost_container_deposit', 'updated_at'])
+    log_audit(
+        request,
+        "OTHER_REVENUE_UPDATED",
+        f"{rev.get_inflow_type_display()}: TSh {rev.amount:,.2f} from {rev.source} on {rev.date}",
+        job=rev.job,
+    )
+    messages.success(request, "Inflow / revenue record updated.")
+    return _other_revenues_redirect(rev.date.strftime('%Y-%m'))
+
+
+@login_required
+@role_required(OPERATING_EXPENSE_ROLES)
+def other_revenue_delete_action(request, revenue_id):
+    rev = get_object_or_404(OtherRevenue, id=revenue_id)
+    if request.method == 'POST':
+        month = rev.date.strftime('%Y-%m')
+        details = f"{rev.get_inflow_type_display()}: TSh {rev.amount:,.2f} from {rev.source} on {rev.date}"
+        rev.delete()
+        log_audit(request, "OTHER_REVENUE_DELETED", details)
+        messages.success(request, "Inflow / revenue record deleted.")
+        return _other_revenues_redirect(month)
+    return redirect('other_revenues')
 
 
 # =========================================================================
@@ -9132,7 +9693,7 @@ def expense_create_action(request):
 
 
 
-            return redirect('finance')
+            return redirect(request.META.get('HTTP_REFERER') or 'finance_billing')
 
 
 
@@ -9272,11 +9833,11 @@ def expense_create_action(request):
 
 
 
-        return redirect('finance')
+        return redirect(request.META.get('HTTP_REFERER') or 'finance_billing')
 
 
 
-    return redirect('finance')
+    return redirect(request.META.get('HTTP_REFERER') or 'finance_billing')
 
 
 
@@ -9662,7 +10223,7 @@ def expense_approval_action(request, voucher_id):
 
 
 
-    return redirect('finance')
+    return redirect(request.META.get('HTTP_REFERER') or 'finance_billing')
 
 
 
@@ -9845,7 +10406,7 @@ def payment_record_action(request):
 
 
 
-    return redirect('finance')
+    return redirect(request.META.get('HTTP_REFERER') or 'finance_billing')
 
 
 
@@ -10181,6 +10742,15 @@ def _get_tancis_filename(doc):
     code = TANCIS_DOC_CODES.get(doc.document_type)
     if code:
         return f"{code}{ext}"
+    raw_title = (getattr(doc, 'title', '') or '').strip()
+    if raw_title:
+        import re
+        clean_title = re.sub(r'[\\/:*?"<>|]+', '_', raw_title)
+        clean_title = re.sub(r'\s+', '_', clean_title).strip('_')
+        if clean_title:
+            if clean_title.lower().endswith(ext.lower()):
+                return clean_title
+            return f"{clean_title}{ext}"
     doc_type_clean = (
         doc.get_document_type_display()
         .replace(' ', '_')
@@ -19837,9 +20407,10 @@ def get_vehicle_tracking_milestones(job):
     STAGE_SPECS = [
         (1, 'File Opening & Doc Intake', 'Document Intake & File Opening', 'Same Day', 'fa-folder-open'),
         (2, 'Customs Declaration', 'TRA TANSAD Declaration', '24 Hours', 'fa-file-invoice'),
-        (3, 'Port Clearance & Gate Exit', 'D/O, Inspection, Port Fees & Gate Pass', '1-2 Days', 'fa-truck-moving'),
-        (4, 'Vehicle Arrival', 'Arrived at Yard / Office', 'Same Day', 'fa-warehouse'),
-        (5, 'Customer Handover', 'Customer Handover & POD Signed', 'Upon Request', 'fa-handshake'),
+        (3, 'TBS Inspection & Clearance', 'TBS Portal & Standards Approval', '1-2 Days', 'fa-shield-halved'),
+        (4, 'Port Clearance & Gate Exit', 'D/O, Inspection, Port Fees & Gate Pass', '1-2 Days', 'fa-truck-moving'),
+        (5, 'Vehicle Arrival', 'Arrived at Yard / Office', 'Same Day', 'fa-warehouse'),
+        (6, 'Customer Handover', 'Customer Handover & POD Signed', 'Upon Request', 'fa-handshake'),
     ]
 
     stages_map = {si.stage_number: si for si in job.stages.all().select_related('responsible_officer')}
@@ -19874,11 +20445,13 @@ def get_vehicle_tracking_milestones(job):
                 officer = job.documentation_officer.get_full_name() or job.documentation_officer.username
             elif step_num == 2 and job.clearing_officer:
                 officer = job.clearing_officer.get_full_name() or job.clearing_officer.username
-            elif step_num == 3 and (job.vehicle_inspection_by or getattr(job, 'port_officer', None)):
+            elif step_num == 3 and getattr(job, 'tbs_officer', None):
+                officer = job.tbs_officer.get_full_name() or job.tbs_officer.username
+            elif step_num == 4 and (job.vehicle_inspection_by or getattr(job, 'port_officer', None)):
                 officer = (job.vehicle_inspection_by.get_full_name() or job.vehicle_inspection_by.username) if job.vehicle_inspection_by else (job.port_officer.get_full_name() or job.port_officer.username)
-            elif step_num == 4 and job.vehicle_driver_name:
+            elif step_num == 5 and job.vehicle_driver_name:
                 officer = job.vehicle_driver_name
-            elif step_num == 5 and job.received_by_name:
+            elif step_num == 6 and job.received_by_name:
                 officer = job.received_by_name
 
         if not officer:
@@ -21985,11 +22558,7 @@ def root_entry_view(request):
 
             return dashboard_view(request)
 
-
-
         return redirect('login')
-
-
 
     return public_website_view(request)
 
@@ -23235,6 +23804,64 @@ def stage_pipeline_view(request, stage_number):
         )
     ).order_by('stage_completed', '-updated_at', '-created_at')
 
+    has_assignment_stage = stage_number in (2, 3, 4)
+    can_assign_declarer = has_assignment_stage and _can_assign_stage(request.user, stage_number)
+    show_all_stage2_workload = has_assignment_stage
+    selected_declarer = (request.GET.get('declarer') or '').strip()
+    declarers = []
+    declarer_stats = []
+    unassigned_count = 0
+    my_pending_count = 0
+
+    if has_assignment_stage:
+        from django.db.models import Count
+        officer_field = 'clearing_officer' if stage_number == 2 else ('tbs_officer' if stage_number == 3 else 'port_officer')
+        officer_id_field = f'{officer_field}_id'
+        all_stage_jobs = jobs
+        unassigned_count = all_stage_jobs.filter(stage_completed=False, **{f'{officer_field}__isnull': True}).count()
+        my_pending_count = all_stage_jobs.filter(stage_completed=False, **{officer_field: request.user}).count()
+
+        ops_roles = [
+            UserRole.OPERATIONS, UserRole.CLEARING_OFFICER, UserRole.OPERATIONS_MGR,
+            UserRole.DOC_OFFICER, UserRole.PORT_OFFICER, UserRole.DISPATCH_OFFICER,
+        ]
+        declarers = list(
+            User.objects.filter(
+                is_active=True,
+                profile__role__in=ops_roles,
+            ).exclude(username__startswith='test_').order_by('first_name', 'username')
+        )
+
+        counts_qs = (
+            all_stage_jobs.filter(**{f'{officer_field}__isnull': False})
+            .values(officer_id_field, 'stage_completed')
+            .annotate(cnt=Count('id'))
+        )
+        counts_map = {}
+        for row in counts_qs:
+            uid = row[officer_id_field]
+            bucket = counts_map.setdefault(uid, {'pending': 0, 'completed': 0})
+            if row['stage_completed']:
+                bucket['completed'] += row['cnt']
+            else:
+                bucket['pending'] += row['cnt']
+
+        for u in declarers:
+            st = counts_map.get(u.id, {'pending': 0, 'completed': 0})
+            declarer_stats.append({
+                'id': u.id,
+                'name': u.get_full_name() or u.username,
+                'pending': st['pending'],
+                'completed': st['completed'],
+            })
+
+        if selected_declarer == 'mine':
+            jobs = jobs.filter(**{officer_field: request.user})
+        elif selected_declarer == 'unassigned':
+            jobs = jobs.filter(**{f'{officer_field}__isnull': True})
+        elif selected_declarer.isdigit():
+            jobs = jobs.filter(**{officer_id_field: int(selected_declarer)})
+
     stage_specs = {
         1: {
             'title': "1. Documentation & Intake (File Opening)",
@@ -23253,23 +23880,31 @@ def stage_pipeline_view(request, stage_number):
             'confirm_msg': "Confirm: Complete TANSAD declaration for this consignment?",
         },
         3: {
-            'title': "3. Port Clearance & Gate Exit",
+            'title': "3. TBS Inspection & Clearance",
+            'desc': "TBS portal clearance, standards inspection, and approval before port exit.",
+            'icon': "fa-shield-halved",
+            'badge_bg': "#0EA5E9",
+            'finish_label': "✓ Approve TBS",
+            'confirm_msg': "Confirm: Approve TBS clearance and advance to Port Clearance?",
+        },
+        4: {
+            'title': "4. Port Clearance & Gate Exit",
             'desc': "D/O collection, wharfage clearance, physical verification, and gate pass exit.",
             'icon': "fa-anchor",
             'badge_bg': "#0284C7",
             'finish_label': "✓ Complete Port Clearance",
             'confirm_msg': "Confirm: Cargo has cleared gate exit and departed port?",
         },
-        4: {
-            'title': "4. Yard Arrivals & Inspection",
+        5: {
+            'title': "5. Yard Arrivals & Inspection",
             'desc': "Vehicle intake at Malkia yard with condition inspection.",
             'icon': "fa-warehouse",
             'badge_bg': "#0D9488",
             'finish_label': "✓ Confirm Yard Arrival",
             'confirm_msg': "Confirm: Vehicle safely received at Malkia yard?",
         },
-        5: {
-            'title': "5. Customer Handover & Delivery",
+        6: {
+            'title': "6. Customer Handover & Delivery",
             'desc': "Final handover to customer, POD signing, and file closing.",
             'icon': "fa-handshake",
             'badge_bg': "#16A34A",
@@ -23300,6 +23935,15 @@ def stage_pipeline_view(request, stage_number):
         'search_q': q,
         'active_count': jobs.filter(stage_completed=False).count(),
         'total_count': jobs.count(),
+        'has_assignment_stage': has_assignment_stage,
+        'assign_url_name': 'assign_declarer' if stage_number == 2 else ('assign_tbs_officer' if stage_number == 3 else 'assign_port_officer'),
+        'can_assign_declarer': can_assign_declarer,
+        'show_all_stage2_workload': show_all_stage2_workload,
+        'declarers': declarers,
+        'declarer_stats': declarer_stats,
+        'unassigned_count': unassigned_count,
+        'my_pending_count': my_pending_count,
+        'selected_declarer': selected_declarer,
     }
     return render(request, 'core/stage_operation_list.html', context)
 
@@ -23307,14 +23951,17 @@ def stage_pipeline_view(request, stage_number):
 def stage_customs_view(request):
     return stage_pipeline_view(request, stage_number=2)
 
-def stage_port_view(request):
+def stage_tbs_view(request):
     return stage_pipeline_view(request, stage_number=3)
 
-def stage_yard_view(request):
+def stage_port_view(request):
     return stage_pipeline_view(request, stage_number=4)
 
-def stage_handover_view(request):
+def stage_yard_view(request):
     return stage_pipeline_view(request, stage_number=5)
+
+def stage_handover_view(request):
+    return stage_pipeline_view(request, stage_number=6)
 
 
 
@@ -23412,12 +24059,30 @@ def finance_vehicles_out_view(request):
         status_param = 'all'
         displayed_jobs = job_list
 
-    # Attach document URLs for quick view in ledger
+    # Attach document URLs & Container Deposit Refund totals for quick view in ledger
+    from django.db.models import Count
+    refund_rows = OtherRevenue.objects.filter(
+        job_id__in=[j.id for j in job_list],
+        inflow_type='CONTAINER_REFUND',
+    ).values('job_id').annotate(
+        total=Sum('returned_amount', filter=Q(deposit_status__in=['RETURNED_FULL', 'PARTIAL'])),
+        resolved_cnt=Count('id', filter=Q(deposit_status__in=['RETURNED_FULL', 'PARTIAL', 'FORFEITED'])),
+    )
+    refund_totals = {r['job_id']: (r['total'] or Decimal('0')) for r in refund_rows}
+    refund_counts = {r['job_id']: r['resolved_cnt'] for r in refund_rows}
     for j in job_list:
         bl_doc = j.documents.filter(document_type='BILL_OF_LADING').first()
         inv_doc = j.documents.filter(document_type='COMMERCIAL_INVOICE').first()
         j.bl_doc_url = bl_doc.file.url if bl_doc and bl_doc.file else None
         j.inv_doc_url = inv_doc.file.url if inv_doc and inv_doc.file else None
+        j.deposit_refunded_total = refund_totals.get(j.id, Decimal('0'))
+        j._deposit_refunded_cache = j.deposit_refunded_total
+        j.deposit_refund_logged = refund_counts.get(j.id, 0) > 0
+        j.unrecovered_deposit_for_invoice = (
+            (j.cost_other or Decimal('0')) + j.net_container_deposit
+            if j.deposit_refund_logged and j.net_container_deposit > 0
+            else (j.cost_other or Decimal('0'))
+        )
 
     context = {
         'jobs': displayed_jobs,

@@ -55,6 +55,41 @@
         </form>
     </div>
 
+    {% if has_assignment_stage and show_all_stage2_workload %}
+    <!-- 2B. OFFICER WORKLOAD & ASSIGNMENT FILTER STRIP -->
+    <div class="card-panel" style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:0.85rem 1.15rem;margin-bottom:1.15rem;box-shadow:var(--shadow-sm);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.65rem;">
+            <span style="font-weight:800;font-size:0.78rem;color:#334155;text-transform:uppercase;letter-spacing:0.04em;">
+                <i class="fa-solid fa-users-gear" style="color:#7C3AED;margin-right:0.35rem;"></i>
+                {% if stage_number == 2 %}Mgawanyo wa Kazi za Declaration (Pending / Done){% elif stage_number == 3 %}Mgawanyo wa Kazi za TBS (Pending / Done){% else %}Mgawanyo wa Kazi za Port Clearance (Pending / Done){% endif %}
+            </span>
+            {% if can_assign_declarer %}
+            <span style="font-size:0.74rem;color:#64748B;">
+                Chagua jina la afisa kwenye jedwali hapa chini ili kumkabidhi kazi
+            </span>
+            {% endif %}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.45rem;align-items:center;">
+            <a href="?{% if search_q %}q={{ search_q|urlencode }}{% endif %}" style="text-decoration:none;padding:0.35rem 0.75rem;border-radius:999px;font-size:0.76rem;font-weight:800;border:1px solid {% if not selected_declarer %}#0F172A{% else %}#CBD5E1{% endif %};background:{% if not selected_declarer %}#0F172A{% else %}#F8FAFC{% endif %};color:{% if not selected_declarer %}#FFFFFF{% else %}#334155{% endif %};">
+                All ({{ total_count }})
+            </a>
+            <a href="?declarer=mine{% if search_q %}&amp;q={{ search_q|urlencode }}{% endif %}" style="text-decoration:none;padding:0.35rem 0.75rem;border-radius:999px;font-size:0.76rem;font-weight:800;border:1px solid {% if selected_declarer == 'mine' %}#2563EB{% else %}#BFDBFE{% endif %};background:{% if selected_declarer == 'mine' %}#2563EB{% else %}#EFF6FF{% endif %};color:{% if selected_declarer == 'mine' %}#FFFFFF{% else %}#1D4ED8{% endif %};">
+                Kazi Zangu ({{ my_pending_count }})
+            </a>
+            <a href="?declarer=unassigned{% if search_q %}&amp;q={{ search_q|urlencode }}{% endif %}" style="text-decoration:none;padding:0.35rem 0.75rem;border-radius:999px;font-size:0.76rem;font-weight:800;border:1px solid {% if selected_declarer == 'unassigned' %}#D97706{% else %}#FDE68A{% endif %};background:{% if selected_declarer == 'unassigned' %}#D97706{% else %}#FEF3C7{% endif %};color:{% if selected_declarer == 'unassigned' %}#FFFFFF{% else %}#92400E{% endif %};">
+                Unassigned ({{ unassigned_count }})
+            </a>
+            {% for ds in declarer_stats %}
+            <a href="?declarer={{ ds.id }}{% if search_q %}&amp;q={{ search_q|urlencode }}{% endif %}" style="text-decoration:none;padding:0.35rem 0.75rem;border-radius:999px;font-size:0.75rem;font-weight:700;border:1px solid {% if selected_declarer == ds.id|stringformat:'s' %}#7C3AED{% else %}#CBD5E1{% endif %};background:{% if selected_declarer == ds.id|stringformat:'s' %}#7C3AED{% else %}#FFFFFF{% endif %};color:{% if selected_declarer == ds.id|stringformat:'s' %}#FFFFFF{% else %}#1E293B{% endif %};display:inline-flex;align-items:center;gap:0.35rem;">
+                <span>{{ ds.name }}</span>
+                <span style="background:{% if selected_declarer == ds.id|stringformat:'s' %}rgba(255,255,255,0.22){% elif ds.pending > 0 %}#FEF3C7;color:#92400E{% else %}#F1F5F9;color:#64748B{% endif %};padding:1px 6px;border-radius:999px;font-size:0.7rem;font-weight:800;">{{ ds.pending }}</span>
+                <span style="background:{% if selected_declarer == ds.id|stringformat:'s' %}rgba(255,255,255,0.22){% else %}#DCFCE7;color:#166534{% endif %};padding:1px 6px;border-radius:999px;font-size:0.7rem;font-weight:800;">✓{{ ds.completed }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <!-- 3. MAIN WORKFLOW TABLE (1-CLICK FINISH) -->
     <div class="card-panel" style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="padding:0.85rem 1.25rem;background:#F8FAFC;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;">
@@ -75,6 +110,9 @@
                         <th>Client &amp; Contact</th>
                         <th>Vehicle &amp; Chassis</th>
                         <th>Status &amp; Time</th>
+                        {% if has_assignment_stage %}
+                        <th>Assigned To</th>
+                        {% endif %}
                         <th style="text-align:right;">Action (1-Click Finish)</th>
                     </tr>
                 </thead>
@@ -120,13 +158,13 @@
                         <!-- 4. STATUS & TIME -->
                         <td style="padding:0.85rem 1rem;vertical-align:middle;">
                             {% if job.stage_completed %}
-                            <span style="display:inline-block;font-size:0.72rem;font-weight:800;padding:0.15rem 0.55rem;border-radius:999px;background:#DCFCE7;color:#166534;">
+                            <span style="display:inline-block;font-size:0.72rem;font-weight:800;padding:0.15rem 0.55rem;border-radius:999px;background:#DCFCE7;color:#166534;border:1px solid #86EFAC;">
                                 ✓ COMPLETED
                             </span>
                             {% else %}
                             <span style="display:inline-block;font-size:0.72rem;font-weight:800;padding:0.15rem 0.5rem;border-radius:999px;
-                                {% if job.status == 'DELAYED' %}background:#FEE2E2;color:#B91C1C;
-                                {% else %}background:#DCFCE7;color:#15803D;{% endif %}">
+                                {% if job.status == 'DELAYED' %}background:#FEE2E2;color:#B91C1C;border:1px solid #FECACA;
+                                {% else %}background:#DBEAFE;color:#1D4ED8;border:1px solid #BFDBFE;{% endif %}">
                                 {% if job.status == 'DELAYED' %}● DELAYED{% else %}● ON TRACK{% endif %}
                             </span>
                             {% endif %}
@@ -135,12 +173,129 @@
                             </div>
                         </td>
 
+                        {% if has_assignment_stage %}
+                        <!-- 4B. ASSIGNED OFFICER -->
+                        {% if stage_number == 2 %}{% with assigned_officer=job.clearing_officer %}
+                        <td style="padding:0.75rem 0.85rem;vertical-align:middle;">
+                            {% if can_assign_declarer and not job.stage_completed %}
+                            <form action="{% url assign_url_name job.id %}" method="POST" style="margin:0;">
+                                {% csrf_token %}
+                                <select name="declarer_id" onchange="this.form.submit()" class="form-control" style="font-size:0.76rem;font-weight:700;padding:0.32rem 0.5rem;height:auto;min-width:145px;border-radius:7px;border:1px solid {% if assigned_officer %}#86EFAC;background:#F0FDF4;color:#166534{% else %}#FCD34D;background:#FFFBEB;color:#92400E{% endif %};">
+                                    <option value="">-- Unassigned --</option>
+                                    {% for dec in declarers %}
+                                    <option value="{{ dec.id }}" {% if assigned_officer and assigned_officer.id == dec.id %}selected{% endif %}>
+                                        {{ dec.get_full_name|default:dec.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                            {% else %}
+                                {% if assigned_officer %}
+                                    {% if assigned_officer.id == request.user.id %}
+                                    <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#DBEAFE;color:#1E40AF;font-size:0.74rem;font-weight:800;padding:0.25rem 0.6rem;border-radius:999px;">
+                                        <i class="fa-solid fa-user-check"></i> You ({{ assigned_officer.get_full_name|default:assigned_officer.username }})
+                                    </span>
+                                    {% else %}
+                                    <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#F1F5F9;color:#334155;font-size:0.74rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:999px;">
+                                        <i class="fa-solid fa-user"></i> {{ assigned_officer.get_full_name|default:assigned_officer.username }}
+                                    </span>
+                                    {% endif %}
+                                {% else %}
+                                <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#FEF3C7;color:#92400E;font-size:0.74rem;font-weight:800;padding:0.25rem 0.6rem;border-radius:999px;">
+                                    <i class="fa-regular fa-clock"></i> Unassigned
+                                </span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% elif stage_number == 3 %}{% with assigned_officer=job.tbs_officer %}
+                        <td style="padding:0.75rem 0.85rem;vertical-align:middle;">
+                            {% if can_assign_declarer and not job.stage_completed %}
+                            <form action="{% url assign_url_name job.id %}" method="POST" style="margin:0;">
+                                {% csrf_token %}
+                                <select name="declarer_id" onchange="this.form.submit()" class="form-control" style="font-size:0.76rem;font-weight:700;padding:0.32rem 0.5rem;height:auto;min-width:145px;border-radius:7px;border:1px solid {% if assigned_officer %}#86EFAC;background:#F0FDF4;color:#166534{% else %}#FCD34D;background:#FFFBEB;color:#92400E{% endif %};">
+                                    <option value="">-- Unassigned --</option>
+                                    {% for dec in declarers %}
+                                    <option value="{{ dec.id }}" {% if assigned_officer and assigned_officer.id == dec.id %}selected{% endif %}>
+                                        {{ dec.get_full_name|default:dec.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                            {% else %}
+                                {% if assigned_officer %}
+                                    {% if assigned_officer.id == request.user.id %}
+                                    <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#DBEAFE;color:#1E40AF;font-size:0.74rem;font-weight:800;padding:0.25rem 0.6rem;border-radius:999px;">
+                                        <i class="fa-solid fa-user-check"></i> You ({{ assigned_officer.get_full_name|default:assigned_officer.username }})
+                                    </span>
+                                    {% else %}
+                                    <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#F1F5F9;color:#334155;font-size:0.74rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:999px;">
+                                        <i class="fa-solid fa-user"></i> {{ assigned_officer.get_full_name|default:assigned_officer.username }}
+                                    </span>
+                                    {% endif %}
+                                {% else %}
+                                <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#FEF3C7;color:#92400E;font-size:0.74rem;font-weight:800;padding:0.25rem 0.6rem;border-radius:999px;">
+                                    <i class="fa-regular fa-clock"></i> Unassigned
+                                </span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% else %}{% with assigned_officer=job.port_officer %}
+                        <td style="padding:0.75rem 0.85rem;vertical-align:middle;">
+                            {% if can_assign_declarer and not job.stage_completed %}
+                            <form action="{% url assign_url_name job.id %}" method="POST" style="margin:0;">
+                                {% csrf_token %}
+                                <select name="declarer_id" onchange="this.form.submit()" class="form-control" style="font-size:0.76rem;font-weight:700;padding:0.32rem 0.5rem;height:auto;min-width:145px;border-radius:7px;border:1px solid {% if assigned_officer %}#86EFAC;background:#F0FDF4;color:#166534{% else %}#FCD34D;background:#FFFBEB;color:#92400E{% endif %};">
+                                    <option value="">-- Unassigned --</option>
+                                    {% for dec in declarers %}
+                                    <option value="{{ dec.id }}" {% if assigned_officer and assigned_officer.id == dec.id %}selected{% endif %}>
+                                        {{ dec.get_full_name|default:dec.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                            {% else %}
+                                {% if assigned_officer %}
+                                    {% if assigned_officer.id == request.user.id %}
+                                    <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#DBEAFE;color:#1E40AF;font-size:0.74rem;font-weight:800;padding:0.25rem 0.6rem;border-radius:999px;">
+                                        <i class="fa-solid fa-user-check"></i> You ({{ assigned_officer.get_full_name|default:assigned_officer.username }})
+                                    </span>
+                                    {% else %}
+                                    <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#F1F5F9;color:#334155;font-size:0.74rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:999px;">
+                                        <i class="fa-solid fa-user"></i> {{ assigned_officer.get_full_name|default:assigned_officer.username }}
+                                    </span>
+                                    {% endif %}
+                                {% else %}
+                                <span style="display:inline-flex;align-items:center;gap:0.3rem;background:#FEF3C7;color:#92400E;font-size:0.74rem;font-weight:800;padding:0.25rem 0.6rem;border-radius:999px;">
+                                    <i class="fa-regular fa-clock"></i> Unassigned
+                                </span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endif %}
+                        {% endif %}
+
                         <!-- 5. 1-CLICK ACTION BUTTON -->
                         <td style="padding:0.85rem 1rem;vertical-align:middle;text-align:right;white-space:nowrap;">
                             <div style="display:inline-flex;align-items:center;gap:0.45rem;">
                                 {% if job.stage_completed %}
                                 <span style="background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;font-weight:800;padding:0.4rem 0.85rem;border-radius:8px;font-size:0.78rem;display:inline-flex;align-items:center;gap:0.35rem;">
                                     <i class="fa-solid fa-circle-check"></i> Completed
+                                </span>
+                                {% elif stage_number == 2 and not job.clearing_officer or stage_number == 3 and not job.tbs_officer or stage_number == 4 and not job.port_officer %}
+                                <span style="background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;font-weight:800;padding:0.4rem 0.75rem;border-radius:8px;font-size:0.76rem;display:inline-flex;align-items:center;gap:0.35rem;">
+                                    <i class="fa-regular fa-clock"></i> Wait Assignment
+                                </span>
+                                {% elif stage_number == 2 and job.clearing_officer_id != request.user.id %}
+                                <span style="background:#F1F5F9;color:#475569;border:1px solid #CBD5E1;font-weight:700;padding:0.4rem 0.75rem;border-radius:8px;font-size:0.76rem;display:inline-flex;align-items:center;gap:0.35rem;">
+                                    <i class="fa-solid fa-lock"></i> {{ job.clearing_officer.get_full_name|default:job.clearing_officer.username }}
+                                </span>
+                                {% elif stage_number == 3 and job.tbs_officer_id != request.user.id %}
+                                <span style="background:#F1F5F9;color:#475569;border:1px solid #CBD5E1;font-weight:700;padding:0.4rem 0.75rem;border-radius:8px;font-size:0.76rem;display:inline-flex;align-items:center;gap:0.35rem;">
+                                    <i class="fa-solid fa-lock"></i> {{ job.tbs_officer.get_full_name|default:job.tbs_officer.username }}
+                                </span>
+                                {% elif stage_number == 4 and job.port_officer_id != request.user.id %}
+                                <span style="background:#F1F5F9;color:#475569;border:1px solid #CBD5E1;font-weight:700;padding:0.4rem 0.75rem;border-radius:8px;font-size:0.76rem;display:inline-flex;align-items:center;gap:0.35rem;">
+                                    <i class="fa-solid fa-lock"></i> {{ job.port_officer.get_full_name|default:job.port_officer.username }}
                                 </span>
                                 {% else %}
                                 <form action="{% url 'advance_stage' job.id %}" method="POST" style="display:inline;" onsubmit="return confirm('{{ confirm_msg }}');">
@@ -159,7 +314,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" style="padding:3.5rem 1.5rem;text-align:center;color:#94A3B8;">
+                        <td colspan="{% if has_assignment_stage %}6{% else %}5{% endif %}" style="padding:3.5rem 1.5rem;text-align:center;color:#94A3B8;">
                             <div style="width:54px;height:54px;border-radius:50%;background:#F1F5F9;color:#94A3B8;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 0.75rem auto;">
                                 <i class="fa-solid fa-circle-check" style="color:#10B981;"></i>
                             </div>

@@ -60,6 +60,8 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     employee_id = models.CharField(max_length=30, unique=True, null=True, blank=True, verbose_name="Staff ID / Nambari ya Mfanyakazi")
     role = models.CharField(max_length=30, choices=UserRole.choices, default=UserRole.DOC_OFFICER)
+    can_assign_declaration = models.BooleanField(default=False, verbose_name="Head of Declaration (Can Assign Stage 2 Jobs)")
+    can_assign_port = models.BooleanField(default=False, verbose_name="Head of Port Clearance (Can Assign Stage 3 Jobs)")
     department = models.CharField(max_length=30, choices=DEPARTMENT_CHOICES, default='OPERATIONS')
     title = models.CharField(max_length=100, blank=True, verbose_name="Wadhifa / Job Title")
     phone_number = models.CharField(max_length=30, blank=True, verbose_name="Nambari ya Simu")
@@ -335,6 +337,7 @@ class JobShipment(models.Model):
     # Responsible Officers
     documentation_officer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='doc_jobs')
     clearing_officer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='clearing_jobs')
+    tbs_officer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='tbs_jobs')
     port_officer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='port_jobs')
     driver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='driver_jobs')
     truck_number = models.CharField(max_length=50, blank=True)
@@ -444,9 +447,10 @@ class JobShipment(models.Model):
         stage_names = {
             1: "File Opening & Doc Intake",
             2: "Customs Declaration (TANSAD)",
-            3: "Port Clearance & Gate Exit",
-            4: "Vehicle Arrival (Yard / Office)",
-            5: "Customer Handover"
+            3: "TBS Inspection & Clearance",
+            4: "Port Clearance & Gate Exit",
+            5: "Vehicle Arrival (Yard / Office)",
+            6: "Customer Handover",
         }
         return stage_names.get(self.current_stage_number, f"Stage {self.current_stage_number}")
 
@@ -487,12 +491,30 @@ class JobShipment(models.Model):
             (self.cost_transport or Decimal('0')) +
             (self.cost_fuel or Decimal('0')) +
             (self.cost_ferry_charges or Decimal('0')) +
-            (self.cost_container_deposit or Decimal('0')) +
+            self.net_container_deposit +
             (self.cost_shipping_fee or Decimal('0')) +
             (self.cost_demurrage or Decimal('0')) +
             (self.cost_storage or Decimal('0')) +
             (self.cost_other or Decimal('0'))
         )
+
+    @property
+    def container_deposit_refunded(self):
+        if hasattr(self, '_deposit_refunded_cache'):
+            return self._deposit_refunded_cache
+        from django.db.models import Sum
+        total = self.other_revenues.filter(
+            inflow_type='CONTAINER_REFUND',
+            deposit_status__in=['RETURNED_FULL', 'PARTIAL'],
+        ).aggregate(s=Sum('returned_amount'))['s']
+        return total or Decimal('0')
+
+    @property
+    def net_container_deposit(self):
+        dep = self.cost_container_deposit or Decimal('0')
+        if dep <= 0:
+            return Decimal('0')
+        return max(Decimal('0'), dep - self.container_deposit_refunded)
 
     @property
     def costing_status(self):
@@ -1199,6 +1221,42 @@ class OperatingExpense(models.Model):
 
     def __str__(self):
         return f"{self.category.name} - TSh {self.amount:,.2f} ({self.date})"
+
+
+class OtherRevenue(models.Model):
+    INFLOW_TYPE_CHOICES = [
+        ('OTHER_REVENUE', 'Other Business Revenue (Counts as Profit)'),
+        ('CONTAINER_REFUND', 'Container Deposit (Shipping Line)'),
+        ('CAPITAL_INJECTION', 'Capital Injection / Boss Deposit'),
+    ]
+
+    DEPOSIT_STATUS_CHOICES = [
+        ('PENDING', 'Pending (At Shipping Line)'),
+        ('RETURNED_FULL', 'Returned in Full'),
+        ('PARTIAL', 'Partial / Deducted'),
+        ('FORFEITED', 'Forfeited in Full'),
+    ]
+
+    date = models.DateField(default=timezone.now)
+    inflow_type = models.CharField(max_length=30, choices=INFLOW_TYPE_CHOICES, default='OTHER_REVENUE')
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    deposit_status = models.CharField(max_length=20, choices=DEPOSIT_STATUS_CHOICES, default='PENDING')
+    returned_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    source = models.CharField(max_length=150, verbose_name="Received From / Source")
+    job = models.ForeignKey(JobShipment, on_delete=models.SET_NULL, null=True, blank=True, related_name='other_revenues')
+    payment_method = models.CharField(max_length=30, choices=OperatingExpense.PAYMENT_METHOD_CHOICES, default='BANK')
+    payment_reference = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True)
+    receipt_file = models.FileField(upload_to='other_revenues/%Y/%m/', null=True, blank=True)
+    recorded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='recorded_other_revenues')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date', '-id']
+
+    def __str__(self):
+        return f"{self.get_inflow_type_display()} - TSh {self.amount:,.2f} ({self.date})"
 
 
 class SalaryPayment(models.Model):

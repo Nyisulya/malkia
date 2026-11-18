@@ -260,7 +260,7 @@
                     <tr>
                         <th>DATE IN</th>
                         {% if ledger_tab == 'containers' %}
-                        <th>CONTAINER NO</th>
+                        <th>JOB NO</th>
                         <th>ITEM / BL NO</th>
                         {% else %}
                         <th>JOB NO</th>
@@ -279,17 +279,16 @@
                             {{ job.created_at|date:"d.m.Y" }}
                         </td>
                         {% if ledger_tab == 'containers' %}
-                        <td class="text-center-col" title="Job: {{ job.job_number }} | Client: {{ job.customer.company_name|default:'—' }}">
-                            <span style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A; font-size: 0.82rem; background: #FEF3C7; padding: 2px 7px; border-radius: 5px; border: 1px solid #FDE68A;">
-                                {{ job.container_numbers|default:job.job_number }}
+                        <td class="text-center-col" title="Client: {{ job.customer.company_name|default:'—' }}">
+                            <span style="font-family: var(--font-mono, monospace); font-weight: 800; color: #0F172A; font-size: 0.84rem; background: #F8FAFC; padding: 2px 6px; border-radius: 4px; border: 1px solid #E2E8F0;">
+                                {{ job.job_number }}
                             </span>
-                            <span style="font-size: 0.7rem; font-weight: 800; color: #475569; margin-left: 3px;">&times;{{ job.container_qty|default:1 }}</span>
                         </td>
-                        <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis;" title="{{ job.cargo_description }} | BL: {{ job.bl_number }}">
-                            <div style="font-weight: 800; color: #0F172A; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <td style="max-width: 240px; overflow: hidden; text-overflow: ellipsis;" title="{{ job.cargo_description }} | BL: {{ job.bl_number }}">
+                            <div style="font-weight: 800; color: #0F172A; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                 {{ job.cargo_description|default:"Containerized Cargo" }}
                             </div>
-                            <div style="font-family: var(--font-mono, monospace); font-size: 0.72rem; font-weight: 700; color: #0284C7;">
+                            <div style="font-family: var(--font-mono, monospace); font-size: 0.74rem; font-weight: 700; color: #0284C7;">
                                 BL: {{ job.bl_number|default:"—" }}
                             </div>
                         </td>
@@ -326,6 +325,27 @@
                                 <i class="fa-solid fa-clock"></i> Pending
                             </span>
                             {% endif %}
+                            {% if job.cost_container_deposit > 0 %}
+                            <div style="margin-top: 4px;">
+                                {% if job.deposit_refunded_total >= job.cost_container_deposit %}
+                                <span style="background: #DCFCE7; color: #166534; border: 1px solid #86EFAC; font-size: 0.65rem; padding: 1px 6px; border-radius: 999px; font-weight: 800; display: inline-block;">
+                                    ✓ Deposit Refunded
+                                </span>
+                                {% elif job.deposit_refunded_total > 0 %}
+                                <span style="background: #DBEAFE; color: #1D4ED8; border: 1px solid #BFDBFE; font-size: 0.65rem; padding: 1px 6px; border-radius: 999px; font-weight: 800; display: inline-block;">
+                                    ⚠ Deposit Partial
+                                </span>
+                                {% elif job.deposit_refund_logged %}
+                                <span style="background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; font-size: 0.65rem; padding: 1px 6px; border-radius: 999px; font-weight: 800; display: inline-block;">
+                                    ✕ Deposit Forfeited
+                                </span>
+                                {% else %}
+                                <span style="background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; font-size: 0.65rem; padding: 1px 6px; border-radius: 999px; font-weight: 800; display: inline-block;">
+                                    ⏳ Deposit Pending
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
                         </td>
 
                         <!-- DEDICATED ACTIONS COLUMN -->
@@ -333,7 +353,7 @@
                             <div style="display: flex; align-items: center; justify-content: flex-start; gap: 0.35rem; flex-wrap: wrap;">
                                 <!-- VIEW EYE BUTTON -->
                                 <button type="button" 
-                                    onclick="openBreakdownModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:job.cargo_description|default:""|escapejs }}', '{{ job.vehicle_model|default:""|escapejs }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:job.container_numbers|default:""|escapejs }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{% if job.costing_status == "FULLY_COSTED" %}Costed{% elif job.costing_status == "IN_PROGRESS" %}In Progress{% else %}Pending{% endif %}', '', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}', '{{ job.cost_container_deposit|default:0 }}', '{{ job.cost_shipping_fee|default:0 }}', '{{ job.cost_demurrage|default:0 }}', '{{ job.cost_storage|default:0 }}')"
+                                    onclick="openBreakdownModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:job.cargo_description|default:""|escapejs }}', '{{ job.vehicle_model|default:""|escapejs }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:job.container_numbers|default:""|escapejs }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{% if job.costing_status == "FULLY_COSTED" %}Costed{% elif job.costing_status == "IN_PROGRESS" %}In Progress{% else %}Pending{% endif %}', '', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}', '{{ job.cost_container_deposit|default:0 }}', '{{ job.cost_shipping_fee|default:0 }}', '{{ job.cost_demurrage|default:0 }}', '{{ job.cost_storage|default:0 }}', '{{ job.deposit_refunded_total|default:0 }}', '{{ job.deposit_refund_logged|yesno:"1,0" }}')"
                                     class="btn-header-action" style="height: 28px; width: 30px; padding: 0; background: #F1F5F9; color: #0F172A; border: 1px solid #CBD5E1; border-radius: 6px; font-size: 0.74rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" title="View Full Cost Breakdown">
                                     <i class="fa-solid fa-eye" style="color: #0284C7;"></i>
                                 </button>
@@ -360,7 +380,7 @@
                                         <i class="fa-solid fa-file-invoice"></i> {{ job.latest_invoice.invoice_number }}
                                     </a>
                                     <button type="button"
-                                        onclick="openInvoiceModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.latest_invoice.amount_clearing_agency_fee|default:0 }}', '{{ job.latest_invoice.amount_shipping_line_do|default:0 }}', '{{ job.latest_invoice.amount_port_charges|default:0 }}', '{{ job.latest_invoice.amount_transport|default:0 }}', '{{ job.latest_invoice.amount_duty_reimbursement|default:0 }}', '{{ job.latest_invoice.amount_sundry_charges|default:0 }}', '{{ job.latest_invoice.notes|default:""|escapejs }}', '{{ job.latest_invoice.invoice_number }}', '{{ job.latest_invoice.issue_date|date:"Y-m-d" }}', '{{ job.latest_invoice.due_date|date:"Y-m-d" }}')"
+                                        onclick="openInvoiceModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.latest_invoice.amount_clearing_agency_fee|default:0 }}', '{{ job.latest_invoice.amount_shipping_line_do|default:0 }}', '{{ job.latest_invoice.amount_port_charges|default:0 }}', '{{ job.latest_invoice.amount_transport|default:0 }}', '{{ job.latest_invoice.amount_duty_reimbursement|default:0 }}', '{{ job.latest_invoice.amount_sundry_charges|default:0 }}', '{{ job.latest_invoice.notes|default:""|escapejs }}', '{{ job.latest_invoice.invoice_number }}', '{{ job.latest_invoice.issue_date|date:"Y-m-d" }}', '{{ job.latest_invoice.due_date|date:"Y-m-d" }}', '{% if job.deposit_refund_logged %}{{ job.net_container_deposit|default:0 }}{% else %}0{% endif %}')"
                                         style="height: 28px; width: 28px; padding: 0; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; color: #475569; cursor: pointer; font-size: 0.7rem; display: inline-flex; align-items: center; justify-content: center;"
                                         title="Customize / Edit Invoice">
                                         <i class="fa-solid fa-pen"></i>
@@ -368,7 +388,7 @@
                                 </div>
                                 {% else %}
                                 <button type="button"
-                                    onclick="openInvoiceModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.cost_agent_fee|default:350000 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|add:job.cost_handling|default:0 }}', '{{ job.cost_transport|default:0 }}', '0', '{{ job.cost_other|default:0 }}', '', '', '', '')"
+                                    onclick="openInvoiceModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.cost_agent_fee|default:350000 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|add:job.cost_handling|default:0 }}', '{{ job.cost_transport|default:0 }}', '0', '{{ job.cost_other|default:0 }}', '', '', '', '', '{% if job.deposit_refund_logged %}{{ job.net_container_deposit|default:0 }}{% else %}0{% endif %}')"
                                     style="height: 28px; background: #ECFDF5; color: #047857; border: 1px solid #6EE7B7; border-radius: 6px; font-size: 0.72rem; padding: 0 0.6rem; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.25rem; cursor: pointer; white-space: nowrap; flex-shrink: 0;"
                                     title="Tengeneza Invoice maalum kwa ajili ya mteja huyu">
                                     <i class="fa-solid fa-file-invoice-dollar"></i> + Invoice
@@ -473,6 +493,37 @@
                     <div id="bdGrandTotal" style="font-weight: 900; font-size: 1.15rem; color: #047857;">TSh 0.00</div>
                 </div>
             </div>
+
+            <!-- CONTAINER DEPOSIT REFUND STATUS -->
+            <div id="bdDepositRefundBox" style="display: none; margin-top: 0.75rem; border-radius: 10px; padding: 0.75rem 1rem;"></div>
+
+            <!-- QUICK INLINE FORM TO RECORD DEPOSIT REFUND / FORFEITED FROM CONTAINERS OUT -->
+            <form id="bdQuickRefundForm" data-no-ajax="true" action="{% url 'other_revenue_create' %}" method="POST" style="display: none; margin-top: 0.75rem; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 10px; padding: 0.85rem 1rem;">
+                {% csrf_token %}
+                <input type="hidden" name="inflow_type" value="CONTAINER_REFUND">
+                <input type="hidden" name="deposit_status" id="bdRefundStatus" value="RETURNED_FULL">
+                <input type="hidden" name="amount" id="bdRefundDepositAmt" value="">
+                <input type="hidden" name="job_id" id="bdRefundJobId" value="">
+                <input type="hidden" name="next_url" value="{{ request.get_full_path }}">
+                <div style="font-size: 0.78rem; font-weight: 800; color: #0F172A; margin-bottom: 0.5rem;">
+                    Update Container Deposit Outcome (Auto-syncs to Other Revenue):
+                </div>
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.6rem;">
+                    <button type="button" onclick="setQuickRefundOutcome('full')" style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;font-size:0.72rem;padding:0.28rem 0.6rem;font-weight:800;border-radius:6px;cursor:pointer;">✓ Full Refund</button>
+                    <button type="button" onclick="setQuickRefundOutcome('partial')" style="background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;font-size:0.72rem;padding:0.28rem 0.6rem;font-weight:800;border-radius:6px;cursor:pointer;">⚠ Partial / Deducted</button>
+                    <button type="button" onclick="setQuickRefundOutcome('forfeited')" style="background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;font-size:0.72rem;padding:0.28rem 0.6rem;font-weight:800;border-radius:6px;cursor:pointer;">✕ Forfeited in Full</button>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; margin-bottom: 0.55rem;">
+                    <input type="number" step="0.01" min="0" name="returned_amount" id="bdRefundAmount" class="form-control" placeholder="Amount Returned (TSh)" style="font-size: 0.8rem; height: 34px;">
+                    <input type="text" name="source" id="bdRefundSource" class="form-control" value="Shipping Line" placeholder="Received From" style="font-size: 0.8rem; height: 34px;">
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="text" name="description" id="bdRefundDesc" class="form-control" placeholder="Notes (e.g. returned in full / deducted for demurrage)" style="font-size: 0.78rem; height: 34px; flex: 1;">
+                    <button type="submit" style="background: #16A34A; color: #FFFFFF; border: none; border-radius: 6px; padding: 0.42rem 0.85rem; font-size: 0.76rem; font-weight: 800; cursor: pointer; white-space: nowrap;">
+                        Save
+                    </button>
+                </div>
+            </form>
             
             <!-- DOC LINKS -->
             <div id="bdDocButtons" style="margin-top: 0.85rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
@@ -817,8 +868,9 @@
                     <div style="display: grid; grid-template-columns: 28px 1fr 160px; gap: 0.65rem; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 0.55rem 0.85rem; border-radius: 8px;">
                         <input type="checkbox" id="chk_inv_sundry" onchange="toggleInvItem('chk_inv_sundry', 'inv_sundry')" style="width: 18px; height: 18px; cursor: pointer; accent-color: #059669;">
                         <div>
-                            <label for="chk_inv_sundry" style="font-weight: 800; font-size: 0.82rem; color: #0F172A; cursor: pointer; display: block; margin: 0;">6. Sundry / Other Specific Charges</label>
-                            <span style="font-size: 0.7rem; color: #64748B;">Any extra billable logistics or documentation charges</span>
+                            <label for="chk_inv_sundry" style="font-weight: 800; font-size: 0.82rem; color: #0F172A; cursor: pointer; display: block; margin: 0;">6. Container Deposit Loss / Extra Charges</label>
+                            <span style="font-size: 0.7rem; color: #64748B;">Forfeited container deposit or extra billable charges</span>
+                            <div id="invUnrecoveredDepositHint" style="display: none; margin-top: 4px; font-size: 0.72rem; font-weight: 800; color: #991B1B; background: #FEE2E2; border: 1px solid #FECACA; padding: 3px 8px; border-radius: 6px;"></div>
                         </div>
                         <input type="number" step="0.01" name="amount_sundry_charges" id="inv_sundry" class="form-control" style="font-weight: 800; font-size: 0.85rem; text-align: right; height: 34px;" oninput="calcInvoiceTotals()">
                     </div>
@@ -962,7 +1014,7 @@
         document.getElementById('invTotalBillDisplay').innerText = 'TSh ' + total.toLocaleString('en-US', { minimumFractionDigits: 2 });
     }
 
-    function openInvoiceModal(jobId, blNumber, make, model, customer, agencyFee, doAmt, portAmt, transAmt, dutyAmt, sundryAmt, notes, invNumber, issueDate, dueDate) {
+    function openInvoiceModal(jobId, blNumber, make, model, customer, agencyFee, doAmt, portAmt, transAmt, dutyAmt, sundryAmt, notes, invNumber, issueDate, dueDate, unrecoveredDeposit = 0) {
         document.getElementById('invModalTitle').innerText = invNumber ? `Edit Invoice (${invNumber})` : `Generate Invoice — ${make} ${model}`;
         document.getElementById('invCustomerName').innerText = customer || 'Direct Client';
         document.getElementById('invRefDetails').innerText = `BL: ${blNumber}`;
@@ -992,7 +1044,23 @@
         setField('chk_inv_port', 'inv_port', portAmt);
         setField('chk_inv_trans', 'inv_trans', transAmt);
         setField('chk_inv_duty', 'inv_duty', dutyAmt);
-        setField('chk_inv_sundry', 'inv_sundry', sundryAmt);
+        const unrecDep = parseFloat(unrecoveredDeposit || 0);
+        const baseSundry = parseFloat(sundryAmt || 0);
+        const hintEl = document.getElementById('invUnrecoveredDepositHint');
+        if (unrecDep > 0) {
+            if (baseSundry <= 0) {
+                setField('chk_inv_sundry', 'inv_sundry', unrecDep);
+            } else {
+                setField('chk_inv_sundry', 'inv_sundry', baseSundry);
+            }
+            if (hintEl) {
+                hintEl.style.display = 'inline-block';
+                hintEl.innerHTML = `Forfeited / Unrecovered Container Deposit: TSh ${unrecDep.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            }
+        } else {
+            setField('chk_inv_sundry', 'inv_sundry', baseSundry);
+            if (hintEl) hintEl.style.display = 'none';
+        }
 
         // Dates
         const today = new Date().toISOString().split('T')[0];
@@ -1017,7 +1085,38 @@
     // ==========================================
     // VIEW BREAKDOWN MODAL
     // ==========================================
-    function openBreakdownModal(jobId, blNumber, make, model, year, chassis, clientName, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, statusText, statusBadgeClass, blUrl, invUrl, containerDeposit = 0, shippingFee = 0, demurrage = 0, storage = 0) {
+    function toggleQuickRefundForm() {
+        const f = document.getElementById('bdQuickRefundForm');
+        if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function setQuickRefundOutcome(mode) {
+        const dep = window._currentBdDepositAmt || 0;
+        const statusEl = document.getElementById('bdRefundStatus');
+        const depAmtEl = document.getElementById('bdRefundDepositAmt');
+        const amtEl = document.getElementById('bdRefundAmount');
+        const descEl = document.getElementById('bdRefundDesc');
+        depAmtEl.value = dep.toFixed(2);
+        if (mode === 'full') {
+            statusEl.value = 'RETURNED_FULL';
+            amtEl.readOnly = true;
+            amtEl.value = dep > 0 ? dep.toFixed(2) : '';
+            descEl.value = 'Container deposit returned in full';
+        } else if (mode === 'partial') {
+            statusEl.value = 'PARTIAL';
+            amtEl.readOnly = false;
+            amtEl.value = '';
+            amtEl.focus();
+            descEl.value = 'Partial container deposit returned (balance deducted)';
+        } else if (mode === 'forfeited') {
+            statusEl.value = 'FORFEITED';
+            amtEl.readOnly = true;
+            amtEl.value = '0';
+            descEl.value = 'Container deposit forfeited in full by shipping line';
+        }
+    }
+
+    function openBreakdownModal(jobId, blNumber, make, model, year, chassis, clientName, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, statusText, statusBadgeClass, blUrl, invUrl, containerDeposit = 0, shippingFee = 0, demurrage = 0, storage = 0, depositRefunded = 0, depositLogged = '0') {
         document.getElementById('bdVehicleTitle').innerText = `${make} ${model} ${year ? '(' + year + ')' : ''}`.trim();
         document.getElementById('bdChassisRef').innerText = `BL: ${blNumber} • Ref: ${chassis || '—'}`;
         document.getElementById('bdInvoiceVal').innerText = parseFloat(cifUsd || 0) > 0 ? `$${parseFloat(cifUsd).toLocaleString('en-US', {minimumFractionDigits: 2})}` : '—';
@@ -1032,6 +1131,10 @@
         let badgeBg = statusText === 'Costed' ? '#D1FAE5' : (statusText === 'In Progress' ? '#E0F2FE' : '#FEF3C7');
         document.getElementById('bdStatusBadge').innerHTML = `<span style="font-size: 0.75rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; background: ${badgeBg}; color: ${badgeColor};">${statusText}</span>`;
 
+        const depAmt = parseFloat(containerDeposit || 0);
+        const refAmt = parseFloat(depositRefunded || 0);
+        const netDepAmt = Math.max(0, depAmt - refAmt);
+
         const items = [
             { name: '1. Shipping Line D/O', amount: doCost },
             { name: '2. Wharfage (TPA Port)', amount: wharfage },
@@ -1041,7 +1144,7 @@
             { name: '6. Transport', amount: trans },
             { name: '7. Fuel (Mafuta)', amount: fuel },
             { name: '8. Ferry Charges', amount: ferry },
-            ...(parseFloat(containerDeposit || 0) > 0 ? [{ name: 'Container Deposit', amount: containerDeposit }] : []),
+            ...(depAmt > 0 ? [{ name: refAmt > 0 ? `Container Deposit (Net after TSh ${fmt(refAmt)} refund)` : 'Container Deposit', amount: netDepAmt }] : []),
             ...(parseFloat(shippingFee || 0) > 0 ? [{ name: 'Shipping Fee', amount: shippingFee }] : []),
             ...(parseFloat(demurrage || 0) > 0 ? [{ name: 'Demurrage Charges', amount: demurrage }] : []),
             ...(parseFloat(storage || 0) > 0 ? [{ name: 'Storage Charges', amount: storage }] : []),
@@ -1115,6 +1218,82 @@
         const grandTotal = directTotal + feeAmt;
         document.getElementById('bdDirectTotal').innerText = 'TSh ' + fmt(directTotal);
         document.getElementById('bdGrandTotal').innerText = 'TSh ' + fmt(grandTotal);
+
+        const depBox = document.getElementById('bdDepositRefundBox');
+        const quickForm = document.getElementById('bdQuickRefundForm');
+        if (quickForm) quickForm.style.display = 'none';
+        window._currentBdDepositAmt = depAmt;
+        if (document.getElementById('bdRefundJobId')) document.getElementById('bdRefundJobId').value = jobId;
+        if (depBox) {
+            if (depAmt > 0 || refAmt > 0) {
+                depBox.style.display = 'flex';
+                depBox.style.alignItems = 'center';
+                depBox.style.justifyContent = 'space-between';
+                depBox.style.flexWrap = 'wrap';
+                depBox.style.gap = '0.5rem';
+                const updateBtnHtml = `<button type="button" onclick="toggleQuickRefundForm()" style="background:#0F172A;color:#FFFFFF;border:none;border-radius:6px;padding:0.28rem 0.65rem;font-size:0.72rem;font-weight:800;cursor:pointer;">Update Deposit Status</button>`;
+                if (refAmt >= depAmt && depAmt > 0) {
+                    depBox.style.background = '#DCFCE7';
+                    depBox.style.border = '1px solid #86EFAC';
+                    depBox.innerHTML = `
+                        <div>
+                            <div style="font-size: 0.78rem; font-weight: 800; color: #166534;">
+                                <i class="fa-solid fa-circle-check"></i> Container Deposit Refunded (Other Revenue)
+                            </div>
+                            <div style="font-family: monospace; font-weight: 900; font-size: 0.85rem; color: #166534;">
+                                Paid: TSh ${fmt(depAmt)} &bull; Refunded: TSh ${fmt(refAmt)}
+                            </div>
+                        </div>
+                        ${updateBtnHtml}
+                    `;
+                } else if (refAmt > 0) {
+                    const rem = Math.max(0, depAmt - refAmt);
+                    depBox.style.background = '#DBEAFE';
+                    depBox.style.border = '1px solid #BFDBFE';
+                    depBox.innerHTML = `
+                        <div>
+                            <div style="font-size: 0.78rem; font-weight: 800; color: #1D4ED8;">
+                                <i class="fa-solid fa-rotate-left"></i> Partial Container Deposit Refunded
+                            </div>
+                            <div style="font-family: monospace; font-weight: 900; font-size: 0.85rem; color: #1D4ED8;">
+                                Refunded: TSh ${fmt(refAmt)} &bull; Deducted/Short: TSh ${fmt(rem)}
+                            </div>
+                        </div>
+                        ${updateBtnHtml}
+                    `;
+                } else if (depositLogged === '1') {
+                    depBox.style.background = '#FEE2E2';
+                    depBox.style.border = '1px solid #FECACA';
+                    depBox.innerHTML = `
+                        <div>
+                            <div style="font-size: 0.78rem; font-weight: 800; color: #991B1B;">
+                                <i class="fa-solid fa-circle-xmark"></i> Container Deposit Forfeited (Lost to Shipping Line)
+                            </div>
+                            <div style="font-family: monospace; font-weight: 900; font-size: 0.85rem; color: #991B1B;">
+                                Paid: TSh ${fmt(depAmt)} &bull; Returned: TSh 0.00
+                            </div>
+                        </div>
+                        ${updateBtnHtml}
+                    `;
+                } else {
+                    depBox.style.background = '#FFFBEB';
+                    depBox.style.border = '1px solid #FDE68A';
+                    depBox.innerHTML = `
+                        <div>
+                            <div style="font-size: 0.78rem; font-weight: 800; color: #92400E;">
+                                <i class="fa-solid fa-clock"></i> Container Deposit Pending Refund
+                            </div>
+                            <div style="font-family: monospace; font-weight: 900; font-size: 0.85rem; color: #92400E;">
+                                Paid: TSh ${fmt(depAmt)} &bull; Refunded: TSh 0.00
+                            </div>
+                        </div>
+                        ${updateBtnHtml}
+                    `;
+                }
+            } else {
+                depBox.style.display = 'none';
+            }
+        }
 
         // Doc links
         let docsHtml = '';

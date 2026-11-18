@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipping Line Authorization Letter — {{ job.bl_number|default:job.job_number }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        {% include "core/includes/authorization_letter_styles.html" %}
+        .preset-btn {
+            padding: 0.36rem 0.78rem;
+            border-radius: 6px;
+            border: 1px solid #475569;
+            background: #1E293B;
+            color: #E2E8F0;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .preset-btn.active {
+            background: #0284C7;
+            border-color: #0284C7;
+            color: #FFFFFF;
+        }
+        .editable {
+            outline: none;
+            border-bottom: 1px dashed transparent;
+        }
+        .editable:hover, .editable:focus {
+            background: #FEF9C3;
+            border-bottom: 1px dashed #CA8A04;
+        }
+        .hidden-el {
+            display: none !important;
+        }
+        @media print {
+            .editable:hover, .editable:focus {
+                background: transparent !important;
+                border-bottom: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <div>
+            <strong style="font-size:0.95rem;">
+                <i class="fa-solid fa-file-contract" style="color:#38BDF8;margin-right:0.35rem;"></i>
+                {% if shipping_line == 'WOSAC' %}WOSAC Authorization Letter{% else %}PRIME Authorization Letter{% endif %}
+            </strong>
+            <span style="margin-left:0.75rem;font-size:0.82rem;color:#94A3B8;">
+                BL: {{ job.bl_number|default:"—" }} | Job: {{ job.job_number }} | {{ job.customer.company_name }}
+            </span>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+            <a href="{% url 'job_detail' job.id %}" class="btn btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Back to File
+            </a>
+            <button type="button" class="btn btn-print" onclick="window.print()">
+                <i class="fa-solid fa-print"></i> Print / Save PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="page">
+        <div>
+            <div class="header-section">
+                <div class="header-logo-box">
+                    <img id="clientLogoImg" src="{% if job.customer.logo_image %}{{ job.customer.logo_image.url }}{% endif %}" alt="{{ job.customer.company_name }}" class="customer-logo {% if not job.customer.logo_image %}hidden-el{% endif %}">
+                    <div class="letter-date editable" contenteditable="true">{{ today|date:"d/m/Y" }}</div>
+                </div>
+            </div>
+
+            <div class="recipient-box editable" id="recipientBlock" contenteditable="true" style="white-space:pre-line;">{% if shipping_line == 'WOSAC' %}WOSAC LIMITED,
+P.O. BOX 63210,
+TELL: +255222138336
+DAR ES SALAAM,
+TANZANIA.{% else %}PRIME CONSOLIDATORS CO.LTD,
+GOLDEN JUBILEE TOWER, FIRST FLOOR, WING A,
+P.O. BOX 104784,
+TELL: +255222922213
+DAR ES SALAAM,
+TANZANIA.{% endif %}</div>
+
+            <div class="salutation">Dear Sir/Madam:</div>
+
+            <div class="subject-box">
+                <div class="subject-title editable" contenteditable="true">RE: AGENT AUTHORIZATION LETTER</div>
+            </div>
+            <div style="font-weight:700;margin-bottom:0.85rem;font-size:11.5pt;">REFER THE HEADING ABOVE</div>
+
+            <div class="letter-body">
+                <p class="editable" contenteditable="true">This is to tell you that I have authorized <strong>Malkia Cargo Wave Limited</strong> to act as my clearing and forwarding agent on behalf of the following cargo. I hope that we will work together to clear my goods.</p>
+                <p style="margin-top:1rem;"><strong>B/L NO:</strong> <span class="editable" contenteditable="true">{{ job.bl_number|default:job.job_number }}</span></p>
+                <p><strong>CHASSIS NO:</strong> <span class="editable" contenteditable="true">{{ job.chassis_number|default:"—" }}</span></p>
+            </div>
+
+            <div class="signoff-section">
+                <div class="yours-faithfully">Yours faithfully</div>
+                <div class="stamp-sign-area">
+                    <div class="signature-line"></div>
+                </div>
+                <div class="company-signee-name editable" contenteditable="true">{{ job.customer.company_name|upper }}</div>
+            </div>
+        </div>
+
+        <div class="letterhead-footer-bar {% if not job.customer.logo_image and not job.customer.physical_address %}hidden-el{% endif %}" id="letterheadFooter">
+            <div class="editable" contenteditable="true">
+                {{ job.customer.company_name }}{% if job.customer.physical_address %}, {{ job.customer.physical_address }}{% endif %}
+            </div>
+            {% if job.customer.email %}
+                <div class="editable" contenteditable="true">Email: {{ job.customer.email }}</div>
+            {% elif job.customer.phone %}
+                <div class="editable" contenteditable="true">Tel: {{ job.customer.phone }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const PRESETS = {
+            PRIME: `PRIME CONSOLIDATORS CO.LTD,\nGOLDEN JUBILEE TOWER, FIRST FLOOR, WING A,\nP.O. BOX 104784,\nTELL: +255222922213\nDAR ES SALAAM,\nTANZANIA.`,
+            WOSAC: `WOSAC LIMITED,\nP.O. BOX 63210,\nTELL: +255222138336\nDAR ES SALAAM,\nTANZANIA.`,
+            CUSTOM: `SHIPPING LINE / CONSOLIDATOR NAME,\nADDRESS LINE,\nP.O. BOX,\nDAR ES SALAAM,\nTANZANIA.`
+        };
+
+        function selectPreset(key) {
+            document.getElementById('recipientBlock').textContent = PRESETS[key] || PRESETS.PRIME;
+            document.getElementById('btnPrime').classList.toggle('active', key === 'PRIME');
+            document.getElementById('btnWosac').classList.toggle('active', key === 'WOSAC');
+            document.getElementById('btnCustom').classList.toggle('active', key === 'CUSTOM');
+        }
+
+        function toggleLetterhead(show) {
+            const logo = document.getElementById('clientLogoImg');
+            const footer = document.getElementById('letterheadFooter');
+            if (logo && logo.getAttribute('src')) {
+                logo.classList.toggle('hidden-el', !show);
+            }
+            if (footer) {
+                footer.classList.toggle('hidden-el', !show);
+            }
+            document.getElementById('btnWithHeader').classList.toggle('active', show);
+            document.getElementById('btnPlain').classList.toggle('active', !show);
+        }
+
+        function previewCustomLogo(input) {
+            if (!input.files || !input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const logo = document.getElementById('clientLogoImg');
+                logo.src = e.target.result;
+                logo.classList.remove('hidden-el');
+                toggleLetterhead(true);
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    </script>
+</body>
+</html>

@@ -290,10 +290,10 @@
             <form action="{% url 'login' %}" method="POST">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label for="username">Username</label>
+                    <label for="username">Email or Username</label>
                     <div class="input-wrap">
                         <i class="fa-solid fa-user field-icon"></i>
-                        <input type="text" id="username" name="username" class="input-field" placeholder="Enter username" required autofocus autocomplete="username">
+                        <input type="text" id="username" name="username" class="input-field" placeholder="e.g. edwin@malkiacargowave.com" required autofocus autocomplete="username">
                     </div>
                 </div>
 

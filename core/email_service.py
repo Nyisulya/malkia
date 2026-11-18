@@ -73,11 +73,8 @@ def get_resend_from_email():
 
 
 def send_resend_email(to_email, subject, html_content, text_content=None, reply_to=None):
-    """
-    Sends email via Resend API (Primary).
-    If Resend fails or is not configured, falls back to Django SMTP.
-    Returns (success: bool, response_info: str)
-    """
+    """Disabled: client email notifications are turned off."""
+    return False, "Utumaji wa Email kwa wateja umezimwa."
     api_key = get_resend_api_key()
     from_sender = get_resend_from_email()
     raw_list = [to_email] if isinstance(to_email, str) else (to_email or [])
@@ -240,9 +237,8 @@ def get_nextsms_config():
 
 
 def send_smsgate_sms(to_phone, message_text):
-    """
-    Sends an SMS via SMS Gate Android Gateway (https://api.sms-gate.app/3rdparty/v1/message).
-    """
+    """Disabled: client SMS notifications are turned off."""
+    return False, "Utumaji wa SMS kwa wateja umezimwa."
     cfg = get_smsgate_config()
     clean_phone = normalize_tz_phone(to_phone, with_plus=True)
     if not clean_phone:
@@ -429,8 +425,13 @@ MILESTONE_TEMPLATES = {
 
 
 def notify_client_milestone(job, milestone_key, extra_note='', async_send=False):
-    if async_send:
-        return run_in_background(notify_client_milestone, job, milestone_key, extra_note=extra_note, async_send=False)
+    """Disabled: client email & SMS notifications are turned off."""
+    return {
+        'email_ok': False,
+        'email_info': "Utumaji wa Email kwa wateja umezimwa.",
+        'sms_ok': False,
+        'sms_info': "Utumaji wa SMS kwa wateja umezimwa.",
+    }
     """
     Sends BOTH Email (via Resend) AND SMS (via SMS Gate / NextSMS) using simple, clear Swahili
     without internal file numbers or technical port jargon.

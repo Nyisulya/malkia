@@ -253,10 +253,10 @@
                 </span>
             </div>
             <div style="font-size: 1.55rem; font-weight: 900; color: #059669; margin: 0.35rem 0 0.2rem 0;">
-                TSh {{ sum_agent_fee|floatformat:0|intcomma }}
+                TSh {{ total_company_revenue|floatformat:0|intcomma }}
             </div>
-            <div style="font-size: 0.72rem; color: #047857; font-weight: 700;">
-                <i class="fa-solid fa-arrow-trend-up"></i> Company Clearance Earnings
+            <div style="font-size: 0.71rem; color: #047857; font-weight: 700;">
+                Clearance {{ sum_agent_fee|floatformat:0|intcomma }} &bull; Other Rev {{ sum_other_business_revenue|floatformat:0|intcomma }}
             </div>
         </div>
 
@@ -318,7 +318,7 @@
                 TSh {{ sum_direct_costs|floatformat:0|intcomma }}
             </div>
             <div style="font-size: 0.71rem; color: #64748B; font-weight: 600;">
-                D/O, Port &amp; Fuel (Excl. TRA Duty)
+                D/O, Port, Transport &amp; Fuel
             </div>
         </div>
 
@@ -341,6 +341,25 @@
                     style="color:#DC2626;">Due: TSh {{ total_due|floatformat:0|intcomma }}</span>
             </div>
         </div>
+
+        <!-- CARD 6: OTHER CASH INFLOWS (REFUNDS & BOSS CAPITAL) -->
+        <a href="{% url 'other_revenues' %}" class="fin-card" style="border-left: 4px solid #7C3AED; text-decoration: none; display: block;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span
+                    style="font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em;">Refunds
+                    &amp; Boss Capital</span>
+                <span
+                    style="width: 32px; height: 32px; border-radius: 8px; background: #EDE9FE; color: #7C3AED; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </span>
+            </div>
+            <div style="font-size: 1.55rem; font-weight: 900; color: #6D28D9; margin: 0.35rem 0 0.2rem 0;">
+                TSh {{ total_other_inflows|floatformat:0|intcomma }}
+            </div>
+            <div style="font-size: 0.71rem; color: #64748B; font-weight: 700;">
+                Refunds {{ sum_container_refunds|floatformat:0|intcomma }} &bull; Capital {{ sum_capital_injections|floatformat:0|intcomma }}
+            </div>
+        </a>
 
     </div>
 

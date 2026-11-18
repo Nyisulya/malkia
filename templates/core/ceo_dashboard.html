@@ -1,0 +1,442 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Executive Summary — Malkia Cargo Waves{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:1.15rem;">
+    <div>
+        <h1 class="page-title" style="display:flex;align-items:center;gap:0.65rem;">
+            <i class="fa-solid fa-chart-pie" style="color:var(--brand-primary);"></i>
+            Executive Summary
+        </h1>
+        <p class="page-subtitle">Company-wide financial performance, shipment pipeline, and SLA overview.</p>
+    </div>
+    <div style="display:flex;gap:0.65rem;flex-wrap:wrap;align-items:center;">
+        <a href="{% url 'export_daily_report_excel' %}" class="btn-header-action" style="background:#ECFDF5;color:#059669;border:1px solid #A7F3D0;font-weight:700;" title="Download Live Excel Report">
+            <i class="fa-solid fa-file-excel"></i> Export Daily Excel
+        </a>
+    </div>
+</div>
+
+<!-- DATE FILTER BAR -->
+<div class="card-panel" style="margin-bottom:1.5rem;padding:0.95rem 1.25rem;">
+    <form method="get" action="{% url 'dashboard' %}" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+            <span style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);margin-right:0.35rem;">
+                <i class="fa-solid fa-calendar-days" style="color:var(--brand-primary);"></i> Filter Period:
+            </span>
+            <a href="{% url 'dashboard' %}?preset=today" class="btn-header-action {% if preset == 'today' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">Today</a>
+            <a href="{% url 'dashboard' %}?preset=this_month" class="btn-header-action {% if preset == 'this_month' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">This Month (Default)</a>
+            <a href="{% url 'dashboard' %}?preset=this_year" class="btn-header-action {% if preset == 'this_year' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">This Year</a>
+            <a href="{% url 'dashboard' %}?preset=last_year" class="btn-header-action {% if preset == 'last_year' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">Last Year</a>
+            <a href="{% url 'dashboard' %}?preset=all" class="btn-header-action {% if preset == 'all' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">All Time</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;">
+                <label style="font-size:0.75rem;font-weight:700;color:var(--text-muted);">From:</label>
+                <input type="date" name="date_from" value="{{ date_from }}" required style="padding:0.35rem 0.55rem;border:1px solid #CBD5E1;border-radius:6px;font-size:0.8rem;background:#F8FAFC;">
+            </div>
+            <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;">
+                <label style="font-size:0.75rem;font-weight:700;color:var(--text-muted);">To:</label>
+                <input type="date" name="date_to" value="{{ date_to }}" required style="padding:0.35rem 0.55rem;border:1px solid #CBD5E1;border-radius:6px;font-size:0.8rem;background:#F8FAFC;">
+            </div>
+            <button type="submit" class="btn-header-action btn-primary" style="padding:0.4rem 0.9rem;font-size:0.78rem;border-radius:6px;font-weight:800;border:none;">
+                <i class="fa-solid fa-filter"></i> Apply
+            </button>
+            {% if preset != 'this_month' %}
+            <a href="{% url 'dashboard' %}" class="btn-header-action btn-outline" style="padding:0.4rem 0.65rem;font-size:0.76rem;border-radius:6px;color:#DC2626;border-color:#FECACA;text-decoration:none;" title="Reset to This Month">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+            </a>
+            {% endif %}
+        </div>
+    </form>
+    <div style="margin-top:0.65rem;padding-top:0.55rem;border-top:1px solid #F1F5F9;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;font-size:0.76rem;">
+        <div>
+            <span style="color:var(--text-muted);">Showing data for:</span>
+            <strong style="color:var(--brand-primary);margin-left:0.25rem;"><i class="fa-solid fa-clock"></i> {{ filter_label }}</strong>
+        </div>
+        <div style="color:var(--text-muted);">Default view is set to <strong>This Month</strong>.</div>
+    </div>
+</div>
+
+<!-- 1. EXECUTIVE FINANCIAL HEALTH (6 ACCOUNTANT KPI CARDS IN 3x2 GRID) -->
+<div class="kpi-grid" style="grid-template-columns:repeat(3, minmax(0, 1fr));gap:1.1rem;margin-bottom:1.35rem;">
+    <!-- CARD 1: MALKIA AGENCY REVENUE -->
+    <div class="kpi-card" style="border-left:4px solid #10B981;">
+        <div class="kpi-header">
+            <span class="kpi-title">Malkia Agency Revenue</span>
+            <div class="kpi-icon-wrap" style="background:#ECFDF5;color:#059669;"><i class="fa-solid fa-sack-dollar"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#059669;">TSh {{ total_company_revenue|floatformat:0|intcomma }}</div>
+        <div class="kpi-meta"><span style="color:#047857;font-weight:700;">Clearance {{ sum_agent_fee|floatformat:0|intcomma }} &bull; Other Rev {{ sum_other_business_revenue|floatformat:0|intcomma }}</span></div>
+    </div>
+
+    <!-- CARD 2: SALARIES & OVERHEADS -->
+    <div class="kpi-card" style="border-left:4px solid #F59E0B;">
+        <div class="kpi-header">
+            <span class="kpi-title">Salaries &amp; Overheads</span>
+            <div class="kpi-icon-wrap" style="background:#FEF3C7;color:#D97706;"><i class="fa-solid fa-money-bill-transfer"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#B45309;">TSh {{ total_company_costs|floatformat:0|intcomma }}</div>
+        <div class="kpi-meta"><span>Salaries {{ sum_salaries_paid|floatformat:0|intcomma }} &bull; Office {{ sum_office_expenses|floatformat:0|intcomma }}</span></div>
+    </div>
+
+    <!-- CARD 3: NET COMPANY PROFIT -->
+    <div class="kpi-card" style="border-left:4px solid {% if net_profit >= 0 %}#10B981{% else %}#EF4444{% endif %};">
+        <div class="kpi-header">
+            <span class="kpi-title">Net Company Profit</span>
+            <div class="kpi-icon-wrap" style="background:{% if net_profit >= 0 %}#DCFCE7;color:#166534{% else %}#FEE2E2;color:#DC2626{% endif %};">
+                <i class="fa-solid {% if net_profit >= 0 %}fa-scale-balanced{% else %}fa-arrow-trend-down{% endif %}"></i>
+            </div>
+        </div>
+        <div class="kpi-value" style="color:{% if net_profit >= 0 %}#047857{% else %}#DC2626{% endif %};">TSh {{ net_profit|floatformat:0|intcomma }}</div>
+        <div class="kpi-meta">
+            <span style="font-weight:700;color:{% if net_profit >= 0 %}#059669{% else %}#DC2626{% endif %};">
+                {% if net_profit >= 0 %}<i class="fa-solid fa-circle-check"></i> Net Operational Surplus{% else %}<i class="fa-solid fa-circle-exclamation"></i> Net Operating Deficit{% endif %}
+            </span>
+        </div>
+    </div>
+
+    <!-- CARD 4: OFFICE CLIENT DISBURSEMENTS -->
+    <div class="kpi-card" style="border-left:4px solid #EF4444;">
+        <div class="kpi-header">
+            <span class="kpi-title">Office Client Disbursements</span>
+            <div class="kpi-icon-wrap" style="background:#FEE2E2;color:#DC2626;"><i class="fa-solid fa-receipt"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#DC2626;">TSh {{ sum_direct_costs|floatformat:0|intcomma }}</div>
+        <div class="kpi-meta"><span>D/O, Port, Transport &amp; Fuel</span></div>
+    </div>
+
+    <!-- CARD 5: INVOICED & RECEIVABLES -->
+    <div class="kpi-card" style="border-left:4px solid #6366F1;">
+        <div class="kpi-header">
+            <span class="kpi-title">Invoiced &amp; Receivables</span>
+            <div class="kpi-icon-wrap" style="background:#EEF2FF;color:#4F46E5;"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#4338CA;">TSh {{ total_invoiced|floatformat:0|intcomma }}</div>
+        <div class="kpi-meta">
+            <span style="font-weight:700;">
+                <span style="color:#16A34A;">Paid: TSh {{ total_collected|floatformat:0|intcomma }}</span> &bull;
+                <span style="color:#DC2626;">Due: TSh {{ total_due|floatformat:0|intcomma }}</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- CARD 6: REFUNDS & BOSS CAPITAL -->
+    <a href="{% url 'other_revenues' %}" class="kpi-card" style="border-left:4px solid #7C3AED;text-decoration:none;display:block;">
+        <div class="kpi-header">
+            <span class="kpi-title">Refunds &amp; Boss Capital</span>
+            <div class="kpi-icon-wrap" style="background:#EDE9FE;color:#7C3AED;"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#6D28D9;">TSh {{ total_other_inflows|floatformat:0|intcomma }}</div>
+        <div class="kpi-meta"><span>Refunds {{ sum_container_refunds|floatformat:0|intcomma }} &bull; Capital {{ sum_capital_injections|floatformat:0|intcomma }}</span></div>
+    </a>
+</div>
+
+<!-- DIRECT COST BREAKDOWN BANNER -->
+<div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:1.15rem 1.35rem;margin-bottom:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;border-bottom:1px solid #F1F5F9;padding-bottom:0.75rem;margin-bottom:1rem;">
+        <div>
+            <div style="font-weight:800;font-size:0.95rem;color:#0F172A;text-transform:uppercase;letter-spacing:0.03em;display:flex;align-items:center;gap:0.45rem;">
+                <i class="fa-solid fa-chart-pie" style="color:#7C3AED;"></i> Direct Cost Breakdown
+                <span style="font-size:0.72rem;color:#64748B;font-weight:600;text-transform:none;">(Office Client Disbursements)</span>
+            </div>
+            <div style="font-size:0.75rem;color:#64748B;margin-top:0.2rem;">
+                Clearance costs advanced by Malkia on behalf of clients &bull; Excludes TRA Customs Duty settled directly by client
+            </div>
+        </div>
+        <div style="background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:999px;padding:0.35rem 1rem;display:flex;align-items:center;gap:0.6rem;">
+            <span style="font-weight:800;font-size:0.75rem;color:#991B1B;text-transform:uppercase;letter-spacing:0.04em;">Total Disbursements:</span>
+            <strong style="font-family:var(--font-mono, monospace);font-weight:900;font-size:1.05rem;color:#DC2626;">TSh {{ sum_direct_costs|floatformat:0|intcomma }}</strong>
+        </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:0.75rem;">
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:0.65rem 0.85rem;">
+            <div style="font-size:0.69rem;font-weight:700;color:#64748B;text-transform:uppercase;">1. Shipping Line (D/O)</div>
+            <div style="font-family:var(--font-mono, monospace);font-weight:800;font-size:0.95rem;color:#0F172A;margin-top:0.2rem;">TSh {{ sum_do|floatformat:0|intcomma }}</div>
+        </div>
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:0.65rem 0.85rem;">
+            <div style="font-size:0.69rem;font-weight:700;color:#64748B;text-transform:uppercase;">2. Wharfage &amp; TISS (Port)</div>
+            <div style="font-family:var(--font-mono, monospace);font-weight:800;font-size:0.95rem;color:#0F172A;margin-top:0.2rem;">TSh {{ sum_wharfage_total|floatformat:0|intcomma }}</div>
+        </div>
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:0.65rem 0.85rem;">
+            <div style="font-size:0.69rem;font-weight:700;color:#64748B;text-transform:uppercase;">3. Port / ICD Handling</div>
+            <div style="font-family:var(--font-mono, monospace);font-weight:800;font-size:0.95rem;color:#0F172A;margin-top:0.2rem;">TSh {{ sum_handling|floatformat:0|intcomma }}</div>
+        </div>
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:0.65rem 0.85rem;">
+            <div style="font-size:0.69rem;font-weight:700;color:#64748B;text-transform:uppercase;">4. Transport &amp; Delivery</div>
+            <div style="font-family:var(--font-mono, monospace);font-weight:800;font-size:0.95rem;color:#0F172A;margin-top:0.2rem;">TSh {{ sum_transport|floatformat:0|intcomma }}</div>
+        </div>
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:0.65rem 0.85rem;">
+            <div style="font-size:0.69rem;font-weight:700;color:#64748B;text-transform:uppercase;">5. Fuel</div>
+            <div style="font-family:var(--font-mono, monospace);font-weight:800;font-size:0.95rem;color:#0F172A;margin-top:0.2rem;">TSh {{ sum_fuel|floatformat:0|intcomma }}</div>
+        </div>
+        <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:0.65rem 0.85rem;">
+            <div style="font-size:0.69rem;font-weight:700;color:#64748B;text-transform:uppercase;">6. Ferry &amp; Facilitation</div>
+            <div style="font-family:var(--font-mono, monospace);font-weight:800;font-size:0.95rem;color:#0F172A;margin-top:0.2rem;">TSh {{ sum_ferry_facil|floatformat:0|intcomma }}</div>
+        </div>
+        <div style="background:#F1F5F9;border:1px dashed #CBD5E1;border-radius:8px;padding:0.65rem 0.85rem;">
+            <div style="font-size:0.69rem;font-weight:700;color:#475569;text-transform:uppercase;display:flex;justify-content:space-between;">
+                <span>7. Customs Duty</span>
+                <span style="color:#059669;font-weight:800;">(Control #)</span>
+            </div>
+            <div style="font-family:var(--font-mono, monospace);font-weight:800;font-size:0.95rem;color:#475569;margin-top:0.2rem;">TSh {{ sum_duty|floatformat:0|intcomma }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. OPERATIONS PIPELINE SUMMARY (6 BALANCED CARDS: 3x2) -->
+<div class="kpi-grid" style="grid-template-columns:repeat(3, minmax(0, 1fr));gap:1.1rem;margin-bottom:1.5rem;">
+    <div class="kpi-card kpi-blue" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('ACTIVE');" style="cursor:pointer;">
+        <div class="kpi-header">
+            <span class="kpi-title">Active Shipments</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-car-side"></i></div>
+        </div>
+        <div class="kpi-value">{{ ceo_active_count|default:0 }}</div>
+        <div class="kpi-meta"><span>Current pipeline in progress</span></div>
+    </div>
+
+    <div class="kpi-card kpi-purple" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('TRA');" style="border-left:4px solid #8B5CF6;cursor:pointer;">
+        <div class="kpi-header">
+            <span class="kpi-title">TRA Customs (TANSAD)</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp" style="color:#8B5CF6;"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#6D28D9;">{{ pulse_tra_count|default:0 }}</div>
+        <div class="kpi-meta"><span>Stage 2 &bull; TANSAD declaration</span></div>
+    </div>
+
+    <div class="kpi-card" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('TBS');" style="border-left:4px solid #0EA5E9;cursor:pointer;">
+        <div class="kpi-header">
+            <span class="kpi-title">TBS Clearance</span>
+            <div class="kpi-icon-wrap" style="color:#0EA5E9;background:#E0F2FE;"><i class="fa-solid fa-shield-halved"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#0369A1;">{{ pulse_tbs_count|default:0 }}</div>
+        <div class="kpi-meta"><span>Stage 3 &bull; TBS inspection</span></div>
+    </div>
+
+    <div class="kpi-card kpi-cyan" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('PORT');" style="cursor:pointer;">
+        <div class="kpi-header">
+            <span class="kpi-title">Port Clearance &amp; Gate</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-anchor"></i></div>
+        </div>
+        <div class="kpi-value">{{ pulse_port_count|default:0 }}</div>
+        <div class="kpi-meta"><span>Stage 4 &bull; D/O &amp; gate exit</span></div>
+    </div>
+
+    <div class="kpi-card" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('YARD');" style="border-left:4px solid #D97706;background:#FFFBEB;cursor:pointer;">
+        <div class="kpi-header">
+            <span class="kpi-title" style="color:#B45309;">At Malkia Yard</span>
+            <div class="kpi-icon-wrap" style="color:#D97706;background:#FEF3C7;"><i class="fa-solid fa-warehouse"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#92400E;">{{ pulse_yard_count|default:0 }}</div>
+        <div class="kpi-meta" style="color:#B45309;"><span>Stage 5 &bull; Arrived at yard</span></div>
+    </div>
+
+    <div class="kpi-card kpi-emerald" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('COMPLETED');" style="cursor:pointer;">
+        <div class="kpi-header">
+            <span class="kpi-title">Completed &amp; Handed Over</span>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+        <div class="kpi-value">{{ ceo_completed_count|default:0 }}</div>
+        <div class="kpi-meta"><span class="trend-positive"><i class="fa-solid fa-award"></i> Stage 6 &bull; Delivered</span></div>
+    </div>
+</div>
+
+<!-- 3. SHIPMENTS OVERVIEW TABLE -->
+<div class="card-panel" id="trackingPulsePanel">
+    <div class="card-panel-header" style="flex-wrap:wrap;gap:0.85rem;">
+        <div>
+            <h3 class="panel-title"><i class="fa-solid fa-clock-rotate-left"></i> Shipments Overview</h3>
+            <p class="panel-description">Live status and financial margin of active and completed consignments</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+            <a href="{% url 'jobs_list' %}" class="btn-header-action btn-outline" style="font-size:0.8rem;">
+                View All Shipments ({{ ceo_all_count }}) <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div style="padding:0.85rem 1.25rem;background:#F8FAFC;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+        <div id="trackingPulseFilterBtns" style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;">
+            <span style="font-size:0.74rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-right:0.2rem;">
+                <i class="fa-solid fa-filter" style="color:var(--brand-primary);"></i> Filter:
+            </span>
+            <button type="button" data-pulse-filter="ALL" onclick="window.filterTrackingPulse('ALL')" class="pulse-filter-btn active" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:800;border:1.5px solid #2563EB;background:#2563EB;color:#FFFFFF;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;">
+                All <span style="background:rgba(255,255,255,0.22);color:#FFF;padding:1px 7px;border-radius:999px;font-size:0.72rem;">{{ ceo_all_count }}</span>
+            </button>
+            <button type="button" data-pulse-filter="ACTIVE" onclick="window.filterTrackingPulse('ACTIVE')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;">
+                Active <span style="background:#EFF6FF;color:#1D4ED8;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ ceo_active_count }}</span>
+            </button>
+            <button type="button" data-pulse-filter="COMPLETED" onclick="window.filterTrackingPulse('COMPLETED')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;">
+                Completed <span style="background:#DCFCE7;color:#15803D;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ ceo_completed_count }}</span>
+            </button>
+            <button type="button" data-pulse-filter="TRA" onclick="window.filterTrackingPulse('TRA')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;">
+                At TRA <span style="background:#F3E8FF;color:#6D28D9;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_tra_count }}</span>
+            </button>
+            <button type="button" data-pulse-filter="TBS" onclick="window.filterTrackingPulse('TBS')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;">
+                At TBS <span style="background:#E0F2FE;color:#0369A1;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_tbs_count }}</span>
+            </button>
+            <button type="button" data-pulse-filter="PORT" onclick="window.filterTrackingPulse('PORT')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;">
+                At Port <span style="background:#E0F2FE;color:#0369A1;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_port_count }}</span>
+            </button>
+            <button type="button" data-pulse-filter="YARD" onclick="window.filterTrackingPulse('YARD')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;">
+                At Yard <span style="background:#FEF3C7;color:#B45309;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_yard_count }}</span>
+            </button>
+        </div>
+
+        <div style="position:relative;min-width:230px;flex:0 1 280px;">
+            <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:0.8rem;pointer-events:none;"></i>
+            <input type="text" id="trackingPulseSearch" oninput="window.applyTrackingPulseFilters()" placeholder="Search File No, BL, Client, Car..." style="width:100%;padding:0.42rem 2rem 0.42rem 2.1rem;border:1px solid #CBD5E1;border-radius:999px;font-size:0.79rem;background:#FFFFFF;color:#0F172A;outline:none;">
+            <button type="button" id="trackingPulseClearSearch" onclick="document.getElementById('trackingPulseSearch').value='';window.applyTrackingPulseFilters();" style="display:none;position:absolute;right:0.55rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#94A3B8;cursor:pointer;font-size:0.8rem;">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="modern-table" id="trackingPulseTable" data-page-size="8">
+            <thead>
+                <tr>
+                    <th style="min-width:160px;">File No &amp; BL</th>
+                    <th style="min-width:200px;">Client &amp; Cargo</th>
+                    <th style="min-width:220px;">Current Stage</th>
+                    <th style="min-width:120px;">Status</th>
+                    <th style="min-width:150px;">Profit &amp; Margin</th>
+                    <th style="text-align:right;min-width:140px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in ceo_jobs %}
+                <tr class="tracking-pulse-row"
+                    data-status="{% if job.status == 'COMPLETED' or job.status == 'CLOSED' %}COMPLETED{% elif job.status == 'DELAYED' %}DELAYED{% else %}ACTIVE{% endif %}"
+                    data-stage="{{ job.current_stage_number }}"
+                    data-search="{{ job.job_number|lower }} {{ job.bl_number|default:''|lower }} {{ job.customer.company_name|lower }} {{ job.cargo_description|default:''|lower }} {{ job.chassis_number|default:''|lower }}">
+                    <td>
+                        <strong style="font-family:var(--font-heading);font-size:0.95rem;">
+                            <a href="{% url 'job_detail' job.id %}" style="color:var(--brand-primary);text-decoration:none;">{{ job.job_number }}</a>
+                        </strong>
+                        <div style="font-size:0.78rem;font-weight:700;color:#0F172A;font-family:monospace;margin-top:2px;">
+                            BL: {{ job.bl_number|default:"—" }}
+                        </div>
+                    </td>
+                    <td>
+                        <strong style="color:var(--brand-navy-900);font-size:0.92rem;display:block;">{{ job.customer.company_name }}</strong>
+                        <div style="font-size:0.78rem;color:#475569;margin-top:2px;">
+                            <i class="fa-solid fa-car" style="font-size:0.72rem;color:#0369A1;"></i>
+                            {{ job.cargo_description|default:"1 Motor Vehicle"|truncatechars:26 }}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display:inline-flex;align-items:center;gap:0.45rem;background:{% if job.status == 'COMPLETED' or job.status == 'CLOSED' %}#F0FDF4{% else %}#F8FAFC{% endif %};padding:4px 8px;border-radius:6px;border:1px solid {% if job.status == 'COMPLETED' or job.status == 'CLOSED' %}#BBF7D0{% else %}#E2E8F0{% endif %};">
+                            <span style="font-size:0.72rem;font-weight:800;background:{% if job.status == 'COMPLETED' or job.status == 'CLOSED' %}#16A34A{% else %}var(--brand-primary){% endif %};color:#FFF;padding:2px 6px;border-radius:4px;white-space:nowrap;">
+                                Step {{ job.current_stage_number }}
+                            </span>
+                            <span style="font-size:0.82rem;font-weight:700;color:var(--brand-navy-900);white-space:nowrap;">
+                                {{ job.current_stage_display_name }}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if job.status == 'DELAYED' %}
+                        <span class="badge-pill badge-delayed" style="font-weight:700;"><span class="badge-dot"></span> Delayed</span>
+                        {% elif job.status == 'COMPLETED' or job.status == 'CLOSED' %}
+                        <span class="badge-pill badge-completed" style="font-weight:700;background:#DCFCE7;color:#15803D;border:1px solid #86EFAC;">
+                            <i class="fa-solid fa-circle-check" style="font-size:0.72rem;"></i> Completed
+                        </span>
+                        {% else %}
+                        <span class="badge-pill badge-active" style="font-weight:700;"><span class="badge-dot"></span> On Track</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong class="{% if job.gross_margin > 0 %}text-profit-positive{% else %}text-profit-negative{% endif %}" style="font-size:0.92rem;display:block;">
+                            TSh {{ job.gross_margin|floatformat:0|intcomma }}
+                        </strong>
+                        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:1px;">
+                            {{ job.gross_margin_percentage }}% margin
+                        </div>
+                    </td>
+                    <td style="text-align:right;white-space:nowrap;">
+                        <div style="display:inline-flex;gap:0.4rem;align-items:center;">
+                            <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="padding:0.35rem 0.72rem;font-size:0.78rem;background:#16A34A;color:#FFFFFF;border:none;font-weight:800;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:0.32rem;">
+                                <i class="fa-solid fa-route"></i> Track
+                            </a>
+                            <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.78rem;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:0.25rem;">
+                                View <i class="fa-solid fa-chevron-right" style="font-size:0.7rem;"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:2.5rem;color:var(--text-muted);">
+                        <i class="fa-solid fa-inbox" style="font-size:2rem;display:block;margin-bottom:0.5rem;opacity:0.4;"></i>
+                        No shipment records found for this period.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+(function() {
+    window._currentPulseFilter = 'ALL';
+
+    window.filterTrackingPulse = function(filterType) {
+        window._currentPulseFilter = filterType || 'ALL';
+        var btns = document.querySelectorAll('#trackingPulseFilterBtns .pulse-filter-btn');
+        btns.forEach(function(btn) {
+            var isAct = btn.getAttribute('data-pulse-filter') === window._currentPulseFilter;
+            btn.classList.toggle('active', isAct);
+            if (isAct) {
+                btn.style.background = '#2563EB';
+                btn.style.borderColor = '#2563EB';
+                btn.style.color = '#FFFFFF';
+            } else {
+                btn.style.background = '#FFFFFF';
+                btn.style.borderColor = '#CBD5E1';
+                btn.style.color = '#1E293B';
+            }
+        });
+        window.applyTrackingPulseFilters();
+    };
+
+    window.filterTrackingPulseAndScroll = function(filterType) {
+        window.filterTrackingPulse(filterType);
+        var panel = document.getElementById('trackingPulsePanel');
+        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    window.applyTrackingPulseFilters = function() {
+        var table = document.getElementById('trackingPulseTable');
+        if (!table) return;
+        var searchInput = document.getElementById('trackingPulseSearch');
+        var clearBtn = document.getElementById('trackingPulseClearSearch');
+        var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
+
+        var filter = window._currentPulseFilter || 'ALL';
+        var rows = table.querySelectorAll('tbody tr.tracking-pulse-row');
+
+        rows.forEach(function(row) {
+            var status = row.getAttribute('data-status') || '';
+            var stage = parseInt(row.getAttribute('data-stage') || '1', 10);
+            var searchBlob = row.getAttribute('data-search') || '';
+
+            var statusMatch = true;
+            if (filter === 'ACTIVE') statusMatch = (status === 'ACTIVE' || status === 'DELAYED');
+            else if (filter === 'COMPLETED') statusMatch = (status === 'COMPLETED');
+            else if (filter === 'DELAYED') statusMatch = (status === 'DELAYED');
+            else if (filter === 'TRA') statusMatch = (status !== 'COMPLETED' && stage === 2);
+            else if (filter === 'TBS') statusMatch = (status !== 'COMPLETED' && stage === 3);
+            else if (filter === 'PORT') statusMatch = (status !== 'COMPLETED' && stage === 4);
+            else if (filter === 'YARD') statusMatch = (status !== 'COMPLETED' && stage === 5);
+
+            var queryMatch = !query || searchBlob.indexOf(query) !== -1;
+            row.style.display = (statusMatch && queryMatch) ? '' : 'none';
+        });
+    };
+})();
+</script>
+{% endblock %}

@@ -51,10 +51,10 @@
             </span>
 
             <a href="{% url 'dashboard' %}?preset=today" class="btn-header-action {% if preset == 'today' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
-                Today (Default)
+                Today
             </a>
             <a href="{% url 'dashboard' %}?preset=this_month" class="btn-header-action {% if preset == 'this_month' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
-                This Month
+                This Month (Default)
             </a>
             <a href="{% url 'dashboard' %}?preset=this_year" class="btn-header-action {% if preset == 'this_year' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.4rem 0.85rem;font-size:0.78rem;border-radius:6px;text-decoration:none;font-weight:700;">
                 This Year
@@ -102,9 +102,9 @@
 
             </button>
 
-            {% if preset != 'today' %}
+            {% if preset != 'this_month' %}
 
-            <a href="{% url 'dashboard' %}" class="btn-header-action btn-outline" style="padding:0.4rem 0.65rem;font-size:0.76rem;border-radius:6px;color:#DC2626;border-color:#FECACA;text-decoration:none;" title="Reset to Today">
+            <a href="{% url 'dashboard' %}" class="btn-header-action btn-outline" style="padding:0.4rem 0.65rem;font-size:0.76rem;border-radius:6px;color:#DC2626;border-color:#FECACA;text-decoration:none;" title="Reset to This Month">
 
                 <i class="fa-solid fa-rotate-left"></i> Reset
 
@@ -138,7 +138,7 @@
 
         <div style="color:var(--text-muted);">
 
-            Default view is set to <strong>Today</strong>. Use the buttons or custom date range above to view past years or other periods.
+            Default view is set to <strong>This Month</strong>. Use the buttons or custom date range above to view Today or other periods.
 
         </div>
 
@@ -178,7 +178,19 @@
         </div>
     </div>
 
-    <!-- 3. Port Clearance & Gate Exit -->
+    <!-- 3. TBS Clearance -->
+    <div class="kpi-card" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('TBS');" style="border-left:4px solid #0EA5E9;cursor:pointer;" title="Click to filter Jobs at TBS below">
+        <div class="kpi-header">
+            <span class="kpi-title">TBS Clearance</span>
+            <div class="kpi-icon-wrap" style="color:#0EA5E9;background:#E0F2FE;"><i class="fa-solid fa-shield-halved"></i></div>
+        </div>
+        <div class="kpi-value" style="color:#0369A1;">{{ pulse_tbs_count }}</div>
+        <div class="kpi-meta">
+            <span>Stage 3 &bull; TBS inspection &amp; clearance</span>
+        </div>
+    </div>
+
+    <!-- 4. Port Clearance & Gate Exit -->
     <div class="kpi-card kpi-cyan" onclick="if(window.filterTrackingPulseAndScroll) window.filterTrackingPulseAndScroll('PORT');" style="cursor:pointer;" title="Click to filter Jobs at Port below">
         <div class="kpi-header">
             <span class="kpi-title">Port Clearance &amp; Gate</span>
@@ -186,7 +198,7 @@
         </div>
         <div class="kpi-value">{{ pulse_port_count }}</div>
         <div class="kpi-meta">
-            <span>Stage 3 &bull; D/O, inspection &amp; gate exit</span>
+            <span>Stage 4 &bull; D/O, inspection &amp; gate exit</span>
         </div>
     </div>
 
@@ -198,7 +210,7 @@
         </div>
         <div class="kpi-value" style="color:#92400E;">{{ pulse_yard_count }}</div>
         <div class="kpi-meta" style="color:#B45309;">
-            <span>Stage 4 &bull; Arrived at yard/office</span>
+            <span>Stage 5 &bull; Arrived at yard/office</span>
         </div>
     </div>
 
@@ -210,7 +222,7 @@
         </div>
         <div class="kpi-value">{{ completed_jobs_count }}</div>
         <div class="kpi-meta">
-            <span class="trend-positive"><i class="fa-solid fa-award"></i> Stage 5 &bull; Handover &amp; POD</span>
+            <span class="trend-positive"><i class="fa-solid fa-award"></i> Stage 6 &bull; Handover &amp; POD</span>
         </div>
     </div>
 
@@ -695,6 +707,10 @@
                 <i class="fa-solid fa-stamp" style="color:#7C3AED;font-size:0.72rem;"></i> At TRA
                 <span style="background:#F3E8FF;color:#6D28D9;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_tra_count|default:jobs_at_tra }}</span>
             </button>
+            <button type="button" data-pulse-filter="TBS" onclick="window.filterTrackingPulse('TBS')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:all 0.15s;">
+                <i class="fa-solid fa-shield-halved" style="color:#0EA5E9;font-size:0.72rem;"></i> At TBS
+                <span style="background:#E0F2FE;color:#0369A1;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_tbs_count|default:0 }}</span>
+            </button>
             <button type="button" data-pulse-filter="PORT" onclick="window.filterTrackingPulse('PORT')" class="pulse-filter-btn" style="padding:0.38rem 0.8rem;border-radius:999px;font-size:0.78rem;font-weight:700;border:1.5px solid #CBD5E1;background:#FFFFFF;color:#1E293B;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:all 0.15s;">
                 <i class="fa-solid fa-anchor" style="color:#0284C7;font-size:0.72rem;"></i> At Port
                 <span style="background:#E0F2FE;color:#0369A1;padding:1px 7px;border-radius:999px;font-size:0.72rem;font-weight:800;">{{ pulse_port_count|default:jobs_at_port }}</span>
@@ -909,10 +925,12 @@
                 statusMatch = (status === 'DELAYED');
             } else if (filter === 'TRA') {
                 statusMatch = (status !== 'COMPLETED' && stage === 2);
-            } else if (filter === 'PORT') {
+            } else if (filter === 'TBS') {
                 statusMatch = (status !== 'COMPLETED' && stage === 3);
-            } else if (filter === 'YARD' || filter === 'BOND') {
+            } else if (filter === 'PORT') {
                 statusMatch = (status !== 'COMPLETED' && stage === 4);
+            } else if (filter === 'YARD' || filter === 'BOND') {
+                statusMatch = (status !== 'COMPLETED' && stage === 5);
             }
 
             var queryMatch = !query || searchBlob.indexOf(query) !== -1;

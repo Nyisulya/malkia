@@ -19,6 +19,7 @@ def global_stats(request):
         stage_3_count = JobShipment.objects.filter(current_stage_number=3, status__in=['ACTIVE', 'DELAYED']).count()
         stage_4_count = JobShipment.objects.filter(current_stage_number=4, status__in=['ACTIVE', 'DELAYED']).count()
         stage_5_count = JobShipment.objects.filter(current_stage_number=5, status__in=['ACTIVE', 'DELAYED']).count()
+        stage_6_count = JobShipment.objects.filter(current_stage_number=6, status__in=['ACTIVE', 'DELAYED']).count()
         pending_intakes_count = JobShipment.objects.filter(
             current_stage_number__in=[1, 2], status__in=['ACTIVE', 'DELAYED']
         ).count()
@@ -118,6 +119,7 @@ def global_stats(request):
             'global_stage_3_count': stage_3_count,
             'global_stage_4_count': stage_4_count,
             'global_stage_5_count': stage_5_count,
+            'global_stage_6_count': stage_6_count,
             'global_pending_expenses': pending_expenses_count,
             'global_unpaid_invoices': unpaid_invoices_count,
             'global_pending_intakes': pending_intakes_count,

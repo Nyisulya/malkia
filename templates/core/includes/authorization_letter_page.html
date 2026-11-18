@@ -45,12 +45,6 @@
             <div class="yours-faithfully">Yours faithfully</div>
 
             <div class="stamp-sign-area">
-                {% if job.customer.signature_image %}
-                    <img src="{{ job.customer.signature_image.url }}" alt="Signature" class="digital-signature">
-                {% endif %}
-                {% if job.customer.stamp_image %}
-                    <img src="{{ job.customer.stamp_image.url }}" alt="Stamp" class="digital-stamp">
-                {% endif %}
                 <div class="signature-line"></div>
             </div>
 

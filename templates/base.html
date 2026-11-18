@@ -256,7 +256,6 @@
                     <a href="{% url 'finance_vehicles_out' %}?tab=vehicles">
                         <i class="fa-solid fa-car" style="color:#0284C7;"></i>
                         <span>Vehicles Out Ledger</span>
-                        <span class="nav-badge" style="background:#0284C7;color:#FFFFFF;font-weight:800;font-size:0.65rem;">VEHICLES</span>
                     </a>
                 </li>
 
@@ -264,7 +263,6 @@
                     <a href="{% url 'finance_vehicles_out' %}?tab=containers">
                         <i class="fa-solid fa-boxes-stacked" style="color:#D97706;"></i>
                         <span>Containers Out Ledger</span>
-                        <span class="nav-badge" style="background:#D97706;color:#FFFFFF;font-weight:800;font-size:0.65rem;">CONTAINERS</span>
                     </a>
                 </li>
 
@@ -289,7 +287,13 @@
                     <a href="{% url 'operating_expenses' %}">
                         <i class="fa-solid fa-money-bill-transfer" style="color:#E11D48;"></i>
                         <span>Operating Expenses</span>
-                        <span class="nav-badge" style="background:#E11D48;color:#FFFFFF;font-weight:800;font-size:0.65rem;">NEW</span>
+                    </a>
+                </li>
+
+                <li class="nav-item {% if request.resolver_match.url_name in 'other_revenues,other_revenue_create,other_revenue_update' %}active{% endif %}">
+                    <a href="{% url 'other_revenues' %}">
+                        <i class="fa-solid fa-hand-holding-dollar" style="color:#16A34A;"></i>
+                        <span>Other Revenue &amp; Inflows</span>
                     </a>
                 </li>
 
@@ -306,7 +310,6 @@
                     <a href="{% url 'payroll' %}">
                         <i class="fa-solid fa-money-check-dollar" style="color:#7C3AED;"></i>
                         <span>Salary Payroll</span>
-                        <span class="nav-badge" style="background:#7C3AED;color:#FFFFFF;font-weight:800;font-size:0.65rem;">NEW</span>
                     </a>
                 </li>
 
@@ -321,14 +324,14 @@
 
                 {% elif is_ceo %}
                 <!-- ========================================================
-                     2. CEO / MANAGEMENT NAVIGATION
+                     2. CEO / EXECUTIVE NAVIGATION (ULTRA-CLEAN, 5 ITEMS)
                      ======================================================== -->
-                <li class="nav-section-title">Executive Command</li>
+                <li class="nav-section-title">Executive Menu</li>
 
                 <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                     <a href="{% url 'dashboard' %}">
                         <i class="fa-solid fa-gauge-high"></i>
-                        <span>Executive Dashboard</span>
+                        <span>Executive Summary</span>
                     </a>
                 </li>
 
@@ -339,22 +342,6 @@
                         {% if global_active_jobs %}
                         <span class="nav-badge badge-blue">{{ global_active_jobs }}</span>
                         {% endif %}
-                    </a>
-                </li>
-
-                <li class="nav-item {% if request.resolver_match.url_name in 'finance_vehicles_out,finance_vehicles_out_export' and request.GET.tab != 'containers' %}active{% endif %}">
-                    <a href="{% url 'finance_vehicles_out' %}?tab=vehicles">
-                        <i class="fa-solid fa-car" style="color:#0284C7;"></i>
-                        <span>Vehicles Out Ledger</span>
-                        <span class="nav-badge" style="background:#0284C7;color:#FFFFFF;font-weight:800;font-size:0.65rem;">VEHICLES</span>
-                    </a>
-                </li>
-
-                <li class="nav-item {% if request.resolver_match.url_name in 'finance_vehicles_out,finance_vehicles_out_export' and request.GET.tab == 'containers' %}active{% endif %}">
-                    <a href="{% url 'finance_vehicles_out' %}?tab=containers">
-                        <i class="fa-solid fa-boxes-stacked" style="color:#D97706;"></i>
-                        <span>Containers Out Ledger</span>
-                        <span class="nav-badge" style="background:#D97706;color:#FFFFFF;font-weight:800;font-size:0.65rem;">CONTAINERS</span>
                     </a>
                 </li>
 
@@ -371,25 +358,16 @@
                 <li class="nav-item {% if request.resolver_match.url_name == 'operating_expenses' %}active{% endif %}">
                     <a href="{% url 'operating_expenses' %}">
                         <i class="fa-solid fa-money-bill-transfer" style="color:#E11D48;"></i>
-                        <span>Operating Expenses &amp; Revenue</span>
+                        <span>Expenses</span>
                     </a>
                 </li>
 
-                <li class="nav-item {% if request.resolver_match.url_name in 'employees,employee_detail' %}active{% endif %}">
-                    <a href="{% url 'employees' %}">
-                        <i class="fa-solid fa-users" style="color:#0D9488;"></i>
-                        <span>Employees</span>
+                <li class="nav-item {% if request.resolver_match.url_name in 'other_revenues,other_revenue_create,other_revenue_update' %}active{% endif %}">
+                    <a href="{% url 'other_revenues' %}">
+                        <i class="fa-solid fa-hand-holding-dollar" style="color:#16A34A;"></i>
+                        <span>Other Revenue</span>
                     </a>
                 </li>
-
-                <li class="nav-item {% if request.resolver_match.url_name in 'payroll,payroll_generate,payroll_update,payroll_delete,payslip' %}active{% endif %}">
-                    <a href="{% url 'payroll' %}">
-                        <i class="fa-solid fa-money-check-dollar" style="color:#7C3AED;"></i>
-                        <span>Salary Payroll</span>
-                    </a>
-                </li>
-
-                <li class="nav-section-title" style="margin-top:0.75rem;font-size:0.68rem;letter-spacing:0.05em;color:#94A3B8;">Directory</li>
 
                 <li class="nav-item {% if request.resolver_match.url_name == 'customers_list' %}active{% endif %}">
                     <a href="{% url 'customers_list' %}">
@@ -398,11 +376,10 @@
                     </a>
                 </li>
 
-                <li class="nav-section-title" style="margin-top:0.75rem;font-size:0.68rem;letter-spacing:0.05em;color:#94A3B8;">Management</li>
-                <li class="nav-item {% if request.resolver_match.url_name in 'system_settings,audit_trail,users_list' %}active{% endif %}">
-                    <a href="{% url 'system_settings' %}">
-                        <i class="fa-solid fa-sliders"></i>
-                        <span>Settings</span>
+                <li class="nav-item {% if request.resolver_match.url_name in 'employees,employee_detail' %}active{% endif %}">
+                    <a href="{% url 'employees' %}">
+                        <i class="fa-solid fa-users" style="color:#0D9488;"></i>
+                        <span>Staff</span>
                     </a>
                 </li>
 
@@ -437,7 +414,7 @@
                     </a>
                 </li>
 
-                <li class="nav-section-title" style="margin-top:0.75rem;font-size:0.68rem;letter-spacing:0.05em;color:#94A3B8;">Workflow Stages (1–5)</li>
+                <li class="nav-section-title" style="margin-top:0.75rem;font-size:0.68rem;letter-spacing:0.05em;color:#94A3B8;">Workflow Stages (1–6)</li>
 
                 <!-- STAGE 1: NYARAKA & INTAKE -->
                 <li class="nav-item {% if request.resolver_match.url_name == 'document_register' %}active{% endif %}">
@@ -461,35 +438,46 @@
                     </a>
                 </li>
 
-                <!-- STAGE 3: PORT CLEARANCE & GATE EXIT -->
+                <!-- STAGE 3: TBS CLEARANCE -->
+                <li class="nav-item {% if request.resolver_match.url_name == 'stage_tbs' %}active{% endif %}">
+                    <a href="{% url 'stage_tbs' %}">
+                        <i class="fa-solid fa-shield-halved" style="color:#0EA5E9;"></i>
+                        <span>3. TBS Clearance</span>
+                        {% if global_stage_3_count %}
+                        <span class="nav-badge" style="background:#0EA5E9;color:#FFFFFF;">{{ global_stage_3_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <!-- STAGE 4: PORT CLEARANCE & GATE EXIT -->
                 <li class="nav-item {% if request.resolver_match.url_name == 'stage_port' %}active{% endif %}">
                     <a href="{% url 'stage_port' %}">
                         <i class="fa-solid fa-anchor" style="color:#0284C7;"></i>
-                        <span>3. Port Clearance</span>
-                        {% if global_stage_3_count %}
-                        <span class="nav-badge" style="background:#0284C7;color:#FFFFFF;">{{ global_stage_3_count }}</span>
+                        <span>4. Port Clearance</span>
+                        {% if global_stage_4_count %}
+                        <span class="nav-badge" style="background:#0284C7;color:#FFFFFF;">{{ global_stage_4_count }}</span>
                         {% endif %}
                     </a>
                 </li>
 
-                <!-- STAGE 4: YARD ARRIVALS -->
+                <!-- STAGE 5: YARD ARRIVALS -->
                 <li class="nav-item {% if request.resolver_match.url_name in 'stage_yard,yard_operations' %}active{% endif %}">
                     <a href="{% url 'stage_yard' %}">
                         <i class="fa-solid fa-warehouse" style="color:#0D9488;"></i>
-                        <span>4. Yard Arrivals</span>
-                        {% if global_stage_4_count %}
-                        <span class="nav-badge" style="background:#0D9488;color:#FFFFFF;">{{ global_stage_4_count }}</span>
+                        <span>5. Yard Arrivals</span>
+                        {% if global_stage_5_count %}
+                        <span class="nav-badge" style="background:#0D9488;color:#FFFFFF;">{{ global_stage_5_count }}</span>
                         {% endif %}
                     </a>
                 </li>
 
-                <!-- STAGE 5: CUSTOMER HANDOVER -->
+                <!-- STAGE 6: CUSTOMER HANDOVER -->
                 <li class="nav-item {% if request.resolver_match.url_name == 'stage_handover' %}active{% endif %}">
                     <a href="{% url 'stage_handover' %}">
                         <i class="fa-solid fa-handshake" style="color:#16A34A;"></i>
-                        <span>5. Customer Handover</span>
-                        {% if global_stage_5_count %}
-                        <span class="nav-badge" style="background:#16A34A;color:#FFFFFF;">{{ global_stage_5_count }}</span>
+                        <span>6. Customer Handover</span>
+                        {% if global_stage_6_count %}
+                        <span class="nav-badge" style="background:#16A34A;color:#FFFFFF;">{{ global_stage_6_count }}</span>
                         {% endif %}
                     </a>
                 </li>
@@ -529,6 +517,9 @@
 
                     </a>
 
+                    <a href="{% url 'change_password' %}" title="Change Password" style="color:#94A3B8;font-size:0.95rem;padding:0.3rem;margin-right:0.15rem;">
+                        <i class="fa-solid fa-key"></i>
+                    </a>
                     <a href="{% url 'logout' %}" title="Log Out" style="color:#F87171;font-size:1.1rem;padding:0.3rem;">
 
                         <i class="fa-solid fa-power-off"></i>

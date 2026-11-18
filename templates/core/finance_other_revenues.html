@@ -1,0 +1,437 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Other Revenue &amp; Cash Inflows | Malkia C&amp;F{% endblock %}
+
+{% block content %}
+<div style="max-width:1240px;margin:0 auto;padding-bottom:3rem;">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header-box">
+        <div>
+            <h2 class="page-title">
+                <i class="fa-solid fa-hand-holding-dollar" style="color:#16A34A;margin-right:0.4rem;"></i>
+                Other Revenue &amp; Cash Inflows
+            </h2>
+            <p class="page-subtitle">
+                Record non-client cash inflows: Shipping Line Container Deposit Refunds, Boss Capital Injections, and Other Business Revenue.
+            </p>
+        </div>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;" class="no-print">
+            <a href="{% url 'operating_expenses' %}" class="btn-header-action btn-outline" style="text-decoration:none;">
+                <i class="fa-solid fa-money-bill-transfer"></i> Operating Expenses
+            </a>
+            <button type="button" class="btn-header-action btn-primary" onclick="openCreateRevenueModal()">
+                <i class="fa-solid fa-plus"></i> Record Cash Inflow
+            </button>
+        </div>
+    </div>
+
+    <!-- 4 KPI CARDS (SEPARATING PROFIT REVENUE vs REFUNDS vs CAPITAL) -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));gap:0.9rem;margin-bottom:1.25rem;">
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #0F172A;border-radius:12px;padding:1rem 1.15rem;box-shadow:var(--shadow-sm);">
+            <div style="font-size:0.7rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;">Total Cash Inflows ({{ month_label }})</div>
+            <div style="font-size:1.35rem;font-weight:900;color:#0F172A;margin:0.25rem 0;font-family:monospace;">TSh {{ total_inflows|floatformat:2|intcomma }}</div>
+            <div style="font-size:0.72rem;color:#64748B;">All non-client cash received</div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #16A34A;border-radius:12px;padding:1rem 1.15rem;box-shadow:var(--shadow-sm);">
+            <div style="font-size:0.7rem;font-weight:800;color:#15803D;text-transform:uppercase;letter-spacing:0.04em;">Other Business Revenue</div>
+            <div style="font-size:1.35rem;font-weight:900;color:#16A34A;margin:0.25rem 0;font-family:monospace;">TSh {{ total_business_revenue|floatformat:2|intcomma }}</div>
+            <div style="font-size:0.72rem;color:#166534;">Counts toward company Net Profit</div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #0284C7;border-radius:12px;padding:1rem 1.15rem;box-shadow:var(--shadow-sm);">
+            <div style="font-size:0.7rem;font-weight:800;color:#0369A1;text-transform:uppercase;letter-spacing:0.04em;">Container Deposit Refunds</div>
+            <div style="font-size:1.35rem;font-weight:900;color:#0284C7;margin:0.25rem 0;font-family:monospace;">TSh {{ total_container_refunds|floatformat:2|intcomma }}</div>
+            <div style="font-size:0.72rem;color:#0369A1;">Returned by Shipping Lines</div>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #7C3AED;border-radius:12px;padding:1rem 1.15rem;box-shadow:var(--shadow-sm);">
+            <div style="font-size:0.7rem;font-weight:800;color:#6D28D9;text-transform:uppercase;letter-spacing:0.04em;">Boss Capital Injections</div>
+            <div style="font-size:1.35rem;font-weight:900;color:#7C3AED;margin:0.25rem 0;font-family:monospace;">TSh {{ total_capital_injections|floatformat:2|intcomma }}</div>
+            <div style="font-size:0.72rem;color:#6D28D9;">Increases cash balance (not profit)</div>
+        </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card-panel" style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:0.9rem 1.15rem;margin-bottom:1.15rem;box-shadow:var(--shadow-sm);">
+        <form method="GET" style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:0.4rem;">
+                <label style="font-size:0.74rem;font-weight:800;color:#64748B;text-transform:uppercase;">Month:</label>
+                <input type="month" name="month" class="form-control" value="{% if month_param != 'all' %}{{ month_param }}{% endif %}" onchange="this.form.submit()" style="min-width:165px;">
+                <a href="?month=all" class="btn-header-action {% if month_param == 'all' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:0.42rem 0.8rem;font-size:0.78rem;text-decoration:none;">All Time</a>
+            </div>
+            <div style="min-width:220px;">
+                <select name="inflow_type" class="form-control" onchange="this.form.submit()">
+                    <option value="">All Inflow Types</option>
+                    {% for val, label in inflow_choices %}
+                    <option value="{{ val }}" {% if inflow_type_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="flex:1;min-width:210px;">
+                <input type="text" name="q" value="{{ search_q }}" class="form-control" placeholder="Search source, ref, BL, notes...">
+            </div>
+            <button type="submit" class="btn-header-action btn-primary" style="padding:0.45rem 1rem;font-size:0.82rem;">
+                <i class="fa-solid fa-filter"></i> Filter
+            </button>
+        </form>
+    </div>
+
+    <!-- INFLOWS TABLE -->
+    <div class="card-panel" style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);">
+        <div class="table-responsive">
+            <table class="modern-table" style="width:100%;">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Inflow Type</th>
+                        <th>Linked B/L</th>
+                        <th>Status</th>
+                        <th>Method</th>
+                        <th style="text-align:right;">Amount (TSh)</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rev in revenues %}
+                    <tr>
+                        <td style="white-space:nowrap;font-weight:700;color:#334155;">{{ rev.date|date:"d M Y" }}</td>
+                        <td>
+                            {% if rev.inflow_type == 'OTHER_REVENUE' %}
+                            <span style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;font-size:0.72rem;font-weight:800;padding:0.2rem 0.55rem;border-radius:999px;white-space:nowrap;">
+                                Business Revenue
+                            </span>
+                            {% elif rev.inflow_type == 'CONTAINER_REFUND' %}
+                            <span style="background:#DBEAFE;color:#1D4ED8;border:1px solid #BFDBFE;font-size:0.72rem;font-weight:800;padding:0.2rem 0.55rem;border-radius:999px;white-space:nowrap;">
+                                Container Deposit
+                            </span>
+                            {% else %}
+                            <span style="background:#EDE9FE;color:#6D28D9;border:1px solid #DDD6FE;font-size:0.72rem;font-weight:800;padding:0.2rem 0.55rem;border-radius:999px;white-space:nowrap;">
+                                Boss Capital
+                            </span>
+                            {% endif %}
+                            {% if rev.description %}
+                            <div style="font-size:0.73rem;color:#64748B;margin-top:3px;">{{ rev.description }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if rev.job %}
+                            <a href="{% url 'job_detail' rev.job.id %}" style="font-family:monospace;font-weight:800;color:#0284C7;text-decoration:none;">
+                                {{ rev.job.bl_number|default:rev.job.job_number }}
+                            </a>
+                            {% if rev.inflow_type == 'CONTAINER_REFUND' and rev.job.cost_container_deposit > 0 %}
+                            <div style="font-size:0.71rem;margin-top:2px;color:#64748B;font-weight:700;">
+                                Deposit: TSh {{ rev.job.cost_container_deposit|floatformat:0|intcomma }}
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <span style="color:#94A3B8;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if rev.inflow_type == 'CONTAINER_REFUND' %}
+                                {% if rev.deposit_status == 'FORFEITED' %}
+                                <span style="background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;font-size:0.72rem;font-weight:800;padding:0.2rem 0.55rem;border-radius:999px;white-space:nowrap;">
+                                    ✕ Forfeited (Imeenda Yote)
+                                </span>
+                                {% elif rev.deposit_status == 'PARTIAL' %}
+                                <span style="background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;font-size:0.72rem;font-weight:800;padding:0.2rem 0.55rem;border-radius:999px;white-space:nowrap;">
+                                    ⚠ Partial (Imekatwa)
+                                </span>
+                                {% elif rev.deposit_status == 'RETURNED_FULL' %}
+                                <span style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;font-size:0.72rem;font-weight:800;padding:0.2rem 0.55rem;border-radius:999px;white-space:nowrap;">
+                                    ✓ Returned Full
+                                </span>
+                                {% else %}
+                                <span style="background:#FEF3C7;color:#B45309;border:1px solid #FDE68A;font-size:0.72rem;font-weight:800;padding:0.2rem 0.55rem;border-radius:999px;white-space:nowrap;">
+                                    ⏳ Pending
+                                </span>
+                                {% endif %}
+                            {% elif rev.inflow_type == 'CAPITAL_INJECTION' %}
+                            <span style="background:#EDE9FE;color:#6D28D9;border:1px solid #DDD6FE;font-size:0.72rem;font-weight:800;padding:0.2rem 0.55rem;border-radius:999px;white-space:nowrap;">
+                                ✓ Capital Added
+                            </span>
+                            {% else %}
+                            <span style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;font-size:0.72rem;font-weight:800;padding:0.2rem 0.55rem;border-radius:999px;white-space:nowrap;">
+                                ✓ Received
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-size:0.78rem;font-weight:700;color:#334155;">{{ rev.get_payment_method_display }}</div>
+                            {% if rev.payment_reference %}
+                            <div style="font-size:0.72rem;font-family:monospace;color:#64748B;">Ref: {{ rev.payment_reference }}</div>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right;font-family:monospace;font-weight:900;font-size:0.92rem;white-space:nowrap;">
+                            {% if rev.inflow_type == 'CONTAINER_REFUND' %}
+                                {% if rev.deposit_status == 'FORFEITED' %}
+                                <span style="color:#DC2626;">- {{ rev.amount|floatformat:2|intcomma }}</span>
+                                <div style="font-size:0.68rem;color:#991B1B;font-family:sans-serif;font-weight:700;">Lost / Forfeited</div>
+                                {% elif rev.deposit_status == 'PARTIAL' %}
+                                <span style="color:#16A34A;">+ {{ rev.returned_amount|floatformat:2|intcomma }}</span>
+                                <div style="font-size:0.68rem;color:#92400E;font-family:sans-serif;font-weight:700;">of {{ rev.amount|floatformat:0|intcomma }} deposit</div>
+                                {% elif rev.deposit_status == 'RETURNED_FULL' %}
+                                <span style="color:#16A34A;">+ {{ rev.returned_amount|default:rev.amount|floatformat:2|intcomma }}</span>
+                                {% else %}
+                                <span style="color:#B45309;">{{ rev.amount|floatformat:2|intcomma }}</span>
+                                <div style="font-size:0.68rem;color:#B45309;font-family:sans-serif;font-weight:700;">Held at Shipping Line</div>
+                                {% endif %}
+                            {% else %}
+                            <span style="color:#16A34A;">+ {{ rev.amount|floatformat:2|intcomma }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right;white-space:nowrap;">
+                            <div style="display:inline-flex;gap:0.35rem;align-items:center;">
+                                {% if rev.receipt_file %}
+                                <a href="{{ rev.receipt_file.url }}" target="_blank" class="btn-header-action btn-outline" style="padding:0.3rem 0.55rem;font-size:0.74rem;" title="View Receipt/Slip">
+                                    <i class="fa-solid fa-paperclip"></i>
+                                </a>
+                                {% endif %}
+                                <button type="button" class="btn-header-action btn-outline" style="padding:0.3rem 0.6rem;font-size:0.74rem;"
+                                    onclick="openEditRevenueModal('{{ rev.id }}', '{{ rev.date|date:'Y-m-d' }}', '{{ rev.inflow_type }}', '{{ rev.amount }}', '{{ rev.source|escapejs }}', '{{ rev.job_id|default:'' }}', '{{ rev.payment_method }}', '{{ rev.payment_reference|escapejs }}', '{{ rev.description|escapejs }}', '{{ rev.deposit_status }}', '{{ rev.returned_amount }}')">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                                </button>
+                                <form action="{% url 'other_revenue_delete' rev.id %}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this inflow record?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-header-action" style="background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;padding:0.3rem 0.55rem;font-size:0.74rem;">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align:center;padding:3rem 1rem;color:#64748B;">
+                            <div style="font-size:2rem;color:#CBD5E1;margin-bottom:0.5rem;"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                            <strong style="color:#1E293B;display:block;">No cash inflows recorded for {{ month_label }}</strong>
+                            <span style="font-size:0.8rem;">Click <strong>+ Record Cash Inflow</strong> above to log a Container Deposit Refund, Boss Capital Deposit, or Other Revenue.</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ADD / EDIT INFLOW MODAL -->
+<div id="revenueModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card" style="max-width:600px;">
+        <div class="modal-header">
+            <h3 id="revenueModalTitle" style="margin:0;font-size:1.05rem;font-weight:900;">
+                <i class="fa-solid fa-hand-holding-dollar" style="color:#16A34A;margin-right:0.35rem;"></i>
+                Record Cash Inflow / Other Revenue
+            </h3>
+            <button type="button" class="modal-close" onclick="closeModal('revenueModal')">&times;</button>
+        </div>
+        <form id="revenueForm" data-no-ajax="true" action="{% url 'other_revenue_create' %}" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="return_month" value="{{ month_param }}">
+            <div class="modal-body" style="display:grid;gap:0.85rem;">
+                <div class="form-group" style="margin:0;">
+                    <label style="font-weight:800;font-size:0.8rem;">Inflow Type *</label>
+                    <select name="inflow_type" id="revType" required class="form-control" onchange="toggleContainerOutcomeHelper()">
+                        {% for val, label in inflow_choices %}
+                        <option value="{{ val }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;">
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-weight:800;font-size:0.8rem;">Date *</label>
+                        <input type="date" name="date" id="revDate" value="{{ today_str }}" required class="form-control">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label style="font-weight:800;font-size:0.8rem;" id="revAmountLabel">Amount (TSh) *</label>
+                        <input type="number" step="0.01" min="1" name="amount" id="revAmount" required class="form-control" placeholder="e.g. 400000">
+                    </div>
+                </div>
+
+                <!-- SHOWN ONLY FOR CONTAINER DEPOSIT -->
+                <div class="form-group" id="revJobWrap" style="margin:0;display:none;">
+                    <label style="font-weight:800;font-size:0.8rem;">Linked Container / B/L *</label>
+                    <input type="text" id="revJobSearch" class="form-control" placeholder="Type BL #, Job #, or Client name to filter..." oninput="filterRevJobs(this.value)" style="margin-bottom:0.4rem;font-size:0.8rem;background:#F8FAFC;">
+                    <select name="job_id" id="revJobId" class="form-control">
+                        <option value="">-- Select Container / B/L --</option>
+                        {% for j in recent_jobs %}
+                        <option value="{{ j.id }}" data-deposit="{{ j.cost_container_deposit|default:0 }}" data-search="{{ j.job_number|lower }} {{ j.bl_number|default:''|lower }} {{ j.customer.company_name|lower }}">{{ j.bl_number|default:j.job_number }} — {{ j.customer.company_name }} ({{ j.job_number }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <input type="hidden" name="deposit_status" id="revDepositStatus" value="PENDING">
+                <div id="containerOutcomeHelper" style="display:none;background:#F8FAFC;border:1px solid #CBD5E1;border-radius:8px;padding:0.75rem;">
+                    <div style="font-size:0.74rem;font-weight:800;color:#334155;margin-bottom:0.45rem;">Update Container Deposit Outcome:</div>
+                    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.45rem;">
+                        <button type="button" onclick="applyDepositOutcome('RETURNED_FULL')" class="btn-header-action" style="background:#DCFCE7;color:#166534;border:1px solid #86EFAC;font-size:0.73rem;padding:0.32rem 0.65rem;font-weight:800;border-radius:6px;cursor:pointer;">
+                            ✓ Returned in Full
+                        </button>
+                        <button type="button" onclick="applyDepositOutcome('PARTIAL')" class="btn-header-action" style="background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;font-size:0.73rem;padding:0.32rem 0.65rem;font-weight:800;border-radius:6px;cursor:pointer;">
+                            ⚠ Partial / Deducted
+                        </button>
+                        <button type="button" onclick="applyDepositOutcome('FORFEITED')" class="btn-header-action" style="background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;font-size:0.73rem;padding:0.32rem 0.65rem;font-weight:800;border-radius:6px;cursor:pointer;">
+                            ✕ Forfeited in Full
+                        </button>
+                    </div>
+                    <div id="revReturnedWrap" style="display:none;margin-top:0.45rem;">
+                        <label style="font-weight:800;font-size:0.76rem;color:#92400E;">Actual Amount Returned by Shipping Line (TSh) *</label>
+                        <input type="number" step="0.01" min="0" name="returned_amount" id="revReturnedAmount" class="form-control" placeholder="e.g. 300000" disabled>
+                    </div>
+                    <div id="revOutcomeNote" style="font-size:0.73rem;font-weight:700;color:#64748B;"></div>
+                </div>
+
+                <!-- SHOWN FOR OTHER REVENUE / BOSS CAPITAL (AND OPTIONAL NOTE FOR DEPOSIT) -->
+                <div class="form-group" id="revDescWrap" style="margin:0;">
+                    <label style="font-weight:800;font-size:0.8rem;" id="revDescLabel">What is this revenue for? *</label>
+                    <input type="text" name="description" id="revDesc" class="form-control" placeholder="e.g. Commission / Consultation fee">
+                </div>
+
+                <div class="form-group" style="margin:0;">
+                    <label style="font-weight:700;font-size:0.8rem;">Payment Method</label>
+                    <select name="payment_method" id="revMethod" class="form-control">
+                        {% for val, label in payment_methods %}
+                        <option value="{{ val }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer" style="display:flex;justify-content:space-between;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('revenueModal')">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="background:#16A34A;border:none;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Record
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    window._revEditMode = false;
+
+    function filterRevJobs(query) {
+        const q = (query || '').trim().toLowerCase();
+        const sel = document.getElementById('revJobId');
+        if (!sel) return;
+        let firstMatch = null;
+        let matchCount = 0;
+        Array.from(sel.options).forEach((opt, idx) => {
+            if (idx === 0) { opt.hidden = false; return; }
+            const txt = opt.getAttribute('data-search') || opt.text.toLowerCase();
+            const matched = !q || txt.includes(q);
+            opt.hidden = !matched;
+            if (matched) {
+                matchCount++;
+                if (!firstMatch) firstMatch = opt.value;
+            }
+        });
+        if (q && matchCount === 1 && firstMatch) {
+            sel.value = firstMatch;
+        }
+    }
+
+    function toggleContainerOutcomeHelper() {
+        const typeVal = document.getElementById('revType').value;
+        const isRefund = typeVal === 'CONTAINER_REFUND';
+        const isCapital = typeVal === 'CAPITAL_INJECTION';
+
+        document.getElementById('containerOutcomeHelper').style.display = (isRefund && window._revEditMode) ? 'block' : 'none';
+        document.getElementById('revJobWrap').style.display = isRefund ? 'block' : 'none';
+        document.getElementById('revJobId').required = isRefund;
+        if (!isRefund) document.getElementById('revJobId').value = '';
+
+        const lbl = document.getElementById('revAmountLabel');
+        if (lbl) lbl.innerText = isRefund ? 'Deposit Amount Paid (TSh) *' : 'Amount (TSh) *';
+
+        const descLbl = document.getElementById('revDescLabel');
+        const descEl = document.getElementById('revDesc');
+        if (isRefund) {
+            descLbl.innerText = 'Note (Optional)';
+            descEl.required = false;
+            descEl.placeholder = 'e.g. Container deposit for shipping line';
+        } else if (isCapital) {
+            descLbl.innerText = 'Note (Optional)';
+            descEl.required = false;
+            descEl.placeholder = 'e.g. Capital added by Boss for office operations';
+        } else {
+            descLbl.innerText = 'What is this revenue for? *';
+            descEl.required = true;
+            descEl.placeholder = 'e.g. Commission / Extra service fee';
+        }
+    }
+
+    function applyDepositOutcome(mode) {
+        document.getElementById('revDepositStatus').value = mode;
+        const retWrap = document.getElementById('revReturnedWrap');
+        const retInput = document.getElementById('revReturnedAmount');
+        const noteEl = document.getElementById('revOutcomeNote');
+        const descEl = document.getElementById('revDesc');
+        retInput.required = false;
+        retInput.disabled = true;
+
+        if (mode === 'RETURNED_FULL') {
+            retWrap.style.display = 'none';
+            noteEl.style.color = '#166534';
+            noteEl.innerText = '✓ Full deposit amount will be recorded as returned.';
+            if (!descEl.value.trim()) descEl.value = 'Container deposit returned in full';
+        } else if (mode === 'PARTIAL') {
+            retWrap.style.display = 'block';
+            retInput.disabled = false;
+            retInput.required = true;
+            retInput.min = '0.01';
+            retInput.focus();
+            noteEl.style.color = '#92400E';
+            noteEl.innerText = '⚠ Enter only the partial amount that was returned.';
+            if (!descEl.value.trim()) descEl.value = 'Partial container deposit returned (balance deducted)';
+        } else if (mode === 'FORFEITED') {
+            retWrap.style.display = 'none';
+            retInput.value = '0';
+            noteEl.style.color = '#991B1B';
+            noteEl.innerText = '✕ Entire deposit marked as forfeited (lost to shipping line).';
+            if (!descEl.value.trim()) descEl.value = 'Container deposit forfeited in full by shipping line';
+        } else {
+            retWrap.style.display = 'none';
+            noteEl.style.color = '#64748B';
+            noteEl.innerText = '⏳ Pending response from shipping line.';
+        }
+    }
+
+    function openCreateRevenueModal() {
+        window._revEditMode = false;
+        document.getElementById('revenueForm').action = "{% url 'other_revenue_create' %}";
+        document.getElementById('revenueModalTitle').innerHTML = '<i class="fa-solid fa-hand-holding-dollar" style="color:#16A34A;margin-right:0.35rem;"></i> Record Cash Inflow / Container Deposit';
+        document.getElementById('revDate').value = "{{ today_str }}";
+        document.getElementById('revType').value = "OTHER_REVENUE";
+        document.getElementById('revDepositStatus').value = "PENDING";
+        document.getElementById('revReturnedAmount').value = "";
+        document.getElementById('revAmount').value = "";
+        if (document.getElementById('revJobSearch')) { document.getElementById('revJobSearch').value = ""; filterRevJobs(""); }
+        document.getElementById('revJobId').value = "";
+        document.getElementById('revMethod').value = "BANK";
+        document.getElementById('revDesc').value = "";
+        toggleContainerOutcomeHelper();
+        openModal('revenueModal');
+    }
+
+    function openEditRevenueModal(id, dateVal, typeVal, amountVal, sourceVal, jobVal, methodVal, refVal, descVal, depStatus = 'PENDING', returnedVal = '0') {
+        window._revEditMode = true;
+        document.getElementById('revenueForm').action = `/finance/other-revenues/${id}/update/`;
+        document.getElementById('revenueModalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color:#0284C7;margin-right:0.35rem;"></i> Edit Record / Update Deposit Outcome';
+        document.getElementById('revDate').value = dateVal;
+        document.getElementById('revType').value = typeVal;
+        document.getElementById('revAmount').value = amountVal;
+        if (document.getElementById('revJobSearch')) { document.getElementById('revJobSearch').value = ""; filterRevJobs(""); }
+        document.getElementById('revJobId').value = jobVal || "";
+        document.getElementById('revMethod').value = methodVal || "BANK";
+        document.getElementById('revDesc').value = descVal || "";
+        document.getElementById('revReturnedAmount').value = parseFloat(returnedVal || 0) > 0 ? returnedVal : '';
+        toggleContainerOutcomeHelper();
+        if (typeVal === 'CONTAINER_REFUND') applyDepositOutcome(depStatus || 'PENDING');
+        openModal('revenueModal');
+    }
+</script>
+{% endblock %}

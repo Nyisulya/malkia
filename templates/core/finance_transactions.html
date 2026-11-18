@@ -88,9 +88,9 @@
             <span class="kpi-title">Total Cash Inflow (Income)</span>
             <div class="kpi-icon-wrap"><i class="fa-solid fa-arrow-down-left"></i></div>
         </div>
-        <div class="kpi-value">TSh {{ total_income|floatformat:0 }}</div>
+        <div class="kpi-value">TSh {{ total_income|floatformat:0|intcomma }}</div>
         <div class="kpi-meta">
-            <span class="trend-positive"><i class="fa-solid fa-circle-check"></i> Client payments collected</span>
+            <span class="trend-positive"><i class="fa-solid fa-circle-check"></i> Client payments, refunds &amp; capital</span>
         </div>
     </div>
 
@@ -99,9 +99,9 @@
             <span class="kpi-title">Total Cash Outflow (Expenses)</span>
             <div class="kpi-icon-wrap"><i class="fa-solid fa-arrow-up-right"></i></div>
         </div>
-        <div class="kpi-value">TSh {{ total_expenses|floatformat:0 }}</div>
+        <div class="kpi-value">TSh {{ total_expenses|floatformat:0|intcomma }}</div>
         <div class="kpi-meta">
-            <span>Disbursed port, transport & ops</span>
+            <span>Office expenses, payroll &amp; vouchers</span>
         </div>
     </div>
 
@@ -110,7 +110,7 @@
             <span class="kpi-title">TRA Customs Duty Settled</span>
             <div class="kpi-icon-wrap"><i class="fa-solid fa-stamp"></i></div>
         </div>
-        <div class="kpi-value">TSh {{ total_duty_settled|floatformat:0 }}</div>
+        <div class="kpi-value">TSh {{ total_duty_settled|floatformat:0|intcomma }}</div>
         <div class="kpi-meta">
             <span>Verified GePG tax settlements</span>
         </div>
@@ -121,7 +121,7 @@
             <span class="kpi-title">Net Operating Cashflow</span>
             <div class="kpi-icon-wrap"><i class="fa-solid fa-scale-balanced"></i></div>
         </div>
-        <div class="kpi-value">TSh {{ net_cashflow|floatformat:0 }}</div>
+        <div class="kpi-value">TSh {{ net_cashflow|floatformat:0|intcomma }}</div>
         <div class="kpi-meta">
             <span>Net cash balance position</span>
         </div>
@@ -196,16 +196,16 @@
         </span>
     </div>
 
-    <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
+    <div class="table-responsive">
+        <table class="modern-table" data-page-size="15" style="width:100%;border-collapse:collapse;font-size:0.82rem;text-align:left;">
             <thead>
-                <tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;color:#64748B;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">
-                    <th style="padding:0.75rem 1rem;font-weight:800;width:12%;">Date</th>
-                    <th style="padding:0.75rem 1rem;font-weight:800;width:28%;">Description &amp; Client</th>
-                    <th style="padding:0.75rem 1rem;font-weight:800;width:22%;">B/L &amp; Chassis / Reference</th>
-                    <th style="padding:0.75rem 1rem;font-weight:800;width:16%;">Method &amp; Ref #</th>
-                    <th style="padding:0.75rem 1rem;font-weight:800;width:12%;">Amount</th>
-                    <th style="padding:0.75rem 1rem;font-weight:800;width:10%;text-align:right;">Receipt / Action</th>
+                <tr>
+                    <th>Date</th>
+                    <th>Type &amp; Description</th>
+                    <th>B/L &amp; Reference</th>
+                    <th>Method</th>
+                    <th style="text-align:right;">Amount (TSh)</th>
+                    <th style="text-align:right;">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -232,35 +232,19 @@
                                 <i class="fa-solid fa-arrow-up"></i> Expense
                             </span>
                             {% endif %}
-                            <strong style="color:#0F172A;font-size:0.88rem;white-space:nowrap;">{{ t.title }}</strong>
+                            <strong style="color:#0F172A;font-size:0.85rem;">{{ t.title }}</strong>
                         </div>
-                        <div style="font-size:0.73rem;color:#64748B;white-space:nowrap;">
-                            Recorded by: {{ t.recorded_by }}
+                        <div style="font-size:0.73rem;color:#64748B;">
+                            By: {{ t.recorded_by }}
                         </div>
                     </td>
 
-                    <!-- 3. B/L & Chassis / Reference -->
-                    <td style="padding:0.75rem 1rem;vertical-align:middle;">
-                        {% if is_ceo %}
-                        <div style="font-size:0.74rem;font-weight:800;color:#0F766E;">
-                            Job: {{ t.related_job }}
+                    <!-- 3. B/L & Reference -->
+                    <td style="padding:0.75rem 0.85rem;vertical-align:middle;">
+                        <div style="font-weight:800;font-size:0.84rem;color:#0F172A;">
+                            {{ t.bl_number|default:t.related_job|default:"—" }}
                         </div>
-                        <div style="font-weight:800;font-size:0.88rem;color:#0F172A;white-space:nowrap;">
-                            B/L: {{ t.bl_number|default:t.related_job }}
-                        </div>
-                        {% else %}
-                        <div style="font-weight:800;font-size:0.9rem;color:#0F172A;white-space:nowrap;">
-                            B/L: {{ t.bl_number|default:t.related_job }}
-                        </div>
-                        {% endif %}
-
-                        {% if t.chassis_number %}
-                        <div style="font-family:monospace;font-size:0.74rem;color:#1E40AF;margin-top:0.15rem;white-space:nowrap;">
-                            Chassis: <span style="background:#EFF6FF;padding:0.05rem 0.35rem;border-radius:3px;font-weight:700;border:1px solid #DBEAFE;">{{ t.chassis_number }}</span>
-                        </div>
-                        {% endif %}
-
-                        <div style="font-size:0.74rem;color:#475569;margin-top:0.15rem;white-space:nowrap;">
+                        <div style="font-size:0.73rem;color:#475569;margin-top:0.15rem;">
                             Ref: <strong style="font-family:monospace;color:#334155;">{{ t.related_doc }}</strong>
                         </div>
                     </td>

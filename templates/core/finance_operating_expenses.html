@@ -7,12 +7,14 @@
 <style>
     .expense-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 340px;
+        grid-template-columns: 1fr;
         gap: 1.25rem;
         align-items: start;
     }
-    @media (max-width: 1100px) {
-        .expense-grid { grid-template-columns: 1fr; }
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 0.6rem;
     }
     .category-chip-row {
         display: flex;
@@ -175,15 +177,15 @@
                 </span>
             </div>
 
-            <div style="overflow-x:auto;">
-                <table style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
+            <div class="table-responsive">
+                <table class="modern-table" data-page-size="10" style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
                     <thead>
-                        <tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;color:#64748B;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">
-                            <th style="padding:0.7rem 0.9rem;font-weight:800;">Date</th>
-                            <th style="padding:0.7rem 0.9rem;font-weight:800;">Category &amp; Description</th>
-                            <th style="padding:0.7rem 0.9rem;font-weight:800;">Payment Method</th>
-                            <th style="padding:0.7rem 0.9rem;font-weight:800;text-align:right;">Amount (TSh)</th>
-                            <th style="padding:0.7rem 0.9rem;font-weight:800;text-align:right;" class="no-print">Actions</th>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category &amp; Description</th>
+                            <th>Payment Method</th>
+                            <th style="text-align:right;">Amount (TSh)</th>
+                            <th style="text-align:right;" class="no-print">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -248,8 +250,6 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <!-- SMART PAGINATION -->
-                {% include 'includes/pagination.html' with page_obj=page_obj extra_querystring=extra_querystring item_label="expenses" %}
             </div>
         </div>
 
@@ -267,8 +267,9 @@
                 Categories you create here are yours — add salary, commission, rent, internet, fuel, utility bills and anything else the company pays for.
             </p>
 
+            <div class="categories-grid">
             {% for c in categories %}
-            <div class="category-chip-row">
+            <div class="category-chip-row" style="margin-bottom:0;">
                 <div style="min-width:0;">
                     <div style="font-weight:800;font-size:0.82rem;color:{% if c.is_active %}#0F172A{% else %}#94A3B8{% endif %};text-decoration:{% if c.is_active %}none{% else %}line-through{% endif %};">
                         {{ c.name }}
@@ -286,11 +287,12 @@
                 </form>
             </div>
             {% empty %}
-            <div style="text-align:center;padding:1.5rem 0.5rem;color:#94A3B8;font-size:0.8rem;">
+            <div style="grid-column:1/-1;text-align:center;padding:1.5rem 0.5rem;color:#94A3B8;font-size:0.8rem;">
                 <i class="fa-solid fa-tags" style="font-size:1.6rem;display:block;margin-bottom:0.5rem;color:#CBD5E1;"></i>
                 No categories yet. Add your first one to start recording expenses.
             </div>
             {% endfor %}
+            </div>
         </div>
     </div>
 
