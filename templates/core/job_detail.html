@@ -1871,89 +1871,87 @@
             const statusText = document.getElementById('batchUploadStatusText');
             const percentText = document.getElementById('batchUploadPercentText');
 
+            // 1. Lock Live Sync so background polling never overwrites or reloads the DOM during upload
+            window._isUploadingDocs = true;
+            window.isUploadingDocs = true;
+
             if (btn) btn.disabled = true;
             if (label) label.textContent = `Inapakia (${items.length})...`;
             if (progressWrap) progressWrap.style.display = 'block';
-            if (statusText) statusText.textContent = `Inapakia nyaraka 1/${items.length}...`;
+            if (statusText) statusText.textContent = `Inaunganisha na kupakia nyaraka zote ${items.length}...`;
+            if (progressBar) progressBar.style.width = '5%';
+            if (percentText) percentText.textContent = '5%';
 
             const csrfToken = saveDossierForm.querySelector('input[name="csrfmiddlewaretoken"]').value;
             const uploadUrl = "{% url 'upload_documents_batch' job.id %}";
 
-            function uploadSingleItem(item, itemIndex, totalItems, attempt) {
-                return new Promise((resolve, reject) => {
-                    const fd = new FormData();
-                    fd.append('files', item.file, item.file.name);
-                    fd.append('document_types', item.docType);
-                    fd.append('titles', item.title);
+            // 2. Package ALL files in a single high-performance multipart request
+            const fd = new FormData();
+            items.forEach(item => {
+                fd.append('files', item.file, item.file.name);
+                fd.append('document_types', item.docType);
+                fd.append('titles', item.title);
+            });
 
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('POST', uploadUrl, true);
-                    xhr.timeout = 60000;
-                    xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', uploadUrl, true);
+            xhr.timeout = 180000; // 3 minutes timeout
+            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
-                    xhr.upload.onprogress = function (ev) {
-                        if (ev.lengthComputable) {
-                            const fileFrac = ev.loaded / ev.total;
-                            const overallPct = Math.min(99, Math.round(((itemIndex + fileFrac) / totalItems) * 100));
-                            if (progressBar) progressBar.style.width = overallPct + '%';
-                            if (percentText) percentText.textContent = overallPct + '%';
-                        }
-                    };
+            xhr.upload.onprogress = function (ev) {
+                if (ev.lengthComputable) {
+                    const overallPct = Math.min(98, Math.round((ev.loaded / ev.total) * 100));
+                    if (progressBar) progressBar.style.width = overallPct + '%';
+                    if (percentText) percentText.textContent = overallPct + '%';
+                    if (statusText) statusText.textContent = `Inapakia nyaraka zote ${items.length}... ${overallPct}%`;
+                }
+            };
 
-                    xhr.onload = function () {
-                        if (xhr.status >= 200 && xhr.status < 300) {
-                            resolve();
-                        } else if (attempt < 3 && xhr.status >= 500) {
-                            setTimeout(() => uploadSingleItem(item, itemIndex, totalItems, attempt + 1).then(resolve).catch(reject), 700);
-                        } else {
-                            let serverMsg = 'HTTP ' + xhr.status;
-                            try {
-                                const parsed = JSON.parse(xhr.responseText);
-                                if (parsed && parsed.message) serverMsg = parsed.message;
-                            } catch (_) {}
-                            if (xhr.status === 413) {
-                                serverMsg = 'Faili "' + item.file.name + '" ni kubwa kuliko kikomo cha Nginx (413).';
-                            }
-                            reject(new Error(serverMsg));
-                        }
-                    };
-                    xhr.onerror = xhr.ontimeout = function () {
-                        if (attempt < 3) {
-                            setTimeout(() => uploadSingleItem(item, itemIndex, totalItems, attempt + 1).then(resolve).catch(reject), 900);
-                        } else {
-                            reject(new Error('Mtandao au muda wa ombi umeisha kwa faili "' + item.file.name + '".'));
-                        }
-                    };
-                    xhr.send(fd);
-                });
-            }
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    if (progressBar) progressBar.style.width = '100%';
+                    if (percentText) percentText.textContent = '100%';
+                    if (statusText) statusText.textContent = `Nyaraka zote ${items.length} zimehifadhiwa kikamilifu! Inafungua ukurasa...`;
 
-            (async function runBatch() {
-                try {
-                    for (let i = 0; i < items.length; i++) {
-                        const cur = items[i];
-                        if (statusText) statusText.textContent = `Inapakia (${i + 1}/${items.length}): ${cur.file.name}...`;
-                        await uploadSingleItem(cur, i, items.length, 1);
-                        if (cur.docType !== 'OTHER' && stagedSlotDocs[cur.docType]) {
-                            delete stagedSlotDocs[cur.docType];
-                        } else {
-                            const oIdx = stagedOtherDocs.indexOf(cur);
-                            if (oIdx !== -1) stagedOtherDocs.splice(oIdx, 1);
-                        }
-                        const pct = Math.round(((i + 1) / items.length) * 100);
-                        if (progressBar) progressBar.style.width = pct + '%';
-                        if (percentText) percentText.textContent = pct + '%';
+                    // Clear memory staged items
+                    for (let k in stagedSlotDocs) delete stagedSlotDocs[k];
+                    stagedOtherDocs.length = 0;
+
+                    setTimeout(() => {
+                        window._isUploadingDocs = false;
+                        window.isUploadingDocs = false;
+                        window.location.href = "{% url 'job_detail' job.id %}#documentCenter";
+                        window.location.reload();
+                    }, 400);
+                } else {
+                    window._isUploadingDocs = false;
+                    window.isUploadingDocs = false;
+                    let serverMsg = 'Hitilafu ya seva (HTTP ' + xhr.status + '). Tafadhali jaribu tena.';
+                    try {
+                        const parsed = JSON.parse(xhr.responseText);
+                        if (parsed && parsed.message) serverMsg = parsed.message;
+                    } catch (_) {}
+                    if (xhr.status === 413) {
+                        serverMsg = 'Faili ulizochagua ni kubwa kuliko uwezo wa seva (413). Tafadhali punguza ukubwa au pakia chache.';
                     }
-                    if (statusText) statusText.textContent = 'Imekamilika 100%! Inasasisha ukurasa...';
-                    window.location.href = "{% url 'job_detail' job.id %}#documentCenter";
-                    window.location.reload();
-                } catch (err) {
-                    alert('Hitilafu wakati wa kupakia: ' + (err && err.message ? err.message : 'Tafadhali bonyeza Save tena.'));
+                    alert(serverMsg);
                     if (btn) btn.disabled = false;
-                    renderStagedOtherDocs();
+                    if (progressWrap) progressWrap.style.display = 'none';
                     updateSaveButtonState();
                 }
-            })();
+            };
+
+            xhr.onerror = xhr.ontimeout = function () {
+                window._isUploadingDocs = false;
+                window.isUploadingDocs = false;
+                alert('Muunganisho umekatika au muda umeisha. Tafadhali bonyeza Save tena.');
+                if (btn) btn.disabled = false;
+                if (progressWrap) progressWrap.style.display = 'none';
+                updateSaveButtonState();
+            };
+
+            xhr.send(fd);
         });
     }
 </script>

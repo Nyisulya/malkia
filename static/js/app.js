@@ -718,6 +718,7 @@ window.repaginateTable = function(table, targetPage) {
     let pendingReload = false;
 
     function isUserEditing() {
+        if (window._isUploadingDocs || window.isUploadingDocs) return true;
         const openModal = document.querySelector('.modal.open, .modal[style*="display: flex"], .modal[style*="display: block"]');
         if (openModal) return true;
 
@@ -729,7 +730,7 @@ window.repaginateTable = function(table, targetPage) {
     }
 
     async function checkPulse() {
-        if (document.hidden || isReloading) return;
+        if (document.hidden || isReloading || window._isUploadingDocs || window.isUploadingDocs) return;
 
         try {
             const url = '/api/realtime-pulse/?v=' + encodeURIComponent(lastVersion || '');
@@ -780,7 +781,7 @@ window.repaginateTable = function(table, targetPage) {
     }
 
     async function seamlessContentReload() {
-        if (isReloading) return;
+        if (isReloading || window._isUploadingDocs || window.isUploadingDocs) return;
         isReloading = true;
         pendingReload = false;
 
@@ -846,9 +847,10 @@ window.repaginateTable = function(table, targetPage) {
 
     // Trigger reload once user finishes typing or closes modal
     document.addEventListener('focusout', () => {
+        if (window._isUploadingDocs || window.isUploadingDocs) return;
         if (pendingReload && !isUserEditing()) {
             setTimeout(() => {
-                if (!isUserEditing()) seamlessContentReload();
+                if (!isUserEditing() && !window._isUploadingDocs && !window.isUploadingDocs) seamlessContentReload();
             }, 400);
         }
     });

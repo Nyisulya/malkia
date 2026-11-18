@@ -10568,22 +10568,31 @@ def upload_document_action(request, job_id):
 @login_required
 def upload_documents_batch_action(request, job_id):
     """Uploads multiple staged documents in a single request and finalizes the dossier."""
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', '')
+
     if request.method != 'POST':
-        return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
+        return redirect('job_detail', job_id=job_id)
 
     job = get_object_or_404(JobShipment, id=job_id)
     if not user_can_manage_docs(request.user, job):
-        return JsonResponse({
-            'status': 'error',
-            'message': 'Ruksa imezuiwa: Ni Afisa Nyaraka (Documentation Officer) au Admin pekee anayeweza kupakia nyaraka.'
-        }, status=403)
+        msg = 'Ruksa imezuiwa: Ni Afisa Nyaraka (Documentation Officer) au Admin pekee anayeweza kupakia nyaraka.'
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': msg}, status=403)
+        messages.error(request, msg)
+        return redirect('job_detail', job_id=job.id)
 
     files = request.FILES.getlist('files')
     doc_types = request.POST.getlist('document_types')
     titles = request.POST.getlist('titles')
 
     if not files:
-        return JsonResponse({'status': 'error', 'message': 'Hakuna faili zilizochaguliwa.'}, status=400)
+        msg = 'Hakuna faili zilizochaguliwa.'
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': msg}, status=400)
+        messages.warning(request, msg)
+        return redirect(f"/jobs/{job.id}/#documentCenter")
 
     doc_type_dict = dict(JobDocument.DOC_TYPES)
     doc_flag_map = {
@@ -10638,7 +10647,11 @@ def upload_documents_batch_action(request, job_id):
                 update_fields_dict[doc_flag_map[raw_type]] = True
 
         if uploaded_count == 0:
-            return JsonResponse({'status': 'error', 'message': 'Faili zilizochaguliwa ni tupu (0 KB). Tafadhali chagua faili sahihi.'}, status=400)
+            msg = 'Faili zilizochaguliwa ni tupu (0 KB). Tafadhali chagua faili sahihi.'
+            if is_ajax:
+                return JsonResponse({'status': 'error', 'message': msg}, status=400)
+            messages.warning(request, msg)
+            return redirect(f"/jobs/{job.id}/#documentCenter")
 
         JobShipment.objects.filter(id=job.id).update(**update_fields_dict)
         try:
@@ -10646,13 +10659,21 @@ def upload_documents_batch_action(request, job_id):
         except Exception:
             pass
     except Exception as exc:
-        return JsonResponse({'status': 'error', 'message': f"Hitilafu ya server wakati wa kuhifadhi faili: {str(exc)}"}, status=500)
+        msg = f"Hitilafu ya server wakati wa kuhifadhi faili: {str(exc)}"
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': msg}, status=500)
+        messages.error(request, msg)
+        return redirect(f"/jobs/{job.id}/#documentCenter")
 
-    return JsonResponse({
-        'status': 'ok',
-        'uploaded': uploaded_count,
-        'message': f"Nyaraka {uploaded_count} zimepakiwa na kuhifadhiwa kikamilifu!"
-    })
+    if is_ajax:
+        return JsonResponse({
+            'status': 'ok',
+            'uploaded': uploaded_count,
+            'message': f"Nyaraka {uploaded_count} zimepakiwa na kuhifadhiwa kikamilifu!"
+        })
+
+    messages.success(request, f"Nyaraka {uploaded_count} zimepakiwa na kuhifadhiwa kikamilifu!")
+    return redirect(f"/jobs/{job.id}/#documentCenter")
 
 
 
