@@ -11,6 +11,7 @@ from storages.backends.s3boto3 import S3Boto3Storage
 
 _CFG_CACHE = {'ts': 0.0, 'cfg': None}
 _CFG_TTL_SECONDS = 10
+_R2_SYNC_LOCK = threading.Lock()
 
 
 def get_r2_config(use_cache=True):
@@ -149,17 +150,26 @@ class MalkiaDynamicR2Storage(FileSystemStorage):
             except Exception:
                 pass
         saved_name = super()._save(name, content)
-        r2 = self._get_r2_storage()
-        if r2 is not None:
+        cfg = get_r2_config()
+        if cfg.get('is_configured'):
             local_path = os.path.join(settings.MEDIA_ROOT, saved_name)
-            def _bg_r2_sync(storage_obj, target_name, src_path):
+            def _bg_r2_sync(r2_cfg, target_name, src_path):
                 try:
-                    if os.path.exists(src_path) and os.path.getsize(src_path) > 0:
-                        with open(src_path, 'rb') as fp:
-                            storage_obj._save(target_name, fp)
+                    if not (os.path.exists(src_path) and os.path.getsize(src_path) > 0):
+                        return
+                    with _R2_SYNC_LOCK:
+                        s3_client = boto3.client(
+                            's3',
+                            endpoint_url=r2_cfg['endpoint_url'],
+                            aws_access_key_id=r2_cfg['access_key'],
+                            aws_secret_access_key=r2_cfg['secret_key'],
+                            region_name='auto',
+                            config=Config(signature_version='s3v4', connect_timeout=5, read_timeout=20, retries={'max_attempts': 1}),
+                        )
+                        s3_client.upload_file(src_path, r2_cfg['bucket_name'], target_name.replace('\\', '/'))
                 except Exception as e:
                     print(f"[Cloudflare R2 Background Sync] {e}")
-            threading.Thread(target=_bg_r2_sync, args=(r2, saved_name, local_path), daemon=True).start()
+            threading.Thread(target=_bg_r2_sync, args=(cfg, saved_name, local_path), daemon=True).start()
         return saved_name
 
     def url(self, name):

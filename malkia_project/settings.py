@@ -106,8 +106,14 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 30,
+        },
     }
 }
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600
 
 
 # Password validation

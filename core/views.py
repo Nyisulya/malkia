@@ -10419,50 +10419,7 @@ def payment_record_action(request):
 
 
 def _compress_pdf_if_needed(uploaded_file):
-    """
-    Compresses oversized PDF uploads (especially scanned PDFs) using PyMuPDF
-    before uploading to Cloudflare R2, keeping text & scans sharp.
-    """
-    if not uploaded_file or getattr(uploaded_file, 'size', 0) <= 300 * 1024:
-        return uploaded_file
-    try:
-        import pymupdf as fitz
-        from io import BytesIO
-        from django.core.files.uploadedfile import InMemoryUploadedFile
-
-        uploaded_file.seek(0)
-        raw_bytes = uploaded_file.read()
-        doc = fitz.open(stream=raw_bytes, filetype="pdf")
-        if doc.needs_pass:
-            doc.close()
-            uploaded_file.seek(0)
-            return uploaded_file
-
-        try:
-            doc.rewrite_images(
-                dpi_threshold=150,
-                dpi_target=120,
-                quality=75,
-                lossy=True,
-                lossless=True,
-                bitonal=True,
-            )
-        except Exception:
-            pass
-
-        out_bytes = doc.tobytes(garbage=4, deflate=True, clean=True)
-        doc.close()
-        if out_bytes and len(out_bytes) < len(raw_bytes):
-            buf = BytesIO(out_bytes)
-            return InMemoryUploadedFile(
-                buf, 'FileField', uploaded_file.name, 'application/pdf', len(out_bytes), None
-            )
-    except Exception:
-        pass
-    try:
-        uploaded_file.seek(0)
-    except Exception:
-        pass
+    """Return PDF as-is without CPU-heavy PyMuPDF image rewriting."""
     return uploaded_file
 
 
@@ -10642,46 +10599,55 @@ def upload_documents_batch_action(request, job_id):
         'BILL_OF_LADING', 'COMMERCIAL_INVOICE', 'PACKING_LIST',
     }
     uploaded_count = 0
-    for idx, f in enumerate(files):
-        if getattr(f, 'size', 0) == 0:
-            continue
-        raw_type = doc_types[idx].strip() if idx < len(doc_types) else 'OTHER'
-        if raw_type not in doc_type_dict:
-            raw_type = 'OTHER'
+    update_fields_dict = {
+        'doc_intake_finalized': True,
+        'doc_received_at': timezone.now(),
+    }
+    if not job.documentation_officer_id:
+        update_fields_dict['documentation_officer'] = request.user
 
-        raw_title = titles[idx].strip() if idx < len(titles) else ''
-        if not raw_title:
-            if raw_type != 'OTHER' and raw_type in doc_type_dict:
-                raw_title = f"{doc_type_dict[raw_type]} ({f.name})"
-            else:
-                raw_title = f.name
+    try:
+        for idx, f in enumerate(files):
+            if getattr(f, 'size', 0) == 0:
+                continue
+            raw_type = doc_types[idx].strip() if idx < len(doc_types) else 'OTHER'
+            if raw_type not in doc_type_dict:
+                raw_type = 'OTHER'
 
-        if raw_type in single_slot_types:
-            JobDocument.objects.filter(job=job, document_type=raw_type).delete()
+            raw_title = titles[idx].strip() if idx < len(titles) else ''
+            if not raw_title:
+                if raw_type != 'OTHER' and raw_type in doc_type_dict:
+                    raw_title = f"{doc_type_dict[raw_type]} ({f.name})"
+                else:
+                    raw_title = f.name
 
-        f = _compress_image_if_needed(f)
-        JobDocument.objects.create(
-            job=job,
-            document_type=raw_type,
-            title=raw_title,
-            file=f,
-            uploaded_by=request.user,
-        )
-        uploaded_count += 1
+            if raw_type in single_slot_types:
+                JobDocument.objects.filter(job=job, document_type=raw_type).delete()
 
-        if raw_type in doc_flag_map:
-            setattr(job, doc_flag_map[raw_type], True)
+            f = _compress_image_if_needed(f)
+            JobDocument.objects.create(
+                job=job,
+                document_type=raw_type,
+                title=raw_title,
+                file=f,
+                uploaded_by=request.user,
+            )
+            uploaded_count += 1
 
-    if uploaded_count == 0:
-        return JsonResponse({'status': 'error', 'message': 'Faili zilizochaguliwa ni tupu (0 KB). Tafadhali chagua faili sahihi.'}, status=400)
+            if raw_type in doc_flag_map:
+                update_fields_dict[doc_flag_map[raw_type]] = True
 
-    job.doc_intake_finalized = True
-    job.doc_received_at = timezone.now()
-    if not job.documentation_officer:
-        job.documentation_officer = request.user
-    job.save()
+        if uploaded_count == 0:
+            return JsonResponse({'status': 'error', 'message': 'Faili zilizochaguliwa ni tupu (0 KB). Tafadhali chagua faili sahihi.'}, status=400)
 
-    log_audit(request, "UPLOAD_DOCUMENT", f"Batch uploaded {uploaded_count} document(s) to Job {job.job_number}", job=job)
+        JobShipment.objects.filter(id=job.id).update(**update_fields_dict)
+        try:
+            log_audit(request, "UPLOAD_DOCUMENT", f"Uploaded {uploaded_count} document(s) to Job {job.job_number}", job=job)
+        except Exception:
+            pass
+    except Exception as exc:
+        return JsonResponse({'status': 'error', 'message': f"Hitilafu ya server wakati wa kuhifadhi faili: {str(exc)}"}, status=500)
+
     return JsonResponse({
         'status': 'ok',
         'uploaded': uploaded_count,
