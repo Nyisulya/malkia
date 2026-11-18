@@ -1725,6 +1725,11 @@
     async function stageSlotFile(input) {
         const rawFile = input.files && input.files[0];
         if (!rawFile) return;
+        if (rawFile.size === 0) {
+            alert('Faili ulilochagua ("' + rawFile.name + '") ni tupu (0 B). Tafadhali chagua faili lenye maudhui.');
+            input.value = '';
+            return;
+        }
 
         const form = input.form;
         const docType = form.querySelector('input[name="document_type"]').value;
@@ -1832,6 +1837,11 @@
             const fileEl = document.getElementById('simpleDocFileInput');
             const rawFile = fileEl && fileEl.files && fileEl.files[0];
             if (!rawFile) return;
+            if (rawFile.size === 0) {
+                alert('Faili ulilochagua ("' + rawFile.name + '") ni tupu (0 B). Tafadhali chagua faili lenye maudhui.');
+                fileEl.value = '';
+                return;
+            }
 
             const { file } = await compressImageFile(rawFile);
             stagedOtherDocs.push({
@@ -1864,50 +1874,69 @@
             if (btn) btn.disabled = true;
             if (label) label.textContent = `Inapakia (${items.length})...`;
             if (progressWrap) progressWrap.style.display = 'block';
-            if (statusText) statusText.textContent = `Inapakia nyaraka ${items.length} kwa pamoja...`;
+            if (statusText) statusText.textContent = `Inapakia nyaraka 0/${items.length}...`;
 
-            const formData = new FormData();
             const csrfToken = saveDossierForm.querySelector('input[name="csrfmiddlewaretoken"]').value;
-            items.forEach((item) => {
-                formData.append('files', item.file, item.file.name);
-                formData.append('document_types', item.docType);
-                formData.append('titles', item.title);
-            });
+            const uploadUrl = "{% url 'upload_documents_batch' job.id %}";
+            let completedCount = 0;
 
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', "{% url 'upload_documents_batch' job.id %}", true);
-            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+            function uploadSingleItem(item, attempt) {
+                return new Promise((resolve, reject) => {
+                    const fd = new FormData();
+                    fd.append('files', item.file, item.file.name);
+                    fd.append('document_types', item.docType);
+                    fd.append('titles', item.title);
 
-            xhr.upload.onprogress = function (ev) {
-                if (ev.lengthComputable) {
-                    const pct = Math.round((ev.loaded / ev.total) * 100);
-                    if (progressBar) progressBar.style.width = pct + '%';
-                    if (percentText) percentText.textContent = pct + '%';
-                    if (pct === 100 && statusText) {
-                        statusText.textContent = 'Inahifadhi kwenye Cloudflare R2...';
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', uploadUrl, true);
+                    xhr.timeout = 45000;
+                    xhr.setRequestHeader('X-CSRFToken', csrfToken);
+
+                    xhr.onload = function () {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve();
+                        } else if (attempt < 3) {
+                            setTimeout(() => uploadSingleItem(item, attempt + 1).then(resolve).catch(reject), 600);
+                        } else {
+                            reject(new Error('HTTP ' + xhr.status));
+                        }
+                    };
+                    xhr.onerror = xhr.ontimeout = function () {
+                        if (attempt < 3) {
+                            setTimeout(() => uploadSingleItem(item, attempt + 1).then(resolve).catch(reject), 800);
+                        } else {
+                            reject(new Error('Network error'));
+                        }
+                    };
+                    xhr.send(fd);
+                });
+            }
+
+            (async function runBatch() {
+                try {
+                    const concurrency = 2;
+                    let idx = 0;
+                    async function worker() {
+                        while (idx < items.length) {
+                            const cur = items[idx++];
+                            await uploadSingleItem(cur, 1);
+                            completedCount++;
+                            const pct = Math.round((completedCount / items.length) * 100);
+                            if (progressBar) progressBar.style.width = pct + '%';
+                            if (percentText) percentText.textContent = pct + '%';
+                            if (statusText) statusText.textContent = `Imepakiwa nyaraka ${completedCount}/${items.length}...`;
+                        }
                     }
-                }
-            };
-
-            xhr.onload = function () {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    if (statusText) statusText.textContent = 'Imekamilika! Inahifadhi...';
+                    await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
+                    if (statusText) statusText.textContent = 'Imekamilika 100%! Inasasisha ukurasa...';
                     window.location.href = "{% url 'job_detail' job.id %}#documentCenter";
                     window.location.reload();
-                } else {
-                    alert('Kuna tatizo wakati wa kupakia nyaraka. Tafadhali jaribu tena.');
+                } catch (err) {
+                    alert('Baadhi ya nyaraka hazikupakiwa kutokana na mtandao. Tafadhali bonyeza Save tena.');
                     if (btn) btn.disabled = false;
                     updateSaveButtonState();
                 }
-            };
-
-            xhr.onerror = function () {
-                alert('Mtandao umekatika wakati wa kupakia. Tafadhali jaribu tena.');
-                if (btn) btn.disabled = false;
-                updateSaveButtonState();
-            };
-
-            xhr.send(formData);
+            })();
         });
     }
 </script>

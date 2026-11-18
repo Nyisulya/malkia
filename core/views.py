@@ -10637,8 +10637,14 @@ def upload_documents_batch_action(request, job_id):
         'EXPORT_CERT': 'doc_export_cert_received',
     }
 
+    single_slot_types = {
+        'TRA_AUTH_SIGNED', 'TBS_SIGNED', 'FORM_C41',
+        'BILL_OF_LADING', 'COMMERCIAL_INVOICE', 'PACKING_LIST',
+    }
     uploaded_count = 0
     for idx, f in enumerate(files):
+        if getattr(f, 'size', 0) == 0:
+            continue
         raw_type = doc_types[idx].strip() if idx < len(doc_types) else 'OTHER'
         if raw_type not in doc_type_dict:
             raw_type = 'OTHER'
@@ -10649,6 +10655,9 @@ def upload_documents_batch_action(request, job_id):
                 raw_title = f"{doc_type_dict[raw_type]} ({f.name})"
             else:
                 raw_title = f.name
+
+        if raw_type in single_slot_types:
+            JobDocument.objects.filter(job=job, document_type=raw_type).delete()
 
         f = _compress_image_if_needed(f)
         JobDocument.objects.create(
@@ -10662,6 +10671,9 @@ def upload_documents_batch_action(request, job_id):
 
         if raw_type in doc_flag_map:
             setattr(job, doc_flag_map[raw_type], True)
+
+    if uploaded_count == 0:
+        return JsonResponse({'status': 'error', 'message': 'Faili zilizochaguliwa ni tupu (0 KB). Tafadhali chagua faili sahihi.'}, status=400)
 
     job.doc_intake_finalized = True
     job.doc_received_at = timezone.now()

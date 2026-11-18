@@ -1,4 +1,5 @@
 import os
+import threading
 import time
 from functools import lru_cache
 import boto3
@@ -142,13 +143,24 @@ class MalkiaDynamicR2Storage(FileSystemStorage):
         return super()._open(name, mode)
 
     def _save(self, name, content):
+        if hasattr(content, 'seek'):
+            try:
+                content.seek(0)
+            except Exception:
+                pass
+        saved_name = super()._save(name, content)
         r2 = self._get_r2_storage()
         if r2 is not None:
-            try:
-                return r2._save(name, content)
-            except Exception as e:
-                print(f"[Cloudflare R2 Upload Fallback to Local] {e}")
-        return super()._save(name, content)
+            local_path = os.path.join(settings.MEDIA_ROOT, saved_name)
+            def _bg_r2_sync(storage_obj, target_name, src_path):
+                try:
+                    if os.path.exists(src_path) and os.path.getsize(src_path) > 0:
+                        with open(src_path, 'rb') as fp:
+                            storage_obj._save(target_name, fp)
+                except Exception as e:
+                    print(f"[Cloudflare R2 Background Sync] {e}")
+            threading.Thread(target=_bg_r2_sync, args=(r2, saved_name, local_path), daemon=True).start()
+        return saved_name
 
     def url(self, name):
         r2 = self._get_r2_storage()
@@ -166,12 +178,6 @@ class MalkiaDynamicR2Storage(FileSystemStorage):
         return super().url(name)
 
     def exists(self, name):
-        r2 = self._get_r2_storage()
-        if r2 is not None:
-            try:
-                return r2.exists(name)
-            except Exception:
-                pass
         return super().exists(name)
 
     def delete(self, name):
