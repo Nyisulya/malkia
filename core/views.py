@@ -2951,7 +2951,7 @@ def job_create_view(request):
             request,
             f"Shipment file {job.job_number} (BL: {bl_number or job.job_number}) opened successfully. Official TRA & TBS authorization letters are ready for 1-click printing."
         )
-        return redirect(f'/jobs/{job.id}/?intake=success')
+        return redirect(f'/jobs/{job.id}/?intake=success#documentCenter')
 
 
 

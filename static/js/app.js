@@ -470,6 +470,12 @@ function setupGlobalFormInterceptor() {
                 }
             });
 
+            // If the server redirected to a new destination page, navigate cleanly
+            if (response.redirected && response.url) {
+                window.location.href = response.url;
+                return;
+            }
+
             const contentType = response.headers.get('content-type') || '';
             
             if (contentType.includes('application/json')) {

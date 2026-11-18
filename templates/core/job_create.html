@@ -22,7 +22,7 @@
     </div>
 
     <div class="card-panel" style="background:#FFFFFF;border-radius:var(--radius-xl);border:1px solid #E2E8F0;box-shadow:var(--shadow-md);padding:2rem;">
-        <form action="{% url 'job_create' %}" method="POST" enctype="multipart/form-data" id="docReceiveForm">
+        <form action="{% url 'job_create' %}" method="POST" enctype="multipart/form-data" id="docReceiveForm" data-no-ajax="true">
             {% csrf_token %}
 
             <!-- SECTION 1: CLIENT & ESSENTIAL FILE DETAILS (MINIMAL ENTRY) -->
@@ -281,10 +281,9 @@ if (saveForm && btnSave) {
     saveForm.addEventListener('submit', function(e) {
         // Only trigger loading state if form validity checks pass
         if (saveForm.checkValidity()) {
-            btnSave.disabled = true;
+            btnSave.style.pointerEvents = 'none';
             btnSave.style.opacity = '0.75';
-            btnSave.style.cursor = 'wait';
-            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Opening Shipment File...';
+            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Inafungua faili na kuelekea kwenye nyaraka...';
         }
     });
 }
