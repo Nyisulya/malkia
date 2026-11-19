@@ -23773,10 +23773,40 @@ def api_realtime_pulse(request):
 # Each stage has its own dedicated queue with 1-click Finish button
 # ==============================================================================
 
+def _ensure_stage_definition_exists(stage_number):
+    stage_def = WorkflowStageDefinition.objects.filter(stage_number=stage_number).first()
+    if stage_def:
+        return stage_def
+
+    stage_defaults = {
+        1: ("File Opening & Doc Intake", "Upokeaji Nyaraka & Kufungua Jalada", 1, "folder-plus", UserRole.DOC_OFFICER, "Client document intake, file opening, and digital dossier registration.", False),
+        2: ("Customs Declaration (TANSAD)", "Declaration ya TANSAD", 2, "file-invoice", UserRole.CLEARING_OFFICER, "Customs declaration lodge (TANSAD) and tax assessment verification.", False),
+        3: ("TBS Inspection & Clearance", "Ukaguzi na Kibali cha TBS", 1, "shield-halved", UserRole.PORT_OFFICER, "TBS portal clearance, standards inspection, and approval before port exit.", False),
+        4: ("Port Clearance & Gate Exit", "Bandarini & Kutoka Geti (D/O, Ukaguzi, Malipo & Gate Pass)", 1, "anchor", UserRole.PORT_OFFICER, "D/O collection, wharfage clearance, physical verification, and gate pass exit.", True),
+        5: ("Vehicle Arrival (Yard / Office)", "Gari Kufika Yadi / Ofisini", 1, "warehouse", UserRole.OPERATIONS_MGR, "Vehicle intake at Malkia yard with condition inspection.", False),
+        6: ("Customer Handover", "Kukabidhi Gari kwa Mteja & POD", 1, "handshake", UserRole.OPERATIONS_MGR, "Final handover to customer, POD signing, and file closing.", True),
+    }
+
+    vals = stage_defaults.get(stage_number, (f"Stage {stage_number}", f"Hatua {stage_number}", 1, "layer-group", UserRole.OPERATIONS, "", False))
+    stage_def, _ = WorkflowStageDefinition.objects.get_or_create(
+        stage_number=stage_number,
+        defaults={
+            'name_en': vals[0],
+            'name_sw': vals[1],
+            'target_days': vals[2],
+            'icon': vals[3],
+            'required_role': vals[4],
+            'description': vals[5],
+            'is_controlled_gate': vals[6],
+        }
+    )
+    return stage_def
+
+
 @login_required
 @role_required([UserRole.OPERATIONS, UserRole.CEO, UserRole.ADMIN])
 def stage_pipeline_view(request, stage_number):
-    stage_def = get_object_or_404(WorkflowStageDefinition, stage_number=stage_number)
+    stage_def = _ensure_stage_definition_exists(stage_number)
     q = request.GET.get('q', '').strip()
 
     from django.db.models import Case, When, BooleanField, Value
