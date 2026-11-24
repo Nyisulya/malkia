@@ -1,11 +1,29 @@
 // Malkia Freight & Logistics - Global Seamless Async Interactivity Engine
 // Zero Full-Page Reload Architecture for Internal Actions, Modals, Tabs & Inner Buttons
 
+const loadedExternalScripts = new Set();
+const pageCleanups = [];
+
+window.registerPageCleanup = function(callback) {
+    if (typeof callback === 'function') pageCleanups.push(callback);
+};
+
+function cleanupCurrentPage() {
+    while (pageCleanups.length) {
+        const cleanup = pageCleanups.pop();
+        try { cleanup(); } catch (err) {}
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initGlobalEngine();
 });
 
 function initGlobalEngine() {
+    Array.from(document.scripts).forEach(script => {
+        if (script.src) loadedExternalScripts.add(script.src);
+    });
+
     // 1. MODAL CONTROLLERS
     window.openModal = function(modalId) {
         const modal = document.getElementById(modalId);
@@ -185,9 +203,7 @@ function initGlobalEngine() {
 
     // 8. INNER LINK SPA NAVIGATOR (ZERO PAGE RELOAD FOR INNER BUTTONS)
     setupInnerLinkInterceptor();
-
-    // 9. TABLE PAGINATION ENGINE
-    window.initTablePagination();
+    setupLinkPrefetch();
 }
 
 // Rebind helpers after dynamic DOM replacement
@@ -231,7 +247,7 @@ function showTopProgressBar() {
     }
     bar.style.opacity = '1';
     bar.style.width = '35%';
-    setTimeout(() => { if (bar && bar.style.width === '35%') bar.style.width = '75%'; }, 120);
+    setTimeout(() => { if (bar && bar.style.width === '35%') bar.style.width = '75%'; }, 80);
 }
 
 function hideTopProgressBar() {
@@ -242,8 +258,8 @@ function hideTopProgressBar() {
             bar.style.opacity = '0';
             setTimeout(() => {
                 bar.style.width = '0%';
-            }, 300);
-        }, 150);
+            }, 180);
+        }, 80);
     }
 }
 
@@ -257,10 +273,18 @@ function executeScripts(container) {
         if (scriptType && scriptType !== 'text/javascript' && scriptType !== 'application/javascript' && scriptType !== 'module') {
             return;
         }
+        if (oldScript.src) {
+            if (loadedExternalScripts.has(oldScript.src)) {
+                oldScript.remove();
+                return;
+            }
+            loadedExternalScripts.add(oldScript.src);
+        }
         const newScript = document.createElement('script');
         Array.from(oldScript.attributes).forEach(attr => {
             newScript.setAttribute(attr.name, attr.value);
         });
+        if (newScript.src) newScript.async = false;
         newScript.textContent = oldScript.textContent;
         oldScript.parentNode.replaceChild(newScript, oldScript);
     });
@@ -305,102 +329,189 @@ function updateActiveSidebarNav(url) {
     } catch(e) {}
 }
 
-// Seamless Page Loader Engine (No full-page reload)
+const PAGE_CACHE_TTL = 20000;
+const PAGE_CACHE_LIMIT = 12;
+const pageCache = new Map();
+const prefetchingUrls = new Set();
+let activePrefetches = 0;
 let isNavigating = false;
-window.loadPageSeamlessly = async function(url, pushState = true) {
-    if (isNavigating) return;
-    isNavigating = true;
-    showTopProgressBar();
+let pendingNavigation = null;
 
+function isCacheablePageUrl(url) {
     try {
-        const response = await fetch(url, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
+        const parsed = new URL(url, window.location.origin);
+        return parsed.origin === window.location.origin &&
+            !parsed.pathname.startsWith('/api/') &&
+            !parsed.pathname.startsWith('/login/') &&
+            !parsed.pathname.startsWith('/logout/') &&
+            !parsed.searchParams.has('edit');
+    } catch (err) {
+        return false;
+    }
+}
 
-        if (!response.ok) {
-            window.location.href = url;
+function getCachedPage(url) {
+    const key = new URL(url, window.location.origin).href;
+    const entry = pageCache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.fetchedAt > PAGE_CACHE_TTL) {
+        pageCache.delete(key);
+        return null;
+    }
+    pageCache.delete(key);
+    pageCache.set(key, entry);
+    return entry.doc;
+}
+
+function cachePage(url, doc) {
+    if (!isCacheablePageUrl(url) || !doc.querySelector('.page-content')) return;
+    const key = new URL(url, window.location.origin).href;
+    pageCache.delete(key);
+    while (pageCache.size >= PAGE_CACHE_LIMIT) {
+        pageCache.delete(pageCache.keys().next().value);
+    }
+    pageCache.set(key, { doc: doc, fetchedAt: Date.now() });
+}
+
+window.clearPageCache = function() {
+    pageCache.clear();
+};
+
+async function fetchPageDocument(url) {
+    const response = await fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    if (!response.ok) throw new Error('Page request failed');
+    if (response.redirected && new URL(response.url).pathname.startsWith('/login/')) {
+        throw new Error('Session expired');
+    }
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    if (!doc.querySelector('.page-content')) throw new Error('Not a portal page');
+    return doc;
+}
+
+function renderPageDocument(doc, url, options = {}) {
+    const newContent = doc.querySelector('.page-content');
+    const currentContent = document.querySelector('.page-content');
+    if (!newContent || !currentContent) return false;
+
+    cleanupCurrentPage();
+    window.closeAllModals();
+    syncExtraCss(doc);
+    currentContent.innerHTML = newContent.innerHTML;
+    executeScripts(currentContent);
+    syncExtraJs(doc);
+    rebindDynamicElements();
+
+    if (doc.title) document.title = doc.title;
+    currentContent.style.opacity = '1';
+    currentContent.style.transition = '';
+    updateActiveSidebarNav(url);
+    if (options.scrollTop !== false) window.scrollTo({ top: 0, behavior: 'instant' });
+    return true;
+}
+
+window.loadPageSeamlessly = async function(url, pushState = true) {
+    const targetUrl = new URL(url, window.location.origin).href;
+    if (isNavigating) {
+        pendingNavigation = { url: targetUrl, pushState: pushState };
+        return;
+    }
+
+    isNavigating = true;
+    try {
+        let doc = getCachedPage(targetUrl);
+        if (!doc) {
+            showTopProgressBar();
+            doc = await fetchPageDocument(targetUrl);
+            cachePage(targetUrl, doc);
+        }
+
+        if (!renderPageDocument(doc, targetUrl)) {
+            window.location.href = targetUrl;
             return;
         }
 
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-
-        if (doc.title) {
-            document.title = doc.title;
+        if (pushState && window.location.href !== targetUrl) {
+            window.history.pushState({ url: targetUrl }, doc.title || '', targetUrl);
         }
-
-        const newContent = doc.querySelector('.page-content');
-        const currentContent = document.querySelector('.page-content');
-
-        if (newContent && currentContent) {
-            currentContent.style.opacity = '0.35';
-            currentContent.style.transition = 'opacity 0.12s ease';
-
-            setTimeout(() => {
-                syncExtraCss(doc);
-                currentContent.innerHTML = newContent.innerHTML;
-                window.closeAllModals();
-                executeScripts(currentContent);
-                syncExtraJs(doc);
-                currentContent.style.opacity = '1';
-
-                rebindDynamicElements();
-
-                window.scrollTo({ top: 0, behavior: 'instant' });
-            }, 80);
-        } else {
-            window.location.href = url;
-            return;
-        }
-
-        updateActiveSidebarNav(url);
-
-        if (pushState) {
-            window.history.pushState({ url: url }, doc.title || '', url);
-        }
-
     } catch (err) {
         console.error('Seamless Navigation Error:', err);
-        window.location.href = url;
+        window.location.href = targetUrl;
     } finally {
         isNavigating = false;
         hideTopProgressBar();
+        if (pendingNavigation) {
+            const next = pendingNavigation;
+            pendingNavigation = null;
+            setTimeout(() => window.loadPageSeamlessly(next.url, next.pushState), 0);
+        }
+        window.dispatchEvent(new Event('malkia:navigation-complete'));
     }
 };
 
-// 8. INNER LINK SPA NAVIGATOR
 function setupInnerLinkInterceptor() {
     document.addEventListener('click', (e) => {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         const link = e.target.closest('a');
         if (!link) return;
 
-        // Skip sidebar links (allow normal navigation as user requested: "labda kama sidebar")
-        if (link.closest('.app-sidebar')) return;
-
-        // Skip target="_blank", print preview links, downloads
         if (link.target === '_blank' || link.hasAttribute('download')) return;
         if (link.getAttribute('data-no-ajax') === 'true' || link.getAttribute('data-native') === 'true') return;
 
         const href = link.getAttribute('href');
         if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('tel:') || href.startsWith('mailto:')) return;
         if (href.includes('/logout/') || href.includes('/static/') || href.includes('/media/')) return;
-
-        // Same origin only
         if (link.origin !== window.location.origin) return;
 
-        // Intercept inner link and load without page refresh!
         e.preventDefault();
         window.loadPageSeamlessly(link.href, true);
     });
 
-    // Handle Browser Back & Forward buttons
     window.addEventListener('popstate', (e) => {
         const targetUrl = (e.state && e.state.url) ? e.state.url : window.location.href;
         window.loadPageSeamlessly(targetUrl, false);
     });
+}
+
+function setupLinkPrefetch() {
+    function schedule(link, delay) {
+        if (!link || !isCacheablePageUrl(link.href) || link.href === window.location.href) return;
+        if (link.dataset.prefetchScheduled === 'true') return;
+        link.dataset.prefetchScheduled = 'true';
+        setTimeout(() => {
+            link.dataset.prefetchScheduled = 'false';
+            prefetchPage(link.href);
+        }, delay);
+    }
+
+    document.addEventListener('pointerover', (e) => {
+        if (e.pointerType === 'touch') return;
+        schedule(e.target.closest('a[href]'), 120);
+    }, { passive: true });
+
+    document.addEventListener('focusin', (e) => {
+        schedule(e.target.closest('a[href]'), 250);
+    }, { passive: true });
+}
+
+async function prefetchPage(url) {
+    if (!isCacheablePageUrl(url) || isNavigating || activePrefetches >= 1 || getCachedPage(url)) return;
+    const key = new URL(url, window.location.origin).href;
+    if (prefetchingUrls.has(key)) return;
+
+    prefetchingUrls.add(key);
+    activePrefetches += 1;
+    try {
+        const doc = await fetchPageDocument(url);
+        cachePage(url, doc);
+    } catch (err) {
+        // The real navigation will retry and show any error.
+    } finally {
+        prefetchingUrls.delete(key);
+        activePrefetches -= 1;
+    }
 }
 
 // 7. GLOBAL ASYNC FORM SUBMISSION INTERCEPTOR
@@ -469,15 +580,15 @@ function setupGlobalFormInterceptor() {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             });
+            clearPageCache();
 
-            // If the server redirected to a new destination page, navigate cleanly
-            if (response.redirected && response.url) {
+            const contentType = response.headers.get('content-type') || '';
+
+            if (response.redirected && response.url && !contentType.includes('text/html')) {
                 window.location.href = response.url;
                 return;
             }
 
-            const contentType = response.headers.get('content-type') || '';
-            
             if (contentType.includes('application/json')) {
                 const data = await response.json();
                 if (data.success) {
@@ -515,25 +626,15 @@ function setupGlobalFormInterceptor() {
 
                 // Seamlessly update .page-content, extra_css, and extra_js without page refresh!
                 const newContent = doc.querySelector('.page-content');
-                const currentContent = document.querySelector('.page-content');
-                if (newContent && currentContent) {
+                if (newContent) {
                     const newMessages = newContent.querySelector('.toast-messages-container');
                     if (newMessages) newMessages.remove();
-
-                    syncExtraCss(doc);
-                    currentContent.innerHTML = newContent.innerHTML;
-                    executeScripts(currentContent);
-                    syncExtraJs(doc);
-                }
-
-                if (doc.title) {
-                    document.title = doc.title;
+                    renderPageDocument(doc, response.url || action, { scrollTop: false });
                 }
 
                 // Update URL history without page reload
                 if (response.url && response.url !== window.location.href) {
                     window.history.pushState({ url: response.url }, doc.title || '', response.url);
-                    updateActiveSidebarNav(response.url);
                 }
 
                 // Update sidebar badges from response HTML
@@ -547,8 +648,6 @@ function setupGlobalFormInterceptor() {
                         }
                     }
                 });
-
-                rebindDynamicElements();
             }
         } catch (error) {
             console.error('AJAX Action Error:', error);
@@ -569,6 +668,7 @@ window.initTablePagination = function() {
     const tables = document.querySelectorAll('table.modern-table, table.containers-table, table.data-table, table[data-paginate="true"]');
     
     tables.forEach(table => {
+        if (table.dataset.paginatedInitialized === 'true') return;
         const tbody = table.querySelector('tbody');
         if (!tbody) return;
 
@@ -722,6 +822,7 @@ window.repaginateTable = function(table, targetPage) {
     let lastVersion = null;
     let isReloading = false;
     let pendingReload = false;
+    let pulseInFlight = false;
 
     function isUserEditing() {
         if (window._isUploadingDocs || window.isUploadingDocs) return true;
@@ -736,9 +837,12 @@ window.repaginateTable = function(table, targetPage) {
     }
 
     async function checkPulse() {
-        if (document.hidden || isReloading || window._isUploadingDocs || window.isUploadingDocs) return;
+        if (pulseInFlight) return;
+        pulseInFlight = true;
 
         try {
+            if (document.hidden || isNavigating || isReloading || window._isUploadingDocs || window.isUploadingDocs) return;
+
             const url = '/api/realtime-pulse/?v=' + encodeURIComponent(lastVersion || '');
             const res = await fetch(url, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -753,6 +857,7 @@ window.repaginateTable = function(table, targetPage) {
 
             if (data.has_change && data.version !== lastVersion) {
                 lastVersion = data.version;
+                clearPageCache();
 
                 // 1. Sleek Floating Toast Notification for the update
                 if (data.latest_event && data.latest_event.details) {
@@ -775,7 +880,7 @@ window.repaginateTable = function(table, targetPage) {
                 }
 
                 // 3. Auto-Reload current view seamlessly
-                if (isUserEditing()) {
+                if (isNavigating || isUserEditing()) {
                     pendingReload = true;
                 } else {
                     seamlessContentReload();
@@ -783,11 +888,14 @@ window.repaginateTable = function(table, targetPage) {
             }
         } catch (e) {
             // Quiet network recovery
+        } finally {
+            pulseInFlight = false;
+            setTimeout(checkPulse, 3500);
         }
     }
 
     async function seamlessContentReload() {
-        if (isReloading || window._isUploadingDocs || window.isUploadingDocs) return;
+        if (isReloading || isNavigating || window._isUploadingDocs || window.isUploadingDocs) return;
         isReloading = true;
         pendingReload = false;
 
@@ -802,43 +910,20 @@ window.repaginateTable = function(table, targetPage) {
 
         try {
             const targetUrl = window.location.href;
-            const res = await fetch(targetUrl, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-
-            if (res.ok) {
-                const html = await res.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-
-                const newContent = doc.querySelector('.page-content');
-                const currentContent = document.querySelector('.page-content');
-
-                if (newContent && currentContent) {
-                    currentContent.style.transition = 'opacity 0.15s ease';
-                    currentContent.style.opacity = '0.5';
-
-                    setTimeout(() => {
-                        // Remove flash messages from new content to avoid repeating past alerts
-                        const newMsgs = newContent.querySelector('.toast-messages-container');
-                        if (newMsgs) newMsgs.remove();
-
-                        currentContent.innerHTML = newContent.innerHTML;
-                        if (typeof executeScripts === 'function') executeScripts(currentContent);
-                        if (typeof rebindDynamicElements === 'function') rebindDynamicElements();
-
-                        currentContent.style.opacity = '1';
-                        isReloading = false;
-                    }, 120);
-                } else {
-                    isReloading = false;
-                }
-            } else {
-                isReloading = false;
+            const doc = await fetchPageDocument(targetUrl);
+            if (isNavigating) {
+                pendingReload = true;
+                return;
             }
+
+            const newMessages = doc.querySelector('.page-content .toast-messages-container');
+            if (newMessages) newMessages.remove();
+            clearPageCache();
+            renderPageDocument(doc, targetUrl, { scrollTop: false });
         } catch (err) {
-            isReloading = false;
+            // Keep the current view when a background refresh fails.
         } finally {
+            isReloading = false;
             setTimeout(() => {
                 if (pill) {
                     pill.style.background = '#ECFDF5';
@@ -847,7 +932,7 @@ window.repaginateTable = function(table, targetPage) {
                     const dot = pill.querySelector('span');
                     if (dot) dot.style.background = '#10B981';
                 }
-            }, 600);
+            }, 300);
         }
     }
 
@@ -861,6 +946,13 @@ window.repaginateTable = function(table, targetPage) {
         }
     });
 
-    // Check every 3.5 seconds
-    setInterval(checkPulse, 3500);
+    window.addEventListener('malkia:navigation-complete', () => {
+        if (!pendingReload || isUserEditing()) return;
+        setTimeout(() => {
+            if (!isUserEditing() && !isNavigating) seamlessContentReload();
+        }, 250);
+    });
+
+    // Check after each completed pulse so slow VPS requests never overlap.
+    setTimeout(checkPulse, 3500);
 })();

@@ -1098,179 +1098,6 @@
 
 {% block extra_js %}
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-
-document.addEventListener('DOMContentLoaded', function() {
-
-    // Financials Chart
-
-    const ctxFin = document.getElementById('financialsChart');
-
-    if (ctxFin) {
-
-        const rev = parseFloat(ctxFin.getAttribute('data-revenue') || '0');
-
-        const exp = parseFloat(ctxFin.getAttribute('data-expenses') || '0');
-
-        const mar = parseFloat(ctxFin.getAttribute('data-margin') || '0');
-
-
-
-        new Chart(ctxFin, {
-
-            type: 'bar',
-
-            data: {
-
-                labels: ['Billed Revenue', 'Direct Port & Ops Costs', 'Gross Margin'],
-
-                datasets: [{
-
-                    label: 'Amount in TSh',
-
-                    data: [rev, exp, mar],
-
-                    backgroundColor: [
-
-                        'rgba(37, 99, 235, 0.85)',
-
-                        'rgba(245, 158, 11, 0.85)',
-
-                        'rgba(16, 185, 129, 0.85)'
-
-                    ],
-
-                    borderRadius: 8,
-
-                    borderWidth: 0
-
-                }]
-
-            },
-
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-
-                plugins: {
-
-                    legend: { display: false }
-
-                },
-
-                scales: {
-
-                    y: {
-
-                        beginAtZero: true,
-
-                        ticks: {
-
-                            callback: function(val) {
-
-                                return 'TSh ' + (val / 1000000) + 'M';
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        });
-
-    }
-
-
-
-    // Pipeline Stages Chart
-
-    const ctxStages = document.getElementById('stagesChart');
-
-    const stagesJsonElem = document.getElementById('stagesDataJson');
-
-    if (ctxStages && stagesJsonElem) {
-
-        const stagesData = JSON.parse(stagesJsonElem.textContent);
-
-        const stageLabels = stagesData.map(function(s) {
-
-            return s.name.length > 18 ? s.name.substring(0, 18) + '...' : s.name;
-
-        });
-
-        const stageData = stagesData.map(function(s) {
-
-            return s.count;
-
-        });
-
-
-
-        new Chart(ctxStages, {
-
-            type: 'doughnut',
-
-            data: {
-
-                labels: stageLabels,
-
-                datasets: [{
-
-                    data: stageData,
-
-                    backgroundColor: [
-
-                        '#3B82F6', '#60A5FA', '#93C5FD', '#F59E0B', '#EF4444',
-
-                        '#10B981', '#059669', '#06B6D4', '#6366F1', '#8B5CF6', '#14B8A6'
-
-                    ],
-
-                    borderWidth: 2,
-
-                    borderColor: '#FFFFFF'
-
-                }]
-
-            },
-
-            options: {
-
-                responsive: true,
-
-                maintainAspectRatio: false,
-
-                plugins: {
-
-                    legend: {
-
-                        position: 'right',
-
-                        labels: { boxWidth: 10, font: { size: 10 } }
-
-                    }
-
-                },
-
-                cutout: '65%'
-
-            }
-
-        });
-
-    }
-
-});
-
-</script>
 
 
 
@@ -2114,6 +1941,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let isFirstOpen = true;
 
+    const pageController = new AbortController();
+    if (window.registerPageCleanup) {
+        window.registerPageCleanup(function() { pageController.abort(); });
+    }
+
 
 
     function closePanel() {
@@ -2208,7 +2040,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             }
 
-        });
+        }, { signal: pageController.signal });
 
     }
 
@@ -2236,7 +2068,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (e.key === 'Escape' && isOpen) closePanel();
 
-    });
+    }, { signal: pageController.signal });
 
 
 

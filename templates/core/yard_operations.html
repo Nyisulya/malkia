@@ -829,6 +829,10 @@ function closeHandoverModal() {
 }
 
 // Close modals with Escape key
+const yardPageController = new AbortController();
+if (window.registerPageCleanup) {
+    window.registerPageCleanup(function() { yardPageController.abort(); });
+}
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeHandoverModal();
@@ -841,7 +845,7 @@ document.addEventListener('keydown', function(e) {
             m.style.display = 'none';
         });
     }
-});
+}, { signal: yardPageController.signal });
 </script>
 
 {% endblock %}
