@@ -286,64 +286,8 @@ def send_smsgate_sms(to_phone, message_text):
 
 
 def send_nextsms_sms(to_phone, message_text, reference=None):
-    """
-    Unified SMS dispatcher:
-    1. Uses SMS Gate Android Gateway (api.sms-gate.app) if configured.
-    2. Otherwise uses NextSMS Tanzania if configured.
-    """
-    smsgate_cfg = get_smsgate_config()
-    if smsgate_cfg['is_configured']:
-        ok, info = send_smsgate_sms(to_phone, message_text)
-        if ok:
-            return True, info
-        # If NextSMS is also configured, try NextSMS as fallback
-        next_cfg = get_nextsms_config()
-        if not next_cfg['is_configured']:
-            return False, info
-
-    cfg = get_nextsms_config()
-    clean_phone = normalize_tz_phone(to_phone, with_plus=False)
-    if not clean_phone:
-        return False, "Namba ya simu ya mteja haipo au si sahihi."
-
-    if not cfg['is_configured']:
-        return False, "Credentials za SMS (SMS Gate / NextSMS) bado hazijawekwa kwenye Settings."
-
-    auth_candidates = []
-    if cfg['api_key']:
-        if cfg['api_key'].startswith('Basic ') or cfg['api_key'].startswith('Bearer '):
-            auth_candidates.append(cfg['api_key'])
-        else:
-            auth_candidates.append(f"Bearer {cfg['api_key']}")
-            auth_candidates.append(f"Basic {cfg['api_key']}")
-    if cfg['username'] and cfg['password']:
-        b64_token = base64.b64encode(f"{cfg['username']}:{cfg['password']}".encode('utf-8')).decode('utf-8')
-        auth_candidates.append(f"Basic {b64_token}")
-
-    payload = {
-        "from": cfg['sender_id'],
-        "to": clean_phone,
-        "text": message_text,
-        "reference": reference or f"malkia_{int(time.time())}"
-    }
-
-    last_err = ""
-    for auth_val in auth_candidates:
-        headers = {
-            "Authorization": auth_val,
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        }
-        try:
-            resp = requests.post(cfg['api_url'], json=payload, headers=headers, timeout=12)
-            if resp.status_code in [200, 201]:
-                return True, f"SMS imetumwa kupitia NextSMS kwenda {clean_phone}"
-            else:
-                last_err = f"NextSMS HTTP {resp.status_code}: {resp.text}"
-        except Exception as e:
-            last_err = f"NextSMS Connection Error: {str(e)}"
-
-    return False, last_err or "Imeshindikana kutuma SMS."
+    """Disabled: client SMS notifications are turned off."""
+    return False, "Utumaji wa SMS kwa wateja umezimwa."
 
 
 # =========================================================================
@@ -627,59 +571,10 @@ def notify_client_milestone(job, milestone_key, extra_note='', async_send=False)
 
 
 def send_stage_update_email(job, stage_number, extra_note='', async_send=False):
-    if async_send:
-        return run_in_background(send_stage_update_email, job, stage_number, extra_note=extra_note, async_send=False)
-
-    if stage_number == 1:
-        milestone_key = 'DOCS_RECEIVED'
-    elif stage_number in [3, 4] and not job.duty_paid:
-        milestone_key = 'TRA_DUTY_ISSUED'
-    elif stage_number == 8 or job.vehicle_arrived_at_office:
-        milestone_key = 'PORT_EXIT_YARD_ARRIVAL'
-    else:
-        return True, "Hatua hii haitumi ujumbe kwa mteja (ujumbe hutumwa kwenye hatua 3 kuu pekee)."
-
-    res = notify_client_milestone(job, milestone_key, extra_note=extra_note)
-    any_ok = res['email_ok'] or res['sms_ok']
-    summary = f"Email: {res['email_info']} | SMS: {res['sms_info']}"
-    return any_ok, summary
+    """Disabled: client stage updates (email/SMS) are turned off."""
+    return False, "Utumaji wa taarifa kwa wateja (Email/SMS) umezimwa."
 
 
 def send_declarer_intake_notification(job, declarer, async_send=False):
-    if async_send:
-        return run_in_background(send_declarer_intake_notification, job, declarer, async_send=False)
-
-    if not declarer:
-        return False, "Hakuna Customs Declarer aliyepatikana."
-    recipient = (declarer.email or '').strip()
-    if not recipient:
-        return False, f"Declarer {declarer.username} hana barua pepe."
-
-    received = ", ".join(name for name, ok in job.received_docs_checklist if ok) or "Hakuna"
-    subject = f"Faili Mpya kwa Declaration (B/L: {job.bl_number or job.job_number}) - {COMPANY_OFFICIAL_NAME}"
-    summary = (
-        f"Faili jipya limepokelewa kutoka Documentation. "
-        f"B/L: {job.bl_number or 'N/A'} | Mteja: {job.customer.company_name}. "
-        f"Nyaraka zilizopokelewa: {received}."
-    )
-    html_content = f"""
-    <div style="font-family: Arial, sans-serif; background:#F1F5F9; padding:24px;">
-        <div style="max-width:600px; margin:0 auto; background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; overflow:hidden;">
-            <div style="background:#0F766E; color:#FFFFFF; padding:20px 24px;">
-                <div style="font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:#99F6E4;">{COMPANY_OFFICIAL_NAME}</div>
-                <h2 style="margin:6px 0 0; font-size:19px;">Faili Mpya kwa Customs Declaration</h2>
-            </div>
-            <div style="padding:24px; color:#1E293B; font-size:14px; line-height:1.6;">
-                <p>Habari <strong>{declarer.get_full_name() or declarer.username}</strong>,</p>
-                <p>Documentation Officer amekamilisha upokeaji wa nyaraka na kupeleka faili hili kwako kwa ajili ya kuwasilisha tamko la forodha.</p>
-                <table style="width:100%; border-collapse:collapse; margin:16px 0; font-size:13.5px;">
-                    <tr><td style="padding:8px 0; color:#64748B; width:38%;">B/L Number:</td><td style="padding:8px 0; font-weight:700;">{job.bl_number or 'N/A'}</td></tr>
-                    <tr><td style="padding:8px 0; color:#64748B;">Mteja:</td><td style="padding:8px 0;">{job.customer.company_name}</td></tr>
-                    <tr><td style="padding:8px 0; color:#64748B;">Nyaraka:</td><td style="padding:8px 0;">{received}</td></tr>
-                </table>
-            </div>
-        </div>
-    </div>
-    """
-    ok, result = send_resend_email(recipient, subject, html_content, text_content=summary)
-    return ok, result
+    """Disabled: internal email notifications are turned off."""
+    return False, "Utumaji wa taarifa umezimwa."

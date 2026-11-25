@@ -1859,9 +1859,9 @@
 
     var saveDossierForm = document.getElementById('saveDossierForm');
     if (saveDossierForm) {
-        saveDossierForm.addEventListener('submit', function (e) {
+        saveDossierForm.addEventListener('submit', async function (e) {
             const items = [...Object.values(stagedSlotDocs), ...stagedOtherDocs];
-            if (items.length === 0) return; // normal dossier finalize POST
+            if (items.length === 0) return;
 
             e.preventDefault();
             const btn = document.getElementById('saveDocumentsBtn');
@@ -1870,88 +1870,255 @@
             const progressBar = document.getElementById('batchUploadProgressBar');
             const statusText = document.getElementById('batchUploadStatusText');
             const percentText = document.getElementById('batchUploadPercentText');
+            const csrfToken = saveDossierForm.querySelector('input[name="csrfmiddlewaretoken"]').value;
+            const uploadUrl = "{% url 'upload_documents_batch' job.id %}";
+            const uploadUrlsUrl = "{% url 'create_document_upload_urls' job.id %}";
 
-            // 1. Lock Live Sync so background polling never overwrites or reloads the DOM during upload
             window._isUploadingDocs = true;
             window.isUploadingDocs = true;
-
             if (btn) btn.disabled = true;
             if (label) label.textContent = `Inapakia (${items.length})...`;
             if (progressWrap) progressWrap.style.display = 'block';
-            if (statusText) statusText.textContent = `Inaunganisha na kupakia nyaraka zote ${items.length}...`;
-            if (progressBar) progressBar.style.width = '5%';
-            if (percentText) percentText.textContent = '5%';
+            if (statusText) statusText.textContent = 'Inaandaa upload ya moja kwa moja...';
+            if (progressBar) progressBar.style.width = '0%';
+            if (percentText) percentText.textContent = '0%';
 
-            const csrfToken = saveDossierForm.querySelector('input[name="csrfmiddlewaretoken"]').value;
-            const uploadUrl = "{% url 'upload_documents_batch' job.id %}";
+            function setProgress(percent, message) {
+                const safePercent = Math.max(0, Math.min(100, percent));
+                if (progressBar) progressBar.style.width = safePercent + '%';
+                if (percentText) percentText.textContent = safePercent + '%';
+                if (statusText && message) statusText.textContent = message;
+            }
 
-            // 2. Package ALL files in a single high-performance multipart request
-            const fd = new FormData();
-            items.forEach(item => {
-                fd.append('files', item.file, item.file.name);
-                fd.append('document_types', item.docType);
-                fd.append('titles', item.title);
-            });
-
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', uploadUrl, true);
-            xhr.timeout = 180000; // 3 minutes timeout
-            xhr.setRequestHeader('X-CSRFToken', csrfToken);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-
-            xhr.upload.onprogress = function (ev) {
-                if (ev.lengthComputable) {
-                    const overallPct = Math.min(98, Math.round((ev.loaded / ev.total) * 100));
-                    if (progressBar) progressBar.style.width = overallPct + '%';
-                    if (percentText) percentText.textContent = overallPct + '%';
-                    if (statusText) statusText.textContent = `Inapakia nyaraka zote ${items.length}... ${overallPct}%`;
-                }
-            };
-
-            xhr.onload = function () {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    if (progressBar) progressBar.style.width = '100%';
-                    if (percentText) percentText.textContent = '100%';
-                    if (statusText) statusText.textContent = `Nyaraka zote ${items.length} zimehifadhiwa kikamilifu! Inafungua ukurasa...`;
-
-                    // Clear memory staged items
-                    for (let k in stagedSlotDocs) delete stagedSlotDocs[k];
-                    stagedOtherDocs.length = 0;
-
-                    setTimeout(() => {
-                        window._isUploadingDocs = false;
-                        window.isUploadingDocs = false;
-                        window.location.href = "{% url 'job_detail' job.id %}#documentCenter";
-                        window.location.reload();
-                    }, 400);
-                } else {
-                    window._isUploadingDocs = false;
-                    window.isUploadingDocs = false;
-                    let serverMsg = 'Hitilafu ya seva (HTTP ' + xhr.status + '). Tafadhali jaribu tena.';
-                    try {
-                        const parsed = JSON.parse(xhr.responseText);
-                        if (parsed && parsed.message) serverMsg = parsed.message;
-                    } catch (_) {}
-                    if (xhr.status === 413) {
-                        serverMsg = 'Faili ulizochagua ni kubwa kuliko uwezo wa seva (413). Tafadhali punguza ukubwa au pakia chache.';
-                    }
-                    alert(serverMsg);
-                    if (btn) btn.disabled = false;
-                    if (progressWrap) progressWrap.style.display = 'none';
-                    updateSaveButtonState();
-                }
-            };
-
-            xhr.onerror = xhr.ontimeout = function () {
+            function finishSuccessfully() {
+                setProgress(100, `Nyaraka zote ${items.length} zimehifadhiwa kikamilifu! Inafungua ukurasa...`);
+                for (let key in stagedSlotDocs) delete stagedSlotDocs[key];
+                stagedOtherDocs.length = 0;
                 window._isUploadingDocs = false;
                 window.isUploadingDocs = false;
-                alert('Muunganisho umekatika au muda umeisha. Tafadhali bonyeza Save tena.');
+                setTimeout(() => {
+                    window.location.href = "{% url 'job_detail' job.id %}#documentCenter";
+                    window.location.reload();
+                }, 400);
+            }
+
+            function showUploadError(error) {
+                window._isUploadingDocs = false;
+                window.isUploadingDocs = false;
+                alert((error && error.message) || 'Upload haikufanikiwa. Tafadhali bonyeza Save tena.');
                 if (btn) btn.disabled = false;
                 if (progressWrap) progressWrap.style.display = 'none';
                 updateSaveButtonState();
-            };
+            }
 
-            xhr.send(fd);
+            async function requestDirectUploads() {
+                let response;
+                try {
+                    response = await fetch(uploadUrlsUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({
+                            files: items.map(item => ({
+                                name: item.file.name,
+                                size: item.file.size,
+                                document_type: item.docType,
+                                title: item.title,
+                            })),
+                        }),
+                    });
+                } catch (_) {
+                    return null;
+                }
+
+                let data = {};
+                try { data = await response.json(); } catch (_) {}
+                if (!response.ok) {
+                    if (response.status >= 500) return null;
+                    const error = new Error(data.message || `Hitilafu ya kuandaa upload (HTTP ${response.status}).`);
+                    error.status = response.status;
+                    throw error;
+                }
+                if (data.status === 'fallback') return null;
+                if (data.status !== 'ok' || !Array.isArray(data.uploads) || data.uploads.length !== items.length) {
+                    throw new Error('Seva haikuweza kuandaa upload ya nyaraka zote.');
+                }
+                return data.uploads;
+            }
+
+            function putFileDirectly(item, uploadInfo, onProgress) {
+                return new Promise((resolve, reject) => {
+                    let attempt = 0;
+                    function send() {
+                        attempt += 1;
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('PUT', uploadInfo.upload_url, true);
+                        xhr.timeout = 180000;
+                        xhr.setRequestHeader('Content-Type', uploadInfo.content_type || item.file.type || 'application/octet-stream');
+                        xhr.upload.onprogress = function (event) {
+                            if (event.lengthComputable) onProgress(event.loaded, event.total);
+                        };
+                        xhr.onload = function () {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                resolve();
+                            } else if (attempt < 2 && xhr.status >= 500) {
+                                setTimeout(send, 700);
+                            } else {
+                                const error = new Error(`Faili "${item.file.name}" haikupakiwa kwenye Cloudflare (HTTP ${xhr.status || 0}).`);
+                                error.httpStatus = xhr.status || 0;
+                                reject(error);
+                            }
+                        };
+                        xhr.onerror = xhr.ontimeout = function () {
+                            if (attempt < 2) {
+                                setTimeout(send, 900);
+                            } else {
+                                const error = new Error(`Muunganisho wa Cloudflare umekatika kwa faili "${item.file.name}".`);
+                                error.httpStatus = 0;
+                                reject(error);
+                            }
+                        };
+                        xhr.send(item.file);
+                    }
+                    send();
+                });
+            }
+
+            async function uploadDirectlyToR2(uploads) {
+                const totalBytes = items.reduce((sum, item) => sum + item.file.size, 0);
+                const loadedBytes = new Array(items.length).fill(0);
+                const failures = [];
+                let completedUploads = 0;
+                let nextIndex = 0;
+
+                function updateOverallProgress() {
+                    const loaded = loadedBytes.reduce((sum, value) => sum + value, 0);
+                    const percent = totalBytes > 0 ? Math.min(98, Math.round((loaded / totalBytes) * 98)) : 0;
+                    setProgress(percent, `Inapakia moja kwa moja kwenye Cloudflare... ${percent}%`);
+                }
+
+                async function worker() {
+                    while (nextIndex < items.length) {
+                        const index = nextIndex++;
+                        const item = items[index];
+                        try {
+                            await putFileDirectly(item, uploads[index], (loaded, total) => {
+                                loadedBytes[index] = total > 0 ? loaded : 0;
+                                updateOverallProgress();
+                            });
+                            loadedBytes[index] = item.file.size;
+                            completedUploads += 1;
+                            updateOverallProgress();
+                        } catch (error) {
+                            failures.push(error);
+                        }
+                    }
+                }
+
+                await Promise.all(Array.from({ length: Math.min(3, items.length) }, () => worker()));
+                if (failures.length) {
+                    const error = failures[0];
+                    if (completedUploads === 0 && failures.every(failure => failure.httpStatus === 0)) {
+                        error.useVpsFallback = true;
+                    }
+                    throw error;
+                }
+
+                setProgress(98, 'Inahifadhi taarifa za nyaraka...');
+                let response;
+                let data = {};
+                for (let attempt = 0; attempt < 2; attempt += 1) {
+                    try {
+                        response = await fetch(uploadUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: JSON.stringify({
+                                documents: uploads.map(upload => ({
+                                    object_key: upload.object_key,
+                                    completion_token: upload.completion_token,
+                                })),
+                            }),
+                        });
+                        try { data = await response.json(); } catch (_) {}
+                        if (response.ok && data.status === 'ok') {
+                            finishSuccessfully();
+                            return;
+                        }
+                        if (response.status < 500) break;
+                    } catch (_) {
+                        response = null;
+                    }
+                    if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 700));
+                }
+                throw new Error(data.message || 'Faili zimepakiwa, lakini kuhifadhi taarifa hakukufanikiwa. Bonyeza Save tena.');
+            }
+
+            function uploadThroughVps() {
+                return new Promise((resolve, reject) => {
+                    const formData = new FormData();
+                    items.forEach(item => {
+                        formData.append('files', item.file, item.file.name);
+                        formData.append('document_types', item.docType);
+                        formData.append('titles', item.title);
+                    });
+
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', uploadUrl, true);
+                    xhr.timeout = 180000;
+                    xhr.setRequestHeader('X-CSRFToken', csrfToken);
+                    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                    xhr.upload.onprogress = function (event) {
+                        if (event.lengthComputable) {
+                            const percent = Math.min(98, Math.round((event.loaded / event.total) * 98));
+                            setProgress(percent, `Inapakia kupitia seva... ${percent}%`);
+                        }
+                    };
+                    xhr.onload = function () {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            finishSuccessfully();
+                            resolve();
+                            return;
+                        }
+                        let message = `Hitilafu ya seva (HTTP ${xhr.status}).`;
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            if (data && data.message) message = data.message;
+                        } catch (_) {}
+                        reject(new Error(message));
+                    };
+                    xhr.onerror = xhr.ontimeout = function () {
+                        reject(new Error('Muunganisho umekatika au muda umeisha. Tafadhali bonyeza Save tena.'));
+                    };
+                    xhr.send(formData);
+                });
+            }
+
+            try {
+                const directUploads = await requestDirectUploads();
+                if (directUploads) {
+                    await uploadDirectlyToR2(directUploads);
+                } else {
+                    await uploadThroughVps();
+                }
+            } catch (error) {
+                if (error && error.useVpsFallback) {
+                    setProgress(0, 'Cloudflare direct upload haipatikani. Inarudi kwenye seva...');
+                    try {
+                        await uploadThroughVps();
+                    } catch (fallbackError) {
+                        showUploadError(fallbackError);
+                    }
+                } else {
+                    showUploadError(error);
+                }
+            }
         });
     }
 </script>

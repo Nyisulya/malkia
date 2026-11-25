@@ -26,6 +26,7 @@ urlpatterns = [
     path('jobs/<int:job_id>/assign-port-officer/', views.assign_port_officer_view, name='assign_port_officer'),
     path('jobs/<int:job_id>/upload-doc/', views.upload_document_action, name='upload_document'),
     path('jobs/<int:job_id>/upload-docs-batch/', views.upload_documents_batch_action, name='upload_documents_batch'),
+    path('jobs/<int:job_id>/r2-upload-urls/', views.create_document_upload_urls, name='create_document_upload_urls'),
     path('jobs/<int:job_id>/print-handover-note/', views.print_handover_note_view, name='print_handover_note'),
     path('documents/<int:doc_id>/rename/', views.rename_document_action, name='rename_document'),
     path('documents/<int:doc_id>/edit/', views.rename_document_action, name='edit_document'),

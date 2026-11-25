@@ -1,4 +1,5 @@
 import os
+import uuid
 
 
 
@@ -37,6 +38,7 @@ from django.contrib.auth import login, logout, authenticate
 
 
 from django.contrib.auth.decorators import login_required
+from django.core import signing
 
 
 
@@ -45,9 +47,11 @@ from django.views.decorators.csrf import csrf_exempt
 
 
 from django.utils import timezone
+from django.utils.text import get_valid_filename
 
 
 
+from django.db import transaction
 from django.db.models import Sum, Q
 
 from django.db.models.functions import TruncMonth
@@ -88,7 +92,7 @@ from .models import (
 
 
 
-    JobShipment, JobStageInstance, JobDocument, JobContainer, ExpenseVoucher,
+    JobShipment, JobStageInstance, JobDocument, JobContainer, ExpenseVoucher, job_document_upload_path,
 
 
 
@@ -7136,67 +7140,12 @@ def customs_confirm_duty_payment_action(request, job_id):
 
 
 def send_job_stage_email_action(request, job_id):
-
     """
-
-    Manual trigger to send or re-send one of the 3 official dual-channel notifications (Email + SMS) to the client.
-
+    Client email & SMS notifications are currently disabled upon request.
     """
-
     job = get_object_or_404(JobShipment, id=job_id)
-
-    from .email_service import notify_client_milestone
-
-
-
-    milestone_key = request.POST.get('milestone') or request.GET.get('milestone')
-
-    if not milestone_key:
-
-        if job.vehicle_arrived_at_office or job.current_stage_number >= 8:
-
-            milestone_key = 'PORT_EXIT_YARD_ARRIVAL'
-
-        elif job.duty_control_number or job.assessed_duty_amount > 0 or job.current_stage_number >= 3:
-
-            milestone_key = 'TRA_DUTY_ISSUED'
-
-        else:
-
-            milestone_key = 'DOCS_RECEIVED'
-
-
-
-    note = request.POST.get('note', '') or request.GET.get('note', '')
-
-    res = notify_client_milestone(job, milestone_key, extra_note=note)
-
-
-
-    if res['email_ok'] or res['sms_ok']:
-
-        messages.success(
-
-            request,
-
-            f"✅ Taarifa ({milestone_key}) imetumwa kwa mteja! Email: {'Imetumwa' if res['email_ok'] else res['email_info']} | SMS: {'Imetumwa' if res['sms_ok'] else res['sms_info']}"
-
-        )
-
-    else:
-
-        messages.warning(
-
-            request,
-
-            f"⚠️ Ujumbe haujatoka: Email ({res['email_info']}) | SMS ({res['sms_info']}). Hakikisha umeweka credentials za Resend na NextSMS kwenye Settings."
-
-        )
-
-
-
+    messages.info(request, "Utumaji wa barua pepe na SMS kwa wateja umezimwa kwenye mfumo.")
     next_url = request.POST.get('next') or request.META.get('HTTP_REFERER') or f'/jobs/{job.id}/'
-
     return redirect(next_url)
 
 
@@ -10418,6 +10367,92 @@ def payment_record_action(request):
 
 
 
+DOCUMENT_UPLOAD_EXTENSIONS = {'.pdf', '.jpg', '.jpeg', '.png', '.webp'}
+DOCUMENT_UPLOAD_MAX_BYTES = 60 * 1024 * 1024
+DOCUMENT_UPLOAD_MAX_FILES = 20
+DOCUMENT_UPLOAD_TOKEN_SALT = 'malkia-document-upload-v1'
+DOCUMENT_UPLOAD_TOKEN_MAX_AGE = 1800
+
+
+def _document_upload_content_type(filename):
+    content_type, _ = mimetypes.guess_type(filename)
+    return content_type or 'application/octet-stream'
+
+
+def _document_upload_object_key(job, filename):
+    valid_name = get_valid_filename(os.path.basename(filename)) or 'document'
+    stem, extension = os.path.splitext(valid_name)
+    unique_name = f"{uuid.uuid4().hex}_{stem[:80]}{extension.lower()}"
+    document = JobDocument(job=job)
+    return job_document_upload_path(document, unique_name).replace('\\', '/')
+
+
+def _store_dossier_documents(request, job, documents):
+    doc_type_dict = dict(JobDocument.DOC_TYPES)
+    doc_flag_map = {
+        'BILL_OF_LADING': 'doc_bl_received',
+        'COMMERCIAL_INVOICE': 'doc_invoice_received',
+        'PACKING_LIST': 'doc_packing_list_received',
+        'TBS_CERT': 'doc_tbs_cert_received',
+        'EXPORT_CERT': 'doc_export_cert_received',
+    }
+    single_slot_types = {
+        'TRA_AUTH_SIGNED', 'TBS_SIGNED', 'FORM_C41',
+        'BILL_OF_LADING', 'COMMERCIAL_INVOICE', 'PACKING_LIST',
+    }
+    update_fields = {
+        'doc_intake_finalized': True,
+        'doc_received_at': timezone.now(),
+    }
+    if not job.documentation_officer_id:
+        update_fields['documentation_officer'] = request.user
+
+    uploaded_count = 0
+    with transaction.atomic():
+        for item in documents:
+            raw_type = item['document_type']
+            if raw_type not in doc_type_dict:
+                raw_type = 'OTHER'
+            raw_title = item['title']
+            if not raw_title:
+                raw_title = (
+                    f"{doc_type_dict[raw_type]} ({item['filename']})"
+                    if raw_type != 'OTHER' and raw_type in doc_type_dict
+                    else item['filename']
+                )
+
+            if raw_type in single_slot_types:
+                JobDocument.objects.filter(job=job, document_type=raw_type).delete()
+
+            file_value = item.get('file')
+            if file_value is None:
+                file_value = item['object_key']
+            else:
+                file_value = _compress_image_if_needed(file_value)
+
+            JobDocument.objects.create(
+                job=job,
+                document_type=raw_type,
+                title=raw_title,
+                file=file_value,
+                uploaded_by=request.user,
+            )
+            uploaded_count += 1
+            if raw_type in doc_flag_map:
+                update_fields[doc_flag_map[raw_type]] = True
+
+        if uploaded_count == 0:
+            raise ValueError('Faili zilizochaguliwa ni tupu (0 KB). Tafadhali chagua faili sahihi.')
+
+        JobShipment.objects.filter(id=job.id).update(**update_fields)
+
+    try:
+        log_audit(request, "UPLOAD_DOCUMENT", f"Uploaded {uploaded_count} document(s) to Job {job.job_number}", job=job)
+    except Exception:
+        pass
+    return uploaded_count
+
+
 def _compress_pdf_if_needed(uploaded_file):
     """Return PDF as-is without CPU-heavy PyMuPDF image rewriting."""
     return uploaded_file
@@ -10566,8 +10601,103 @@ def upload_document_action(request, job_id):
 
 
 @login_required
+def create_document_upload_urls(request, job_id):
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
+
+    job = get_object_or_404(JobShipment, id=job_id)
+    if not user_can_manage_docs(request.user, job):
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Ruksa imezuiwa: Ni Afisa Nyaraka (Documentation Officer) au Admin pekee anayeweza kupakia nyaraka.',
+        }, status=403)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return JsonResponse({'status': 'error', 'message': 'Ombi la upload si sahihi.'}, status=400)
+
+    files = payload.get('files') if isinstance(payload, dict) else None
+    if not isinstance(files, list) or not files:
+        return JsonResponse({'status': 'error', 'message': 'Hakuna faili zilizochaguliwa.'}, status=400)
+    if len(files) > DOCUMENT_UPLOAD_MAX_FILES:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Unaweza kupakia hadi faili {DOCUMENT_UPLOAD_MAX_FILES} kwa wakati mmoja.',
+        }, status=400)
+
+    doc_type_dict = dict(JobDocument.DOC_TYPES)
+    prepared = []
+    total_size = 0
+    for item in files:
+        if not isinstance(item, dict):
+            return JsonResponse({'status': 'error', 'message': 'Taarifa ya faili si sahihi.'}, status=400)
+
+        filename = str(item.get('name', '')).strip()
+        extension = os.path.splitext(filename)[1].lower()
+        if not filename or len(filename) > 255 or extension not in DOCUMENT_UPLOAD_EXTENSIONS:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Chagua faili la PDF, JPG, PNG au WEBP.',
+            }, status=400)
+        try:
+            size = int(item.get('size', 0))
+        except (TypeError, ValueError):
+            size = 0
+        if size <= 0:
+            return JsonResponse({'status': 'error', 'message': f'Faili "{filename}" ni tupu (0 B).'}, status=400)
+
+        total_size += size
+        if total_size > DOCUMENT_UPLOAD_MAX_BYTES:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Jumla ya faili ni kubwa kuliko uwezo wa 60 MB.',
+            }, status=400)
+
+        raw_type = str(item.get('document_type', 'OTHER')).strip()
+        if raw_type not in doc_type_dict:
+            raw_type = 'OTHER'
+        title = str(item.get('title', '')).strip()[:200]
+        if not title:
+            title = f"{doc_type_dict[raw_type]} ({filename})" if raw_type != 'OTHER' else filename
+
+        object_key = _document_upload_object_key(job, filename)
+        completion_token = signing.dumps({
+            'job_id': job.id,
+            'object_key': object_key,
+            'document_type': raw_type,
+            'title': title,
+            'filename': filename,
+            'size': size,
+        }, salt=DOCUMENT_UPLOAD_TOKEN_SALT)
+        prepared.append({
+            'object_key': object_key,
+            'content_type': _document_upload_content_type(filename),
+            'completion_token': completion_token,
+        })
+
+    from .storage_backends import get_r2_config, generate_presigned_upload_url
+    if not get_r2_config().get('is_configured'):
+        return JsonResponse({'status': 'fallback', 'message': 'Cloudflare R2 is not configured.'})
+
+    uploads = []
+    for item in prepared:
+        upload_url = generate_presigned_upload_url(item['object_key'], item['content_type'], DOCUMENT_UPLOAD_TOKEN_MAX_AGE)
+        if not upload_url:
+            return JsonResponse({'status': 'fallback', 'message': 'Cloudflare R2 is not configured.'})
+        uploads.append({
+            'upload_url': upload_url,
+            'object_key': item['object_key'],
+            'content_type': item['content_type'],
+            'completion_token': item['completion_token'],
+        })
+
+    return JsonResponse({'status': 'ok', 'uploads': uploads})
+
+
+@login_required
 def upload_documents_batch_action(request, job_id):
-    """Uploads multiple staged documents in a single request and finalizes the dossier."""
+    """Uploads staged documents through R2 or the VPS, then finalizes the dossier."""
     is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', '')
 
     if request.method != 'POST':
@@ -10583,83 +10713,72 @@ def upload_documents_batch_action(request, job_id):
         messages.error(request, msg)
         return redirect('job_detail', job_id=job.id)
 
-    files = request.FILES.getlist('files')
-    doc_types = request.POST.getlist('document_types')
-    titles = request.POST.getlist('titles')
+    if request.content_type == 'application/json':
+        try:
+            payload = json.loads(request.body.decode('utf-8') or '{}')
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return JsonResponse({'status': 'error', 'message': 'Ombi la kuhifadhi nyaraka si sahihi.'}, status=400)
 
-    if not files:
-        msg = 'Hakuna faili zilizochaguliwa.'
-        if is_ajax:
-            return JsonResponse({'status': 'error', 'message': msg}, status=400)
-        messages.warning(request, msg)
-        return redirect(f"/jobs/{job.id}/#documentCenter")
+        entries = payload.get('documents') if isinstance(payload, dict) else None
+        if not isinstance(entries, list) or not entries or len(entries) > DOCUMENT_UPLOAD_MAX_FILES:
+            return JsonResponse({'status': 'error', 'message': 'Hakuna nyaraka sahihi za kuhifadhi.'}, status=400)
 
-    doc_type_dict = dict(JobDocument.DOC_TYPES)
-    doc_flag_map = {
-        'BILL_OF_LADING': 'doc_bl_received',
-        'COMMERCIAL_INVOICE': 'doc_invoice_received',
-        'PACKING_LIST': 'doc_packing_list_received',
-        'TBS_CERT': 'doc_tbs_cert_received',
-        'EXPORT_CERT': 'doc_export_cert_received',
-    }
-
-    single_slot_types = {
-        'TRA_AUTH_SIGNED', 'TBS_SIGNED', 'FORM_C41',
-        'BILL_OF_LADING', 'COMMERCIAL_INVOICE', 'PACKING_LIST',
-    }
-    uploaded_count = 0
-    update_fields_dict = {
-        'doc_intake_finalized': True,
-        'doc_received_at': timezone.now(),
-    }
-    if not job.documentation_officer_id:
-        update_fields_dict['documentation_officer'] = request.user
-
-    try:
-        for idx, f in enumerate(files):
-            if getattr(f, 'size', 0) == 0:
-                continue
-            raw_type = doc_types[idx].strip() if idx < len(doc_types) else 'OTHER'
-            if raw_type not in doc_type_dict:
-                raw_type = 'OTHER'
-
-            raw_title = titles[idx].strip() if idx < len(titles) else ''
-            if not raw_title:
-                if raw_type != 'OTHER' and raw_type in doc_type_dict:
-                    raw_title = f"{doc_type_dict[raw_type]} ({f.name})"
-                else:
-                    raw_title = f.name
-
-            if raw_type in single_slot_types:
-                JobDocument.objects.filter(job=job, document_type=raw_type).delete()
-
-            f = _compress_image_if_needed(f)
-            JobDocument.objects.create(
-                job=job,
-                document_type=raw_type,
-                title=raw_title,
-                file=f,
-                uploaded_by=request.user,
-            )
-            uploaded_count += 1
-
-            if raw_type in doc_flag_map:
-                update_fields_dict[doc_flag_map[raw_type]] = True
-
-        if uploaded_count == 0:
-            msg = 'Faili zilizochaguliwa ni tupu (0 KB). Tafadhali chagua faili sahihi.'
+        documents = []
+        for entry in entries:
+            if not isinstance(entry, dict):
+                return JsonResponse({'status': 'error', 'message': 'Taarifa ya nyaraka si sahihi.'}, status=400)
+            object_key = str(entry.get('object_key', '')).strip()
+            token = str(entry.get('completion_token', '')).strip()
+            if not object_key or not token:
+                return JsonResponse({'status': 'error', 'message': 'Uthibitisho wa upload haukamilika.'}, status=400)
+            try:
+                data = signing.loads(token, salt=DOCUMENT_UPLOAD_TOKEN_SALT, max_age=DOCUMENT_UPLOAD_TOKEN_MAX_AGE)
+            except signing.BadSignature:
+                return JsonResponse({'status': 'error', 'message': 'Muda wa upload umeisha au link si halali.'}, status=400)
+            if not isinstance(data, dict) or data.get('job_id') != job.id or data.get('object_key') != object_key:
+                return JsonResponse({'status': 'error', 'message': 'Nyaraka hii si ya faili hili.'}, status=400)
+            documents.append({
+                'object_key': object_key,
+                'document_type': data.get('document_type', 'OTHER'),
+                'title': data.get('title', ''),
+                'filename': data.get('filename', ''),
+            })
+    else:
+        files = request.FILES.getlist('files')
+        doc_types = request.POST.getlist('document_types')
+        titles = request.POST.getlist('titles')
+        if not files:
+            msg = 'Hakuna faili zilizochaguliwa.'
             if is_ajax:
                 return JsonResponse({'status': 'error', 'message': msg}, status=400)
             messages.warning(request, msg)
             return redirect(f"/jobs/{job.id}/#documentCenter")
 
-        JobShipment.objects.filter(id=job.id).update(**update_fields_dict)
-        try:
-            log_audit(request, "UPLOAD_DOCUMENT", f"Uploaded {uploaded_count} document(s) to Job {job.job_number}", job=job)
-        except Exception:
-            pass
-    except Exception as exc:
-        msg = f"Hitilafu ya server wakati wa kuhifadhi faili: {str(exc)}"
+        doc_type_dict = dict(JobDocument.DOC_TYPES)
+        documents = []
+        for idx, uploaded_file in enumerate(files):
+            if getattr(uploaded_file, 'size', 0) == 0:
+                continue
+            raw_type = doc_types[idx].strip() if idx < len(doc_types) else 'OTHER'
+            if raw_type not in doc_type_dict:
+                raw_type = 'OTHER'
+            raw_title = titles[idx].strip() if idx < len(titles) else ''
+            documents.append({
+                'file': uploaded_file,
+                'document_type': raw_type,
+                'title': raw_title,
+                'filename': uploaded_file.name,
+            })
+
+    try:
+        uploaded_count = _store_dossier_documents(request, job, documents)
+    except ValueError as exc:
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': str(exc)}, status=400)
+        messages.warning(request, str(exc))
+        return redirect(f"/jobs/{job.id}/#documentCenter")
+    except Exception:
+        msg = 'Hitilafu ya server wakati wa kuhifadhi faili.'
         if is_ajax:
             return JsonResponse({'status': 'error', 'message': msg}, status=500)
         messages.error(request, msg)
@@ -10669,7 +10788,7 @@ def upload_documents_batch_action(request, job_id):
         return JsonResponse({
             'status': 'ok',
             'uploaded': uploaded_count,
-            'message': f"Nyaraka {uploaded_count} zimepakiwa na kuhifadhiwa kikamilifu!"
+            'message': f"Nyaraka {uploaded_count} zimepakiwa na kuhifadhiwa kikamilifu!",
         })
 
     messages.success(request, f"Nyaraka {uploaded_count} zimepakiwa na kuhifadhiwa kikamilifu!")

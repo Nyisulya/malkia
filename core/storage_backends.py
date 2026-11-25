@@ -66,6 +66,30 @@ def get_r2_config(use_cache=True):
     return cfg
 
 
+def generate_presigned_upload_url(object_key, content_type='application/octet-stream', expires_in=1800):
+    cfg = get_r2_config()
+    if not cfg['is_configured']:
+        return None
+
+    s3_client = boto3.client(
+        's3',
+        endpoint_url=cfg['endpoint_url'],
+        aws_access_key_id=cfg['access_key'],
+        aws_secret_access_key=cfg['secret_key'],
+        region_name='auto',
+        config=Config(signature_version='s3v4', connect_timeout=5, read_timeout=20, retries={'max_attempts': 1}),
+    )
+    return s3_client.generate_presigned_url(
+        'put_object',
+        Params={
+            'Bucket': cfg['bucket_name'],
+            'Key': object_key,
+            'ContentType': content_type,
+        },
+        ExpiresIn=expires_in,
+    )
+
+
 def test_r2_connection():
     """
     Tests live connectivity to the configured Cloudflare R2 bucket.
