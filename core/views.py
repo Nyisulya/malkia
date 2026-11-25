@@ -8569,6 +8569,130 @@ def _operating_expenses_context(request):
         )
         running_jobs.append(j)
 
+    # -------------------------------------------------------------
+    # GENERAL COST SUMMARY BY EXPENSE HEAD / CATEGORY
+    # -------------------------------------------------------------
+    from django.db.models import Count
+    office_cat_qs = OperatingExpense.objects.filter(
+        date__gte=range_start, date__lte=range_end
+    )
+    if category_filter.isdigit():
+        office_cat_qs = office_cat_qs.filter(category_id=int(category_filter))
+    if query:
+        office_cat_qs = office_cat_qs.filter(
+            Q(payee__icontains=query) |
+            Q(description__icontains=query) |
+            Q(payment_reference__icontains=query) |
+            Q(category__name__icontains=query)
+        )
+
+    office_cat_summary = (
+        office_cat_qs.values('category__id', 'category__name')
+        .annotate(total=Sum('amount'), count=Count('id'))
+        .order_by('-total')
+    )
+
+    category_summary = []
+    office_fuel_total = Decimal('0.00')
+
+    for c_row in office_cat_summary:
+        c_name = c_row['category__name'] or 'Uncategorized'
+        c_total = c_row['total'] or Decimal('0.00')
+        c_count = c_row['count'] or 0
+        if c_name.strip().upper() == 'FUEL':
+            office_fuel_total += c_total
+        category_summary.append({
+            'name': c_name,
+            'source': 'Office OPEX',
+            'count': c_count,
+            'count_label': f"{c_count} payment{'s' if c_count != 1 else ''}",
+            'total': c_total,
+            'is_cargo': False,
+            'icon': 'fa-solid fa-building-columns',
+            'badge_bg': '#EEF2FF',
+            'badge_color': '#3730A3',
+        })
+
+    if job_transport_total > 0:
+        c_count = running_jobs_qs.filter(cost_transport__gt=0).count()
+        category_summary.append({
+            'name': 'Transport & Carrier (Cargo)',
+            'source': 'Cargo Direct',
+            'count': c_count,
+            'count_label': f"{c_count} job{'s' if c_count != 1 else ''}",
+            'total': job_transport_total,
+            'is_cargo': True,
+            'icon': 'fa-solid fa-truck',
+            'badge_bg': '#DBEAFE',
+            'badge_color': '#1E40AF',
+        })
+
+    if job_fuel_total > 0:
+        c_count = running_jobs_qs.filter(cost_fuel__gt=0).count()
+        category_summary.append({
+            'name': 'Fuel (Cargo & Vehicles Out)',
+            'source': 'Cargo Direct',
+            'count': c_count,
+            'count_label': f"{c_count} job{'s' if c_count != 1 else ''}",
+            'total': job_fuel_total,
+            'is_cargo': True,
+            'icon': 'fa-solid fa-gas-pump',
+            'badge_bg': '#FEF3C7',
+            'badge_color': '#92400E',
+        })
+
+    if job_facilitation_total > 0:
+        c_count = running_jobs_qs.filter(cost_facilitation__gt=0).count()
+        category_summary.append({
+            'name': 'Facilitation (Ground Handling)',
+            'source': 'Cargo Direct',
+            'count': c_count,
+            'count_label': f"{c_count} job{'s' if c_count != 1 else ''}",
+            'total': job_facilitation_total,
+            'is_cargo': True,
+            'icon': 'fa-solid fa-handshake',
+            'badge_bg': '#CCFBF1',
+            'badge_color': '#0F766E',
+        })
+
+    if job_ferry_total > 0:
+        c_count = running_jobs_qs.filter(cost_ferry_charges__gt=0).count()
+        category_summary.append({
+            'name': 'Ferry & Toll Charges (Kigamboni/Kivukoni)',
+            'source': 'Cargo Direct',
+            'count': c_count,
+            'count_label': f"{c_count} job{'s' if c_count != 1 else ''}",
+            'total': job_ferry_total,
+            'is_cargo': True,
+            'icon': 'fa-solid fa-ferry',
+            'badge_bg': '#E0E7FF',
+            'badge_color': '#4338CA',
+        })
+
+    if job_running_other_total > 0:
+        c_count = running_jobs_qs.filter(cost_running_other__gt=0).count()
+        category_summary.append({
+            'name': 'Other Cargo Running Costs',
+            'source': 'Cargo Direct',
+            'count': c_count,
+            'count_label': f"{c_count} job{'s' if c_count != 1 else ''}",
+            'total': job_running_other_total,
+            'is_cargo': True,
+            'icon': 'fa-solid fa-screwdriver-wrench',
+            'badge_bg': '#F3E8FF',
+            'badge_color': '#6B21A8',
+        })
+
+    category_summary.sort(key=lambda x: x['total'], reverse=True)
+    total_outflow = total_combined_outflow or Decimal('0.00')
+    for item in category_summary:
+        if total_outflow > 0:
+            item['percentage'] = round((item['total'] / total_outflow) * 100, 1)
+        else:
+            item['percentage'] = 0.0
+
+    all_fuel_grand_total = office_fuel_total + job_fuel_total
+
     year = selected_month.year
     revenue_by_month = {
         row['month'].month: row['total'] or Decimal('0.00')
@@ -8632,6 +8756,8 @@ def _operating_expenses_context(request):
         'job_running_other_total': job_running_other_total,
         'job_running_total': job_running_total,
         'running_jobs': running_jobs,
+        'category_summary': category_summary,
+        'all_fuel_grand_total': all_fuel_grand_total,
         'total_combined_outflow': total_combined_outflow,
         'monthly_rows': monthly_rows,
         'year_revenue': year_revenue,
@@ -8824,13 +8950,124 @@ def operating_expenses_export_excel(request):
 
     expenses = expenses.order_by('-date', '-id')
 
+    # Pull Cargo & Vehicle Direct Running Costs for Excel
+    running_jobs_qs = JobShipment.objects.filter(
+        created_at__date__gte=range_start, created_at__date__lte=range_end
+    ).filter(
+        Q(cost_fuel__gt=0) |
+        Q(cost_transport__gt=0) |
+        Q(cost_facilitation__gt=0) |
+        Q(cost_ferry_charges__gt=0) |
+        Q(cost_running_other__gt=0)
+    ).select_related('customer').order_by('-created_at')
+
+    if query:
+        running_jobs_qs = running_jobs_qs.filter(
+            Q(job_number__icontains=query) |
+            Q(bl_number__icontains=query) |
+            Q(chassis_number__icontains=query) |
+            Q(cargo_description__icontains=query) |
+            Q(vehicle_make__icontains=query) |
+            Q(vehicle_model__icontains=query) |
+            Q(customer__company_name__icontains=query) |
+            Q(cost_running_other_description__icontains=query)
+        )
+
+    running_aggregates = running_jobs_qs.aggregate(
+        fuel=Sum('cost_fuel'),
+        transport=Sum('cost_transport'),
+        ferry=Sum('cost_ferry_charges'),
+        facilitation=Sum('cost_facilitation'),
+        running_other=Sum('cost_running_other')
+    )
+    job_fuel_total = running_aggregates['fuel'] or Decimal('0.00')
+    job_transport_total = running_aggregates['transport'] or Decimal('0.00')
+    job_ferry_total = running_aggregates['ferry'] or Decimal('0.00')
+    job_facilitation_total = running_aggregates['facilitation'] or Decimal('0.00')
+    job_running_other_total = running_aggregates['running_other'] or Decimal('0.00')
+    job_running_total = job_fuel_total + job_transport_total + job_ferry_total + job_facilitation_total + job_running_other_total
+
+    # Category Summary for Excel Sheet 1
+    from django.db.models import Count
+    office_cat_summary = (
+        expenses.values('category__id', 'category__name')
+        .annotate(total=Sum('amount'), count=Count('id'))
+        .order_by('-total')
+    )
+    cat_summary_list = []
+    for c_row in office_cat_summary:
+        c_name = c_row['category__name'] or 'Uncategorized'
+        c_total = c_row['total'] or Decimal('0.00')
+        c_count = c_row['count'] or 0
+        cat_summary_list.append({
+            'name': c_name,
+            'source': 'Office OPEX',
+            'count': c_count,
+            'count_label': f"{c_count} payments",
+            'total': c_total,
+        })
+
+    if job_transport_total > 0:
+        c_count = running_jobs_qs.filter(cost_transport__gt=0).count()
+        cat_summary_list.append({
+            'name': 'Transport & Carrier (Cargo)',
+            'source': 'Cargo Direct',
+            'count': c_count,
+            'count_label': f"{c_count} jobs",
+            'total': job_transport_total,
+        })
+    if job_fuel_total > 0:
+        c_count = running_jobs_qs.filter(cost_fuel__gt=0).count()
+        cat_summary_list.append({
+            'name': 'Fuel (Cargo & Vehicles Out)',
+            'source': 'Cargo Direct',
+            'count': c_count,
+            'count_label': f"{c_count} jobs",
+            'total': job_fuel_total,
+        })
+    if job_facilitation_total > 0:
+        c_count = running_jobs_qs.filter(cost_facilitation__gt=0).count()
+        cat_summary_list.append({
+            'name': 'Facilitation (Ground Handling)',
+            'source': 'Cargo Direct',
+            'count': c_count,
+            'count_label': f"{c_count} jobs",
+            'total': job_facilitation_total,
+        })
+    if job_ferry_total > 0:
+        c_count = running_jobs_qs.filter(cost_ferry_charges__gt=0).count()
+        cat_summary_list.append({
+            'name': 'Ferry & Toll Charges (Kivukoni)',
+            'source': 'Cargo Direct',
+            'count': c_count,
+            'count_label': f"{c_count} jobs",
+            'total': job_ferry_total,
+        })
+    if job_running_other_total > 0:
+        c_count = running_jobs_qs.filter(cost_running_other__gt=0).count()
+        cat_summary_list.append({
+            'name': 'Other Cargo Running Costs',
+            'source': 'Cargo Direct',
+            'count': c_count,
+            'count_label': f"{c_count} jobs",
+            'total': job_running_other_total,
+        })
+
+    cat_summary_list.sort(key=lambda x: x['total'], reverse=True)
+    total_combined_export = expenses.aggregate(t=Sum('amount'))['t'] or Decimal('0.00')
+    total_combined_export += job_running_total
+    for item in cat_summary_list:
+        if total_combined_export > 0:
+            item['percentage'] = round((item['total'] / total_combined_export) * 100, 1)
+        else:
+            item['percentage'] = 0.0
+
     wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Operating Expenses"
-    ws.views.sheetView[0].showGridLines = True
 
     navy_fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
     header_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
+    teal_header_fill = PatternFill(start_color="0F766E", end_color="0F766E", fill_type="solid")
+    amber_header_fill = PatternFill(start_color="B45309", end_color="B45309", fill_type="solid")
     total_fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
 
     title_font = Font(name="Calibri", size=13, bold=True, color="FFFFFF")
@@ -8853,10 +9090,105 @@ def operating_expenses_export_excel(request):
         bottom=Side(style='double', color='0F172A')
     )
 
-    # Title block
+    # -------------------------------------------------------------
+    # SHEET 1: GENERAL COST SUMMARY BY CATEGORY
+    # -------------------------------------------------------------
+    ws_sum = wb.active
+    ws_sum.title = "Summary by Category"
+    ws_sum.views.sheetView[0].showGridLines = True
+
+    ws_sum.merge_cells("A1:F1")
+    ts_cell = ws_sum["A1"]
+    ts_cell.value = "MALKIA CARGO WAVES - GENERAL COST SUMMARY BY CATEGORY"
+    ts_cell.font = title_font
+    ts_cell.fill = navy_fill
+    ts_cell.alignment = Alignment(horizontal="center", vertical="center")
+    ws_sum.row_dimensions[1].height = 28
+
+    ws_sum.merge_cells("A2:F2")
+    subs_cell = ws_sum["A2"]
+    subs_cell.value = f"Period: {range_label}  |  Exported on: {today.strftime('%d %b %Y')}  |  Total Operational Outflow: TSh {float(total_combined_export):,.0f}"
+    subs_cell.font = subtitle_font
+    subs_cell.fill = navy_fill
+    subs_cell.alignment = Alignment(horizontal="center", vertical="center")
+    ws_sum.row_dimensions[2].height = 18
+    ws_sum.row_dimensions[3].height = 10
+
+    headers_sum = [
+        ("S/N", 6, Alignment(horizontal="center", vertical="center")),
+        ("Expense Category / Cost Head", 32, Alignment(horizontal="left", vertical="center")),
+        ("Classification (Source)", 25, Alignment(horizontal="left", vertical="center")),
+        ("Volume / Count", 18, Alignment(horizontal="center", vertical="center")),
+        ("Total Amount (TSh)", 22, Alignment(horizontal="right", vertical="center")),
+        ("Share of Outflow (%)", 20, Alignment(horizontal="right", vertical="center")),
+    ]
+
+    ws_sum.row_dimensions[4].height = 24
+    for col_idx, (col_name, width, align) in enumerate(headers_sum, start=1):
+        cell = ws_sum.cell(row=4, column=col_idx, value=col_name)
+        cell.font = header_font
+        cell.fill = teal_header_fill
+        cell.alignment = align
+        cell.border = thin_border
+
+    s_row = 5
+    for idx, item in enumerate(cat_summary_list, start=1):
+        ws_sum.row_dimensions[s_row].height = 20
+        row_s_data = [
+            (idx, Alignment(horizontal="center", vertical="center"), regular_font, None),
+            (item['name'], Alignment(horizontal="left", vertical="center"), bold_font, None),
+            (item['source'], Alignment(horizontal="left", vertical="center"), regular_font, None),
+            (item['count_label'], Alignment(horizontal="center", vertical="center"), regular_font, None),
+            (float(item['total']), Alignment(horizontal="right", vertical="center"), money_font, "#,##0"),
+            (f"{item['percentage']}%", Alignment(horizontal="right", vertical="center"), bold_font, None),
+        ]
+        for col_idx, (val, align, font, num_fmt) in enumerate(row_s_data, start=1):
+            cell = ws_sum.cell(row=s_row, column=col_idx, value=val)
+            cell.alignment = align
+            cell.font = font
+            cell.border = thin_border
+            if num_fmt:
+                cell.number_format = num_fmt
+        s_row += 1
+
+    ws_sum.row_dimensions[s_row].height = 24
+    ws_sum.merge_cells(start_row=s_row, start_column=1, end_row=s_row, end_column=4)
+    st_label = ws_sum.cell(row=s_row, column=1, value="GRAND TOTAL OPERATIONAL EXPENDITURE (TSH)")
+    st_label.font = bold_font
+    st_label.alignment = Alignment(horizontal="right", vertical="center")
+    st_label.fill = total_fill
+
+    for c in range(1, 5):
+        ws_sum.cell(row=s_row, column=c).border = double_bottom_border
+        ws_sum.cell(row=s_row, column=c).fill = total_fill
+
+    st_val = ws_sum.cell(row=s_row, column=5, value=float(total_combined_export))
+    st_val.font = Font(name="Calibri", size=10, bold=True, color="B91C1C")
+    st_val.alignment = Alignment(horizontal="right", vertical="center")
+    st_val.number_format = "#,##0"
+    st_val.border = double_bottom_border
+    st_val.fill = total_fill
+
+    st_pct = ws_sum.cell(row=s_row, column=6, value="100.0%")
+    st_pct.font = bold_font
+    st_pct.alignment = Alignment(horizontal="right", vertical="center")
+    st_pct.border = double_bottom_border
+    st_pct.fill = total_fill
+
+    for col_idx, (_, width, _) in enumerate(headers_sum, start=1):
+        col_letter = get_column_letter(col_idx)
+        ws_sum.column_dimensions[col_letter].width = width
+
+    # -------------------------------------------------------------
+    # SHEET 2: OFFICE EXPENSES DETAIL (OPEX)
+    # -------------------------------------------------------------
+    ws = wb.create_sheet(title="Office Expenses Detail")
+    ws.views.sheetView[0].showGridLines = True
+
+    # Title block ws
     ws.merge_cells("A1:H1")
     t_cell = ws["A1"]
-    t_cell.value = "MALKIA CARGO WAVES - OPERATING EXPENSES REPORT"
+    t_cell.value = "MALKIA CARGO WAVES - OFFICE OPERATING EXPENSES DETAIL"
     t_cell.font = title_font
     t_cell.fill = navy_fill
     t_cell.alignment = Alignment(horizontal="center", vertical="center")
@@ -8925,10 +9257,10 @@ def operating_expenses_export_excel(request):
 
         current_row += 1
 
-    # Total row
+    # Total row ws
     ws.row_dimensions[current_row].height = 24
     ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=6)
-    t_label = ws.cell(row=current_row, column=1, value="TOTAL OPERATING EXPENSES (TSH)")
+    t_label = ws.cell(row=current_row, column=1, value="TOTAL OFFICE EXPENSES (TSH)")
     t_label.font = bold_font
     t_label.alignment = Alignment(horizontal="right", vertical="center")
     t_label.fill = total_fill
@@ -8953,7 +9285,7 @@ def operating_expenses_export_excel(request):
         ws.column_dimensions[col_letter].width = width
 
     # -------------------------------------------------------------
-    # SHEET 2: CARGO & VEHICLE RUNNING COSTS (FUEL, TRANSPORT, ETC.)
+    # SHEET 3: CARGO & VEHICLE RUNNING COSTS DETAIL (FUEL, TRANSPORT, ETC.)
     # -------------------------------------------------------------
     running_jobs_qs = JobShipment.objects.filter(
         created_at__date__gte=range_start, created_at__date__lte=range_end

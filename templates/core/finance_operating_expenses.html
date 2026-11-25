@@ -205,19 +205,180 @@
     </div>
 
     <!-- EXPENSE TYPE TABS NAVIGATION -->
-    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;border-bottom:2px solid #E2E8F0;padding-bottom:0.75rem;" class="no-print">
-        <button type="button" onclick="switchExpenseTab('office')" id="tabBtnOffice" style="padding:0.65rem 1.25rem;font-size:0.86rem;font-weight:800;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;gap:0.5rem;background:#0F172A;color:#FFFFFF;box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:all 0.2s ease;">
-            <i class="fa-solid fa-building-columns"></i> Office Overheads (OPEX)
-            <span style="background:#334155;color:#F8FAFC;font-size:0.72rem;padding:0.15rem 0.55rem;border-radius:999px;">{{ expenses|length }}</span>
+    <div style="display:flex;align-items:center;gap:0.65rem;margin-bottom:1.25rem;border-bottom:2px solid #E2E8F0;padding-bottom:0.75rem;flex-wrap:wrap;" class="no-print">
+        <button type="button" onclick="switchExpenseTab('summary')" id="tabBtnSummary" style="padding:0.65rem 1.25rem;font-size:0.86rem;font-weight:800;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;gap:0.5rem;background:#0F172A;color:#FFFFFF;box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:all 0.2s ease;">
+            <i class="fa-solid fa-chart-pie" style="color:#38BDF8;"></i> General Summary by Category
+            <span style="background:#0284C7;color:#FFFFFF;font-size:0.72rem;padding:0.15rem 0.55rem;border-radius:999px;">{{ category_summary|length }}</span>
+        </button>
+        <button type="button" onclick="switchExpenseTab('office')" id="tabBtnOffice" style="padding:0.65rem 1.25rem;font-size:0.86rem;font-weight:800;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;gap:0.5rem;background:#F1F5F9;color:#475569;transition:all 0.2s ease;">
+            <i class="fa-solid fa-building-columns"></i> Office Overheads Detail
+            <span style="background:#E2E8F0;color:#64748B;font-size:0.72rem;padding:0.15rem 0.55rem;border-radius:999px;">{{ expenses|length }}</span>
         </button>
         <button type="button" onclick="switchExpenseTab('running')" id="tabBtnRunning" style="padding:0.65rem 1.25rem;font-size:0.86rem;font-weight:800;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;gap:0.5rem;background:#F1F5F9;color:#475569;transition:all 0.2s ease;">
-            <i class="fa-solid fa-gas-pump" style="color:#D97706;"></i> Cargo Running Costs (Fuel, Transport &amp; Ferry)
+            <i class="fa-solid fa-gas-pump" style="color:#D97706;"></i> Cargo Running Detail (Fuel &amp; Transport)
             <span style="background:#FEF3C7;color:#92400E;font-size:0.72rem;padding:0.15rem 0.55rem;border-radius:999px;">{{ running_jobs|length }} Jobs</span>
         </button>
     </div>
 
-    <!-- TAB 1: OFFICE OPERATING EXPENSES -->
-    <div id="tabSectionOffice">
+    <!-- TAB 1: GENERAL COST SUMMARY BY CATEGORY -->
+    <div id="tabSectionSummary">
+
+        <!-- HIGHLIGHT CARDS BY HEAD -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:0.85rem;margin-bottom:1.25rem;">
+            <!-- Transport -->
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #2563EB;border-radius:10px;padding:0.9rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
+                    <span>Transport &amp; Carrier</span>
+                    <i class="fa-solid fa-truck" style="color:#2563EB;font-size:1.1rem;"></i>
+                </div>
+                <div style="font-size:1.3rem;font-weight:900;color:#0F172A;margin-top:0.4rem;">
+                    TSh {{ job_transport_total|floatformat:0|intcomma }}
+                </div>
+                <div style="font-size:0.72rem;color:#64748B;margin-top:0.25rem;">Gharama za carrier &amp; transfer</div>
+            </div>
+
+            <!-- Total Fuel -->
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #D97706;border-radius:10px;padding:0.9rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
+                    <span>Fuel (Mafuta Yote)</span>
+                    <i class="fa-solid fa-gas-pump" style="color:#D97706;font-size:1.1rem;"></i>
+                </div>
+                <div style="font-size:1.3rem;font-weight:900;color:#0F172A;margin-top:0.4rem;">
+                    TSh {{ all_fuel_grand_total|floatformat:0|intcomma }}
+                </div>
+                <div style="font-size:0.72rem;color:#64748B;margin-top:0.25rem;">
+                    Kazi: {{ job_fuel_total|floatformat:0|intcomma }} · Ofisi: {{ office_fuel_total|default:0|floatformat:0|intcomma }}
+                </div>
+            </div>
+
+            <!-- Facilitation & Ferry -->
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #0D9488;border-radius:10px;padding:0.9rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
+                    <span>Facilitation &amp; Ferry</span>
+                    <i class="fa-solid fa-ferry" style="color:#0D9488;font-size:1.1rem;"></i>
+                </div>
+                <div style="font-size:1.3rem;font-weight:900;color:#0F172A;margin-top:0.4rem;">
+                    TSh {{ job_ferry_facilitation_total|floatformat:0|intcomma }}
+                </div>
+                <div style="font-size:0.72rem;color:#64748B;margin-top:0.25rem;">Bandarini, yadi &amp; kivukoni</div>
+            </div>
+
+            <!-- Total Operational Outflows -->
+            <div style="background:#0F172A;color:#FFFFFF;border-radius:10px;padding:0.9rem 1.1rem;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
+                <div style="font-size:0.72rem;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
+                    <span>Total Outflow (Combined)</span>
+                    <i class="fa-solid fa-coins" style="color:#38BDF8;font-size:1.1rem;"></i>
+                </div>
+                <div style="font-size:1.3rem;font-weight:900;color:#38BDF8;margin-top:0.4rem;">
+                    TSh {{ total_combined_outflow|floatformat:0|intcomma }}
+                </div>
+                <div style="font-size:0.72rem;color:#94A3B8;margin-top:0.25rem;">OPEX + Cargo Running Costs</div>
+            </div>
+        </div>
+
+        <!-- CATEGORY BREAKDOWN TABLE -->
+        <div class="card-panel" style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);margin-bottom:1.5rem;">
+            <div style="padding:1rem 1.25rem;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;background:#F8FAFC;">
+                <div>
+                    <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
+                        <i class="fa-solid fa-table-list" style="color:var(--brand-primary);"></i> General Cost Breakdown by Category — {{ range_label }}
+                    </h3>
+                    <p style="margin:0.25rem 0 0 0;font-size:0.8rem;color:var(--text-muted);">
+                        Muhtasari wa jumla ya matumizi kwa kila kundi (Transport, Internet, Fuel, Mishahara, n.k.) kwa muda uliochujwa.
+                    </p>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.6rem;">
+                    <a href="{% url 'operating_expenses_export_excel' %}?date_from={{ date_from }}&date_to={{ date_to }}&month={{ selected_month|date:'Y-m' }}&category={{ category_filter }}&q={{ search_query }}" class="btn-header-action" style="padding:0.45rem 0.85rem;background:#10B981;color:#FFFFFF;border:1px solid #059669;font-size:0.76rem;font-weight:700;" title="Download clean Excel with category summary">
+                        <i class="fa-solid fa-file-excel"></i> Export Summary
+                    </a>
+                    <span style="font-size:0.75rem;font-weight:800;color:#0F766E;background:#CCFBF1;padding:0.25rem 0.65rem;border-radius:999px;">
+                        {{ category_summary|length }} Categories
+                    </span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="modern-table" style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
+                    <thead>
+                        <tr style="background:#F1F5F9;color:#475569;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;">
+                            <th style="padding:0.75rem 1rem;">Expense Category / Cost Head</th>
+                            <th style="padding:0.75rem 1rem;">Classification</th>
+                            <th style="padding:0.75rem 1rem;">Volume / Count</th>
+                            <th style="padding:0.75rem 1rem;min-width:180px;">Share of Outflow</th>
+                            <th style="padding:0.75rem 1rem;text-align:right;">Total Amount (TSh)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in category_summary %}
+                        <tr style="border-bottom:1px solid #F1F5F9;">
+                            <td style="padding:0.75rem 1rem;vertical-align:middle;">
+                                <div style="display:flex;align-items:center;gap:0.6rem;">
+                                    <div style="width:32px;height:32px;border-radius:8px;background:{{ item.badge_bg }};color:{{ item.badge_color }};display:flex;align-items:center;justify-content:center;font-size:0.9rem;">
+                                        <i class="{{ item.icon }}"></i>
+                                    </div>
+                                    <div>
+                                        <strong style="color:#0F172A;font-size:0.88rem;">{{ item.name }}</strong>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="padding:0.75rem 1rem;vertical-align:middle;">
+                                <span class="badge-pill" style="background:{{ item.badge_bg }};color:{{ item.badge_color }};font-weight:800;font-size:0.7rem;padding:0.18rem 0.55rem;">
+                                    {{ item.source }}
+                                </span>
+                            </td>
+                            <td style="padding:0.75rem 1rem;vertical-align:middle;color:#475569;font-weight:600;">
+                                {{ item.count_label }}
+                            </td>
+                            <td style="padding:0.75rem 1rem;vertical-align:middle;">
+                                <div style="display:flex;align-items:center;gap:0.6rem;">
+                                    <div style="flex:1;background:#E2E8F0;height:7px;border-radius:999px;overflow:hidden;">
+                                        <div style="background:{% if item.is_cargo %}#D97706{% else %}#2563EB{% endif %};height:100%;width:{{ item.percentage }}%;border-radius:999px;"></div>
+                                    </div>
+                                    <span style="font-size:0.76rem;font-weight:800;color:#0F172A;min-width:38px;text-align:right;">{{ item.percentage }}%</span>
+                                </div>
+                            </td>
+                            <td style="padding:0.75rem 1rem;vertical-align:middle;text-align:right;" class="money-cell">
+                                <strong style="color:{% if item.is_cargo %}#D97706{% else %}#B91C1C{% endif %};font-size:0.95rem;">
+                                    TSh {{ item.total|floatformat:0|intcomma }}
+                                </strong>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="padding:2.5rem 1rem;text-align:center;color:#94A3B8;">
+                                <i class="fa-solid fa-chart-pie" style="font-size:2rem;display:block;margin-bottom:0.6rem;color:#CBD5E1;"></i>
+                                No expenses or cargo running costs recorded for {{ range_label }}.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    {% if category_summary %}
+                    <tfoot>
+                        <tr style="background:#F8FAFC;border-top:2px solid #CBD5E1;font-weight:900;">
+                            <td colspan="3" style="padding:0.85rem 1rem;color:#0F172A;font-size:0.86rem;text-transform:uppercase;">
+                                GRAND TOTAL OPERATIONAL OUTFLOW (TSH)
+                            </td>
+                            <td style="padding:0.85rem 1rem;">
+                                <div style="display:flex;align-items:center;gap:0.6rem;">
+                                    <div style="flex:1;background:#CBD5E1;height:7px;border-radius:999px;">
+                                        <div style="background:#0F172A;height:100%;width:100%;border-radius:999px;"></div>
+                                    </div>
+                                    <span style="font-size:0.76rem;font-weight:900;color:#0F172A;">100.0%</span>
+                                </div>
+                            </td>
+                            <td style="padding:0.85rem 1rem;text-align:right;color:#0F172A;font-size:1.05rem;" class="money-cell">
+                                TSh {{ total_combined_outflow|floatformat:0|intcomma }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: OFFICE OPERATING EXPENSES -->
+    <div id="tabSectionOffice" style="display:none;">
         <div class="expense-grid">
 
             <!-- EXPENSE TABLE -->
@@ -715,73 +876,74 @@
     })();
 
     function switchExpenseTab(tab) {
+        const sumSec = document.getElementById('tabSectionSummary');
         const officeSec = document.getElementById('tabSectionOffice');
         const runningSec = document.getElementById('tabSectionRunning');
+        const btnSum = document.getElementById('tabBtnSummary');
         const btnOffice = document.getElementById('tabBtnOffice');
         const btnRunning = document.getElementById('tabBtnRunning');
-        if (!officeSec || !runningSec) return;
+        if (!sumSec || !officeSec || !runningSec) return;
 
-        if (tab === 'running') {
-            officeSec.style.display = 'none';
+        // Reset all buttons
+        [btnSum, btnOffice, btnRunning].forEach(function(b) {
+            if (b) {
+                b.style.background = '#F1F5F9';
+                b.style.color = '#475569';
+                b.style.boxShadow = 'none';
+                const sp = b.querySelector('span');
+                if (sp) { sp.style.background = '#E2E8F0'; sp.style.color = '#64748B'; }
+            }
+        });
+
+        // Hide all sections
+        sumSec.style.display = 'none';
+        officeSec.style.display = 'none';
+        runningSec.style.display = 'none';
+
+        if (tab === 'office') {
+            officeSec.style.display = 'block';
+            if (btnOffice) {
+                btnOffice.style.background = '#0F172A';
+                btnOffice.style.color = '#FFFFFF';
+                btnOffice.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                const sp = btnOffice.querySelector('span');
+                if (sp) { sp.style.background = '#334155'; sp.style.color = '#F8FAFC'; }
+            }
+        } else if (tab === 'running') {
             runningSec.style.display = 'block';
-
-            btnOffice.style.background = '#F1F5F9';
-            btnOffice.style.color = '#475569';
-            btnOffice.style.boxShadow = 'none';
-            const officeBadge = btnOffice.querySelector('span');
-            if (officeBadge) {
-                officeBadge.style.background = '#E2E8F0';
-                officeBadge.style.color = '#64748B';
-            }
-
-            btnRunning.style.background = '#0F172A';
-            btnRunning.style.color = '#FFFFFF';
-            btnRunning.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-            const runningBadge = btnRunning.querySelector('span');
-            if (runningBadge) {
-                runningBadge.style.background = '#D97706';
-                runningBadge.style.color = '#FFFFFF';
-            }
-
-            if (history.replaceState) {
-                const url = new URL(window.location);
-                url.searchParams.set('tab', 'running');
-                history.replaceState(null, '', url);
+            if (btnRunning) {
+                btnRunning.style.background = '#0F172A';
+                btnRunning.style.color = '#FFFFFF';
+                btnRunning.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                const sp = btnRunning.querySelector('span');
+                if (sp) { sp.style.background = '#D97706'; sp.style.color = '#FFFFFF'; }
             }
         } else {
-            runningSec.style.display = 'none';
-            officeSec.style.display = 'block';
-
-            btnRunning.style.background = '#F1F5F9';
-            btnRunning.style.color = '#475569';
-            btnRunning.style.boxShadow = 'none';
-            const runningBadge = btnRunning.querySelector('span');
-            if (runningBadge) {
-                runningBadge.style.background = '#FEF3C7';
-                runningBadge.style.color = '#92400E';
+            sumSec.style.display = 'block';
+            if (btnSum) {
+                btnSum.style.background = '#0F172A';
+                btnSum.style.color = '#FFFFFF';
+                btnSum.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                const sp = btnSum.querySelector('span');
+                if (sp) { sp.style.background = '#0284C7'; sp.style.color = '#FFFFFF'; }
             }
+            tab = 'summary';
+        }
 
-            btnOffice.style.background = '#0F172A';
-            btnOffice.style.color = '#FFFFFF';
-            btnOffice.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-            const officeBadge = btnOffice.querySelector('span');
-            if (officeBadge) {
-                officeBadge.style.background = '#334155';
-                officeBadge.style.color = '#F8FAFC';
-            }
-
-            if (history.replaceState) {
-                const url = new URL(window.location);
-                url.searchParams.set('tab', 'office');
-                history.replaceState(null, '', url);
-            }
+        if (history.replaceState) {
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tab);
+            history.replaceState(null, '', url);
         }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('tab') === 'running') {
-            switchExpenseTab('running');
+        const t = urlParams.get('tab');
+        if (t === 'office' || t === 'running') {
+            switchExpenseTab(t);
+        } else {
+            switchExpenseTab('summary');
         }
     });
 </script>
