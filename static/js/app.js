@@ -313,18 +313,25 @@ function syncExtraJs(doc) {
 // Update sidebar active link state dynamically
 function updateActiveSidebarNav(url) {
     try {
-        const pathname = new URL(url, window.location.origin).pathname;
+        const parsedUrl = new URL(url, window.location.origin);
+        const pathname = parsedUrl.pathname;
+        const currentTab = parsedUrl.searchParams.get('tab');
+
         document.querySelectorAll('.app-sidebar .nav-item').forEach(item => {
             const link = item.querySelector('a');
             if (!link) return;
-            const linkPath = new URL(link.href, window.location.origin).pathname;
-            if (linkPath === pathname || (pathname.startsWith('/jobs/') && linkPath === '/jobs/')) {
-                item.classList.add('active');
-            } else if (pathname === linkPath) {
-                item.classList.add('active');
+            const linkUrl = new URL(link.href, window.location.origin);
+            const linkPath = linkUrl.pathname;
+            const linkTab = linkUrl.searchParams.get('tab');
+
+            let isActive = false;
+            if (linkTab) {
+                isActive = (linkPath === pathname && linkTab === (currentTab || 'vehicles'));
             } else {
-                item.classList.remove('active');
+                isActive = (linkPath === pathname || (pathname.startsWith('/jobs/') && linkPath === '/jobs/'));
             }
+
+            item.classList.toggle('active', isActive);
         });
     } catch(e) {}
 }
