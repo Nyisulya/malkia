@@ -24326,6 +24326,25 @@ def finance_vehicles_out_update_cost_action(request, job_id):
             job.cost_other = parse_dec(request.POST.get('cost_other'))
             job.cost_other_description = request.POST.get('cost_other_description', '').strip()
 
+        # Parse running extra costs (Group 2: Malkia Running Costs - Driver posho, car wash, repair, escort...)
+        running_names = request.POST.getlist('running_extra_cost_names[]')
+        running_amounts = request.POST.getlist('running_extra_cost_amounts[]')
+        if running_names and running_amounts:
+            running_list = []
+            total_running = Decimal('0')
+            for name, amt in zip(running_names, running_amounts):
+                name = name.strip()
+                amt_dec = parse_dec(amt)
+                if name or amt_dec > 0:
+                    running_list.append({'name': name or 'Additional Running Cost', 'amount': float(amt_dec)})
+                    total_running += amt_dec
+            job.cost_running_other = total_running
+            import json
+            job.cost_running_other_description = json.dumps(running_list) if running_list else ''
+        else:
+            job.cost_running_other = parse_dec(request.POST.get('cost_running_other'))
+            job.cost_running_other_description = request.POST.get('cost_running_other_description', '').strip()
+
         # Also update commercial invoice price if modified
         if request.POST.get('cif_usd'):
             job.cif_usd = parse_dec(request.POST.get('cif_usd'))

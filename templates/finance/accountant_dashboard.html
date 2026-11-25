@@ -545,7 +545,7 @@
                             <div style="display: flex; align-items: center; justify-content: flex-start; gap: 0.35rem; flex-wrap: wrap;">
                                 <!-- VIEW EYE BUTTON -->
                                 <button type="button"
-                                    onclick="openBreakdownModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{% if job.costing_status == "FULLY_COSTED" %}Costed{% elif job.costing_status == "IN_PROGRESS" %}In Progress{% else %}Pending{% endif %}', '', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}')"
+                                    onclick="openBreakdownModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:"" }}', '{{ job.customer.company_name|default:""|escapejs }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{% if job.costing_status == "FULLY_COSTED" %}Costed{% elif job.costing_status == "IN_PROGRESS" %}In Progress{% else %}Pending{% endif %}', '', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}', '{{ job.cost_running_other|default:0 }}', '{{ job.cost_running_other_description|default:""|escapejs }}')"
                                     class="btn-header-action"
                                     style="height: 28px; width: 30px; padding: 0; font-size: 0.74rem; background: #F1F5F9; color: #0F172A; border: 1px solid #CBD5E1; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"
                                     title="View Full Cost Breakdown">
@@ -554,7 +554,7 @@
 
                                 <!-- ENTER / EDIT COSTS BUTTON -->
                                 <button type="button"
-                                    onclick="openCostModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:"" }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}')"
+                                    onclick="openCostModal('{{ job.id }}', '{{ job.bl_number|default:job.job_number }}', '{{ job.vehicle_make|default:"" }}', '{{ job.vehicle_model|default:"" }}', '{{ job.registration_year|default:"" }}', '{{ job.chassis_number|default:"" }}', '{{ job.cif_usd|default:0 }}', '{{ job.cost_duty|default:0 }}', '{{ job.cost_do|default:0 }}', '{{ job.cost_wharfage|default:0 }}', '{{ job.cost_tiss_wharfage|default:0 }}', '{{ job.cost_handling|default:0 }}', '{{ job.cost_facilitation|default:0 }}', '{{ job.cost_transport|default:0 }}', '{{ job.cost_agent_fee|default:0 }}', '{{ job.cost_fuel|default:0 }}', '{{ job.cost_ferry_charges|default:0 }}', '{{ job.cost_other|default:0 }}', '{{ job.cost_other_description|default:""|escapejs }}', '{{ job.bl_doc_url|default:"" }}', '{{ job.inv_doc_url|default:"" }}', '{{ job.cost_running_other|default:0 }}', '{{ job.cost_running_other_description|default:""|escapejs }}')"
                                     style="height: 28px; min-width: 78px; padding: 0 0.6rem; font-size: 0.74rem; {% if job.costing_status == 'FULLY_COSTED' %}background: #059669;{% elif job.costing_status == 'IN_PROGRESS' %}background: #0284C7;{% else %}background: #D97706;{% endif %} color: #FFFFFF; border: none; border-radius: 6px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.28rem; white-space: nowrap; flex-shrink: 0;">
                                     {% if job.costing_status == 'FULLY_COSTED' %}
                                     <i class="fa-solid fa-pen-to-square"></i> Edit
@@ -921,13 +921,36 @@
                                 class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
                                 style="font-weight: 700; height: 38px;">
                         </div>
+                    </div>
 
-                        <div class="form-group" style="margin: 0; grid-column: span 2;">
-                            <label style="font-weight: 800; font-size: 0.78rem; color: #047857;">Agent Fee (Malkia Agency) TSh *</label>
-                            <input type="number" step="0.01" name="cost_agent_fee" id="f_agent_fee"
-                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                                style="font-weight: 800; color: #047857; background: #FFFFFF; border: 1.5px solid #059669; height: 38px;">
+                    <!-- DYNAMIC OTHER RUNNING COSTS SECTION WITH + BUTTON -->
+                    <div style="margin-top: 0.75rem; border-top: 1px dashed #86EFAC; padding-top: 0.65rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <div>
+                                <span style="font-weight: 800; font-size: 0.76rem; color: #047857; text-transform: uppercase; display: flex; align-items: center; gap: 0.35rem;">
+                                    <i class="fa-solid fa-wrench" style="color: #059669;"></i> Other Running Costs (Driver Posho, Car Wash, Repair...)
+                                </span>
+                            </div>
+                            <button type="button" onclick="addRunningExtraCostRow()"
+                                style="background: #059669; color: #FFFFFF; border: none; padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.72rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; box-shadow: 0 1px 2px rgba(5,150,105,0.2);">
+                                <i class="fa-solid fa-plus"></i> Add Item
+                            </button>
                         </div>
+
+                        <div id="runningExtraCostsList" style="display: flex; flex-direction: column; gap: 0.4rem;">
+                            <!-- Dynamic running extra cost rows will appear here -->
+                        </div>
+
+                        <input type="hidden" name="cost_running_other" id="f_running_other" value="0">
+                        <input type="hidden" name="cost_running_other_description" id="f_running_other_desc" value="">
+                    </div>
+
+                    <!-- AGENT FEE -->
+                    <div class="form-group" style="margin-top: 0.75rem;">
+                        <label style="font-weight: 800; font-size: 0.78rem; color: #047857;">Agent Fee (Malkia Agency) TSh *</label>
+                        <input type="number" step="0.01" name="cost_agent_fee" id="f_agent_fee"
+                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                            style="font-weight: 800; color: #047857; background: #FFFFFF; border: 1.5px solid #059669; height: 38px;">
                     </div>
                 </div>
 
@@ -1197,6 +1220,57 @@
     }
 
     // ==========================================
+    // DYNAMIC RUNNING EXTRA COSTS (+ BUTTON LOGIC)
+    // ==========================================
+    function addRunningExtraCostRow(name = '', amount = '') {
+        const container = document.getElementById('runningExtraCostsList');
+        if (!container) return;
+        const rowId = 'running_row_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        const row = document.createElement('div');
+        row.id = rowId;
+        row.className = 'running-cost-item';
+        row.style.cssText = 'display: grid; grid-template-columns: 1fr 140px 34px; gap: 0.5rem; align-items: center; background: #FFFFFF; padding: 0.35rem 0.5rem; border-radius: 8px; border: 1px solid #BBF7D0;';
+        
+        row.innerHTML = `
+            <input type="text" name="running_extra_cost_names[]" class="form-control running-name-input" value="${escapeHtml(name)}" placeholder="Description (e.g. Driver posho, Car wash, Puncture...)" style="height: 32px; font-size: 0.8rem;" oninput="updateRunningExtraCostsData()">
+            <input type="number" step="0.01" name="running_extra_cost_amounts[]" class="form-control running-amt-input" value="${amount > 0 ? amount : ''}" placeholder="0.00" style="height: 32px; font-size: 0.8rem; font-weight: 800; text-align: right; color: #047857;" oninput="updateRunningExtraCostsData()">
+            <button type="button" onclick="removeRunningExtraCostRow('${rowId}')" style="background: #FFF1F2; color: #E11D48; border: 1px solid #FECDD3; border-radius: 6px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Remove this item">
+                <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i>
+            </button>
+        `;
+        container.appendChild(row);
+        updateRunningExtraCostsData();
+    }
+
+    function removeRunningExtraCostRow(rowId) {
+        const row = document.getElementById(rowId);
+        if (row) {
+            row.remove();
+            updateRunningExtraCostsData();
+        }
+    }
+
+    function updateRunningExtraCostsData() {
+        const names = document.querySelectorAll('.running-name-input');
+        const amounts = document.querySelectorAll('.running-amt-input');
+        let total = 0;
+        const items = [];
+        names.forEach((nameInput, i) => {
+            const n = nameInput.value.trim();
+            const a = parseFloat(amounts[i].value || 0) || 0;
+            if (n || a > 0) {
+                items.push({ name: n || 'Additional Running Cost', amount: a });
+                total += a;
+            }
+        });
+        const fRunningOther = document.getElementById('f_running_other');
+        const fRunningDesc = document.getElementById('f_running_other_desc');
+        if (fRunningOther) fRunningOther.value = total;
+        if (fRunningDesc) fRunningDesc.value = items.length > 0 ? JSON.stringify(items) : '';
+        calcModalTotals();
+    }
+
+    // ==========================================
     // CLIENT INVOICE MODAL LOGIC
     // ==========================================
     function toggleInvItem(chkId, inputId) {
@@ -1295,7 +1369,7 @@
         document.getElementById('invoiceModal').style.display = 'none';
     }
 
-    function openBreakdownModal(jobId, blNumber, make, model, year, chassis, clientName, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, statusText, statusBadgeClass, blUrl, invUrl) {
+    function openBreakdownModal(jobId, blNumber, make, model, year, chassis, clientName, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, statusText, statusBadgeClass, blUrl, invUrl, runningOther = 0, runningOtherDesc = '') {
         document.getElementById('bdVehicleTitle').innerText = `${make} ${model} (${year || 'Year —'})`;
         document.getElementById('bdChassisRef').innerText = `BL: ${blNumber} • Chassis: ${chassis || '—'}`;
         document.getElementById('bdInvoiceVal').innerText = parseFloat(cifUsd || 0) > 0 ? `$${parseFloat(cifUsd).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '—';
@@ -1375,6 +1449,45 @@
             `;
         }
 
+        // Unpack dynamic running extra costs if present
+        let parsedRunningExtra = null;
+        if (runningOtherDesc) {
+            try {
+                parsedRunningExtra = JSON.parse(runningOtherDesc);
+            } catch (e) {
+                parsedRunningExtra = null;
+            }
+        }
+        if (Array.isArray(parsedRunningExtra) && parsedRunningExtra.length > 0) {
+            parsedRunningExtra.forEach(rx => {
+                const rxAmt = parseFloat(rx.amount || 0);
+                directTotal += rxAmt;
+                rowsHtml += `
+                    <tr style="border-bottom: 1px solid #F1F5F9; background: #F0FDF4;">
+                        <td style="padding: 0.45rem 0.65rem; font-weight: 700; color: #047857;">
+                            <i class="fa-solid fa-wrench" style="font-size: 0.65rem;"></i> ${escapeHtml(rx.name)} (Malkia Running)
+                        </td>
+                        <td style="padding: 0.45rem 0.65rem; text-align: right; font-family: var(--font-mono, monospace); font-weight: 800; color: #047857;">
+                            TSh ${fmt(rxAmt)}
+                        </td>
+                    </tr>
+                `;
+            });
+        } else if (parseFloat(runningOther || 0) > 0) {
+            const rxAmt = parseFloat(runningOther);
+            directTotal += rxAmt;
+            rowsHtml += `
+                <tr style="border-bottom: 1px solid #F1F5F9; background: #F0FDF4;">
+                    <td style="padding: 0.45rem 0.65rem; font-weight: 700; color: #047857;">
+                        <i class="fa-solid fa-wrench" style="font-size: 0.65rem;"></i> Other Running (${escapeHtml(runningOtherDesc || 'Running Cost')})
+                    </td>
+                    <td style="padding: 0.45rem 0.65rem; text-align: right; font-family: var(--font-mono, monospace); font-weight: 800; color: #047857;">
+                        TSh ${fmt(rxAmt)}
+                    </td>
+                </tr>
+            `;
+        }
+
         // Agency fee row
         const feeAmt = parseFloat(agentFee || 0);
         rowsHtml += `
@@ -1386,7 +1499,7 @@
 
         document.getElementById('bdItemsList').innerHTML = rowsHtml;
 
-        const runningCosts = parseFloat(facil || 0) + parseFloat(fuel || 0) + parseFloat(ferry || 0) + parseFloat(trans || 0);
+        const runningCosts = parseFloat(facil || 0) + parseFloat(fuel || 0) + parseFloat(ferry || 0) + parseFloat(trans || 0) + parseFloat(runningOther || 0);
         const netMargin = feeAmt - runningCosts;
 
         document.getElementById('bdDirectTotal').innerText = 'TSh ' + fmt(directTotal);
@@ -1409,7 +1522,7 @@
         // Connect Edit button to openCostModal directly
         document.getElementById('bdEditBtn').onclick = function () {
             closeBreakdownModal();
-            openCostModal(jobId, blNumber, make, model, year, chassis, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, blUrl, invUrl);
+            openCostModal(jobId, blNumber, make, model, year, chassis, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, blUrl, invUrl, runningOther, runningOtherDesc);
         };
 
         document.getElementById('breakdownModal').style.display = 'flex';
@@ -1422,7 +1535,7 @@
     // ==========================================
     // COSTING ENTRY MODAL (WITH DYNAMIC ROWS)
     // ==========================================
-    function openCostModal(jobId, blNumber, make, model, year, chassis, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, blUrl, invUrl) {
+    function openCostModal(jobId, blNumber, make, model, year, chassis, cifUsd, duty, doCost, wharfage, tiss, handling, facil, trans, agentFee, fuel, ferry, other, otherDesc, blUrl, invUrl, runningOther = 0, runningOtherDesc = '') {
         document.getElementById('modalVehicleTitle').innerText = `${make} ${model} (${year || 'Year —'})`;
         document.getElementById('modalChassisRef').innerText = `BL: ${blNumber} | Chassis: ${chassis}`;
         document.getElementById('modalInvoiceVal').innerText = `$${parseFloat(cifUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
@@ -1448,21 +1561,44 @@
         document.getElementById('f_fuel').value = fuel > 0 ? fuel : '';
         document.getElementById('f_ferry').value = ferry > 0 ? ferry : '';
 
-        // Unpack dynamic extra costs
+        // Unpack dynamic extra costs (Client Billable)
         const extraList = document.getElementById('extraCostsList');
-        extraList.innerHTML = '';
-        let parsed = null;
-        if (otherDesc) {
-            try {
-                parsed = JSON.parse(otherDesc);
-            } catch (e) {
-                parsed = null;
+        if (extraList) {
+            extraList.innerHTML = '';
+            let parsed = null;
+            if (otherDesc) {
+                try {
+                    parsed = JSON.parse(otherDesc);
+                } catch (e) {
+                    parsed = null;
+                }
             }
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                parsed.forEach(item => addExtraCostRow(item.name, item.amount));
+            } else if (parseFloat(other || 0) > 0) {
+                addExtraCostRow(otherDesc || 'Additional Cost', other);
+            }
+            updateExtraCostsData();
         }
-        if (Array.isArray(parsed) && parsed.length > 0) {
-            parsed.forEach(item => addExtraCostRow(item.name, item.amount));
-        } else if (parseFloat(other || 0) > 0) {
-            addExtraCostRow(otherDesc || 'Additional Cost', other);
+
+        // Unpack dynamic running extra costs (Malkia Internal Running)
+        const runningList = document.getElementById('runningExtraCostsList');
+        if (runningList) {
+            runningList.innerHTML = '';
+            let parsedRunning = null;
+            if (runningOtherDesc) {
+                try {
+                    parsedRunning = JSON.parse(runningOtherDesc);
+                } catch (e) {
+                    parsedRunning = null;
+                }
+            }
+            if (Array.isArray(parsedRunning) && parsedRunning.length > 0) {
+                parsedRunning.forEach(item => addRunningExtraCostRow(item.name, item.amount));
+            } else if (parseFloat(runningOther || 0) > 0) {
+                addRunningExtraCostRow(runningOtherDesc || 'Additional Running Cost', runningOther);
+            }
+            updateRunningExtraCostsData();
         }
 
         // Action URL
@@ -1471,7 +1607,6 @@
         costForm.action = costUrl;
         costForm.setAttribute('action', costUrl);
 
-        updateExtraCostsData();
         const modal = document.getElementById('costModal');
         modal.style.display = 'flex';
     }
@@ -1486,8 +1621,8 @@
         // 1. Client billable disbursements
         const clientCosts = val('f_do') + val('f_wharfage') + val('f_tiss') + val('f_handling') + val('f_other');
         
-        // 2. Direct internal operational costs (Fuel, Ferry, Facilitation, Transport)
-        const internalCosts = val('f_facil') + val('f_fuel') + val('f_ferry') + val('f_transport');
+        // 2. Direct internal operational costs (Fuel, Ferry, Facilitation, Transport, Other Running)
+        const internalCosts = val('f_facil') + val('f_fuel') + val('f_ferry') + val('f_transport') + val('f_running_other');
 
         const totalDisbursements = clientCosts + internalCosts;
         const agentFee = val('f_agent_fee');

@@ -309,6 +309,8 @@ class JobShipment(models.Model):
     cost_storage = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Storage Charges")
     cost_other = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Other / Miscellaneous Costs (TBS, Demurrage, Storage, etc.)")
     cost_other_description = models.CharField(max_length=255, blank=True, verbose_name="Description for Other Costs")
+    cost_running_other = models.DecimalField(max_digits=14, decimal_places=2, default=0, blank=True, null=True, verbose_name="Other Malkia Running Costs (Driver posho, Car wash, Puncture, etc.)")
+    cost_running_other_description = models.TextField(blank=True, default='', verbose_name="Description for Other Running Costs")
 
     # 1. DOCUMENT RECEIVE (Checklist from Client - No scanning required)
     doc_receive_method = models.CharField(max_length=20, choices=DOC_RECEIVE_METHODS, default='PHYSICAL', verbose_name="Document Receive Method")
@@ -491,6 +493,7 @@ class JobShipment(models.Model):
             (self.cost_transport or Decimal('0')) +
             (self.cost_fuel or Decimal('0')) +
             (self.cost_ferry_charges or Decimal('0')) +
+            (self.cost_running_other or Decimal('0')) +
             self.net_container_deposit +
             (self.cost_shipping_fee or Decimal('0')) +
             (self.cost_demurrage or Decimal('0')) +
@@ -520,14 +523,15 @@ class JobShipment(models.Model):
     def internal_running_costs(self):
         """
         Direct operational costs incurred by Malkia for this specific vehicle/shipment
-        (Facilitation, Fuel, Ferry, Transport), which are absorbed from the Agency Fee.
+        (Facilitation, Fuel, Ferry, Transport, Other Running Costs), which are absorbed from the Agency Fee.
         """
         from decimal import Decimal
         return (
             (self.cost_facilitation or Decimal('0')) +
             (self.cost_fuel or Decimal('0')) +
             (self.cost_ferry_charges or Decimal('0')) +
-            (self.cost_transport or Decimal('0'))
+            (self.cost_transport or Decimal('0')) +
+            (self.cost_running_other or Decimal('0'))
         )
 
     @property
