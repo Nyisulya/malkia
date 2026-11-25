@@ -171,6 +171,13 @@
                             <div style="font-size:0.72rem;color:#64748B;margin-top:0.25rem;" title="Entered stage">
                                 <i class="fa-regular fa-clock" style="font-size:0.68rem;"></i> {{ job.updated_at|default:job.created_at|timesince }} ago
                             </div>
+                            {% if job.box_number %}
+                            <div style="margin-top:0.25rem;">
+                                <span style="display:inline-flex;align-items:center;gap:0.25rem;font-size:0.7rem;font-weight:800;padding:0.12rem 0.5rem;border-radius:6px;background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;">
+                                    <i class="fa-solid fa-box-archive"></i> File: {{ job.box_number }}
+                                </span>
+                            </div>
+                            {% endif %}
                         </td>
 
                         {% if has_assignment_stage %}
@@ -298,12 +305,18 @@
                                     <i class="fa-solid fa-lock"></i> {{ job.port_officer.get_full_name|default:job.port_officer.username }}
                                 </span>
                                 {% else %}
-                                <form action="{% url 'advance_stage' job.id %}" method="POST" style="display:inline;" onsubmit="return confirm('{{ confirm_msg }}');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:0.45rem 0.95rem;border-radius:8px;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;box-shadow:0 2px 5px rgba(22,163,74,0.35);transition:all 0.15s;">
+                                    {% if stage_number == 4 or stage_number == 5 %}
+                                    <button type="button" onclick="openStageApproveModal('{% url 'advance_stage' job.id %}', '{{ job.job_number|escapejs }}', '{{ job.bl_number|default:''|escapejs }}', '{{ job.box_number|default:''|escapejs }}', {{ stage_number }})" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:0.45rem 0.95rem;border-radius:8px;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;box-shadow:0 2px 5px rgba(22,163,74,0.35);transition:all 0.15s;">
                                         <i class="fa-solid fa-circle-check"></i> {{ finish_label }}
                                     </button>
-                                </form>
+                                    {% else %}
+                                    <form action="{% url 'advance_stage' job.id %}" method="POST" style="display:inline;" onsubmit="return confirm('{{ confirm_msg }}');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:0.45rem 0.95rem;border-radius:8px;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;box-shadow:0 2px 5px rgba(22,163,74,0.35);transition:all 0.15s;">
+                                            <i class="fa-solid fa-circle-check"></i> {{ finish_label }}
+                                        </button>
+                                    </form>
+                                    {% endif %}
                                 {% endif %}
                                 <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.45rem 0.75rem;font-size:0.8rem;font-weight:700;">
                                     File &rarr;
@@ -338,5 +351,71 @@
     </div>
 
 </div>
+
+<!-- SIMPLE PHYSICAL FILE STORAGE MODAL (STAGE 4 & STAGE 5) -->
+<div id="stageApproveModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:460px;">
+        <form id="stageApproveForm" action="" method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="stageApproveTitle" style="margin:0;font-size:1.05rem;">Confirm Arrival &amp; Complete Job</h3>
+                    <p id="stageApproveMeta" style="font-size:0.8rem;color:#64748B;margin:0.2rem 0 0 0;"></p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('stageApproveModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding:1.15rem 1.25rem;">
+                <label for="stageBoxNumberInput" style="display:block;font-size:0.78rem;font-weight:800;color:#0F172A;margin-bottom:0.4rem;">
+                    Physical File Storage Location (Mahali File Limetunzwa) <span id="stageBoxReqStar" style="color:#DC2626;">*</span>
+                </label>
+                <input type="text" name="box_number" id="stageBoxNumberInput" class="form-control" placeholder="e.g. Box 04, Kabati la 2, Shelf A..." style="width:100%;padding:0.65rem 0.85rem;font-size:0.9rem;font-weight:700;border:1.5px solid #CBD5E1;border-radius:8px;">
+                <p id="stageBoxHelp" style="font-size:0.75rem;color:#64748B;margin:0.45rem 0 0 0;">
+                    Andika boksi, kabati, au rafu ambapo faili la karatasi la kazi hii limetunzwa ofisini.
+                </p>
+            </div>
+            <div class="modal-footer" style="padding:0.85rem 1.25rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;justify-content:flex-end;gap:0.5rem;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('stageApproveModal')">Cancel</button>
+                <button type="submit" id="stageApproveSubmitBtn" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:0.55rem 1.15rem;border-radius:8px;cursor:pointer;">
+                    <i class="fa-solid fa-circle-check"></i> Confirm &amp; Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+window.openStageApproveModal = function(actionUrl, jobNumber, blNumber, existingBox, stageNum) {
+    const form = document.getElementById('stageApproveForm');
+    const titleEl = document.getElementById('stageApproveTitle');
+    const metaEl = document.getElementById('stageApproveMeta');
+    const inputEl = document.getElementById('stageBoxNumberInput');
+    const starEl = document.getElementById('stageBoxReqStar');
+    const submitBtn = document.getElementById('stageApproveSubmitBtn');
+    if (!form || !inputEl) return;
+
+    form.setAttribute('action', actionUrl);
+    inputEl.value = existingBox || '';
+    metaEl.textContent = blNumber ? (jobNumber + ' • B/L: ' + blNumber) : jobNumber;
+
+    if (Number(stageNum) === 5) {
+        titleEl.innerHTML = '<i class="fa-solid fa-warehouse" style="color:#0D9488;margin-right:0.35rem;"></i> Confirm Arrival &amp; Complete Job';
+        inputEl.required = true;
+        if (starEl) starEl.style.display = 'inline';
+        if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Confirm Arrival &amp; Complete Job';
+    } else {
+        titleEl.innerHTML = '<i class="fa-solid fa-anchor" style="color:#0284C7;margin-right:0.35rem;"></i> Complete Port Clearance';
+        inputEl.required = false;
+        if (starEl) starEl.style.display = 'none';
+        if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Complete Port Clearance';
+    }
+
+    if (window.openModal) {
+        window.openModal('stageApproveModal');
+    } else {
+        const m = document.getElementById('stageApproveModal');
+        if (m) { m.classList.add('open'); m.style.display = 'flex'; }
+    }
+};
+</script>
 {% endblock %}
 

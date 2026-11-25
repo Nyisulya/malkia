@@ -1518,7 +1518,7 @@ def dashboard_view(request):
 
 
     # Stage distribution for visual health card and chart (batched in 2 queries)
-    all_stage_defs = list(WorkflowStageDefinition.objects.all().order_by('stage_number'))
+    all_stage_defs = list(WorkflowStageDefinition.objects.filter(stage_number__lte=5).order_by('stage_number'))
     active_stage_map = {
         row['current_stage_number']: row['cnt']
         for row in jobs.filter(status__in=['ACTIVE', 'DELAYED'])
@@ -2703,7 +2703,7 @@ def job_create_view(request):
 
         # Initialize active workflow stage definitions with single bulk_create
 
-        stage_defs = list(WorkflowStageDefinition.objects.all().order_by('stage_number'))
+        stage_defs = list(WorkflowStageDefinition.objects.filter(stage_number__lte=5).order_by('stage_number'))
 
         stage_instances = []
 
@@ -3529,7 +3529,11 @@ def advance_stage_action(request, job_id):
                 messages.error(request, f"Kazi hii imepangiwa {assigned_name}. Yeye ndiye anayepaswa kubonyeza Complete.")
                 return redirect(request.META.get('HTTP_REFERER') or default_redir)
 
-        # Update stage-specific attributes automatically without requiring any form input
+        box_location = (request.POST.get('box_number') or '').strip()
+        if box_location:
+            job.box_number = box_location
+
+        # Update stage-specific attributes automatically
         if job.current_stage_number == 1:
             job.documentation_officer = request.user
             if not job.file_opened_at:
@@ -3551,15 +3555,14 @@ def advance_stage_action(request, job_id):
             job.vehicle_inspection_by = request.user
             job.vehicle_dispatched_to_office = True
             job.vehicle_dispatched_at = now
-        elif job.current_stage_number == 5:
-            # Vehicle Arrival at Yard / Office
+        elif job.current_stage_number >= 5:
+            # Stage 5 (Yard Arrival) completes the job automatically
             job.vehicle_arrived_at_office = True
             job.vehicle_arrived_at = now
-        elif job.current_stage_number >= 6:
-            # Customer Handover
+            if not job.delivered_date:
+                job.delivered_date = now
             if not job.received_by_name:
                 job.received_by_name = job.customer.company_name
-            job.delivered_date = now
             job.status = 'COMPLETED'
 
         # Complete current stage record
@@ -3569,12 +3572,14 @@ def advance_stage_action(request, job_id):
             current_stage.responsible_officer = request.user
             if not current_stage.started_at:
                 current_stage.started_at = job.created_at
+            if job.current_stage_number >= 5 and job.box_number:
+                current_stage.remarks = f"Physical file stored at: {job.box_number}"
             current_stage.save()
 
         user_name = request.user.get_full_name() or request.user.username
 
-        # Advance to next stage or finish
-        if job.current_stage_number < 6:
+        # Advance to next stage (1->2->3->4->5) or complete at Stage 5
+        if job.current_stage_number < 5:
             completed_num = job.current_stage_number
             next_num = completed_num + 1
             job.current_stage_number = next_num
@@ -3584,7 +3589,8 @@ def advance_stage_action(request, job_id):
                 next_stage.started_at = now
                 next_stage.save()
 
-            log_audit(request, "ADVANCE_STAGE", f"Stage {completed_num} ({current_stage.name_en if current_stage else ''}) completed by {user_name}. Shipment advanced to Stage {next_num}: {next_stage.name_en if next_stage else ''}", job=job)
+            box_note = f" (Physical file stored at: {box_location})" if box_location else ""
+            log_audit(request, "ADVANCE_STAGE", f"Stage {completed_num} ({current_stage.name_en if current_stage else ''}) completed by {user_name}{box_note}. Shipment advanced to Stage {next_num}: {next_stage.name_en if next_stage else ''}", job=job)
 
             try:
                 from .email_service import send_stage_update_email
@@ -3592,13 +3598,20 @@ def advance_stage_action(request, job_id):
             except Exception as e:
                 print(f"[Email Notification Error] {e}")
 
-            messages.success(request, f"Stage {completed_num} completed by {user_name}! Shipment advanced to Stage {next_num}.")
+            messages.success(request, f"Stage {completed_num} completed by {user_name}{box_note}! Shipment advanced to Stage {next_num}.")
         else:
             job.status = 'COMPLETED'
             if not job.delivered_date:
                 job.delivered_date = now
+            # Ensure any legacy stage 6 instance is also marked COMPLETED
+            job.stages.filter(stage_number__gt=5).exclude(status='COMPLETED').update(
+                status='COMPLETED',
+                completed_at=now,
+                responsible_officer=request.user,
+            )
 
-            log_audit(request, "COMPLETE_JOB", f"Job {job.job_number} completed and handed over successfully by {user_name}.", job=job)
+            box_note = f" Physical file stored at: {job.box_number}" if job.box_number else ""
+            log_audit(request, "COMPLETE_JOB", f"Job {job.job_number} arrived at Yard and marked COMPLETED by {user_name}.{box_note}", job=job)
 
             try:
                 from .email_service import send_stage_update_email
@@ -3606,7 +3619,7 @@ def advance_stage_action(request, job_id):
             except Exception as e:
                 print(f"[Email Notification Error] {e}")
 
-            messages.success(request, f"Congratulations! Shipment {job.job_number} has been completed and handed over by {user_name}!")
+            messages.success(request, f"Completed! Shipment {job.job_number} arrived at Yard and is now COMPLETE.{box_note}")
 
         job.save()
 
@@ -21373,8 +21386,7 @@ def get_vehicle_tracking_milestones(job):
         (2, 'Customs Declaration', 'TRA TANSAD Declaration', '24 Hours', 'fa-file-invoice'),
         (3, 'TBS Inspection & Clearance', 'TBS Portal & Standards Approval', '1-2 Days', 'fa-shield-halved'),
         (4, 'Port Clearance & Gate Exit', 'D/O, Inspection, Port Fees & Gate Pass', '1-2 Days', 'fa-truck-moving'),
-        (5, 'Vehicle Arrival', 'Arrived at Yard / Office', 'Same Day', 'fa-warehouse'),
-        (6, 'Customer Handover', 'Customer Handover & POD Signed', 'Upon Request', 'fa-handshake'),
+        (5, 'Yard Arrival & Complete', 'Arrived at Malkia Yard & Completed', 'Same Day', 'fa-warehouse'),
     ]
 
     stages_map = {si.stage_number: si for si in job.stages.all().select_related('responsible_officer')}
@@ -21441,18 +21453,26 @@ def get_vehicle_tracking_milestones(job):
         elif step_num == 2 and getattr(job, 'declaration_number', None):
             sub = f'Dec #{job.declaration_number}'
         elif step_num == 3:
+            if getattr(job, 'tbs_reference_no', None):
+                sub = f'TBS #{job.tbs_reference_no}'
+            elif is_done:
+                sub = 'TBS Approved'
+            elif is_current:
+                sub = 'Awaiting TBS Approval'
+        elif step_num == 4:
             if getattr(job, 'gate_pass_number', None):
                 sub = f'Gate Pass #{job.gate_pass_number}'
-            elif getattr(job, 'vehicle_dispatched_to_office', False):
+            elif getattr(job, 'vehicle_dispatched_to_office', False) or is_done:
                 sub = 'Exited Port Gate & Cleared'
-            elif is_done:
-                sub = 'Port Clearance Complete'
             elif is_current:
                 sub = 'Clearing at Port & ICD'
-        elif step_num == 4:
-            sub = 'Arrived at Malkia Yard' if is_done else 'En Route to Yard / Office'
-        elif step_num == 5 and getattr(job, 'received_by_name', None):
-            sub = f'Received by: {job.received_by_name}'
+        elif step_num == 5:
+            if getattr(job, 'box_number', None):
+                sub = f'Physical file: {job.box_number}'
+            elif is_done:
+                sub = 'Arrived at Malkia Yard (Completed)'
+            else:
+                sub = 'Awaiting Yard Arrival'
 
         time_taken = None
         if si and si.started_at and si.completed_at:
@@ -24854,12 +24874,12 @@ def stage_pipeline_view(request, stage_number):
             'confirm_msg': "Confirm: Cargo has cleared gate exit and departed port?",
         },
         5: {
-            'title': "5. Yard Arrivals & Inspection",
-            'desc': "Vehicle intake at Malkia yard with condition inspection.",
+            'title': "5. Yard Arrival & Job Completion",
+            'desc': "Confirm cargo arrival at yard, record where the physical file is stored, and complete the job.",
             'icon': "fa-warehouse",
             'badge_bg': "#0D9488",
-            'finish_label': "✓ Confirm Yard Arrival",
-            'confirm_msg': "Confirm: Vehicle safely received at Malkia yard?",
+            'finish_label': "✓ Confirm Arrival & Complete",
+            'confirm_msg': "Confirm arrival at yard and complete this job?",
         },
         6: {
             'title': "6. Customer Handover & Delivery",
@@ -24919,7 +24939,7 @@ def stage_yard_view(request):
     return stage_pipeline_view(request, stage_number=5)
 
 def stage_handover_view(request):
-    return stage_pipeline_view(request, stage_number=6)
+    return redirect('stage_yard')
 
 
 

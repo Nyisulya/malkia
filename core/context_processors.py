@@ -103,12 +103,9 @@ def global_stats(request):
             stage_3_count = stage_agg['s3'] or 0
             stage_4_count = stage_agg['s4'] or 0
 
-            stage_56_agg = active_qs.filter(current_stage_number__in=[5, 6]).aggregate(
-                s5=Count('id', distinct=True, filter=Q(current_stage_number=5) & (Q(driver=request.user) | Q(stages__stage_number=5, stages__responsible_officer=request.user))),
-                s6=Count('id', distinct=True, filter=Q(current_stage_number=6) & (Q(driver=request.user) | Q(stages__stage_number=6, stages__responsible_officer=request.user))),
-            )
-            stage_5_count = stage_56_agg['s5'] or 0
-            stage_6_count = stage_56_agg['s6'] or 0
+            stage_5_count = active_qs.filter(
+                current_stage_number=5,
+            ).filter(Q(driver=request.user) | Q(stages__stage_number=5, stages__responsible_officer=request.user)).distinct().count()
 
         pending_receipts_qs = JobShipment.objects.filter(
             duty_paid=False,

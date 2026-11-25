@@ -414,7 +414,7 @@
                     </a>
                 </li>
 
-                <li class="nav-section-title" style="margin-top:0.75rem;font-size:0.68rem;letter-spacing:0.05em;color:#94A3B8;">Workflow Stages (1–6)</li>
+                <li class="nav-section-title" style="margin-top:0.75rem;font-size:0.68rem;letter-spacing:0.05em;color:#94A3B8;">Workflow Stages (1–5)</li>
 
                 <!-- STAGE 1: NYARAKA & INTAKE -->
                 <li class="nav-item {% if request.resolver_match.url_name == 'document_register' %}active{% endif %}">
@@ -460,24 +460,13 @@
                     </a>
                 </li>
 
-                <!-- STAGE 5: YARD ARRIVALS -->
-                <li class="nav-item {% if request.resolver_match.url_name in 'stage_yard,yard_operations' %}active{% endif %}">
+                <!-- STAGE 5: YARD ARRIVALS & COMPLETE -->
+                <li class="nav-item {% if request.resolver_match.url_name in 'stage_yard,stage_handover,yard_operations' %}active{% endif %}">
                     <a href="{% url 'stage_yard' %}">
                         <i class="fa-solid fa-warehouse" style="color:#0D9488;"></i>
                         <span>5. Yard Arrivals</span>
                         {% if global_stage_5_count %}
                         <span class="nav-badge" style="background:#0D9488;color:#FFFFFF;">{{ global_stage_5_count }}</span>
-                        {% endif %}
-                    </a>
-                </li>
-
-                <!-- STAGE 6: CUSTOMER HANDOVER -->
-                <li class="nav-item {% if request.resolver_match.url_name == 'stage_handover' %}active{% endif %}">
-                    <a href="{% url 'stage_handover' %}">
-                        <i class="fa-solid fa-handshake" style="color:#16A34A;"></i>
-                        <span>6. Customer Handover</span>
-                        {% if global_stage_6_count %}
-                        <span class="nav-badge" style="background:#16A34A;color:#FFFFFF;">{{ global_stage_6_count }}</span>
                         {% endif %}
                     </a>
                 </li>

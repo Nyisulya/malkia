@@ -104,7 +104,7 @@
 
                 {% if job.box_number %}
                 <span class="badge-pill" style="background:#F0FDF4;color:#166534;border:1px solid #BBF7D0;font-weight:700;font-size:0.76rem;">
-                    <i class="fa-solid fa-box-archive"></i> Box: {{ job.box_number }}
+                    <i class="fa-solid fa-box-archive"></i> Physical File: {{ job.box_number }}
                 </span>
                 {% endif %}
             </div>
@@ -113,12 +113,18 @@
         <!-- Executive Quick Actions -->
         <div style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
             {% if job.status != 'COMPLETED' %}
-            <form action="{% url 'advance_stage' job.id %}" method="POST" style="display:inline;" onsubmit="return confirm('Confirm: Complete Stage {{ job.current_stage_number }} ({{ job.current_stage_display_name }})?');">
-                {% csrf_token %}
-                <button type="submit" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:0.55rem 1.25rem;border-radius:8px;display:inline-flex;align-items:center;gap:0.5rem;font-size:0.86rem;cursor:pointer;box-shadow:0 2px 6px rgba(22,163,74,0.35);">
+                {% if job.current_stage_number == 4 or job.current_stage_number == 5 %}
+                <button type="button" onclick="openJobFileLocationModal()" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:0.55rem 1.25rem;border-radius:8px;display:inline-flex;align-items:center;gap:0.5rem;font-size:0.86rem;cursor:pointer;box-shadow:0 2px 6px rgba(22,163,74,0.35);">
                     <i class="fa-solid fa-circle-check"></i> Complete Stage: {{ job.current_stage_number }}. {{ job.current_stage_display_name }} (Approve)
                 </button>
-            </form>
+                {% else %}
+                <form action="{% url 'advance_stage' job.id %}" method="POST" style="display:inline;" onsubmit="return confirm('Confirm: Complete Stage {{ job.current_stage_number }} ({{ job.current_stage_display_name }})?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:0.55rem 1.25rem;border-radius:8px;display:inline-flex;align-items:center;gap:0.5rem;font-size:0.86rem;cursor:pointer;box-shadow:0 2px 6px rgba(22,163,74,0.35);">
+                        <i class="fa-solid fa-circle-check"></i> Complete Stage: {{ job.current_stage_number }}. {{ job.current_stage_display_name }} (Approve)
+                    </button>
+                </form>
+                {% endif %}
             {% else %}
             <span class="badge-pill" style="background:#DCFCE7;color:#166534;font-weight:800;font-size:0.85rem;padding:0.5rem 1rem;">
                 <i class="fa-solid fa-check-double"></i> File Completed
@@ -1401,12 +1407,18 @@
             </div>
 
             {% if m.current and job.status != 'COMPLETED' %}
-            <form action="{% url 'advance_stage' job.id %}" method="POST" style="margin-top:0.25rem;" onsubmit="return confirm('Confirm: Complete Stage {{ job.current_stage_number }} ({{ job.current_stage_display_name }})?');">
-                {% csrf_token %}
-                <button type="submit" style="width:100%;background:#16A34A;color:#FFFFFF;border:none;border-radius:5px;padding:0.35rem 0.5rem;font-size:0.74rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:0.3rem;">
+                {% if job.current_stage_number == 4 or job.current_stage_number == 5 %}
+                <button type="button" onclick="openJobFileLocationModal()" style="margin-top:0.25rem;width:100%;background:#16A34A;color:#FFFFFF;border:none;border-radius:5px;padding:0.35rem 0.5rem;font-size:0.74rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:0.3rem;">
                     <i class="fa-solid fa-circle-check"></i> Complete Stage
                 </button>
-            </form>
+                {% else %}
+                <form action="{% url 'advance_stage' job.id %}" method="POST" style="margin-top:0.25rem;" onsubmit="return confirm('Confirm: Complete Stage {{ job.current_stage_number }} ({{ job.current_stage_display_name }})?');">
+                    {% csrf_token %}
+                    <button type="submit" style="width:100%;background:#16A34A;color:#FFFFFF;border:none;border-radius:5px;padding:0.35rem 0.5rem;font-size:0.74rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:0.3rem;">
+                        <i class="fa-solid fa-circle-check"></i> Complete Stage
+                    </button>
+                </form>
+                {% endif %}
             {% endif %}
         </div>
         {% endfor %}
@@ -2862,11 +2874,55 @@
 
 </div>
 
+<!-- SIMPLE PHYSICAL FILE STORAGE MODAL (STAGE 4 & 5) -->
+<div id="jobFileLocationModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:460px;">
+        <form action="{% url 'advance_stage' job.id %}" method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" style="margin:0;font-size:1.05rem;">
+                        {% if job.current_stage_number == 5 %}
+                        <i class="fa-solid fa-warehouse" style="color:#0D9488;margin-right:0.35rem;"></i> Confirm Arrival &amp; Complete Job
+                        {% else %}
+                        <i class="fa-solid fa-anchor" style="color:#0284C7;margin-right:0.35rem;"></i> Complete Port Clearance
+                        {% endif %}
+                    </h3>
+                    <p style="font-size:0.8rem;color:#64748B;margin:0.2rem 0 0 0;">
+                        {{ job.job_number }}{% if job.bl_number %} &bull; B/L: {{ job.bl_number }}{% endif %}
+                    </p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('jobFileLocationModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding:1.15rem 1.25rem;">
+                <label for="jobFileLocationInput" style="display:block;font-size:0.78rem;font-weight:800;color:#0F172A;margin-bottom:0.4rem;">
+                    Physical File Storage Location (Mahali File Limetunzwa) {% if job.current_stage_number == 5 %}<span style="color:#DC2626;">*</span>{% endif %}
+                </label>
+                <input type="text" name="box_number" id="jobFileLocationInput" value="{{ job.box_number|default:'' }}" {% if job.current_stage_number == 5 %}required{% endif %} class="form-control" placeholder="e.g. Box 04, Kabati la 2, Shelf A..." style="width:100%;padding:0.65rem 0.85rem;font-size:0.9rem;font-weight:700;border:1.5px solid #CBD5E1;border-radius:8px;">
+                <p style="font-size:0.75rem;color:#64748B;margin:0.45rem 0 0 0;">
+                    Andika boksi, kabati, au rafu ambapo faili la karatasi la kazi hii limetunzwa ofisini.
+                </p>
+            </div>
+            <div class="modal-footer" style="padding:0.85rem 1.25rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;justify-content:flex-end;gap:0.5rem;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('jobFileLocationModal')">Cancel</button>
+                <button type="submit" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:0.55rem 1.15rem;border-radius:8px;cursor:pointer;">
+                    <i class="fa-solid fa-circle-check"></i> {% if job.current_stage_number == 5 %}Confirm Arrival &amp; Complete Job{% else %}Complete Port Clearance{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
-
-
-
-
+<script>
+window.openJobFileLocationModal = function() {
+    if (window.openModal) {
+        window.openModal('jobFileLocationModal');
+    } else {
+        const m = document.getElementById('jobFileLocationModal');
+        if (m) { m.classList.add('open'); m.style.display = 'flex'; }
+    }
+};
+</script>
 
 {% endblock %}
 
