@@ -13,6 +13,11 @@ def auto_add_missing_columns(sender, **kwargs):
                     cursor.execute("ALTER TABLE core_jobshipment ADD COLUMN cost_running_other decimal(14, 2) DEFAULT 0")
                 if 'cost_running_other_description' not in cols:
                     cursor.execute("ALTER TABLE core_jobshipment ADD COLUMN cost_running_other_description text DEFAULT ''")
+
+            cursor.execute("PRAGMA table_info(core_clientinvoice)")
+            inv_cols = [r[1] for r in cursor.fetchall()]
+            if inv_cols and 'extra_line_items' not in inv_cols:
+                cursor.execute("ALTER TABLE core_clientinvoice ADD COLUMN extra_line_items text DEFAULT ''")
     except Exception:
         pass
 

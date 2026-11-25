@@ -24392,7 +24392,32 @@ def finance_invoice_generate_action(request, job_id):
         duty_reimb = parse_dec(request.POST.get('amount_duty_reimbursement'))
         sundry = parse_dec(request.POST.get('amount_sundry_charges'))
 
-        total_bill = agency_fee + shipping_line + port_charges + terminal_handling + transport + duty_reimb + sundry
+        # Dynamic extra cargo items (TBS, Demurrage, Storage, Escort, etc.)
+        inv_extra_names = request.POST.getlist('inv_extra_names[]')
+        inv_extra_amounts = request.POST.getlist('inv_extra_amounts[]')
+        extra_line_items_list = []
+        extra_line_items_total = Decimal('0')
+        if inv_extra_names and inv_extra_amounts:
+            for name, amt in zip(inv_extra_names, inv_extra_amounts):
+                name = name.strip()
+                amt_dec = parse_dec(amt)
+                if name and amt_dec > 0:
+                    extra_line_items_list.append({'name': name, 'amount': float(amt_dec)})
+                    extra_line_items_total += amt_dec
+
+        # Container deposit loss (if client is being billed for forfeited/unreturned deposit)
+        container_deposit_loss = parse_dec(request.POST.get('amount_container_deposit_loss'))
+        if container_deposit_loss > 0:
+            extra_line_items_list.append({
+                'name': 'Container Deposit Loss (Forfeited by Shipping Line)',
+                'amount': float(container_deposit_loss)
+            })
+            extra_line_items_total += container_deposit_loss
+
+        import json
+        extra_line_items_json = json.dumps(extra_line_items_list) if extra_line_items_list else ''
+
+        total_bill = agency_fee + shipping_line + port_charges + terminal_handling + transport + duty_reimb + sundry + extra_line_items_total
         notes = request.POST.get('notes', '').strip()
 
         issue_date_str = request.POST.get('issue_date', '').strip()
@@ -24428,6 +24453,7 @@ def finance_invoice_generate_action(request, job_id):
                 amount_transport=transport,
                 amount_sundry_charges=sundry,
                 amount_duty_reimbursement=duty_reimb,
+                extra_line_items=extra_line_items_json,
                 total_amount=total_bill,
                 amount_paid=Decimal('0.00'),
                 status='ISSUED',
@@ -24443,6 +24469,7 @@ def finance_invoice_generate_action(request, job_id):
             invoice.amount_transport = transport
             invoice.amount_sundry_charges = sundry
             invoice.amount_duty_reimbursement = duty_reimb
+            invoice.extra_line_items = extra_line_items_json
             invoice.total_amount = total_bill
             invoice.issue_date = issue_date
             invoice.due_date = due_date

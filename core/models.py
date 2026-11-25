@@ -1078,6 +1078,7 @@ class ClientInvoice(models.Model):
     amount_shipping_line_do = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Shipping Line DO Fees")
     amount_transport = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Transport & Offloading")
     amount_sundry_charges = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Sundry / Documentation")
+    extra_line_items = models.TextField(blank=True, default='', verbose_name="Extra Line Items (JSON list of name & amount)")
 
     total_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     amount_paid = models.DecimalField(max_digits=14, decimal_places=2, default=0)
@@ -1102,8 +1103,20 @@ class ClientInvoice(models.Model):
             paid = Decimal(str(paid))
         return max(Decimal('0.00'), tot - paid)
 
+    @property
+    def parsed_extra_line_items(self):
+        if not self.extra_line_items:
+            return []
+        import json
+        try:
+            items = json.loads(self.extra_line_items)
+            return items if isinstance(items, list) else []
+        except Exception:
+            return []
+
     def calculate_total(self):
         from decimal import Decimal
+        extra_sum = sum(Decimal(str(it.get('amount') or 0)) for it in self.parsed_extra_line_items)
         return (
             (self.amount_clearing_agency_fee or Decimal('0')) +
             (self.amount_duty_reimbursement or Decimal('0')) +
@@ -1111,7 +1124,8 @@ class ClientInvoice(models.Model):
             (self.amount_terminal_handling or Decimal('0')) +
             (self.amount_shipping_line_do or Decimal('0')) +
             (self.amount_transport or Decimal('0')) +
-            (self.amount_sundry_charges or Decimal('0'))
+            (self.amount_sundry_charges or Decimal('0')) +
+            extra_sum
         )
 
     @classmethod

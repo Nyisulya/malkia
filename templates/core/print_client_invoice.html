@@ -462,7 +462,18 @@
                     </td>
                 </tr>
                 {% endif %}
-                {% if invoice.amount_sundry_charges > 0 %}
+                {% for item in invoice.parsed_extra_line_items %}
+                {% if item.amount > 0 %}
+                <tr>
+                    <td class="row-num" style="text-align:center;font-weight:700;"></td>
+                    <td style="font-weight:700;">{{ item.name }}</td>
+                    <td style="text-align:right;font-weight:800;">
+                        {{ item.amount|floatformat:0 }}
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+                {% if invoice.amount_sundry_charges > 0 and not invoice.parsed_extra_line_items %}
                 <tr>
                     <td class="row-num" style="text-align:center;font-weight:700;"></td>
                     <td style="font-weight:700;">Sundry &amp; Other Logistics Charges</td>
