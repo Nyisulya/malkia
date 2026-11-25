@@ -8708,16 +8708,40 @@ def _operating_expenses_context(request):
         .values('month')
         .annotate(total=Sum('amount'))
     }
+    running_by_month = {
+        row['month'].month: (
+            (row['fuel'] or Decimal('0.00')) +
+            (row['transport'] or Decimal('0.00')) +
+            (row['ferry'] or Decimal('0.00')) +
+            (row['facilitation'] or Decimal('0.00')) +
+            (row['running_other'] or Decimal('0.00'))
+        )
+        for row in JobShipment.objects.filter(created_at__year=year)
+        .annotate(month=TruncMonth('created_at'))
+        .values('month')
+        .annotate(
+            fuel=Sum('cost_fuel'),
+            transport=Sum('cost_transport'),
+            ferry=Sum('cost_ferry_charges'),
+            facilitation=Sum('cost_facilitation'),
+            running_other=Sum('cost_running_other'),
+        )
+    }
     monthly_rows = []
     for m in range(1, 13):
         rev = revenue_by_month.get(m, Decimal('0.00'))
-        exp = expense_by_month.get(m, Decimal('0.00'))
+        off_exp = expense_by_month.get(m, Decimal('0.00'))
+        run_exp = running_by_month.get(m, Decimal('0.00'))
+        tot_exp = off_exp + run_exp
         monthly_rows.append({
             'number': m,
             'label': date(year, m, 1).strftime('%b %Y'),
             'revenue': rev,
-            'expenses': exp,
-            'net': rev - exp,
+            'office_expenses': off_exp,
+            'running_costs': run_exp,
+            'total_expenses': tot_exp,
+            'expenses': tot_exp,
+            'net': rev - tot_exp,
         })
 
     editing = None
@@ -8730,7 +8754,10 @@ def _operating_expenses_context(request):
         form_categories.append(editing.category)
 
     year_revenue = sum((row['revenue'] for row in monthly_rows), Decimal('0.00'))
-    year_expenses = sum((row['expenses'] for row in monthly_rows), Decimal('0.00'))
+    year_office_expenses = sum((row['office_expenses'] for row in monthly_rows), Decimal('0.00'))
+    year_running_costs = sum((row['running_costs'] for row in monthly_rows), Decimal('0.00'))
+    year_total_expenses = sum((row['total_expenses'] for row in monthly_rows), Decimal('0.00'))
+    year_net = year_revenue - year_total_expenses
 
     return {
         'selected_month': selected_month,
@@ -8761,8 +8788,11 @@ def _operating_expenses_context(request):
         'total_combined_outflow': total_combined_outflow,
         'monthly_rows': monthly_rows,
         'year_revenue': year_revenue,
-        'year_expenses': year_expenses,
-        'year_net': year_revenue - year_expenses,
+        'year_office_expenses': year_office_expenses,
+        'year_running_costs': year_running_costs,
+        'year_total_expenses': year_total_expenses,
+        'year_expenses': year_total_expenses,
+        'year_net': year_net,
         'selected_year': year,
         'category_filter': category_filter,
         'search_query': query,

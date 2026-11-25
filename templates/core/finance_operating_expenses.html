@@ -581,13 +581,13 @@
 
     <!-- MONTHLY REVENUE VS EXPENSES REPORT -->
     <div class="card-panel" style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);margin-top:1.5rem;">
-        <div style="padding:1rem 1.25rem;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+        <div style="padding:1rem 1.25rem;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;background:#F8FAFC;">
             <div>
                 <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
-                    <i class="fa-solid fa-chart-column" style="color:#0284C7;"></i> Revenue vs Operating Expenses — {{ selected_year }}
+                    <i class="fa-solid fa-chart-column" style="color:#0284C7;"></i> Revenue vs Operating &amp; Cargo Expenses — {{ selected_year }}
                 </h3>
                 <p style="margin:0.25rem 0 0 0;font-size:0.8rem;color:var(--text-muted);">
-                    Monthly performance overview for the whole year. Revenue is based on client payments received.
+                    Muhtasari wa mwaka mzima: Mapato ya wateja (Client Payments) dhidi ya Matumizi yote (Office OPEX + Cargo Running Costs).
                 </p>
             </div>
             <button type="button" class="btn-header-action btn-outline no-print" style="padding:0.5rem 0.8rem;font-size:0.78rem;" onclick="window.print()">
@@ -596,27 +596,56 @@
         </div>
 
         <div style="overflow-x:auto;">
-            <table class="report-table" style="width:100%;border-collapse:collapse;text-align:left;">
+            <table class="report-table" style="width:100%;border-collapse:collapse;text-align:left;font-size:0.83rem;">
                 <thead>
-                    <tr>
-                        <th>Month</th>
-                        <th style="text-align:right;">Revenue (Client Payments)</th>
-                        <th style="text-align:right;">Operating Expenses</th>
-                        <th style="text-align:right;">Net</th>
+                    <tr style="background:#F1F5F9;color:#475569;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;">
+                        <th style="padding:0.75rem 1rem;">Month</th>
+                        <th style="padding:0.75rem 1rem;text-align:right;">Revenue (Client Payments)</th>
+                        <th style="padding:0.75rem 1rem;text-align:right;">Office OPEX</th>
+                        <th style="padding:0.75rem 1rem;text-align:right;">Cargo Running Costs</th>
+                        <th style="padding:0.75rem 1rem;text-align:right;">Total Expenses</th>
+                        <th style="padding:0.75rem 1rem;text-align:right;">Net Position</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in monthly_rows %}
-                    <tr {% if row.number == selected_month.month %}class="is-current"{% endif %}>
-                        <td style="font-weight:700;color:#0F172A;">{{ row.label }}</td>
-                        <td style="text-align:right;color:#047857;font-weight:700;" class="money-cell">TSh {{ row.revenue|floatformat:0|intcomma }}</td>
-                        <td style="text-align:right;color:#B91C1C;font-weight:700;" class="money-cell">TSh {{ row.expenses|floatformat:0|intcomma }}</td>
-                        <td style="text-align:right;font-weight:900;color:{% if row.net >= 0 %}#1D4ED8{% else %}#B45309{% endif %};" class="money-cell">
+                    <tr {% if row.number == selected_month.month %}style="background:#F0FDF4;border-bottom:1px solid #BBF7D0;"{% else %}style="border-bottom:1px solid #F1F5F9;"{% endif %}>
+                        <td style="padding:0.65rem 1rem;font-weight:700;color:#0F172A;">
+                            {{ row.label }}
+                            {% if row.number == selected_month.month %}
+                            <span style="margin-left:0.35rem;font-size:0.68rem;background:#DCFCE7;color:#166534;padding:0.12rem 0.45rem;border-radius:4px;font-weight:800;">Selected</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:0.65rem 1rem;text-align:right;color:#047857;font-weight:700;" class="money-cell">
+                            TSh {{ row.revenue|floatformat:0|intcomma }}
+                        </td>
+                        <td style="padding:0.65rem 1rem;text-align:right;color:#475569;font-weight:600;" class="money-cell">
+                            TSh {{ row.office_expenses|floatformat:0|intcomma }}
+                        </td>
+                        <td style="padding:0.65rem 1rem;text-align:right;color:#D97706;font-weight:600;" class="money-cell">
+                            TSh {{ row.running_costs|floatformat:0|intcomma }}
+                        </td>
+                        <td style="padding:0.65rem 1rem;text-align:right;color:#B91C1C;font-weight:800;" class="money-cell">
+                            TSh {{ row.total_expenses|floatformat:0|intcomma }}
+                        </td>
+                        <td style="padding:0.65rem 1rem;text-align:right;font-weight:900;color:{% if row.net >= 0 %}#1D4ED8{% else %}#DC2626{% endif %};" class="money-cell">
                             TSh {{ row.net|floatformat:0|intcomma }}
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
+                <tfoot>
+                    <tr style="background:#F8FAFC;border-top:2px solid #CBD5E1;font-weight:900;">
+                        <td style="padding:0.85rem 1rem;color:#0F172A;text-transform:uppercase;">FULL YEAR {{ selected_year }} TOTAL</td>
+                        <td style="padding:0.85rem 1rem;text-align:right;color:#047857;font-size:0.95rem;" class="money-cell">TSh {{ year_revenue|floatformat:0|intcomma }}</td>
+                        <td style="padding:0.85rem 1rem;text-align:right;color:#475569;font-size:0.9rem;" class="money-cell">TSh {{ year_office_expenses|floatformat:0|intcomma }}</td>
+                        <td style="padding:0.85rem 1rem;text-align:right;color:#D97706;font-size:0.9rem;" class="money-cell">TSh {{ year_running_costs|floatformat:0|intcomma }}</td>
+                        <td style="padding:0.85rem 1rem;text-align:right;color:#B91C1C;font-size:0.95rem;" class="money-cell">TSh {{ year_total_expenses|floatformat:0|intcomma }}</td>
+                        <td style="padding:0.85rem 1rem;text-align:right;font-size:1.05rem;color:{% if year_net >= 0 %}#1D4ED8{% else %}#DC2626{% endif %};" class="money-cell">
+                            TSh {{ year_net|floatformat:0|intcomma }}
+                        </td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
