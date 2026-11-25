@@ -74,6 +74,9 @@
             </p>
         </div>
         <div style="display:flex;gap:0.6rem;flex-wrap:wrap;" class="no-print">
+            <a href="{% url 'operating_expenses_export_excel' %}?date_from={{ date_from }}&date_to={{ date_to }}&month={{ selected_month|date:'Y-m' }}&category={{ category_filter }}&q={{ search_query }}" class="btn-header-action" style="background:#10B981;color:#FFFFFF;border:1px solid #059669;font-weight:700;" title="Export filtered records to Excel (.xlsx)">
+                <i class="fa-solid fa-file-excel"></i> Export Excel
+            </a>
             <button type="button" class="btn-header-action btn-outline" onclick="openModal('categoryModal')" {% if not form_categories %}title="Add your first category before recording an expense"{% endif %}>
                 <i class="fa-solid fa-tags"></i> New Category
             </button>
@@ -87,7 +90,7 @@
     <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));margin-bottom:1.5rem;">
         <div class="kpi-card kpi-emerald">
             <div class="kpi-header">
-                <span class="kpi-title">Revenue Collected — {{ selected_month_label }}</span>
+                <span class="kpi-title">Revenue Collected — {{ range_label }}</span>
                 <div class="kpi-icon-wrap"><i class="fa-solid fa-arrow-down-left"></i></div>
             </div>
             <div class="kpi-value">TSh {{ revenue_total|floatformat:0|intcomma }}</div>
@@ -96,7 +99,7 @@
 
         <div class="kpi-card kpi-rose">
             <div class="kpi-header">
-                <span class="kpi-title">Operating Expenses — {{ selected_month_label }}</span>
+                <span class="kpi-title">Operating Expenses — {{ range_label }}</span>
                 <div class="kpi-icon-wrap"><i class="fa-solid fa-arrow-up-right"></i></div>
             </div>
             <div class="kpi-value">TSh {{ expense_total|floatformat:0|intcomma }}</div>
@@ -105,7 +108,7 @@
 
         <div class="kpi-card {% if net_total >= 0 %}kpi-blue{% else %}kpi-amber{% endif %}">
             <div class="kpi-header">
-                <span class="kpi-title">Net Position — {{ selected_month_label }}</span>
+                <span class="kpi-title">Net Position — {{ range_label }}</span>
                 <div class="kpi-icon-wrap"><i class="fa-solid fa-scale-balanced"></i></div>
             </div>
             <div class="kpi-value" style="color:{% if net_total >= 0 %}#1D4ED8{% else %}#B45309{% endif %};">
@@ -128,32 +131,74 @@
         </div>
     </div>
 
-    <!-- FILTER BAR -->
-    <div class="card-panel no-print" style="padding:1.1rem;margin-bottom:1.5rem;background:#FFFFFF;">
-        <form method="GET" action="{% url 'operating_expenses' %}" style="display:flex;align-items:flex-end;flex-wrap:wrap;gap:0.9rem;">
+    <!-- COMBINED MONTHLY OUTFLOW SUMMARY BANNER -->
+    <div class="card-panel no-print" style="padding:1rem 1.25rem;margin-bottom:1.5rem;background:#F8FAFC;border:1px solid #E2E8F0;border-left:4px solid var(--brand-primary);border-radius:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
             <div>
-                <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Month</label>
-                <input type="month" name="month" class="form-control" value="{{ selected_month|date:'Y-m' }}" onchange="this.form.submit()" style="min-width:170px;">
+                <span style="font-size:0.75rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;">
+                    <i class="fa-solid fa-layer-group" style="color:var(--brand-primary);margin-right:0.3rem;"></i> Combined Operational Cash Outflows — {{ range_label }}
+                </span>
+                <div style="margin-top:0.35rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                    <div>
+                        <span style="font-size:0.75rem;color:#64748B;">General Office OPEX:</span>
+                        <strong style="font-size:0.95rem;color:#B91C1C;margin-left:0.25rem;">TSh {{ expense_total|floatformat:0|intcomma }}</strong>
+                    </div>
+                    <div style="color:#CBD5E1;font-weight:bold;">+</div>
+                    <div>
+                        <span style="font-size:0.75rem;color:#64748B;">Cargo &amp; Vehicle Running (Fuel, Transport):</span>
+                        <strong style="font-size:0.95rem;color:#D97706;margin-left:0.25rem;">TSh {{ job_running_total|floatformat:0|intcomma }}</strong>
+                        <span style="font-size:0.72rem;color:#94A3B8;margin-left:0.25rem;">(Fuel: {{ job_fuel_total|floatformat:0|intcomma }} · Transport: {{ job_transport_total|floatformat:0|intcomma }})</span>
+                    </div>
+                    <div style="color:#CBD5E1;font-weight:bold;">=</div>
+                    <div style="background:#FFFFFF;padding:0.35rem 0.75rem;border-radius:8px;border:1px solid #CBD5E1;">
+                        <span style="font-size:0.75rem;font-weight:700;color:#0F172A;">Total Operational Outflow:</span>
+                        <strong style="font-size:1.05rem;font-weight:900;color:#0F172A;margin-left:0.35rem;">TSh {{ total_combined_outflow|floatformat:0|intcomma }}</strong>
+                    </div>
+                </div>
+            </div>
+            <div style="font-size:0.72rem;color:#64748B;max-width:320px;line-height:1.35;">
+                <i class="fa-solid fa-circle-info" style="color:#3B82F6;"></i> Vehicle running costs are tracked per shipment and deducted from the Agency Fee to preserve profit accuracy; this combined view gives you total cash paid out.
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card-panel no-print" style="padding:1.1rem;margin-bottom:1.5rem;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;">
+        <form method="GET" action="{% url 'operating_expenses' %}" style="display:flex;align-items:flex-end;flex-wrap:wrap;gap:0.85rem;">
+            <div>
+                <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">From Date</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}" style="min-width:140px;">
+            </div>
+            <div>
+                <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">To Date</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}" style="min-width:140px;">
+            </div>
+            <div>
+                <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Or Month</label>
+                <input type="month" name="month" class="form-control" value="{{ selected_month|date:'Y-m' }}" style="min-width:145px;">
             </div>
             <div>
                 <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Category</label>
-                <select name="category" class="form-control" onchange="this.form.submit()" style="min-width:190px;">
+                <select name="category" class="form-control" style="min-width:160px;">
                     <option value="">All Categories</option>
                     {% for c in categories %}
                     <option value="{{ c.id }}" {% if category_filter == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}{% if not c.is_active %} (inactive){% endif %}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div style="flex:1;min-width:220px;">
+            <div style="flex:1;min-width:180px;">
                 <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Search</label>
-                <input type="text" name="q" class="form-control" placeholder="Search description or category..." value="{{ search_query }}">
+                <input type="text" name="q" class="form-control" placeholder="Search description, payee, ref..." value="{{ search_query }}">
             </div>
-            <div style="display:flex;gap:0.5rem;">
+            <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
                 <button type="submit" class="btn-header-action btn-primary" style="padding:0.6rem 1rem;">
                     <i class="fa-solid fa-magnifying-glass"></i> Filter
                 </button>
-                {% if search_query or category_filter %}
-                <a href="{% url 'operating_expenses' %}?month={{ selected_month|date:'Y-m' }}" class="btn-header-action btn-outline" style="padding:0.6rem 0.9rem;">Reset</a>
+                <a href="{% url 'operating_expenses_export_excel' %}?date_from={{ date_from }}&date_to={{ date_to }}&month={{ selected_month|date:'Y-m' }}&category={{ category_filter }}&q={{ search_query }}" class="btn-header-action" style="padding:0.6rem 0.95rem;background:#10B981;color:#FFFFFF;border:1px solid #059669;font-weight:700;" title="Export filtered records to Excel (.xlsx)">
+                    <i class="fa-solid fa-file-excel"></i> Export Excel
+                </a>
+                {% if search_query or category_filter or date_from or date_to %}
+                <a href="{% url 'operating_expenses' %}?month={{ today|date:'Y-m' }}" class="btn-header-action btn-outline" style="padding:0.6rem 0.85rem;">Reset</a>
                 {% endif %}
             </div>
         </form>
@@ -166,10 +211,10 @@
             <div style="padding:1rem 1.25rem;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
                 <div>
                     <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
-                        <i class="fa-solid fa-file-invoice-dollar" style="color:var(--brand-primary);"></i> Expenses Recorded — {{ selected_month_label }}
+                        <i class="fa-solid fa-file-invoice-dollar" style="color:var(--brand-primary);"></i> Expenses Recorded — {{ range_label }}
                     </h3>
                     <p style="margin:0.25rem 0 0 0;font-size:0.8rem;color:var(--text-muted);">
-                        {{ selected_month|date:"d M Y" }} &ndash; {{ month_end|date:"d M Y" }}
+                        {{ range_start|date:"d M Y" }} &ndash; {{ range_end|date:"d M Y" }}
                     </p>
                 </div>
                 <span style="font-size:0.75rem;font-weight:800;color:#0F766E;background:#CCFBF1;padding:0.25rem 0.65rem;border-radius:999px;">

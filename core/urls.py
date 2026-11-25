@@ -59,6 +59,7 @@ urlpatterns = [
     path('finance/pending-payments/', views.finance_pending_payments_view, name='finance_pending_payments'),
     path('finance/transactions/', views.finance_transactions_view, name='finance_transactions'),
     path('finance/operating-expenses/', views.operating_expenses_view, name='operating_expenses'),
+    path('finance/operating-expenses/export-excel/', views.operating_expenses_export_excel, name='operating_expenses_export_excel'),
     path('finance/operating-expenses/create/', views.operating_expense_create_action, name='operating_expense_create'),
     path('finance/operating-expenses/categories/create/', views.operating_expense_category_create_action, name='operating_expense_category_create'),
     path('finance/operating-expenses/categories/<int:category_id>/toggle/', views.operating_expense_category_toggle_action, name='operating_expense_category_toggle'),

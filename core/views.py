@@ -8457,6 +8457,22 @@ def _operating_expenses_redirect(month=None):
 
 def _operating_expenses_context(request):
     today = timezone.now().date()
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+    date_from = None
+    date_to = None
+    if date_from_str:
+        try:
+            date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            date_from = None
+    if date_to_str:
+        try:
+            date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            date_to = None
+
     month_param = request.GET.get('month', '').strip()
     try:
         selected_month = datetime.strptime(month_param, '%Y-%m').date().replace(day=1)
@@ -8468,9 +8484,20 @@ def _operating_expenses_context(request):
     else:
         month_end = date(selected_month.year, selected_month.month + 1, 1) - timedelta(days=1)
 
+    if date_from or date_to:
+        range_start = date_from or date(selected_month.year, 1, 1)
+        range_end = date_to or today
+        is_custom_range = True
+        range_label = f"{range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}"
+    else:
+        range_start = selected_month
+        range_end = month_end
+        is_custom_range = False
+        range_label = selected_month.strftime('%B %Y')
+
     categories = OperatingExpenseCategory.objects.all()
     expenses = OperatingExpense.objects.select_related('category', 'recorded_by').filter(
-        date__gte=selected_month, date__lte=month_end
+        date__gte=range_start, date__lte=range_end
     )
 
     category_filter = request.GET.get('category', '').strip()
@@ -8489,8 +8516,26 @@ def _operating_expenses_context(request):
     expenses = expenses.order_by('-date', '-id')
     expense_total = expenses.aggregate(t=Sum('amount'))['t'] or Decimal('0.00')
     revenue_total = ClientPayment.objects.filter(
-        payment_date__gte=selected_month, payment_date__lte=month_end
+        payment_date__gte=range_start, payment_date__lte=range_end
     ).aggregate(t=Sum('amount'))['t'] or Decimal('0.00')
+
+    # Calculate Cargo & Vehicle Direct Running Costs (Fuel, Transport, Ferry, Facilitation) in this same period
+    job_running = JobShipment.objects.filter(
+        created_at__date__gte=range_start, created_at__date__lte=range_end
+    ).aggregate(
+        fuel=Sum('cost_fuel'),
+        transport=Sum('cost_transport'),
+        ferry=Sum('cost_ferry_charges'),
+        facilitation=Sum('cost_facilitation'),
+        running_other=Sum('cost_running_other')
+    )
+    job_fuel_total = job_running['fuel'] or Decimal('0.00')
+    job_transport_total = job_running['transport'] or Decimal('0.00')
+    job_ferry_total = job_running['ferry'] or Decimal('0.00')
+    job_facilitation_total = job_running['facilitation'] or Decimal('0.00')
+    job_running_other_total = job_running['running_other'] or Decimal('0.00')
+    job_running_total = job_fuel_total + job_transport_total + job_ferry_total + job_facilitation_total + job_running_other_total
+    total_combined_outflow = expense_total + job_running_total
 
     year = selected_month.year
     revenue_by_month = {
@@ -8535,12 +8580,25 @@ def _operating_expenses_context(request):
         'selected_month': selected_month,
         'selected_month_label': selected_month.strftime('%B %Y'),
         'month_end': month_end,
+        'range_start': range_start,
+        'range_end': range_end,
+        'range_label': range_label,
+        'date_from': date_from.strftime('%Y-%m-%d') if date_from else '',
+        'date_to': date_to.strftime('%Y-%m-%d') if date_to else '',
+        'is_custom_range': is_custom_range,
         'categories': categories,
         'form_categories': form_categories,
         'expenses': expenses,
         'expense_total': expense_total,
         'revenue_total': revenue_total,
         'net_total': revenue_total - expense_total,
+        'job_fuel_total': job_fuel_total,
+        'job_transport_total': job_transport_total,
+        'job_ferry_total': job_ferry_total,
+        'job_facilitation_total': job_facilitation_total,
+        'job_running_other_total': job_running_other_total,
+        'job_running_total': job_running_total,
+        'total_combined_outflow': total_combined_outflow,
         'monthly_rows': monthly_rows,
         'year_revenue': year_revenue,
         'year_expenses': year_expenses,
@@ -8660,6 +8718,219 @@ def operating_expense_delete_action(request, expense_id):
         messages.success(request, "Expense record deleted.")
         return _operating_expenses_redirect(month)
     return redirect('operating_expenses')
+
+
+@login_required
+@role_required(OPERATING_EXPENSE_ROLES)
+def operating_expenses_export_excel(request):
+    """
+    Exports filtered Operating Expenses to a beautifully formatted .xlsx Excel sheet.
+    Supports ?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD or ?month=YYYY-MM with category & query filtering.
+    """
+    import io
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
+    today = timezone.now().date()
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    date_from = None
+    date_to = None
+    if date_from_str:
+        try:
+            date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            date_from = None
+    if date_to_str:
+        try:
+            date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            date_to = None
+
+    month_param = request.GET.get('month', '').strip()
+    try:
+        selected_month = datetime.strptime(month_param, '%Y-%m').date().replace(day=1)
+    except (ValueError, TypeError):
+        selected_month = today.replace(day=1)
+
+    if selected_month.month == 12:
+        month_end = date(selected_month.year + 1, 1, 1) - timedelta(days=1)
+    else:
+        month_end = date(selected_month.year, selected_month.month + 1, 1) - timedelta(days=1)
+
+    if date_from or date_to:
+        range_start = date_from or date(selected_month.year, 1, 1)
+        range_end = date_to or today
+        range_label = f"{range_start.strftime('%d %b %Y')} – {range_end.strftime('%d %b %Y')}"
+        filename_dates = f"{range_start.strftime('%Y%m%d')}_to_{range_end.strftime('%Y%m%d')}"
+    else:
+        range_start = selected_month
+        range_end = month_end
+        range_label = selected_month.strftime('%B %Y')
+        filename_dates = selected_month.strftime('%Y_%m')
+
+    expenses = OperatingExpense.objects.select_related('category', 'recorded_by').filter(
+        date__gte=range_start, date__lte=range_end
+    )
+
+    category_filter = request.GET.get('category', '').strip()
+    if category_filter.isdigit():
+        expenses = expenses.filter(category_id=int(category_filter))
+
+    query = request.GET.get('q', '').strip()
+    if query:
+        expenses = expenses.filter(
+            Q(payee__icontains=query) |
+            Q(description__icontains=query) |
+            Q(payment_reference__icontains=query) |
+            Q(category__name__icontains=query)
+        )
+
+    expenses = expenses.order_by('-date', '-id')
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Operating Expenses"
+    ws.views.sheetView[0].showGridLines = True
+
+    navy_fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
+    header_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
+    total_fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+
+    title_font = Font(name="Calibri", size=13, bold=True, color="FFFFFF")
+    subtitle_font = Font(name="Calibri", size=9, italic=True, color="E2E8F0")
+    header_font = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+    bold_font = Font(name="Calibri", size=9, bold=True, color="0F172A")
+    regular_font = Font(name="Calibri", size=9, color="1E293B")
+    money_font = Font(name="Calibri", size=9, bold=True, color="B91C1C")
+
+    thin_border = Border(
+        left=Side(style='thin', color='CBD5E1'),
+        right=Side(style='thin', color='CBD5E1'),
+        top=Side(style='thin', color='CBD5E1'),
+        bottom=Side(style='thin', color='CBD5E1')
+    )
+    double_bottom_border = Border(
+        left=Side(style='thin', color='CBD5E1'),
+        right=Side(style='thin', color='CBD5E1'),
+        top=Side(style='thin', color='CBD5E1'),
+        bottom=Side(style='double', color='0F172A')
+    )
+
+    # Title block
+    ws.merge_cells("A1:H1")
+    t_cell = ws["A1"]
+    t_cell.value = "MALKIA CARGO WAVES - OPERATING EXPENSES REPORT"
+    t_cell.font = title_font
+    t_cell.fill = navy_fill
+    t_cell.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[1].height = 28
+
+    ws.merge_cells("A2:H2")
+    sub_cell = ws["A2"]
+    sub_cell.value = f"Period: {range_label}  |  Exported on: {today.strftime('%d %b %Y')}  |  Records: {expenses.count()}"
+    sub_cell.font = subtitle_font
+    sub_cell.fill = navy_fill
+    sub_cell.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[2].height = 18
+
+    ws.row_dimensions[3].height = 10
+
+    headers = [
+        ("S/N", 6, Alignment(horizontal="center", vertical="center")),
+        ("Date", 13, Alignment(horizontal="center", vertical="center")),
+        ("Category", 20, Alignment(horizontal="left", vertical="center")),
+        ("Description / Payee", 36, Alignment(horizontal="left", vertical="center")),
+        ("Payment Method", 20, Alignment(horizontal="left", vertical="center")),
+        ("Reference", 18, Alignment(horizontal="left", vertical="center")),
+        ("Amount (TSh)", 18, Alignment(horizontal="right", vertical="center")),
+        ("Recorded By", 18, Alignment(horizontal="left", vertical="center")),
+    ]
+
+    header_row = 4
+    ws.row_dimensions[header_row].height = 24
+    for col_idx, (col_name, width, align) in enumerate(headers, start=1):
+        cell = ws.cell(row=header_row, column=col_idx, value=col_name)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = align
+        cell.border = thin_border
+
+    current_row = 5
+    total_amount = Decimal('0.00')
+    for idx, exp in enumerate(expenses, start=1):
+        ws.row_dimensions[current_row].height = 20
+        total_amount += (exp.amount or Decimal('0.00'))
+
+        desc = exp.description or (f"Payment for {exp.category.name}" if exp.category else "")
+        if exp.payee and exp.payee != desc:
+            desc = f"{desc} ({exp.payee})"
+
+        recorder_name = exp.recorded_by.get_full_name() or exp.recorded_by.username if exp.recorded_by else "-"
+
+        row_data = [
+            (idx, Alignment(horizontal="center", vertical="center"), regular_font, None),
+            (exp.date.strftime("%d/%m/%Y") if exp.date else "-", Alignment(horizontal="center", vertical="center"), regular_font, None),
+            (exp.category.name if exp.category else "-", Alignment(horizontal="left", vertical="center"), bold_font, None),
+            (desc, Alignment(horizontal="left", vertical="center"), regular_font, None),
+            (exp.get_payment_method_display(), Alignment(horizontal="left", vertical="center"), regular_font, None),
+            (exp.payment_reference or "-", Alignment(horizontal="left", vertical="center"), regular_font, None),
+            (float(exp.amount), Alignment(horizontal="right", vertical="center"), money_font, "#,##0"),
+            (recorder_name, Alignment(horizontal="left", vertical="center"), regular_font, None),
+        ]
+
+        for col_idx, (val, align, font, num_fmt) in enumerate(row_data, start=1):
+            cell = ws.cell(row=current_row, column=col_idx, value=val)
+            cell.alignment = align
+            cell.font = font
+            cell.border = thin_border
+            if num_fmt:
+                cell.number_format = num_fmt
+
+        current_row += 1
+
+    # Total row
+    ws.row_dimensions[current_row].height = 24
+    ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=6)
+    t_label = ws.cell(row=current_row, column=1, value="TOTAL OPERATING EXPENSES (TSH)")
+    t_label.font = bold_font
+    t_label.alignment = Alignment(horizontal="right", vertical="center")
+    t_label.fill = total_fill
+
+    for c in range(1, 7):
+        ws.cell(row=current_row, column=c).border = double_bottom_border
+        ws.cell(row=current_row, column=c).fill = total_fill
+
+    t_val = ws.cell(row=current_row, column=7, value=float(total_amount))
+    t_val.font = Font(name="Calibri", size=10, bold=True, color="B91C1C")
+    t_val.alignment = Alignment(horizontal="right", vertical="center")
+    t_val.number_format = "#,##0"
+    t_val.border = double_bottom_border
+    t_val.fill = total_fill
+
+    t_rec = ws.cell(row=current_row, column=8, value="")
+    t_rec.border = double_bottom_border
+    t_rec.fill = total_fill
+
+    for col_idx, (_, width, _) in enumerate(headers, start=1):
+        col_letter = get_column_letter(col_idx)
+        ws.column_dimensions[col_letter].width = width
+
+    log_audit(request, "OPERATING_EXPENSES_EXCEL_EXPORTED", f"Exported {expenses.count()} records for period {range_label}")
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    filename = f"Malkia_Operating_Expenses_{filename_dates}.xlsx"
+    response = HttpResponse(
+        buffer.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
 
 
 @login_required
