@@ -256,7 +256,7 @@
                 TSh {{ total_company_revenue|floatformat:0|intcomma }}
             </div>
             <div style="font-size: 0.71rem; color: #047857; font-weight: 700;">
-                Clearance {{ sum_agent_fee|floatformat:0|intcomma }} &bull; Other Rev {{ sum_other_business_revenue|floatformat:0|intcomma }}
+                Clearance {{ sum_agent_fee|floatformat:0|intcomma }} &bull; Net Margin {{ sum_net_agency_margin|floatformat:0|intcomma }}
             </div>
         </div>
 
@@ -303,12 +303,12 @@
             </div>
         </div>
 
-        <!-- CARD 4: PORT & CUSTOMS DISBURSEMENTS -->
+        <!-- CARD 4: JOB DISBURSEMENTS & RUNNING COSTS -->
         <div class="fin-card fin-card-red">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <span
-                    style="font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em;">Office
-                    Client Disbursements</span>
+                    style="font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em;">Job
+                    Disbursements &amp; Costs</span>
                 <span
                     style="width: 32px; height: 32px; border-radius: 8px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
                     <i class="fa-solid fa-receipt"></i>
@@ -317,8 +317,8 @@
             <div style="font-size: 1.55rem; font-weight: 900; color: #DC2626; margin: 0.35rem 0 0.2rem 0;">
                 TSh {{ sum_direct_costs|floatformat:0|intcomma }}
             </div>
-            <div style="font-size: 0.71rem; color: #64748B; font-weight: 600;">
-                D/O, Port, Transport &amp; Fuel
+            <div style="font-size: 0.71rem; color: #64748B; font-weight: 700;">
+                <span style="color: #0284C7;" title="Recoverable Client Disbursements (D/O, Wharfage, Handling, etc.)">Client: TSh {{ sum_client_billable_costs|floatformat:0|intcomma }}</span> &bull; <span style="color: #7C3AED;" title="Direct Vehicle Running Costs (Transport, Fuel, Ferry, Facil)">Running: TSh {{ sum_vehicle_running_costs|floatformat:0|intcomma }}</span>
             </div>
         </div>
 
@@ -369,10 +369,10 @@
             <div>
                 <div style="font-weight: 800; font-size: 0.95rem; color: #0F172A; text-transform: uppercase; letter-spacing: 0.03em; display: flex; align-items: center; gap: 0.45rem;">
                     <i class="fa-solid fa-chart-pie" style="color: #7C3AED;"></i> Direct Cost Breakdown
-                    <span style="font-size: 0.72rem; color: #64748B; font-weight: 600; text-transform: none;">(Office Client Disbursements)</span>
+                    <span style="font-size: 0.72rem; color: #64748B; font-weight: 600; text-transform: none;">(Client Disbursements &amp; Vehicle Running Costs)</span>
                 </div>
                 <div style="font-size: 0.75rem; color: #64748B; margin-top: 0.2rem;">
-                    Clearance costs advanced by Malkia on behalf of clients &bull; Excludes TRA Customs Duty settled directly by client
+                    Client recoverable disbursements &amp; vehicle running costs incurred by Malkia &bull; Excludes TRA Customs Duty settled directly by client
                 </div>
             </div>
             <div style="background: #FEF2F2; border: 1.5px solid #FCA5A5; border-radius: 999px; padding: 0.35rem 1rem; display: flex; align-items: center; gap: 0.6rem;">

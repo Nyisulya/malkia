@@ -728,6 +728,9 @@ def accountant_dashboard_view(request):
     sum_ferry = sum(j.cost_ferry_charges or Decimal('0') for j in all_jobs)
 
     sum_direct_costs = sum(j.total_direct_costs for j in all_jobs)
+    sum_client_billable_costs = sum(j.client_billable_costs for j in all_jobs)
+    sum_vehicle_running_costs = sum(j.internal_running_costs for j in all_jobs)
+    sum_net_agency_margin = sum(j.net_agency_margin for j in all_jobs)
     sum_grand_total = sum(j.total_disbursement_with_agent_fee for j in all_jobs)
 
     # Status counts
@@ -769,7 +772,8 @@ def accountant_dashboard_view(request):
 
     # Total Company Revenue & Net Company Profit / Surplus
     total_company_revenue = sum_agent_fee + sum_other_business_revenue
-    net_profit = total_company_revenue - total_company_costs
+    # True Net Company Profit: Net Agency Margin (Clearance Fee minus Vehicle Running Costs) + Other Revenue minus General Office Overhead & Salaries
+    net_profit = sum_net_agency_margin + sum_other_business_revenue - total_company_costs
 
     # Invoices & Receivables
     all_period_invoices = list(invoices_qs)
@@ -804,6 +808,9 @@ def accountant_dashboard_view(request):
         'uncosted_count': uncosted_count,
         'sum_cif_usd': sum_cif_usd,
         'sum_direct_costs': sum_direct_costs,
+        'sum_client_billable_costs': sum_client_billable_costs,
+        'sum_vehicle_running_costs': sum_vehicle_running_costs,
+        'sum_net_agency_margin': sum_net_agency_margin,
         'sum_agent_fee': sum_agent_fee,
         'sum_other_business_revenue': sum_other_business_revenue,
         'sum_container_refunds': sum_container_refunds,
