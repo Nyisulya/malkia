@@ -1028,7 +1028,8 @@ class ClientInvoice(models.Model):
     # Breakdown of items
     amount_clearing_agency_fee = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Agency / Clearance Fee")
     amount_duty_reimbursement = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="TRA Duty Reimbursement")
-    amount_port_charges = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Port & Wharfage Charges")
+    amount_port_charges = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Port Wharfage (TPA Port)")
+    amount_terminal_handling = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Terminal Handling / ICD Charges")
     amount_shipping_line_do = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Shipping Line DO Fees")
     amount_transport = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Transport & Offloading")
     amount_sundry_charges = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Sundry / Documentation")
@@ -1057,13 +1058,15 @@ class ClientInvoice(models.Model):
         return max(Decimal('0.00'), tot - paid)
 
     def calculate_total(self):
+        from decimal import Decimal
         return (
-            self.amount_clearing_agency_fee +
-            self.amount_duty_reimbursement +
-            self.amount_port_charges +
-            self.amount_shipping_line_do +
-            self.amount_transport +
-            self.amount_sundry_charges
+            (self.amount_clearing_agency_fee or Decimal('0')) +
+            (self.amount_duty_reimbursement or Decimal('0')) +
+            (self.amount_port_charges or Decimal('0')) +
+            (self.amount_terminal_handling or Decimal('0')) +
+            (self.amount_shipping_line_do or Decimal('0')) +
+            (self.amount_transport or Decimal('0')) +
+            (self.amount_sundry_charges or Decimal('0'))
         )
 
     @classmethod

@@ -10197,11 +10197,12 @@ def invoice_create_action(request):
         agency_fee = Decimal(request.POST.get('agency_fee', '0') or '0')
         duty_reimb = Decimal(request.POST.get('duty_reimb', '0') or '0')
         port_charges = Decimal(request.POST.get('port_charges', '0') or '0')
+        terminal_handling = Decimal(request.POST.get('terminal_handling', '0') or request.POST.get('amount_terminal_handling', '0') or '0')
         shipping_line = Decimal(request.POST.get('shipping_line', '0') or '0')
         transport = Decimal(request.POST.get('transport', '0') or '0')
         sundry = Decimal(request.POST.get('sundry', '0') or '0')
 
-        total = agency_fee + duty_reimb + port_charges + shipping_line + transport + sundry
+        total = agency_fee + duty_reimb + port_charges + terminal_handling + shipping_line + transport + sundry
         inv_number = ClientInvoice.generate_next_invoice_number()
         due_date = timezone.now().date() + timedelta(days=14)
 
@@ -10213,6 +10214,7 @@ def invoice_create_action(request):
             amount_clearing_agency_fee=agency_fee,
             amount_duty_reimbursement=duty_reimb,
             amount_port_charges=port_charges,
+            amount_terminal_handling=terminal_handling,
             amount_shipping_line_do=shipping_line,
             amount_transport=transport,
             amount_sundry_charges=sundry,
@@ -21629,9 +21631,9 @@ def auto_compile_customer_final_bill(job):
         agency_fee = job.cost_agent_fee or (job.contracted_revenue if job.contracted_revenue and job.contracted_revenue > Decimal('0') else Decimal('350000.00'))
         shipping_line_amt = job.cost_do or Decimal('0.00')
         port_charges_amt = (job.cost_wharfage or Decimal('0.00')) + (job.cost_tiss_wharfage or Decimal('0.00'))
+        terminal_handling_amt = job.cost_handling or Decimal('0.00')
         transport_amt = job.cost_transport or Decimal('0.00')
         sundry_amt = (
-            (job.cost_handling or Decimal('0.00')) +
             (job.cost_facilitation or Decimal('0.00')) +
             (job.cost_fuel or Decimal('0.00')) +
             (job.cost_ferry_charges or Decimal('0.00')) +
@@ -21657,13 +21659,15 @@ def auto_compile_customer_final_bill(job):
         port_vouchers = vouchers.filter(category=ExpenseCategory.PORT_CHARGES)
         port_charges_amt = port_vouchers.aggregate(tot=Sum('amount'))['tot'] or Decimal('0.00')
 
+        handling_vouchers = vouchers.filter(category=ExpenseCategory.PORT_HANDLING)
+        terminal_handling_amt = handling_vouchers.aggregate(tot=Sum('amount'))['tot'] or Decimal('0.00')
+
         transport_vouchers = vouchers.filter(category=ExpenseCategory.TRANSPORT)
         transport_amt = transport_vouchers.aggregate(tot=Sum('amount'))['tot'] or Decimal('0.00')
 
         sundry_vouchers = vouchers.filter(
             category__in=[
                 ExpenseCategory.FUEL,
-                ExpenseCategory.PORT_HANDLING,
                 ExpenseCategory.DOCUMENTATION,
                 ExpenseCategory.OTHER,
             ]
@@ -21671,7 +21675,7 @@ def auto_compile_customer_final_bill(job):
         sundry_amt = sundry_vouchers.aggregate(tot=Sum('amount'))['tot'] or Decimal('0.00')
 
     duty_reimb = Decimal('0.00')
-    total_bill = agency_fee + shipping_line_amt + port_charges_amt + transport_amt + sundry_amt + duty_reimb
+    total_bill = agency_fee + shipping_line_amt + port_charges_amt + terminal_handling_amt + transport_amt + sundry_amt + duty_reimb
 
     invoice = existing_invoice
     today = date.today()
@@ -21688,6 +21692,7 @@ def auto_compile_customer_final_bill(job):
             amount_clearing_agency_fee=agency_fee,
             amount_shipping_line_do=shipping_line_amt,
             amount_port_charges=port_charges_amt,
+            amount_terminal_handling=terminal_handling_amt,
             amount_transport=transport_amt,
             amount_sundry_charges=sundry_amt,
             amount_duty_reimbursement=duty_reimb,
@@ -21700,6 +21705,7 @@ def auto_compile_customer_final_bill(job):
         invoice.amount_clearing_agency_fee = agency_fee
         invoice.amount_shipping_line_do = shipping_line_amt
         invoice.amount_port_charges = port_charges_amt
+        invoice.amount_terminal_handling = terminal_handling_amt
         invoice.amount_transport = transport_amt
         invoice.amount_sundry_charges = sundry_amt
         invoice.amount_duty_reimbursement = duty_reimb
@@ -24355,11 +24361,12 @@ def finance_invoice_generate_action(request, job_id):
         agency_fee = parse_dec(request.POST.get('amount_clearing_agency_fee'))
         shipping_line = parse_dec(request.POST.get('amount_shipping_line_do'))
         port_charges = parse_dec(request.POST.get('amount_port_charges'))
+        terminal_handling = parse_dec(request.POST.get('amount_terminal_handling'))
         transport = parse_dec(request.POST.get('amount_transport'))
         duty_reimb = parse_dec(request.POST.get('amount_duty_reimbursement'))
         sundry = parse_dec(request.POST.get('amount_sundry_charges'))
 
-        total_bill = agency_fee + shipping_line + port_charges + transport + duty_reimb + sundry
+        total_bill = agency_fee + shipping_line + port_charges + terminal_handling + transport + duty_reimb + sundry
         notes = request.POST.get('notes', '').strip()
 
         issue_date_str = request.POST.get('issue_date', '').strip()
@@ -24391,6 +24398,7 @@ def finance_invoice_generate_action(request, job_id):
                 amount_clearing_agency_fee=agency_fee,
                 amount_shipping_line_do=shipping_line,
                 amount_port_charges=port_charges,
+                amount_terminal_handling=terminal_handling,
                 amount_transport=transport,
                 amount_sundry_charges=sundry,
                 amount_duty_reimbursement=duty_reimb,
@@ -24405,6 +24413,7 @@ def finance_invoice_generate_action(request, job_id):
             invoice.amount_clearing_agency_fee = agency_fee
             invoice.amount_shipping_line_do = shipping_line
             invoice.amount_port_charges = port_charges
+            invoice.amount_terminal_handling = terminal_handling
             invoice.amount_transport = transport
             invoice.amount_sundry_charges = sundry
             invoice.amount_duty_reimbursement = duty_reimb

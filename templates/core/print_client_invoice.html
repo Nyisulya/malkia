@@ -429,9 +429,18 @@
                 {% if invoice.amount_port_charges > 0 %}
                 <tr>
                     <td class="row-num" style="text-align:center;font-weight:700;"></td>
-                    <td style="font-weight:700;">Port Wharfage &amp; Terminal Handling (ICD)</td>
+                    <td style="font-weight:700;">Port Wharfage (TPA Port Charges)</td>
                     <td style="text-align:right;font-weight:800;">
                         {{ invoice.amount_port_charges|floatformat:0 }}
+                    </td>
+                </tr>
+                {% endif %}
+                {% if invoice.amount_terminal_handling > 0 %}
+                <tr>
+                    <td class="row-num" style="text-align:center;font-weight:700;"></td>
+                    <td style="font-weight:700;">Terminal Handling (ICD / CFS)</td>
+                    <td style="text-align:right;font-weight:800;">
+                        {{ invoice.amount_terminal_handling|floatformat:0 }}
                     </td>
                 </tr>
                 {% endif %}

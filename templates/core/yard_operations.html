@@ -380,9 +380,15 @@
                                 <strong>TZS {{ inv.amount_shipping_line_do|default:0|floatformat:0 }}</strong>
                             </div>
                             <div style="display:flex;justify-content:space-between;">
-                                <span>3. Port Wharfage &amp; Terminal (ICD):</span>
+                                <span>3. Port Wharfage (TPA):</span>
                                 <strong>TZS {{ inv.amount_port_charges|default:0|floatformat:0 }}</strong>
                             </div>
+                            {% if inv.amount_terminal_handling > 0 %}
+                            <div style="display:flex;justify-content:space-between;">
+                                <span>4. Terminal Handling (ICD):</span>
+                                <strong>TZS {{ inv.amount_terminal_handling|default:0|floatformat:0 }}</strong>
+                            </div>
+                            {% endif %}
                             <div style="display:flex;justify-content:space-between;">
                                 <span>4. Port-to-Yard Transfer &amp; Inspection:</span>
                                 <strong>TZS {{ inv.amount_transport|default:20000|floatformat:0 }}</strong>

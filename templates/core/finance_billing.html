@@ -339,23 +339,31 @@
 
                     <div class="form-row">
                         <div class="form-group" style="flex:1;">
-                            <label style="font-weight:600;">Port &amp; Wharfage (TPA / TICTS)</label>
+                            <label style="font-weight:600;">Port Wharfage (TPA Port)</label>
                             <input type="number" step="0.01" name="port_charges" id="inv_port_charges" class="form-control" placeholder="0" oninput="calculateInvoiceTotal()">
                             <small style="color:var(--text-muted);font-size:0.7rem;">Wharfage + TISS charges</small>
                         </div>
                         <div class="form-group" style="flex:1;">
-                            <label style="font-weight:600;">Transport &amp; Haulage</label>
-                            <input type="number" step="0.01" name="transport" id="inv_transport" class="form-control" placeholder="0" oninput="calculateInvoiceTotal()">
-                            <small style="color:var(--text-muted);font-size:0.7rem;">Haulage, car carrier or driver</small>
+                            <label style="font-weight:600;">Terminal Handling (ICD / CFS)</label>
+                            <input type="number" step="0.01" name="terminal_handling" id="inv_terminal_handling" class="form-control" placeholder="0" oninput="calculateInvoiceTotal()">
+                            <small style="color:var(--text-muted);font-size:0.7rem;">Inland container depot &amp; CFS handling</small>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group" style="flex:1;">
-                            <label style="font-weight:600;">Sundry &amp; Handling Disbursements</label>
-                            <input type="number" step="0.01" name="sundry" id="inv_sundry" class="form-control" placeholder="0" oninput="calculateInvoiceTotal()">
-                            <small style="color:var(--text-muted);font-size:0.7rem;">Handling, facilitation, fuel &amp; ferry</small>
+                            <label style="font-weight:600;">Transport &amp; Haulage</label>
+                            <input type="number" step="0.01" name="transport" id="inv_transport" class="form-control" placeholder="0" oninput="calculateInvoiceTotal()">
+                            <small style="color:var(--text-muted);font-size:0.7rem;">Haulage, car carrier or driver</small>
                         </div>
+                        <div class="form-group" style="flex:1;">
+                            <label style="font-weight:600;">Sundry &amp; Other Disbursements</label>
+                            <input type="number" step="0.01" name="sundry" id="inv_sundry" class="form-control" placeholder="0" oninput="calculateInvoiceTotal()">
+                            <small style="color:var(--text-muted);font-size:0.7rem;">Facilitation, fuel, ferry &amp; extra costs</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
                         <div class="form-group" style="flex:1;">
                             <label style="font-weight:600;">TRA Duty (Direct by Client)</label>
                             <input type="number" step="0.01" name="duty_reimb" id="inv_duty_reimb" class="form-control" value="0" placeholder="0" oninput="calculateInvoiceTotal()">
@@ -395,11 +403,12 @@ function calculateInvoiceTotal() {
     const agency = parseFloat(document.getElementById('inv_agency_fee').value) || 0;
     const shipping = parseFloat(document.getElementById('inv_shipping_line').value) || 0;
     const port = parseFloat(document.getElementById('inv_port_charges').value) || 0;
+    const handling = parseFloat(document.getElementById('inv_terminal_handling')?.value) || 0;
     const transport = parseFloat(document.getElementById('inv_transport').value) || 0;
     const sundry = parseFloat(document.getElementById('inv_sundry').value) || 0;
     const duty = parseFloat(document.getElementById('inv_duty_reimb').value) || 0;
 
-    const total = agency + shipping + port + transport + sundry + duty;
+    const total = agency + shipping + port + handling + transport + sundry + duty;
     const badge = document.getElementById('liveInvoiceTotalBadge');
     if (badge) {
         badge.textContent = 'Total: TSh ' + total.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
@@ -433,9 +442,9 @@ function onJobSelected(sel) {
     const agency = (rawAgency && rawAgency > 0) ? rawAgency : 750000;
     const doCost = parseFloat(opt.dataset.do) || 0;
     const wharfage = (parseFloat(opt.dataset.wharfage) || 0) + (parseFloat(opt.dataset.tiss) || 0);
+    const handling = parseFloat(opt.dataset.handling) || 0;
     const transport = parseFloat(opt.dataset.transport) || 0;
-    const sundry = (parseFloat(opt.dataset.handling) || 0) + 
-                   (parseFloat(opt.dataset.facil) || 0) + 
+    const sundry = (parseFloat(opt.dataset.facil) || 0) + 
                    (parseFloat(opt.dataset.fuel) || 0) + 
                    (parseFloat(opt.dataset.ferry) || 0) + 
                    (parseFloat(opt.dataset.other) || 0);
@@ -443,6 +452,9 @@ function onJobSelected(sel) {
     document.getElementById('inv_agency_fee').value = agency;
     document.getElementById('inv_shipping_line').value = doCost;
     document.getElementById('inv_port_charges').value = wharfage;
+    if (document.getElementById('inv_terminal_handling')) {
+        document.getElementById('inv_terminal_handling').value = handling;
+    }
     document.getElementById('inv_transport').value = transport;
     document.getElementById('inv_sundry').value = sundry;
     document.getElementById('inv_duty_reimb').value = 0;

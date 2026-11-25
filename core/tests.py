@@ -215,3 +215,53 @@ class NotificationDisabledTests(TestCase):
         messages_list = list(response.context['messages'])
         self.assertTrue(any('umezimwa' in str(m) for m in messages_list))
 
+
+class InvoiceSeparationTests(TestCase):
+    def setUp(self):
+        from decimal import Decimal
+        from core.models import UserRole, UserProfile, ClientInvoice
+
+        self.user = User.objects.create_user(username='accountant_user', password='password123', is_staff=True)
+        UserProfile.objects.create(user=self.user, role=UserRole.FINANCE)
+        self.client.force_login(self.user)
+        self.customer = Customer.objects.create(company_name='Alpha Logistics Ltd')
+        self.job = JobShipment.objects.create(
+            job_number='MCW/2026/0099',
+            customer=self.customer,
+            bl_number='BLWHARFAGETEST',
+            vehicle_make='TOYOTA',
+            vehicle_model='HARRIER',
+            cost_agent_fee=Decimal('250000.00'),
+            cost_do=Decimal('243000.00'),
+            cost_wharfage=Decimal('500000.00'),
+            cost_handling=Decimal('412890.00'),
+        )
+
+    def test_invoice_create_separates_wharfage_and_handling(self):
+        from decimal import Decimal
+        from core.models import ClientInvoice
+
+        invoice = ClientInvoice.objects.create(
+            invoice_number=ClientInvoice.generate_next_invoice_number(),
+            job=self.job,
+            customer=self.customer,
+            due_date=self.job.created_at.date(),
+            amount_clearing_agency_fee=Decimal('250000.00'),
+            amount_shipping_line_do=Decimal('243000.00'),
+            amount_port_charges=Decimal('500000.00'),
+            amount_terminal_handling=Decimal('412890.00'),
+        )
+        invoice.total_amount = invoice.calculate_total()
+        invoice.save()
+
+        self.assertEqual(invoice.total_amount, Decimal('1405890.00'))
+
+        response = self.client.get(reverse('print_invoice', args=[invoice.id]))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn("Port Wharfage (TPA Port Charges)", content)
+        self.assertIn("Terminal Handling (ICD / CFS)", content)
+        self.assertIn("500000", content)
+        self.assertIn("412890", content)
+
+
