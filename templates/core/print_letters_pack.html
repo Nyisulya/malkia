@@ -22,6 +22,12 @@
             </span>
         </div>
         <div style="display:flex;gap:0.5rem;align-items:center;">
+            <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.78rem;background:#1E293B;padding:0.25rem 0.55rem;border-radius:6px;border:1px solid #334155;">
+                <span style="color:#94A3B8;"><i class="fa-solid fa-arrows-up-down"></i> Nafasi ya Logo:</span>
+                <button type="button" onclick="setLetterheadTop('28mm')" class="spacing-btn" id="sp28" title="28mm (Karatasi yenye Logo Fupi)">Fupi</button>
+                <button type="button" onclick="setLetterheadTop('38mm')" class="spacing-btn active" id="sp38" title="38mm (Kawaida)">Kawaida</button>
+                <button type="button" onclick="setLetterheadTop('48mm')" class="spacing-btn" id="sp48" title="48mm (Karatasi yenye Logo Ndefu)">Ndefu</button>
+            </div>
             <a href="{% url 'job_detail' job.id %}" class="btn btn-back">
                 <i class="fa-solid fa-arrow-left"></i> Back to File
             </a>
@@ -40,5 +46,14 @@
     {% include "core/includes/authorization_letter_page.html" with letter_type="TRA" page_badge="Page 1 • TRA Authorization" %}
     {% include "core/includes/authorization_letter_page.html" with letter_type="TBS" page_badge="Page 2 • TBS Authorization" %}
 
+    <script>
+        function setLetterheadTop(val) {
+            document.documentElement.style.setProperty('--letterhead-top', val);
+            document.querySelectorAll('.spacing-btn').forEach(b => b.classList.remove('active'));
+            if (val === '28mm') document.getElementById('sp28')?.classList.add('active');
+            if (val === '38mm') document.getElementById('sp38')?.classList.add('active');
+            if (val === '48mm') document.getElementById('sp48')?.classList.add('active');
+        }
+    </script>
 </body>
 </html>

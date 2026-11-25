@@ -5,12 +5,7 @@
 
     <div>
         <div class="header-section">
-            <div class="header-logo-box">
-                {% if job.customer.logo_image %}
-                    <img src="{{ job.customer.logo_image.url }}" alt="{{ job.customer.company_name }}" class="customer-logo">
-                {% endif %}
-                <div class="letter-date">{{ today|date:"d/m/Y" }}</div>
-            </div>
+            <div class="letter-date">{{ today|date:"d/m/Y" }}</div>
         </div>
 
         <div class="recipient-box">
@@ -50,16 +45,5 @@
 
             <div class="company-signee-name">{{ job.customer.company_name|upper }}</div>
         </div>
-    </div>
-
-    <div class="letterhead-footer-bar">
-        <div>
-            {{ job.customer.company_name }}{% if job.customer.physical_address %}, {{ job.customer.physical_address }}{% endif %}
-        </div>
-        {% if job.customer.email %}
-            <div>Email: {{ job.customer.email }}</div>
-        {% elif job.customer.phone %}
-            <div>Tel: {{ job.customer.phone }}</div>
-        {% endif %}
     </div>
 </div>

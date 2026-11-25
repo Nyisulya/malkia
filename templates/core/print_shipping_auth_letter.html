@@ -53,6 +53,12 @@
             </span>
         </div>
         <div style="display:flex;gap:0.5rem;align-items:center;">
+            <div style="display:flex;align-items:center;gap:0.35rem;font-size:0.78rem;background:#1E293B;padding:0.25rem 0.55rem;border-radius:6px;border:1px solid #334155;">
+                <span style="color:#94A3B8;"><i class="fa-solid fa-arrows-up-down"></i> Nafasi ya Logo:</span>
+                <button type="button" onclick="setLetterheadTop('28mm')" class="spacing-btn" id="sp28" title="28mm (Karatasi yenye Logo Fupi)">Fupi</button>
+                <button type="button" onclick="setLetterheadTop('38mm')" class="spacing-btn active" id="sp38" title="38mm (Kawaida)">Kawaida</button>
+                <button type="button" onclick="setLetterheadTop('48mm')" class="spacing-btn" id="sp48" title="48mm (Karatasi yenye Logo Ndefu)">Ndefu</button>
+            </div>
             <a href="{% url 'job_detail' job.id %}" class="btn btn-back">
                 <i class="fa-solid fa-arrow-left"></i> Back to File
             </a>
@@ -65,10 +71,7 @@
     <div class="page">
         <div>
             <div class="header-section">
-                <div class="header-logo-box">
-                    <img id="clientLogoImg" src="{% if job.customer.logo_image %}{{ job.customer.logo_image.url }}{% endif %}" alt="{{ job.customer.company_name }}" class="customer-logo {% if not job.customer.logo_image %}hidden-el{% endif %}">
-                    <div class="letter-date editable" contenteditable="true">{{ today|date:"d/m/Y" }}</div>
-                </div>
+                <div class="letter-date editable" contenteditable="true">{{ today|date:"d/m/Y" }}</div>
             </div>
 
             <div class="recipient-box editable" id="recipientBlock" contenteditable="true" style="white-space:pre-line;">{% if shipping_line == 'WOSAC' %}WOSAC LIMITED,
@@ -103,20 +106,16 @@ TANZANIA.{% endif %}</div>
                 <div class="company-signee-name editable" contenteditable="true">{{ job.customer.company_name|upper }}</div>
             </div>
         </div>
-
-        <div class="letterhead-footer-bar {% if not job.customer.logo_image and not job.customer.physical_address %}hidden-el{% endif %}" id="letterheadFooter">
-            <div class="editable" contenteditable="true">
-                {{ job.customer.company_name }}{% if job.customer.physical_address %}, {{ job.customer.physical_address }}{% endif %}
-            </div>
-            {% if job.customer.email %}
-                <div class="editable" contenteditable="true">Email: {{ job.customer.email }}</div>
-            {% elif job.customer.phone %}
-                <div class="editable" contenteditable="true">Tel: {{ job.customer.phone }}</div>
-            {% endif %}
-        </div>
     </div>
 
     <script>
+        function setLetterheadTop(val) {
+            document.documentElement.style.setProperty('--letterhead-top', val);
+            document.querySelectorAll('.spacing-btn').forEach(b => b.classList.remove('active'));
+            if (val === '28mm') document.getElementById('sp28')?.classList.add('active');
+            if (val === '38mm') document.getElementById('sp38')?.classList.add('active');
+            if (val === '48mm') document.getElementById('sp48')?.classList.add('active');
+        }
         const PRESETS = {
             PRIME: `PRIME CONSOLIDATORS CO.LTD,\nGOLDEN JUBILEE TOWER, FIRST FLOOR, WING A,\nP.O. BOX 104784,\nTELL: +255222922213\nDAR ES SALAAM,\nTANZANIA.`,
             WOSAC: `WOSAC LIMITED,\nP.O. BOX 63210,\nTELL: +255222138336\nDAR ES SALAAM,\nTANZANIA.`,
