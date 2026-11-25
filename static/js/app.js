@@ -332,18 +332,37 @@ function updateActiveSidebarNav(url) {
 const PAGE_CACHE_TTL = 20000;
 const PAGE_CACHE_LIMIT = 12;
 const pageCache = new Map();
-const prefetchingUrls = new Set();
+const inFlightFetches = new Map();
 let activePrefetches = 0;
 let isNavigating = false;
-let pendingNavigation = null;
+let activeNavController = null;
+let activeNavId = 0;
+
+const NON_AJAX_PATH_PATTERNS = [
+    '/api/',
+    '/login/',
+    '/logout/',
+    '/static/',
+    '/media/',
+    '/export',
+    '/download',
+    '/print-',
+    '/print/',
+    '/switch-role/',
+    '/payslip/',
+    '/id-card/',
+    '/view/',
+];
+
+function isNonAjaxPath(pathname) {
+    return NON_AJAX_PATH_PATTERNS.some(pattern => pathname.includes(pattern));
+}
 
 function isCacheablePageUrl(url) {
     try {
         const parsed = new URL(url, window.location.origin);
         return parsed.origin === window.location.origin &&
-            !parsed.pathname.startsWith('/api/') &&
-            !parsed.pathname.startsWith('/login/') &&
-            !parsed.pathname.startsWith('/logout/') &&
+            !isNonAjaxPath(parsed.pathname) &&
             !parsed.searchParams.has('edit');
     } catch (err) {
         return false;
@@ -377,10 +396,12 @@ window.clearPageCache = function() {
     pageCache.clear();
 };
 
-async function fetchPageDocument(url) {
-    const response = await fetch(url, {
+async function fetchPageDocument(url, signal = null) {
+    const fetchOpts = {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    });
+    };
+    if (signal) fetchOpts.signal = signal;
+    const response = await fetch(url, fetchOpts);
     if (!response.ok) throw new Error('Page request failed');
     if (response.redirected && new URL(response.url).pathname.startsWith('/login/')) {
         throw new Error('Session expired');
@@ -414,18 +435,37 @@ function renderPageDocument(doc, url, options = {}) {
 
 window.loadPageSeamlessly = async function(url, pushState = true) {
     const targetUrl = new URL(url, window.location.origin).href;
-    if (isNavigating) {
-        pendingNavigation = { url: targetUrl, pushState: pushState };
-        return;
+    if (activeNavController) {
+        try { activeNavController.abort(); } catch (e) {}
+        activeNavController = null;
     }
 
+    const navId = ++activeNavId;
+    const controller = new AbortController();
+    activeNavController = controller;
     isNavigating = true;
+
     try {
         let doc = getCachedPage(targetUrl);
         if (!doc) {
             showTopProgressBar();
-            doc = await fetchPageDocument(targetUrl);
-            cachePage(targetUrl, doc);
+            const existingInFlight = inFlightFetches.get(targetUrl);
+            if (existingInFlight) {
+                doc = await existingInFlight;
+            } else {
+                const fetchPromise = fetchPageDocument(targetUrl, controller.signal);
+                inFlightFetches.set(targetUrl, fetchPromise);
+                try {
+                    doc = await fetchPromise;
+                    cachePage(targetUrl, doc);
+                } finally {
+                    inFlightFetches.delete(targetUrl);
+                }
+            }
+        }
+
+        if (navId !== activeNavId || controller.signal.aborted) {
+            return;
         }
 
         if (!renderPageDocument(doc, targetUrl)) {
@@ -437,17 +477,17 @@ window.loadPageSeamlessly = async function(url, pushState = true) {
             window.history.pushState({ url: targetUrl }, doc.title || '', targetUrl);
         }
     } catch (err) {
+        if (err && err.name === 'AbortError') return;
+        if (navId !== activeNavId) return;
         console.error('Seamless Navigation Error:', err);
         window.location.href = targetUrl;
     } finally {
-        isNavigating = false;
-        hideTopProgressBar();
-        if (pendingNavigation) {
-            const next = pendingNavigation;
-            pendingNavigation = null;
-            setTimeout(() => window.loadPageSeamlessly(next.url, next.pushState), 0);
+        if (navId === activeNavId) {
+            isNavigating = false;
+            activeNavController = null;
+            hideTopProgressBar();
+            window.dispatchEvent(new Event('malkia:navigation-complete'));
         }
-        window.dispatchEvent(new Event('malkia:navigation-complete'));
     }
 };
 
@@ -462,8 +502,8 @@ function setupInnerLinkInterceptor() {
 
         const href = link.getAttribute('href');
         if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('tel:') || href.startsWith('mailto:')) return;
-        if (href.includes('/logout/') || href.includes('/static/') || href.includes('/media/')) return;
         if (link.origin !== window.location.origin) return;
+        if (isNonAjaxPath(link.pathname)) return;
 
         e.preventDefault();
         window.loadPageSeamlessly(link.href, true);
@@ -476,40 +516,82 @@ function setupInnerLinkInterceptor() {
 }
 
 function setupLinkPrefetch() {
+    const hoverTimers = new WeakMap();
+
+    function shouldHoverPrefetch(link) {
+        if (!link) return false;
+        return Boolean(link.closest('.app-sidebar, .nav-tabs, .tab-nav-btn, [data-prefetch]'));
+    }
+
     function schedule(link, delay) {
         if (!link || !isCacheablePageUrl(link.href) || link.href === window.location.href) return;
-        if (link.dataset.prefetchScheduled === 'true') return;
-        link.dataset.prefetchScheduled = 'true';
-        setTimeout(() => {
-            link.dataset.prefetchScheduled = 'false';
+        if (hoverTimers.has(link) || getCachedPage(link.href) || inFlightFetches.has(link.href)) return;
+        const timerId = setTimeout(() => {
+            hoverTimers.delete(link);
             prefetchPage(link.href);
         }, delay);
+        hoverTimers.set(link, timerId);
+    }
+
+    function cancel(link) {
+        if (!link) return;
+        const timerId = hoverTimers.get(link);
+        if (timerId) {
+            clearTimeout(timerId);
+            hoverTimers.delete(link);
+        }
     }
 
     document.addEventListener('pointerover', (e) => {
         if (e.pointerType === 'touch') return;
-        schedule(e.target.closest('a[href]'), 120);
+        const link = e.target.closest('a[href]');
+        if (shouldHoverPrefetch(link)) {
+            schedule(link, 120);
+        }
+    }, { passive: true });
+
+    document.addEventListener('pointerout', (e) => {
+        const link = e.target.closest('a[href]');
+        if (link && !link.contains(e.relatedTarget)) {
+            cancel(link);
+        }
+    }, { passive: true });
+
+    document.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const link = e.target.closest('a[href]');
+        if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+        if (link.getAttribute('data-no-ajax') === 'true' || link.getAttribute('data-native') === 'true') return;
+        if (isCacheablePageUrl(link.href) && link.href !== window.location.href) {
+            prefetchPage(link.href);
+        }
     }, { passive: true });
 
     document.addEventListener('focusin', (e) => {
-        schedule(e.target.closest('a[href]'), 250);
+        const link = e.target.closest('a[href]');
+        if (shouldHoverPrefetch(link)) {
+            schedule(link, 250);
+        }
     }, { passive: true });
 }
 
 async function prefetchPage(url) {
-    if (!isCacheablePageUrl(url) || isNavigating || activePrefetches >= 1 || getCachedPage(url)) return;
+    if (!isCacheablePageUrl(url) || isNavigating || activePrefetches >= 2 || getCachedPage(url)) return;
     const key = new URL(url, window.location.origin).href;
-    if (prefetchingUrls.has(key)) return;
+    if (inFlightFetches.has(key)) return;
 
-    prefetchingUrls.add(key);
     activePrefetches += 1;
+    const fetchPromise = fetchPageDocument(key).then(doc => {
+        cachePage(key, doc);
+        return doc;
+    });
+    inFlightFetches.set(key, fetchPromise);
     try {
-        const doc = await fetchPageDocument(url);
-        cachePage(url, doc);
+        await fetchPromise;
     } catch (err) {
         // The real navigation will retry and show any error.
     } finally {
-        prefetchingUrls.delete(key);
+        inFlightFetches.delete(key);
         activePrefetches -= 1;
     }
 }
@@ -890,7 +972,7 @@ window.repaginateTable = function(table, targetPage) {
             // Quiet network recovery
         } finally {
             pulseInFlight = false;
-            setTimeout(checkPulse, 3500);
+            setTimeout(checkPulse, 10000);
         }
     }
 
@@ -954,5 +1036,5 @@ window.repaginateTable = function(table, targetPage) {
     });
 
     // Check after each completed pulse so slow VPS requests never overlap.
-    setTimeout(checkPulse, 3500);
+    setTimeout(checkPulse, 10000);
 })();

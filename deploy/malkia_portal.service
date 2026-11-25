@@ -10,6 +10,8 @@ Environment="PATH=/var/www/malkia/.venv/bin"
 Environment="DJANGO_SETTINGS_MODULE=malkia_project.settings"
 ExecStart=/var/www/malkia/.venv/bin/gunicorn \
     --workers 3 \
+    --worker-class gthread \
+    --threads 4 \
     --bind 127.0.0.1:3444 \
     --timeout 120 \
     --access-logfile /var/log/malkia_access.log \

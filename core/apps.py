@@ -1,5 +1,19 @@
 from django.apps import AppConfig
+from django.db.backends.signals import connection_created
 from django.db.models.signals import post_migrate
+
+
+def _configure_sqlite_pragmas(sender, connection, **kwargs):
+    if connection.vendor == 'sqlite':
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("PRAGMA journal_mode=WAL;")
+                cursor.execute("PRAGMA synchronous=NORMAL;")
+                cursor.execute("PRAGMA temp_store=MEMORY;")
+                cursor.execute("PRAGMA cache_size=-20000;")
+                cursor.execute("PRAGMA busy_timeout=30000;")
+        except Exception:
+            pass
 
 
 def auto_add_missing_columns(sender, **kwargs):
@@ -26,4 +40,5 @@ class CoreConfig(AppConfig):
     name = 'core'
 
     def ready(self):
+        connection_created.connect(_configure_sqlite_pragmas)
         post_migrate.connect(auto_add_missing_columns, sender=self)

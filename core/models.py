@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 
+_UNSET = object()
+
 
 class UserRole(models.TextChoices):
     # 3 Primary System Roles (Operations, Financial, CEO)
@@ -439,11 +441,20 @@ class JobShipment(models.Model):
 
     @property
     def current_stage_obj(self):
-        return self.stages.filter(stage_number=self.current_stage_number).first()
+        cached = getattr(self, '_current_stage_obj_cache', _UNSET)
+        if cached is not _UNSET:
+            return cached
+        prefetched = getattr(self, '_prefetched_objects_cache', {})
+        if 'stages' in prefetched:
+            st = next((s for s in prefetched['stages'] if s.stage_number == self.current_stage_number), None)
+        else:
+            st = self.stages.filter(stage_number=self.current_stage_number).first()
+        self._current_stage_obj_cache = st
+        return st
 
     @property
     def current_stage_display_name(self):
-        st = self.stages.filter(stage_number=self.current_stage_number).first()
+        st = self.current_stage_obj
         if st and st.name_en:
             return st.name_en
         stage_names = {
@@ -552,7 +563,9 @@ class JobShipment(models.Model):
             inflow_type='CONTAINER_REFUND',
             deposit_status__in=['RETURNED_FULL', 'PARTIAL'],
         ).aggregate(s=Sum('returned_amount'))['s']
-        return total or Decimal('0')
+        res = total or Decimal('0')
+        self._deposit_refunded_cache = res
+        return res
 
     @property
     def net_container_deposit(self):
@@ -583,9 +596,26 @@ class JobShipment(models.Model):
         from decimal import Decimal
         return self.total_direct_costs + (self.cost_agent_fee or Decimal('0'))
 
+    def _latest_doc_of_types(self, doc_types):
+        cache = getattr(self, '_doc_type_cache', None)
+        if cache is None:
+            cache = {}
+            self._doc_type_cache = cache
+        key = tuple(doc_types)
+        if key in cache:
+            return cache[key]
+        prefetched = getattr(self, '_prefetched_objects_cache', {})
+        if 'documents' in prefetched:
+            matches = [d for d in prefetched['documents'] if d.document_type in doc_types]
+            doc = max(matches, key=lambda d: d.uploaded_at) if matches else None
+        else:
+            doc = self.documents.filter(document_type__in=doc_types).order_by('-uploaded_at').first()
+        cache[key] = doc
+        return doc
+
     @property
     def signed_tra_doc(self):
-        return self.documents.filter(document_type__in=['TRA_AUTH_SIGNED', 'C41_SIGNED']).order_by('-uploaded_at').first()
+        return self._latest_doc_of_types(('TRA_AUTH_SIGNED', 'C41_SIGNED'))
 
     @property
     def signed_c41_doc(self):
@@ -593,39 +623,49 @@ class JobShipment(models.Model):
 
     @property
     def signed_tbs_doc(self):
-        return self.documents.filter(document_type='TBS_SIGNED').order_by('-uploaded_at').first()
+        return self._latest_doc_of_types(('TBS_SIGNED',))
 
     @property
     def c41_doc(self):
-        return self.documents.filter(document_type__in=['FORM_C41', 'C41_SIGNED']).order_by('-uploaded_at').first()
+        return self._latest_doc_of_types(('FORM_C41', 'C41_SIGNED'))
 
     @property
     def signed_handover_doc(self):
-        return self.documents.filter(document_type='HANDOVER_SIGNED').order_by('-uploaded_at').first()
+        return self._latest_doc_of_types(('HANDOVER_SIGNED',))
 
     @property
     def latest_invoice(self):
-        return self.invoices.order_by('-created_at').first()
+        cached = getattr(self, '_latest_invoice_cache', _UNSET)
+        if cached is not _UNSET:
+            return cached
+        prefetched = getattr(self, '_prefetched_objects_cache', {})
+        if 'invoices' in prefetched:
+            invs = prefetched['invoices']
+            inv = max(invs, key=lambda i: i.created_at) if invs else None
+        else:
+            inv = self.invoices.order_by('-created_at').first()
+        self._latest_invoice_cache = inv
+        return inv
 
     @property
     def bl_doc(self):
-        return self.documents.filter(document_type='BILL_OF_LADING').order_by('-uploaded_at').first()
+        return self._latest_doc_of_types(('BILL_OF_LADING',))
 
     @property
     def invoice_doc(self):
-        return self.documents.filter(document_type='COMMERCIAL_INVOICE').order_by('-uploaded_at').first()
+        return self._latest_doc_of_types(('COMMERCIAL_INVOICE',))
 
     @property
     def packing_list_doc(self):
-        return self.documents.filter(document_type='PACKING_LIST').order_by('-uploaded_at').first()
+        return self._latest_doc_of_types(('PACKING_LIST',))
 
     @property
     def tbs_cert_doc(self):
-        return self.documents.filter(document_type='TBS_CERT').order_by('-uploaded_at').first()
+        return self._latest_doc_of_types(('TBS_CERT',))
 
     @property
     def export_cert_doc(self):
-        return self.documents.filter(document_type='EXPORT_CERT').order_by('-uploaded_at').first()
+        return self._latest_doc_of_types(('EXPORT_CERT',))
 
     @property
     def other_documents(self):
@@ -658,20 +698,45 @@ class JobShipment(models.Model):
 
     @property
     def total_expenses(self):
-        total = self.expenses.filter(approval_status='APPROVED').aggregate(total=models.Sum('amount'))['total']
-        return total or Decimal('0.00')
+        cached = getattr(self, '_total_expenses_cache', _UNSET)
+        if cached is not _UNSET:
+            return cached
+        prefetched = getattr(self, '_prefetched_objects_cache', {})
+        if 'expenses' in prefetched:
+            res = sum((e.amount or Decimal('0.00')) for e in prefetched['expenses'] if e.approval_status == 'APPROVED')
+        else:
+            total = self.expenses.filter(approval_status='APPROVED').aggregate(total=models.Sum('amount'))['total']
+            res = total or Decimal('0.00')
+        self._total_expenses_cache = res
+        return res
 
     @property
     def all_expenses_sum(self):
-        total = self.expenses.exclude(approval_status__in=['REJECTED', 'CANCELLED']).aggregate(total=models.Sum('amount'))['total']
-        return total or Decimal('0.00')
+        cached = getattr(self, '_all_expenses_sum_cache', _UNSET)
+        if cached is not _UNSET:
+            return cached
+        prefetched = getattr(self, '_prefetched_objects_cache', {})
+        if 'expenses' in prefetched:
+            res = sum((e.amount or Decimal('0.00')) for e in prefetched['expenses'] if e.approval_status not in ('REJECTED', 'CANCELLED'))
+        else:
+            total = self.expenses.exclude(approval_status__in=['REJECTED', 'CANCELLED']).aggregate(total=models.Sum('amount'))['total']
+            res = total or Decimal('0.00')
+        self._all_expenses_sum_cache = res
+        return res
 
     @property
     def client_billed_revenue(self):
-        total = self.invoices.aggregate(total=models.Sum('total_amount'))['total']
-        if total:
-            return total
-        return self.contracted_revenue
+        cached = getattr(self, '_client_billed_revenue_cache', _UNSET)
+        if cached is not _UNSET:
+            return cached
+        prefetched = getattr(self, '_prefetched_objects_cache', {})
+        if 'invoices' in prefetched:
+            total = sum((i.total_amount or Decimal('0.00')) for i in prefetched['invoices'])
+        else:
+            total = self.invoices.aggregate(total=models.Sum('total_amount'))['total']
+        res = total if total else self.contracted_revenue
+        self._client_billed_revenue_cache = res
+        return res
 
     @property
     def gross_margin(self):
@@ -686,8 +751,17 @@ class JobShipment(models.Model):
 
     @property
     def total_client_paid(self):
-        total = self.invoices.aggregate(total=models.Sum('amount_paid'))['total']
-        return total or Decimal('0.00')
+        cached = getattr(self, '_total_client_paid_cache', _UNSET)
+        if cached is not _UNSET:
+            return cached
+        prefetched = getattr(self, '_prefetched_objects_cache', {})
+        if 'invoices' in prefetched:
+            total = sum((i.amount_paid or Decimal('0.00')) for i in prefetched['invoices'])
+        else:
+            total = self.invoices.aggregate(total=models.Sum('amount_paid'))['total']
+        res = total or Decimal('0.00')
+        self._total_client_paid_cache = res
+        return res
 
     @property
     def client_outstanding_balance(self):

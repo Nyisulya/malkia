@@ -51,8 +51,9 @@ from django.utils.text import get_valid_filename
 
 
 
+import time as time_module
 from django.db import transaction
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count
 
 from django.db.models.functions import TruncMonth
 
@@ -714,6 +715,21 @@ def accountant_dashboard_view(request):
     all_jobs = list(jobs_qs.order_by('-created_at'))
     total_vehicles = len(all_jobs)
 
+    # Bulk-preload container deposit refund totals before cost/margin loops to prevent N+1 queries
+    if all_jobs:
+        refund_rows = OtherRevenue.objects.filter(
+            job_id__in=[j.id for j in all_jobs],
+            inflow_type='CONTAINER_REFUND',
+        ).values('job_id').annotate(
+            total=Sum('returned_amount', filter=Q(deposit_status__in=['RETURNED_FULL', 'PARTIAL'])),
+            resolved_cnt=Count('id', filter=Q(deposit_status__in=['RETURNED_FULL', 'PARTIAL', 'FORFEITED'])),
+        )
+        refund_totals = {r['job_id']: (r['total'] or Decimal('0')) for r in refund_rows}
+        refund_counts = {r['job_id']: r['resolved_cnt'] for r in refund_rows}
+        for j in all_jobs:
+            j._deposit_refunded_cache = refund_totals.get(j.id, Decimal('0'))
+            j.deposit_refund_logged = refund_counts.get(j.id, 0) > 0
+
     # Financial aggregations
     sum_cif_usd = sum(j.cif_usd or Decimal('0') for j in all_jobs)
     sum_duty = sum(j.cost_duty or Decimal('0') for j in all_jobs)
@@ -781,10 +797,11 @@ def accountant_dashboard_view(request):
     total_collected = sum((i.amount_paid or Decimal('0')) for i in all_period_invoices)
     total_due = max(Decimal('0'), total_invoiced - total_collected)
 
-    # Attach document URLs & costing status for quick preview
-    for j in all_jobs:
-        bl_doc = j.documents.filter(document_type='BILL_OF_LADING').first()
-        inv_doc = j.documents.filter(document_type='COMMERCIAL_INVOICE').first()
+    # Attach document URLs & costing status ONLY for displayed recent jobs (uses prefetched documents)
+    recent_jobs = displayed_jobs[:20]
+    for j in recent_jobs:
+        bl_doc = j.bl_doc
+        inv_doc = j.invoice_doc
         j.bl_doc_url = bl_doc.file.url if bl_doc and bl_doc.file else None
         j.inv_doc_url = inv_doc.file.url if inv_doc and inv_doc.file else None
         j.is_costed = (j.cost_duty > 0 or j.cost_agent_fee > 0)
@@ -801,7 +818,7 @@ def accountant_dashboard_view(request):
         'current_year': current_year,
         'search_q': q,
         'selected_status': status_param,
-        'recent_jobs': displayed_jobs[:20],
+        'recent_jobs': recent_jobs,
         'total_vehicles': total_vehicles,
         'costed_count': costed_count,
         'in_progress_count': in_progress_count,
@@ -1500,52 +1517,51 @@ def dashboard_view(request):
 
 
 
-    # Stage distribution for visual health card and chart
-
-
-
-    all_stage_defs = WorkflowStageDefinition.objects.all().order_by('stage_number')
-
-    stage_counts = []
-
-    for sdef in all_stage_defs:
-
-        cnt = jobs.filter(current_stage_number=sdef.stage_number, status__in=['ACTIVE', 'DELAYED']).count()
-
-        stage_counts.append({
-
+    # Stage distribution for visual health card and chart (batched in 2 queries)
+    all_stage_defs = list(WorkflowStageDefinition.objects.all().order_by('stage_number'))
+    active_stage_map = {
+        row['current_stage_number']: row['cnt']
+        for row in jobs.filter(status__in=['ACTIVE', 'DELAYED'])
+        .values('current_stage_number')
+        .annotate(cnt=Count('id'))
+    }
+    stage_counts = [
+        {
             'stage_number': sdef.stage_number,
-
             'name_en': sdef.name_en,
-
             'name_sw': sdef.name_sw,
+            'count': active_stage_map.get(sdef.stage_number, 0),
+        }
+        for sdef in all_stage_defs
+    ]
 
-            'count': cnt,
+    jobs_metrics = jobs.aggregate(
+        visible_total=Count('id'),
+        active_total=Count('id', filter=Q(status__in=['ACTIVE', 'DELAYED'])),
+        completed_total=Count('id', filter=Q(status='COMPLETED')),
+        delayed_total=Count('id', filter=Q(status='DELAYED')),
+        bond_total=Count('id', filter=Q(clearance_mode='BOND')),
+        s1_all=Count('id', filter=Q(current_stage_number=1)),
+        s2_all=Count('id', filter=Q(current_stage_number=2)),
+        s3_all=Count('id', filter=Q(current_stage_number=3)),
+        docs_today=Count('id', filter=Q(created_at__date=today_date)),
+        customs_attn=Count('id', filter=Q(current_stage_number__in=[2, 3], status='DELAYED')),
+    )
 
-        })
-
-
-
-    active_jobs_count = active_jobs.count()
-
-    completed_jobs_count = completed_jobs.count()
-
-    delayed_jobs_count = delayed_jobs.count()
-
-    visible_jobs_count = jobs.count()
-
+    active_jobs_count = jobs_metrics['active_total'] or 0
+    completed_jobs_count = jobs_metrics['completed_total'] or 0
+    delayed_jobs_count = jobs_metrics['delayed_total'] or 0
+    visible_jobs_count = jobs_metrics['visible_total'] or 0
     pulse_all_count = visible_jobs_count
-
     pulse_active_count = active_jobs_count
+    pulse_bond_count = jobs_metrics['bond_total'] or 0
 
-    pulse_bond_count = jobs.filter(clearance_mode='BOND').count()
-
-    stage_1_count = jobs.filter(current_stage_number=1, status__in=['ACTIVE', 'DELAYED']).count()
-    stage_2_count = jobs.filter(current_stage_number=2, status__in=['ACTIVE', 'DELAYED']).count()
-    stage_3_count = jobs.filter(current_stage_number=3, status__in=['ACTIVE', 'DELAYED']).count()
-    stage_4_count = jobs.filter(current_stage_number=4, status__in=['ACTIVE', 'DELAYED']).count()
-    stage_5_count = jobs.filter(current_stage_number=5, status__in=['ACTIVE', 'DELAYED']).count()
-    stage_6_count = jobs.filter(current_stage_number=6, status__in=['ACTIVE', 'DELAYED']).count()
+    stage_1_count = active_stage_map.get(1, 0)
+    stage_2_count = active_stage_map.get(2, 0)
+    stage_3_count = active_stage_map.get(3, 0)
+    stage_4_count = active_stage_map.get(4, 0)
+    stage_5_count = active_stage_map.get(5, 0)
+    stage_6_count = active_stage_map.get(6, 0)
 
     pulse_tra_count = stage_2_count
     jobs_at_tra = stage_2_count
@@ -1560,27 +1576,17 @@ def dashboard_view(request):
     pulse_delayed_count = delayed_jobs_count
     can_view_financials = (role in [UserRole.CEO, UserRole.ADMIN, UserRole.FINANCE] or request.user.is_superuser)
 
-    new_files_count = jobs.filter(current_stage_number=1).count()
-
+    new_files_count = jobs_metrics['s1_all'] or 0
     pending_files_count = new_files_count
-
     pending_file_opening = new_files_count
-
-    docs_received_today = jobs.filter(created_at__date=today_date).count()
-
-    completed_documents_count = completed_jobs.count()
-
-    pending_declarations_count = jobs.filter(current_stage_number=2).count()
-
-    assessed_declarations_count = jobs.filter(current_stage_number=3).count()
-
-    awaiting_assessment_count = jobs.filter(current_stage_number=2).count()
-
-    customs_attention_count = jobs.filter(current_stage_number__in=[2, 3], status='DELAYED').count()
-
-    stage_1_count = jobs.filter(current_stage_number=1).count()
-
-    stage_2_count = jobs.filter(current_stage_number=2).count()
+    docs_received_today = jobs_metrics['docs_today'] or 0
+    completed_documents_count = completed_jobs_count
+    pending_declarations_count = jobs_metrics['s2_all'] or 0
+    assessed_declarations_count = jobs_metrics['s3_all'] or 0
+    awaiting_assessment_count = pending_declarations_count
+    customs_attention_count = jobs_metrics['customs_attn'] or 0
+    stage_1_count = new_files_count
+    stage_2_count = pending_declarations_count
 
 
 
@@ -1687,7 +1693,7 @@ def dashboard_view(request):
 
         'pipeline_desc': "Total consignments in progress",
 
-        'jobs': jobs.order_by('-created_at')[:20],
+        'jobs': (jobs.prefetch_related('stages', 'invoices', 'expenses') if can_view_financials else jobs.prefetch_related('stages')).order_by('-created_at')[:20],
 
         'is_ceo': (role in [UserRole.CEO, UserRole.ADMIN] or request.user.is_superuser),
 
@@ -1755,9 +1761,18 @@ def dashboard_view(request):
         ceo_total_due = max(Decimal('0'), ceo_total_invoiced - ceo_total_collected)
 
         ceo_jobs_qs = jobs.exclude(job_number__icontains='TEST').exclude(customer__company_name__icontains='Test Logistics')
-        ceo_active_count = ceo_jobs_qs.filter(status__in=['ACTIVE', 'DELAYED']).count()
-        ceo_completed_count = ceo_jobs_qs.filter(status__in=['COMPLETED', 'CLOSED']).count()
-        ceo_all_count = ceo_jobs_qs.count()
+        ceo_agg = ceo_jobs_qs.aggregate(
+            all_cnt=Count('id'),
+            active_cnt=Count('id', filter=Q(status__in=['ACTIVE', 'DELAYED'])),
+            completed_cnt=Count('id', filter=Q(status__in=['COMPLETED', 'CLOSED'])),
+            tra_cnt=Count('id', filter=Q(current_stage_number=2, status__in=['ACTIVE', 'DELAYED'])),
+            tbs_cnt=Count('id', filter=Q(current_stage_number=3, status__in=['ACTIVE', 'DELAYED'])),
+            port_cnt=Count('id', filter=Q(current_stage_number=4, status__in=['ACTIVE', 'DELAYED'])),
+            yard_cnt=Count('id', filter=Q(current_stage_number=5, status__in=['ACTIVE', 'DELAYED'])),
+        )
+        ceo_active_count = ceo_agg['active_cnt'] or 0
+        ceo_completed_count = ceo_agg['completed_cnt'] or 0
+        ceo_all_count = ceo_agg['all_cnt'] or 0
 
         context.update({
             'total_company_revenue': total_company_revenue,
@@ -1781,14 +1796,14 @@ def dashboard_view(request):
             'sum_transport': sum_transport,
             'sum_fuel': sum_fuel,
             'sum_ferry_facil': sum_ferry + sum_facilitation,
-            'ceo_jobs': ceo_jobs_qs.order_by('-created_at')[:30],
+            'ceo_jobs': ceo_jobs_qs.prefetch_related('stages', 'invoices', 'expenses').order_by('-created_at')[:30],
             'ceo_active_count': ceo_active_count,
             'ceo_completed_count': ceo_completed_count,
             'ceo_all_count': ceo_all_count,
-            'pulse_tra_count': ceo_jobs_qs.filter(current_stage_number=2, status__in=['ACTIVE', 'DELAYED']).count(),
-            'pulse_tbs_count': ceo_jobs_qs.filter(current_stage_number=3, status__in=['ACTIVE', 'DELAYED']).count(),
-            'pulse_port_count': ceo_jobs_qs.filter(current_stage_number=4, status__in=['ACTIVE', 'DELAYED']).count(),
-            'pulse_yard_count': ceo_jobs_qs.filter(current_stage_number=5, status__in=['ACTIVE', 'DELAYED']).count(),
+            'pulse_tra_count': ceo_agg['tra_cnt'] or 0,
+            'pulse_tbs_count': ceo_agg['tbs_cnt'] or 0,
+            'pulse_port_count': ceo_agg['port_cnt'] or 0,
+            'pulse_yard_count': ceo_agg['yard_cnt'] or 0,
         })
         return render(request, 'core/ceo_dashboard.html', context)
 
@@ -2329,11 +2344,11 @@ def jobs_list_view(request):
 
 
 
-    customers = Customer.objects.all().order_by('company_name')
-
-
-
     can_view_financials = (role in [UserRole.CEO, UserRole.ADMIN, UserRole.FINANCE] or request.user.is_superuser)
+
+    jobs = jobs.prefetch_related('stages', 'invoices', 'expenses') if can_view_financials else jobs.prefetch_related('stages')
+
+    customers = Customer.objects.all().order_by('company_name')
 
 
 
@@ -24604,121 +24619,81 @@ STRICT RULES:
 
 
 
+_PULSE_CACHE = {'ts': 0.0, 'version': None, 'payload': None}
+
+
 def api_realtime_pulse(request):
-
     """
-
-    Ultra-lightweight real-time synchronization pulse endpoint for all ~7 connected staff & client consoles.
-
-    Detects any stage progress, expense request/approval, yard arrival, or milestone update
-
-    and broadcasts updates without full-page reloads.
-
+    Ultra-lightweight real-time synchronization pulse endpoint for connected staff & client consoles.
+    Caches version state briefly (2s) so polling bursts do not hammer the database.
     """
-
     client_version = request.GET.get('v', '').strip()
+    now_ts = time_module.monotonic()
 
+    if _PULSE_CACHE['version'] is not None and (now_ts - _PULSE_CACHE['ts']) < 2.0:
+        current_version = _PULSE_CACHE['version']
+        if client_version and client_version == current_version:
+            return JsonResponse({'has_change': False, 'version': current_version})
+        if _PULSE_CACHE['payload'] is not None:
+            return JsonResponse(_PULSE_CACHE['payload'])
 
+    latest_audit_row = AuditLog.objects.order_by('-id').values_list('id', 'timestamp').first()
+    latest_exp_id = ExpenseVoucher.objects.order_by('-id').values_list('id', flat=True).first()
+    latest_job_ts = JobShipment.objects.order_by('-updated_at').values_list('updated_at', flat=True).first()
 
-    latest_audit = AuditLog.objects.select_related('user', 'job').order_by('-id').first()
-
-    latest_expense = ExpenseVoucher.objects.order_by('-id').first()
-
-    latest_job = JobShipment.objects.order_by('-updated_at').first()
-
-
-
-    audit_ts = int(latest_audit.timestamp.timestamp()) if latest_audit else 0
-
-    audit_id = latest_audit.id if latest_audit else 0
-
-    exp_id = latest_expense.id if latest_expense else 0
-
-    job_ts = int(latest_job.updated_at.timestamp()) if latest_job else 0
-
-
+    audit_ts = int(latest_audit_row[1].timestamp()) if latest_audit_row else 0
+    audit_id = latest_audit_row[0] if latest_audit_row else 0
+    exp_id = latest_exp_id or 0
+    job_ts = int(latest_job_ts.timestamp()) if latest_job_ts else 0
 
     current_version = f"{audit_ts}_{audit_id}_{exp_id}_{job_ts}"
 
-
-
     if client_version and client_version == current_version:
-
+        _PULSE_CACHE['ts'] = now_ts
+        _PULSE_CACHE['version'] = current_version
         return JsonResponse({'has_change': False, 'version': current_version})
 
-
-
-    # Prepare latest event info for alert banner / toast
+    latest_audit = AuditLog.objects.filter(id=audit_id).select_related('user', 'job').first() if audit_id else None
 
     event_info = None
-
     if latest_audit:
-
         actor_name = ""
-
         if latest_audit.user:
-
             fn = latest_audit.user.get_full_name().strip()
-
             actor_name = fn if fn and fn not in ['Super Administrator', 'IT Administrator'] else latest_audit.user.username
-
         if not actor_name:
-
             actor_name = "Operations Team"
 
-
-
         clean_details = latest_audit.details or latest_audit.action
-
         event_info = {
-
             'id': latest_audit.id,
-
             'action': latest_audit.action,
-
             'actor': actor_name,
-
             'job_id': latest_audit.job_id,
-
             'job_number': latest_audit.job.job_number if latest_audit.job else "",
-
             'details': clean_details,
-
             'timestamp': latest_audit.timestamp.isoformat(),
-
         }
-
-
-
-    # Badge metrics for live counters
 
     requested_vouchers = ExpenseVoucher.objects.filter(approval_status='REQUESTED').count()
-
     verified_vouchers = ExpenseVoucher.objects.filter(approval_status='VERIFIED', is_paid=False).count()
-
     active_jobs = JobShipment.objects.filter(status__in=['ACTIVE', 'DELAYED']).count()
 
-
-
-    return JsonResponse({
-
+    payload = {
         'has_change': True,
-
         'version': current_version,
-
         'latest_event': event_info,
-
         'counts': {
-
             'pending_finance': requested_vouchers,
-
             'pending_ceo': verified_vouchers,
-
             'active_jobs': active_jobs,
-
         }
+    }
+    _PULSE_CACHE['ts'] = now_ts
+    _PULSE_CACHE['version'] = current_version
+    _PULSE_CACHE['payload'] = payload
 
-    })
+    return JsonResponse(payload)
 
 
 
@@ -24979,7 +24954,7 @@ def finance_vehicles_out_view(request):
         except (ValueError, TypeError):
             parsed_date_to = None
 
-    jobs = JobShipment.objects.all().select_related('customer').prefetch_related('documents').order_by('-created_at')
+    jobs = JobShipment.objects.all().select_related('customer').prefetch_related('documents', 'invoices').order_by('-created_at')
     if ledger_tab == 'containers':
         jobs = jobs.exclude(container_size_type='RORO')
     else:
@@ -25008,9 +24983,38 @@ def finance_vehicles_out_view(request):
             Q(job_number__icontains=q)
         )
 
-    # Calculate Ledger Totals
+    # Calculate Ledger Totals (preload container deposit refunds first so net_container_deposit doesn't trigger N+1)
     job_list = list(jobs)
     total_vehicles = len(job_list)
+
+    if job_list:
+        refund_rows = OtherRevenue.objects.filter(
+            job_id__in=[j.id for j in job_list],
+            inflow_type='CONTAINER_REFUND',
+        ).values('job_id').annotate(
+            total=Sum('returned_amount', filter=Q(deposit_status__in=['RETURNED_FULL', 'PARTIAL'])),
+            resolved_cnt=Count('id', filter=Q(deposit_status__in=['RETURNED_FULL', 'PARTIAL', 'FORFEITED'])),
+        )
+        refund_totals = {r['job_id']: (r['total'] or Decimal('0')) for r in refund_rows}
+        refund_counts = {r['job_id']: r['resolved_cnt'] for r in refund_rows}
+    else:
+        refund_totals = {}
+        refund_counts = {}
+
+    for j in job_list:
+        j.deposit_refunded_total = refund_totals.get(j.id, Decimal('0'))
+        j._deposit_refunded_cache = j.deposit_refunded_total
+        j.deposit_refund_logged = refund_counts.get(j.id, 0) > 0
+        bl_doc = j.bl_doc
+        inv_doc = j.invoice_doc
+        j.bl_doc_url = bl_doc.file.url if bl_doc and bl_doc.file else None
+        j.inv_doc_url = inv_doc.file.url if inv_doc and inv_doc.file else None
+        j.unrecovered_deposit_for_invoice = (
+            (j.cost_other or Decimal('0')) + j.net_container_deposit
+            if j.deposit_refund_logged and j.net_container_deposit > 0
+            else (j.cost_other or Decimal('0'))
+        )
+
     sum_cif_usd = sum(j.cif_usd or Decimal('0') for j in job_list)
     sum_duty = sum(j.cost_duty or Decimal('0') for j in job_list)
     sum_do = sum(j.cost_do or Decimal('0') for j in job_list)
@@ -25041,31 +25045,6 @@ def finance_vehicles_out_view(request):
     else:
         status_param = 'all'
         displayed_jobs = job_list
-
-    # Attach document URLs & Container Deposit Refund totals for quick view in ledger
-    from django.db.models import Count
-    refund_rows = OtherRevenue.objects.filter(
-        job_id__in=[j.id for j in job_list],
-        inflow_type='CONTAINER_REFUND',
-    ).values('job_id').annotate(
-        total=Sum('returned_amount', filter=Q(deposit_status__in=['RETURNED_FULL', 'PARTIAL'])),
-        resolved_cnt=Count('id', filter=Q(deposit_status__in=['RETURNED_FULL', 'PARTIAL', 'FORFEITED'])),
-    )
-    refund_totals = {r['job_id']: (r['total'] or Decimal('0')) for r in refund_rows}
-    refund_counts = {r['job_id']: r['resolved_cnt'] for r in refund_rows}
-    for j in job_list:
-        bl_doc = j.documents.filter(document_type='BILL_OF_LADING').first()
-        inv_doc = j.documents.filter(document_type='COMMERCIAL_INVOICE').first()
-        j.bl_doc_url = bl_doc.file.url if bl_doc and bl_doc.file else None
-        j.inv_doc_url = inv_doc.file.url if inv_doc and inv_doc.file else None
-        j.deposit_refunded_total = refund_totals.get(j.id, Decimal('0'))
-        j._deposit_refunded_cache = j.deposit_refunded_total
-        j.deposit_refund_logged = refund_counts.get(j.id, 0) > 0
-        j.unrecovered_deposit_for_invoice = (
-            (j.cost_other or Decimal('0')) + j.net_container_deposit
-            if j.deposit_refund_logged and j.net_container_deposit > 0
-            else (j.cost_other or Decimal('0'))
-        )
 
     context = {
         'jobs': displayed_jobs,
