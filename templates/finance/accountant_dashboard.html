@@ -781,7 +781,7 @@
         </div>
 
         <!-- FORM -->
-        <form id="costForm" method="POST" action="">
+        <form id="costForm" method="POST" action="" data-no-ajax="true">
             {% csrf_token %}
             <div style="padding: 1.25rem 1.5rem;">
 
@@ -981,8 +981,9 @@
                 style="background: transparent; border: none; font-size: 1.4rem; color: #A7F3D0; cursor: pointer; line-height: 1;">&times;</button>
         </div>
 
-        <form id="invoiceForm" method="POST" action="">
+        <form id="invoiceForm" method="POST" action="" data-no-ajax="true" onsubmit="return prepareInvoiceSubmit();">
             {% csrf_token %}
+            <input type="hidden" name="action_type" id="inv_action_type" value="save">
             <div style="padding: 1.25rem 1.5rem;">
                 
                 <!-- CLIENT & SHIPMENT INFO STRIP -->
@@ -1114,10 +1115,10 @@
                     Cancel
                 </button>
                 <div style="display: flex; gap: 0.5rem;">
-                    <button type="submit" name="action_type" value="save" class="btn-header-action btn-primary" style="font-size: 0.84rem; padding: 0.45rem 1.15rem; background: #0F172A; color: #FFFFFF; font-weight: 800; border: none; border-radius: 8px;">
+                    <button type="submit" onclick="document.getElementById('inv_action_type').value='save'" class="btn-header-action btn-primary" style="font-size: 0.84rem; padding: 0.45rem 1.15rem; background: #0F172A; color: #FFFFFF; font-weight: 800; border: none; border-radius: 8px; cursor: pointer;">
                         <i class="fa-solid fa-floppy-disk"></i> Save Invoice
                     </button>
-                    <button type="submit" name="action_type" value="save_and_print" class="btn-header-action" style="font-size: 0.84rem; padding: 0.45rem 1.25rem; background: #059669; color: #FFFFFF; font-weight: 800; border: none; border-radius: 8px; box-shadow: 0 2px 4px rgba(5,150,105,0.25);">
+                    <button type="submit" onclick="document.getElementById('inv_action_type').value='save_and_print'" class="btn-header-action" style="font-size: 0.84rem; padding: 0.45rem 1.25rem; background: #059669; color: #FFFFFF; font-weight: 800; border: none; border-radius: 8px; box-shadow: 0 2px 4px rgba(5,150,105,0.25); cursor: pointer;">
                         <i class="fa-solid fa-print"></i> Save &amp; Print
                     </button>
                 </div>
@@ -1213,11 +1214,26 @@
         document.getElementById('invTotalBillDisplay').innerText = 'TSh ' + total.toLocaleString('en-US', { minimumFractionDigits: 2 });
     }
 
+    function prepareInvoiceSubmit() {
+        const itemIds = ['inv_agency', 'inv_do', 'inv_port', 'inv_handling', 'inv_trans', 'inv_duty', 'inv_sundry'];
+        itemIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.disabled = false;
+                if (!el.value || parseFloat(el.value) < 0) el.value = 0;
+            }
+        });
+        return true;
+    }
+
     function openInvoiceModal(jobId, blNumber, make, model, customer, agencyFee, doAmt, portAmt, handlingAmt, transAmt, dutyAmt, sundryAmt, notes, invNumber, issueDate, dueDate) {
         document.getElementById('invModalTitle').innerText = invNumber ? `Edit Invoice (${invNumber})` : `Generate Invoice — ${make} ${model}`;
         document.getElementById('invCustomerName').innerText = customer || 'Direct Client';
         document.getElementById('invRefDetails').innerText = `BL: ${blNumber}`;
-        document.getElementById('invoiceForm').action = `/finance/vehicles-out/${jobId}/invoice/`;
+        const invForm = document.getElementById('invoiceForm');
+        const invUrl = `/finance/vehicles-out/${jobId}/invoice/`;
+        invForm.action = invUrl;
+        invForm.setAttribute('action', invUrl);
 
         const setField = (chkId, inputId, amt) => {
             const chk = document.getElementById(chkId);
@@ -1427,7 +1443,10 @@
         }
 
         // Action URL
-        document.getElementById('costForm').action = `/finance/vehicles-out/${jobId}/update-costs/`;
+        const costForm = document.getElementById('costForm');
+        const costUrl = `/finance/vehicles-out/${jobId}/update-costs/`;
+        costForm.action = costUrl;
+        costForm.setAttribute('action', costUrl);
 
         updateExtraCostsData();
         const modal = document.getElementById('costModal');

@@ -532,7 +532,7 @@ function setupGlobalFormInterceptor() {
 
         if (form.getAttribute('data-no-ajax') === 'true') return;
 
-        const action = form.getAttribute('action') || window.location.href;
+        const action = form.getAttribute('action') || form.action || window.location.href;
         if (action.includes('/login/') || action.includes('/logout/')) return;
 
         const method = (form.getAttribute('method') || 'GET').toUpperCase();
