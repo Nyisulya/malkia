@@ -13,13 +13,14 @@ def global_stats(request):
             status__in=['IN_PROGRESS', 'DELAYED', 'BLOCKED']
         ).count()
 
-        # 5-Stage Operational Pipeline Counts
-        stage_1_count = JobShipment.objects.filter(current_stage_number=1, status__in=['ACTIVE', 'DELAYED']).count()
-        stage_2_count = JobShipment.objects.filter(current_stage_number=2, status__in=['ACTIVE', 'DELAYED']).count()
-        stage_3_count = JobShipment.objects.filter(current_stage_number=3, status__in=['ACTIVE', 'DELAYED']).count()
-        stage_4_count = JobShipment.objects.filter(current_stage_number=4, status__in=['ACTIVE', 'DELAYED']).count()
-        stage_5_count = JobShipment.objects.filter(current_stage_number=5, status__in=['ACTIVE', 'DELAYED']).count()
-        stage_6_count = JobShipment.objects.filter(current_stage_number=6, status__in=['ACTIVE', 'DELAYED']).count()
+        # Operational Pipeline Stage Counts (Initialized to 0)
+        stage_1_count = 0
+        stage_2_count = 0
+        stage_3_count = 0
+        stage_4_count = 0
+        stage_5_count = 0
+        stage_6_count = 0
+
         pending_intakes_count = JobShipment.objects.filter(
             current_stage_number__in=[1, 2], status__in=['ACTIVE', 'DELAYED']
         ).count()
@@ -93,6 +94,41 @@ def global_stats(request):
             elif is_finance:
                 # Finance gets badged for field requests needing review & audit
                 pending_expenses_count = ExpenseVoucher.objects.filter(approval_status='REQUESTED').count()
+
+            # Personalized Stage Badges: Each user sees ONLY jobs assigned to them
+            stage_1_count = JobShipment.objects.filter(
+                current_stage_number=1,
+                status__in=['ACTIVE', 'DELAYED'],
+                documentation_officer=request.user,
+            ).count()
+
+            stage_2_count = JobShipment.objects.filter(
+                current_stage_number=2,
+                status__in=['ACTIVE', 'DELAYED'],
+                clearing_officer=request.user,
+            ).count()
+
+            stage_3_count = JobShipment.objects.filter(
+                current_stage_number=3,
+                status__in=['ACTIVE', 'DELAYED'],
+                tbs_officer=request.user,
+            ).count()
+
+            stage_4_count = JobShipment.objects.filter(
+                current_stage_number=4,
+                status__in=['ACTIVE', 'DELAYED'],
+                port_officer=request.user,
+            ).count()
+
+            stage_5_count = JobShipment.objects.filter(
+                current_stage_number=5,
+                status__in=['ACTIVE', 'DELAYED'],
+            ).filter(Q(driver=request.user) | Q(stage_instances__stage_number=5, stage_instances__responsible_officer=request.user)).distinct().count()
+
+            stage_6_count = JobShipment.objects.filter(
+                current_stage_number=6,
+                status__in=['ACTIVE', 'DELAYED'],
+            ).filter(Q(driver=request.user) | Q(stage_instances__stage_number=6, stage_instances__responsible_officer=request.user)).distinct().count()
 
             field_today_jobs_count = JobShipment.objects.filter(
                 status__in=['ACTIVE', 'DELAYED']
