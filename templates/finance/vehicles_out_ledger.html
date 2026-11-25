@@ -498,7 +498,7 @@
                         <i class="fa-solid fa-chart-line"></i> Faida Halisi ya Gari (Net Margin):
                     </div>
                     <div id="bdNetMargin" style="font-weight: 900; font-size: 1.15rem; color: #059669; font-family: var(--font-mono, monospace);">TSh 0.00</div>
-                    <div style="font-size: 0.65rem; color: #64748B;">Agency Fee - (Fuel + Ferry + Facil)</div>
+                    <div style="font-size: 0.65rem; color: #64748B;">Agency Fee - (Transport + Fuel + Ferry + Facil)</div>
                 </div>
             </div>
 
@@ -646,13 +646,6 @@
                                 style="font-weight: 700; height: 36px;">
                         </div>
 
-                        <div class="form-group" style="margin: 0; {% if ledger_tab == 'containers' %}{% else %}grid-column: span 2;{% endif %}">
-                            <label style="font-weight: 700; font-size: 0.76rem; color: #334155;">5. Transport &amp; Delivery TSh</label>
-                            <input type="number" step="0.01" name="cost_transport" id="f_transport"
-                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                                style="font-weight: 700; height: 36px;">
-                        </div>
-
                         {% if ledger_tab == 'containers' %}
                         <div class="form-group" style="margin: 0;">
                             <label style="font-weight: 700; font-size: 0.76rem; color: #334155;">Container Deposit TSh</label>
@@ -714,10 +707,17 @@
                         <span id="modalInternalSubtotal" style="font-size: 0.74rem; font-weight: 800; color: #6B21A8; font-family: var(--font-mono, monospace);">Running: TSh 0.00</span>
                     </div>
                     <div style="font-size: 0.7rem; color: #6B21A8; margin-bottom: 0.65rem;">
-                        Gharama za uendeshaji za gari hili (Mafuta, Ferry, Facilitation) hazitozwi kwa mteja bali zinakatwa kwenye Agency Fee ili kujua faida halisi.
+                        Gharama za uendeshaji za gari hili (Transport, Mafuta, Ferry, Facilitation) hazitozwi kwa mteja bali zinakatwa kwenye Agency Fee ili kupata faida halisi.
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #4B5563;">Transport &amp; Delivery TSh</label>
+                            <input type="number" step="0.01" name="cost_transport" id="f_transport"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 700; height: 36px; background: #FFFFFF;">
+                        </div>
+
                         <div class="form-group" style="margin: 0;">
                             <label style="font-weight: 700; font-size: 0.76rem; color: #4B5563;">Facilitation TSh</label>
                             <input type="number" step="0.01" name="cost_facilitation" id="f_facil"
@@ -738,7 +738,7 @@
                                 style="font-weight: 700; height: 36px; background: #FFFFFF;">
                         </div>
 
-                        <div class="form-group" style="margin: 0;">
+                        <div class="form-group" style="margin: 0; grid-column: span 2;">
                             <label style="font-weight: 800; font-size: 0.76rem; color: #047857;">Agent Fee (Malkia Revenue) TSh *</label>
                             <input type="number" step="0.01" name="cost_agent_fee" id="f_agent_fee"
                                 class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
@@ -764,7 +764,7 @@
                         <div id="modalNetMargin" style="font-weight: 900; font-size: 1.15rem; color: #059669; font-family: var(--font-mono, monospace);">
                             TSh 0.00
                         </div>
-                        <div style="font-size: 0.65rem; color: #64748B;">Agency Fee - (Fuel + Ferry + Facil)</div>
+                        <div style="font-size: 0.65rem; color: #64748B;">Agency Fee - (Transport + Fuel + Ferry + Facil)</div>
                     </div>
                 </div>
 
@@ -875,7 +875,7 @@
 
                     <!-- 5. TRANSPORT & TRANSFER -->
                     <div style="display: grid; grid-template-columns: 28px 1fr 160px; gap: 0.65rem; align-items: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 0.55rem 0.85rem; border-radius: 8px;">
-                        <input type="checkbox" id="chk_inv_trans" checked onchange="toggleInvItem('chk_inv_trans', 'inv_trans')" style="width: 18px; height: 18px; cursor: pointer; accent-color: #059669;">
+                        <input type="checkbox" id="chk_inv_trans" onchange="toggleInvItem('chk_inv_trans', 'inv_trans')" style="width: 18px; height: 18px; cursor: pointer; accent-color: #059669;">
                         <div>
                             <label for="chk_inv_trans" style="font-weight: 800; font-size: 0.82rem; color: #0F172A; cursor: pointer; display: block; margin: 0;">5. Vehicle Inspection &amp; Transfer</label>
                             <span style="font-size: 0.7rem; color: #64748B;">Driving/carrier transfer &amp; delivery to yard</span>
@@ -1087,7 +1087,8 @@
         setField('chk_inv_do', 'inv_do', doAmt);
         setField('chk_inv_port', 'inv_port', portAmt);
         setField('chk_inv_handling', 'inv_handling', handlingAmt);
-        setField('chk_inv_trans', 'inv_trans', transAmt);
+        // Transport is treated as an internal running cost by default; only prefilled if editing an existing invoice
+        setField('chk_inv_trans', 'inv_trans', invNumber ? transAmt : 0);
         setField('chk_inv_duty', 'inv_duty', dutyAmt);
         const unrecDep = parseFloat(unrecoveredDeposit || 0);
         const baseSundry = parseFloat(sundryAmt || 0);
@@ -1260,7 +1261,7 @@
 
         document.getElementById('bdItemsList').innerHTML = rowsHtml;
 
-        const runningCosts = parseFloat(facil || 0) + parseFloat(fuel || 0) + parseFloat(ferry || 0);
+        const runningCosts = parseFloat(facil || 0) + parseFloat(fuel || 0) + parseFloat(ferry || 0) + parseFloat(trans || 0);
         const netMargin = feeAmt - runningCosts;
 
         document.getElementById('bdDirectTotal').innerText = 'TSh ' + fmt(directTotal);
@@ -1439,10 +1440,10 @@
         const val = id => parseFloat(document.getElementById(id)?.value || 0) || 0;
 
         // 1. Client billable disbursements
-        const clientCosts = val('f_do') + val('f_wharfage') + val('f_tiss') + val('f_handling') + val('f_transport') + val('f_container_deposit') + val('f_shipping_fee') + val('f_demurrage') + val('f_storage') + val('f_other');
+        const clientCosts = val('f_do') + val('f_wharfage') + val('f_tiss') + val('f_handling') + val('f_container_deposit') + val('f_shipping_fee') + val('f_demurrage') + val('f_storage') + val('f_other');
         
-        // 2. Direct internal operational costs (Fuel, Ferry, Facilitation)
-        const internalCosts = val('f_facil') + val('f_fuel') + val('f_ferry');
+        // 2. Direct internal operational costs (Fuel, Ferry, Facilitation, Transport)
+        const internalCosts = val('f_facil') + val('f_fuel') + val('f_ferry') + val('f_transport');
 
         const totalDisbursements = clientCosts + internalCosts;
         const agentFee = val('f_agent_fee');

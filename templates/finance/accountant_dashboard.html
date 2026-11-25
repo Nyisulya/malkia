@@ -738,7 +738,7 @@
                         <i class="fa-solid fa-chart-line"></i> Faida Halisi ya Gari (Net Margin):
                     </div>
                     <div id="bdNetMargin" style="font-weight: 900; font-size: 1.15rem; color: #059669; font-family: var(--font-mono, monospace);">TSh 0.00</div>
-                    <div style="font-size: 0.65rem; color: #64748B;">Agency Fee - (Fuel + Ferry + Facil)</div>
+                    <div style="font-size: 0.65rem; color: #64748B;">Agency Fee - (Transport + Fuel + Ferry + Facil)</div>
                 </div>
             </div>
 
@@ -861,13 +861,6 @@
                                 class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
                                 style="font-weight: 700; height: 38px;">
                         </div>
-
-                        <div class="form-group" style="margin: 0; grid-column: span 2;">
-                            <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">5. Transport &amp; Delivery TSh</label>
-                            <input type="number" step="0.01" name="cost_transport" id="f_transport"
-                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                                style="font-weight: 700; height: 38px;">
-                        </div>
                     </div>
 
                     <!-- DYNAMIC EXTRA / SPECIFIC CARGO COSTS SECTION WITH + BUTTON -->
@@ -903,27 +896,34 @@
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
                         <div class="form-group" style="margin: 0;">
-                            <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">6. Facilitation TSh</label>
+                            <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">Transport &amp; Delivery TSh</label>
+                            <input type="number" step="0.01" name="cost_transport" id="f_transport"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 700; height: 38px;">
+                        </div>
+
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">Facilitation TSh</label>
                             <input type="number" step="0.01" name="cost_facilitation" id="f_facil"
                                 class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
                                 style="font-weight: 700; height: 38px;">
                         </div>
 
                         <div class="form-group" style="margin: 0;">
-                            <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">7. Fuel (Mafuta) TSh</label>
+                            <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">Fuel (Mafuta) TSh</label>
                             <input type="number" step="0.01" name="cost_fuel" id="f_fuel" class="form-control cost-input"
                                 placeholder="0.00" oninput="calcModalTotals()" style="font-weight: 700; height: 38px;">
                         </div>
 
                         <div class="form-group" style="margin: 0;">
-                            <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">8. Ferry Charges TSh</label>
+                            <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">Ferry Charges TSh</label>
                             <input type="number" step="0.01" name="cost_ferry_charges" id="f_ferry"
                                 class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
                                 style="font-weight: 700; height: 38px;">
                         </div>
 
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-weight: 800; font-size: 0.78rem; color: #047857;">9. Agent Fee (Malkia Agency) TSh *</label>
+                        <div class="form-group" style="margin: 0; grid-column: span 2;">
+                            <label style="font-weight: 800; font-size: 0.78rem; color: #047857;">Agent Fee (Malkia Agency) TSh *</label>
                             <input type="number" step="0.01" name="cost_agent_fee" id="f_agent_fee"
                                 class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
                                 style="font-weight: 800; color: #047857; background: #FFFFFF; border: 1.5px solid #059669; height: 38px;">
@@ -949,7 +949,7 @@
                         <div id="modalNetMargin" style="font-weight: 900; font-size: 1.15rem; color: #059669; font-family: var(--font-mono, monospace);">
                             TSh 0.00
                         </div>
-                        <div style="font-size: 0.65rem; color: #64748B;">Agency Fee - (Fuel + Ferry + Facil)</div>
+                        <div style="font-size: 0.65rem; color: #64748B;">Agency Fee - (Transport + Fuel + Ferry + Facil)</div>
                     </div>
                 </div>
 
@@ -1386,7 +1386,7 @@
 
         document.getElementById('bdItemsList').innerHTML = rowsHtml;
 
-        const runningCosts = parseFloat(facil || 0) + parseFloat(fuel || 0) + parseFloat(ferry || 0);
+        const runningCosts = parseFloat(facil || 0) + parseFloat(fuel || 0) + parseFloat(ferry || 0) + parseFloat(trans || 0);
         const netMargin = feeAmt - runningCosts;
 
         document.getElementById('bdDirectTotal').innerText = 'TSh ' + fmt(directTotal);
@@ -1484,10 +1484,10 @@
         const val = id => parseFloat(document.getElementById(id)?.value || 0) || 0;
 
         // 1. Client billable disbursements
-        const clientCosts = val('f_do') + val('f_wharfage') + val('f_tiss') + val('f_handling') + val('f_transport') + val('f_other');
+        const clientCosts = val('f_do') + val('f_wharfage') + val('f_tiss') + val('f_handling') + val('f_other');
         
-        // 2. Direct internal operational costs (Fuel, Ferry, Facilitation)
-        const internalCosts = val('f_facil') + val('f_fuel') + val('f_ferry');
+        // 2. Direct internal operational costs (Fuel, Ferry, Facilitation, Transport)
+        const internalCosts = val('f_facil') + val('f_fuel') + val('f_ferry') + val('f_transport');
 
         const totalDisbursements = clientCosts + internalCosts;
         const agentFee = val('f_agent_fee');
