@@ -499,6 +499,47 @@ class JobShipment(models.Model):
         )
 
     @property
+    def client_billable_costs(self):
+        """
+        Recoverable direct disbursements billed to client (D/O, Wharfage, TISS, Handling, Transport, Container & Extra Costs).
+        """
+        from decimal import Decimal
+        return (
+            (self.cost_do or Decimal('0')) +
+            (self.cost_wharfage or Decimal('0')) +
+            (self.cost_tiss_wharfage or Decimal('0')) +
+            (self.cost_handling or Decimal('0')) +
+            (self.cost_transport or Decimal('0')) +
+            self.net_container_deposit +
+            (self.cost_shipping_fee or Decimal('0')) +
+            (self.cost_demurrage or Decimal('0')) +
+            (self.cost_storage or Decimal('0')) +
+            (self.cost_other or Decimal('0'))
+        )
+
+    @property
+    def internal_running_costs(self):
+        """
+        Direct operational costs incurred by Malkia for this specific vehicle/shipment
+        (Facilitation, Fuel, Ferry), which are absorbed from the Agency Fee.
+        """
+        from decimal import Decimal
+        return (
+            (self.cost_facilitation or Decimal('0')) +
+            (self.cost_fuel or Decimal('0')) +
+            (self.cost_ferry_charges or Decimal('0'))
+        )
+
+    @property
+    def net_agency_margin(self):
+        """
+        Actual profit margin earned on this job:
+        Agency Fee minus the direct running costs incurred for this vehicle.
+        """
+        from decimal import Decimal
+        return (self.cost_agent_fee or Decimal('0')) - self.internal_running_costs
+
+    @property
     def container_deposit_refunded(self):
         if hasattr(self, '_deposit_refunded_cache'):
             return self._deposit_refunded_cache

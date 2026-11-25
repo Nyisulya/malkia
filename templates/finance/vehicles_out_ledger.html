@@ -307,8 +307,13 @@
                         <td class="num-col" style="font-weight: 800; color: #DC2626; font-size: 0.9rem;">
                             {{ job.total_direct_costs|floatformat:2|intcomma }}
                         </td>
-                        <td class="num-col" style="font-weight: 800; color: #047857; background: #ECFDF5; font-size: 0.9rem;">
-                            {{ job.cost_agent_fee|floatformat:2|intcomma }}
+                        <td class="num-col" style="background: #ECFDF5; font-size: 0.9rem;">
+                            <div style="font-weight: 800; color: #047857;">{{ job.cost_agent_fee|floatformat:2|intcomma }}</div>
+                            {% if job.cost_agent_fee > 0 and job.internal_running_costs > 0 %}
+                            <div style="font-size: 0.68rem; font-weight: 700; color: {% if job.net_agency_margin >= 0 %}#047857{% else %}#DC2626{% endif %};" title="Agency Fee ({{ job.cost_agent_fee|floatformat:0 }}) - Running Costs ({{ job.internal_running_costs|floatformat:0 }})">
+                                Net: TSh {{ job.net_agency_margin|floatformat:2|intcomma }}
+                            </div>
+                            {% endif %}
                         </td>
                         <!-- DEDICATED STATUS COLUMN -->
                         <td style="text-align: center; vertical-align: middle;">
@@ -483,14 +488,17 @@
             </table>
 
             <!-- TOTALS HIGHLIGHT BOX -->
-            <div style="margin-top: 1rem; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 0.85rem 1.15rem; display: flex; align-items: center; justify-content: space-between;">
+            <div style="margin-top: 1rem; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 0.85rem 1.15rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
                 <div>
-                    <div style="font-size: 0.72rem; font-weight: 700; color: #92400E; text-transform: uppercase;">Direct Disbursements:</div>
-                    <div id="bdDirectTotal" style="font-weight: 800; font-size: 0.95rem; color: #78350F;">TSh 0.00</div>
+                    <div style="font-size: 0.7rem; font-weight: 700; color: #92400E; text-transform: uppercase;">Direct Disbursements:</div>
+                    <div id="bdDirectTotal" style="font-weight: 800; font-size: 0.95rem; color: #78350F; font-family: var(--font-mono, monospace);">TSh 0.00</div>
                 </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 0.72rem; font-weight: 800; color: #047857; text-transform: uppercase;">Grand Total (Payout):</div>
-                    <div id="bdGrandTotal" style="font-weight: 900; font-size: 1.15rem; color: #047857;">TSh 0.00</div>
+                <div style="text-align: right; background: #FFFFFF; border: 1.5px solid #86EFAC; border-radius: 8px; padding: 0.4rem 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="font-size: 0.7rem; font-weight: 800; color: #047857; text-transform: uppercase; display: flex; align-items: center; gap: 0.25rem; justify-content: flex-end;">
+                        <i class="fa-solid fa-chart-line"></i> Faida Halisi ya Gari (Net Margin):
+                    </div>
+                    <div id="bdNetMargin" style="font-weight: 900; font-size: 1.15rem; color: #059669; font-family: var(--font-mono, monospace);">TSh 0.00</div>
+                    <div style="font-size: 0.65rem; color: #64748B;">Agency Fee - (Fuel + Ferry + Facil)</div>
                 </div>
             </div>
 
@@ -603,150 +611,160 @@
                     </div>
                 </div>
 
-                <!-- SECTION HEADER: OFFICE DISBURSEMENTS -->
-                <div style="font-size: 0.78rem; font-weight: 800; color: #0284C7; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.35rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 0.35rem;">
-                    <i class="fa-solid fa-receipt"></i> Office Disbursements (Direct Client Costs Advanced by Malkia)
-                </div>
-
-                <!-- 9 OFFICE EXPENSE FIELDS GRID -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
-
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">1. D/O (Shipping Line)
-                            TSh</label>
-                        <input type="number" step="0.01" name="cost_do" id="f_do" class="form-control cost-input"
-                            placeholder="0.00" oninput="calcModalTotals()" style="font-weight: 700; height: 38px;">
+                <!-- GROUP 1: CLIENT BILLABLE DISBURSEMENTS -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.85rem;">
+                    <div style="font-size: 0.78rem; font-weight: 800; color: #0284C7; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.65rem; display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="fa-solid fa-file-invoice-dollar" style="color: #0284C7;"></i> 1. Client Billable Disbursements (Mteja Analipia Hizi)</span>
+                        <span id="modalClientSubtotal" style="font-size: 0.74rem; font-weight: 800; color: #0369A1; font-family: var(--font-mono, monospace);">TSh 0.00</span>
                     </div>
 
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">2. Wharfage (TPA Port)
-                            TSh</label>
-                        <input type="number" step="0.01" name="cost_wharfage" id="f_wharfage"
-                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                            style="font-weight: 700; height: 38px;">
-                    </div>
-
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">3. Tiss Wharfage
-                            TSh</label>
-                        <input type="number" step="0.01" name="cost_tiss_wharfage" id="f_tiss"
-                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                            style="font-weight: 700; height: 38px;">
-                    </div>
-
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">4. Handling (ICD / Port)
-                            TSh</label>
-                        <input type="number" step="0.01" name="cost_handling" id="f_handling"
-                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                            style="font-weight: 700; height: 38px;">
-                    </div>
-
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">5. Facilitation TSh</label>
-                        <input type="number" step="0.01" name="cost_facilitation" id="f_facil"
-                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                            style="font-weight: 700; height: 38px;">
-                    </div>
-
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">6. Transport TSh</label>
-                        <input type="number" step="0.01" name="cost_transport" id="f_transport"
-                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                            style="font-weight: 700; height: 38px;">
-                    </div>
-
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #047857;">7. Agent Fee (Malkia
-                            Agency) TSh *</label>
-                        <input type="number" step="0.01" name="cost_agent_fee" id="f_agent_fee"
-                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                            style="font-weight: 800; color: #047857; background: #ECFDF5; height: 38px;">
-                    </div>
-
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">8. Fuel TSh</label>
-                        <input type="number" step="0.01" name="cost_fuel" id="f_fuel" class="form-control cost-input"
-                            placeholder="0.00" oninput="calcModalTotals()" style="font-weight: 700; height: 38px;">
-                    </div>
-
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">9. Ferry Charges
-                            TSh</label>
-                        <input type="number" step="0.01" name="cost_ferry_charges" id="f_ferry"
-                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                            style="font-weight: 700; height: 38px;">
-                    </div>
-
-                    {% if ledger_tab == 'containers' %}
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">10. Container Deposit TSh</label>
-                        <input type="number" step="0.01" name="cost_container_deposit" id="f_container_deposit"
-                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                            style="font-weight: 700; height: 38px;">
-                    </div>
-
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">11. Shipping Fee TSh</label>
-                        <input type="number" step="0.01" name="cost_shipping_fee" id="f_shipping_fee"
-                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                            style="font-weight: 700; height: 38px;">
-                    </div>
-
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">12. Demurrage Charges TSh</label>
-                        <input type="number" step="0.01" name="cost_demurrage" id="f_demurrage"
-                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                            style="font-weight: 700; height: 38px;">
-                    </div>
-
-                    <div class="form-group" style="margin: 0;">
-                        <label style="font-weight: 700; font-size: 0.78rem; color: #334155;">13. Storage Charges TSh</label>
-                        <input type="number" step="0.01" name="cost_storage" id="f_storage"
-                            class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
-                            style="font-weight: 700; height: 38px;">
-                    </div>
-                    {% endif %}
-
-                </div>
-
-                <!-- DYNAMIC EXTRA / SPECIFIC CARGO COSTS SECTION WITH + BUTTON -->
-                <div style="margin-top: 1rem; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 10px; padding: 0.85rem 1rem;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
-                        <div>
-                            <span style="font-weight: 800; font-size: 0.82rem; color: #334155; text-transform: uppercase; display: flex; align-items: center; gap: 0.35rem;">
-                                <i class="fa-solid fa-boxes-stacked" style="color: #7C3AED;"></i> Additional Cargo Specific Costs
-                            </span>
-                            <div style="font-size: 0.7rem; color: #64748B;">Add any extra cargo-specific charges (e.g. TBS, Demurrage, Storage, Escort)</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #334155;">1. D/O (Shipping Line) TSh</label>
+                            <input type="number" step="0.01" name="cost_do" id="f_do" class="form-control cost-input"
+                                placeholder="0.00" oninput="calcModalTotals()" style="font-weight: 700; height: 36px;">
                         </div>
-                        <button type="button" onclick="addExtraCostRow()"
-                            style="background: #7C3AED; color: #FFFFFF; border: none; padding: 0.32rem 0.8rem; border-radius: 6px; font-size: 0.75rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 1px 2px rgba(124,58,237,0.2);">
-                            <i class="fa-solid fa-plus"></i> Add Item
-                        </button>
+
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #334155;">2. Wharfage (TPA Port) TSh</label>
+                            <input type="number" step="0.01" name="cost_wharfage" id="f_wharfage"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 700; height: 36px;">
+                        </div>
+
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #334155;">3. Tiss Wharfage TSh</label>
+                            <input type="number" step="0.01" name="cost_tiss_wharfage" id="f_tiss"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 700; height: 36px;">
+                        </div>
+
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #334155;">4. Handling (ICD / Port) TSh</label>
+                            <input type="number" step="0.01" name="cost_handling" id="f_handling"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 700; height: 36px;">
+                        </div>
+
+                        <div class="form-group" style="margin: 0; {% if ledger_tab == 'containers' %}{% else %}grid-column: span 2;{% endif %}">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #334155;">5. Transport &amp; Delivery TSh</label>
+                            <input type="number" step="0.01" name="cost_transport" id="f_transport"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 700; height: 36px;">
+                        </div>
+
+                        {% if ledger_tab == 'containers' %}
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #334155;">Container Deposit TSh</label>
+                            <input type="number" step="0.01" name="cost_container_deposit" id="f_container_deposit"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 700; height: 36px;">
+                        </div>
+
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #334155;">Shipping Fee TSh</label>
+                            <input type="number" step="0.01" name="cost_shipping_fee" id="f_shipping_fee"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 700; height: 36px;">
+                        </div>
+
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #334155;">Demurrage Charges TSh</label>
+                            <input type="number" step="0.01" name="cost_demurrage" id="f_demurrage"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 700; height: 36px;">
+                        </div>
+
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #334155;">Storage Charges TSh</label>
+                            <input type="number" step="0.01" name="cost_storage" id="f_storage"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 700; height: 36px;">
+                        </div>
+                        {% endif %}
                     </div>
 
-                    <div id="extraCostsList" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <!-- Dynamic extra cost rows will appear here -->
+                    <!-- DYNAMIC EXTRA / SPECIFIC CARGO COSTS SECTION WITH + BUTTON -->
+                    <div style="margin-top: 0.75rem; border-top: 1px dashed #CBD5E1; padding-top: 0.65rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <div>
+                                <span style="font-weight: 800; font-size: 0.76rem; color: #475569; text-transform: uppercase; display: flex; align-items: center; gap: 0.35rem;">
+                                    <i class="fa-solid fa-boxes-stacked" style="color: #7C3AED;"></i> Cargo Specific Costs (TBS, Demurrage, Storage...)
+                                </span>
+                            </div>
+                            <button type="button" onclick="addExtraCostRow()"
+                                style="background: #7C3AED; color: #FFFFFF; border: none; padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.72rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; box-shadow: 0 1px 2px rgba(124,58,237,0.2);">
+                                <i class="fa-solid fa-plus"></i> Add Item
+                            </button>
+                        </div>
+
+                        <div id="extraCostsList" style="display: flex; flex-direction: column; gap: 0.4rem;">
+                            <!-- Dynamic extra cost rows will appear here -->
+                        </div>
+
+                        <input type="hidden" name="cost_other" id="f_other" value="0">
+                        <input type="hidden" name="cost_other_description" id="f_other_desc" value="">
+                    </div>
+                </div>
+
+                <!-- GROUP 2: MALKIA RUNNING COSTS & AGENCY FEE -->
+                <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.85rem;">
+                    <div style="font-size: 0.78rem; font-weight: 800; color: #7C3AED; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.25rem; display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="fa-solid fa-gas-pump" style="color: #7C3AED;"></i> 2. Malkia Direct Running Costs &amp; Agency Fee</span>
+                        <span id="modalInternalSubtotal" style="font-size: 0.74rem; font-weight: 800; color: #6B21A8; font-family: var(--font-mono, monospace);">Running: TSh 0.00</span>
+                    </div>
+                    <div style="font-size: 0.7rem; color: #6B21A8; margin-bottom: 0.65rem;">
+                        Gharama za uendeshaji za gari hili (Mafuta, Ferry, Facilitation) hazitozwi kwa mteja bali zinakatwa kwenye Agency Fee ili kujua faida halisi.
                     </div>
 
-                    <input type="hidden" name="cost_other" id="f_other" value="0">
-                    <input type="hidden" name="cost_other_description" id="f_other_desc" value="">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #4B5563;">Facilitation TSh</label>
+                            <input type="number" step="0.01" name="cost_facilitation" id="f_facil"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 700; height: 36px; background: #FFFFFF;">
+                        </div>
+
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #4B5563;">Fuel (Mafuta) TSh</label>
+                            <input type="number" step="0.01" name="cost_fuel" id="f_fuel" class="form-control cost-input"
+                                placeholder="0.00" oninput="calcModalTotals()" style="font-weight: 700; height: 36px; background: #FFFFFF;">
+                        </div>
+
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 700; font-size: 0.76rem; color: #4B5563;">Ferry / Toll Charges TSh</label>
+                            <input type="number" step="0.01" name="cost_ferry_charges" id="f_ferry"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 700; height: 36px; background: #FFFFFF;">
+                        </div>
+
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-weight: 800; font-size: 0.76rem; color: #047857;">Agent Fee (Malkia Revenue) TSh *</label>
+                            <input type="number" step="0.01" name="cost_agent_fee" id="f_agent_fee"
+                                class="form-control cost-input" placeholder="0.00" oninput="calcModalTotals()"
+                                style="font-weight: 800; color: #047857; background: #ECFDF5; border: 1.5px solid #6EE7B7; height: 36px;">
+                        </div>
+                    </div>
                 </div>
 
                 <!-- LIVE TOTAL PREVIEW IN MODAL -->
-                <div
-                    style="margin-top: 1.15rem; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 0.85rem 1.15rem; display: flex; align-items: center; justify-content: space-between;">
+                <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 0.85rem 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.65rem;">
                     <div>
-                        <div style="font-size: 0.72rem; font-weight: 700; color: #92400E; text-transform: uppercase;">
-                            Office Disbursements (Excl. Duty):</div>
-                        <div id="modalSubtotal" style="font-weight: 800; font-size: 0.95rem; color: #78350F;">TSh 0.00
+                        <div style="font-size: 0.7rem; font-weight: 700; color: #92400E; text-transform: uppercase;">
+                            Office Disbursements (Total Payout):
+                        </div>
+                        <div id="modalSubtotal" style="font-weight: 800; font-size: 0.95rem; color: #78350F; font-family: var(--font-mono, monospace);">
+                            TSh 0.00
                         </div>
                     </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 0.72rem; font-weight: 800; color: #047857; text-transform: uppercase;">
-                            Grand Total (Incl. Fee):</div>
-                        <div id="modalGrandTotal" style="font-weight: 900; font-size: 1.15rem; color: #047857;">TSh 0.00
+                    <div style="text-align: right; background: #FFFFFF; border: 1.5px solid #86EFAC; border-radius: 8px; padding: 0.45rem 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="font-size: 0.7rem; font-weight: 800; color: #047857; text-transform: uppercase; display: flex; align-items: center; gap: 0.25rem; justify-content: flex-end;">
+                            <i class="fa-solid fa-chart-line"></i> Faida Halisi ya Gari (Net Margin):
                         </div>
+                        <div id="modalNetMargin" style="font-weight: 900; font-size: 1.15rem; color: #059669; font-family: var(--font-mono, monospace);">
+                            TSh 0.00
+                        </div>
+                        <div style="font-size: 0.65rem; color: #64748B;">Agency Fee - (Fuel + Ferry + Facil)</div>
                     </div>
                 </div>
 
@@ -1242,9 +1260,19 @@
 
         document.getElementById('bdItemsList').innerHTML = rowsHtml;
 
-        const grandTotal = directTotal + feeAmt;
+        const runningCosts = parseFloat(facil || 0) + parseFloat(fuel || 0) + parseFloat(ferry || 0);
+        const netMargin = feeAmt - runningCosts;
+
         document.getElementById('bdDirectTotal').innerText = 'TSh ' + fmt(directTotal);
-        document.getElementById('bdGrandTotal').innerText = 'TSh ' + fmt(grandTotal);
+        if (document.getElementById('bdGrandTotal')) {
+            const grandTotal = directTotal + feeAmt;
+            document.getElementById('bdGrandTotal').innerText = 'TSh ' + fmt(grandTotal);
+        }
+        if (document.getElementById('bdNetMargin')) {
+            const marginColor = netMargin >= 0 ? '#059669' : '#DC2626';
+            document.getElementById('bdNetMargin').style.color = marginColor;
+            document.getElementById('bdNetMargin').innerText = (netMargin < 0 ? '-' : '') + 'TSh ' + fmt(Math.abs(netMargin));
+        }
 
         const depBox = document.getElementById('bdDepositRefundBox');
         const quickForm = document.getElementById('bdQuickRefundForm');
@@ -1410,13 +1438,34 @@
     function calcModalTotals() {
         const val = id => parseFloat(document.getElementById(id)?.value || 0) || 0;
 
-        // Direct costs: 1 to 9 + extra costs
-        const directCosts = val('f_do') + val('f_wharfage') + val('f_tiss') + val('f_handling') + val('f_facil') + val('f_transport') + val('f_fuel') + val('f_ferry') + val('f_container_deposit') + val('f_shipping_fee') + val('f_demurrage') + val('f_storage') + val('f_other');
-        const agentFee = val('f_agent_fee');
-        const grandTotal = directCosts + agentFee;
+        // 1. Client billable disbursements
+        const clientCosts = val('f_do') + val('f_wharfage') + val('f_tiss') + val('f_handling') + val('f_transport') + val('f_container_deposit') + val('f_shipping_fee') + val('f_demurrage') + val('f_storage') + val('f_other');
+        
+        // 2. Direct internal operational costs (Fuel, Ferry, Facilitation)
+        const internalCosts = val('f_facil') + val('f_fuel') + val('f_ferry');
 
-        document.getElementById('modalSubtotal').innerText = 'TSh ' + directCosts.toLocaleString('en-US', { minimumFractionDigits: 2 });
-        document.getElementById('modalGrandTotal').innerText = 'TSh ' + grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        const totalDisbursements = clientCosts + internalCosts;
+        const agentFee = val('f_agent_fee');
+        const netMargin = agentFee - internalCosts;
+
+        if (document.getElementById('modalClientSubtotal')) {
+            document.getElementById('modalClientSubtotal').innerText = 'TSh ' + clientCosts.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+        if (document.getElementById('modalInternalSubtotal')) {
+            document.getElementById('modalInternalSubtotal').innerText = 'Running: TSh ' + internalCosts.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+        if (document.getElementById('modalSubtotal')) {
+            document.getElementById('modalSubtotal').innerText = 'TSh ' + totalDisbursements.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+        if (document.getElementById('modalGrandTotal')) {
+            const grandTotal = totalDisbursements + agentFee;
+            document.getElementById('modalGrandTotal').innerText = 'TSh ' + grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+        if (document.getElementById('modalNetMargin')) {
+            const marginColor = netMargin >= 0 ? '#059669' : '#DC2626';
+            document.getElementById('modalNetMargin').style.color = marginColor;
+            document.getElementById('modalNetMargin').innerText = (netMargin < 0 ? '-' : '') + 'TSh ' + Math.abs(netMargin).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
     }
 
     // Close modal when clicking outside
