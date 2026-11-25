@@ -86,8 +86,51 @@
         </div>
     </div>
 
-    <!-- KPI CARDS -->
-    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));margin-bottom:1.5rem;">
+    <!-- FILTER BAR (TOP LEVEL) -->
+    <div class="card-panel no-print" style="padding:1rem 1.25rem;margin-bottom:1.25rem;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <form method="GET" action="{% url 'operating_expenses' %}" style="display:flex;align-items:flex-end;flex-wrap:wrap;gap:0.75rem;">
+            <div>
+                <label style="display:block;font-size:0.7rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">From Date</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}" style="min-width:135px;">
+            </div>
+            <div>
+                <label style="display:block;font-size:0.7rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">To Date</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}" style="min-width:135px;">
+            </div>
+            <div>
+                <label style="display:block;font-size:0.7rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Or Month</label>
+                <input type="month" name="month" class="form-control" value="{{ selected_month|date:'Y-m' }}" style="min-width:140px;">
+            </div>
+            <div>
+                <label style="display:block;font-size:0.7rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Category</label>
+                <select name="category" class="form-control" style="min-width:155px;">
+                    <option value="">All Categories</option>
+                    {% for c in categories %}
+                    <option value="{{ c.id }}" {% if category_filter == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}{% if not c.is_active %} (inactive){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="flex:1;min-width:180px;">
+                <label style="display:block;font-size:0.7rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Search</label>
+                <input type="text" name="q" class="form-control" placeholder="Search description, payee, ref..." value="{{ search_query }}">
+            </div>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.6rem 1.1rem;font-weight:700;">
+                    <i class="fa-solid fa-magnifying-glass"></i> Filter
+                </button>
+                <a href="{% url 'operating_expenses_export_excel' %}?date_from={{ date_from }}&date_to={{ date_to }}&month={{ selected_month|date:'Y-m' }}&category={{ category_filter }}&q={{ search_query }}" class="btn-header-action" style="padding:0.6rem 1rem;background:#10B981;color:#FFFFFF;border:1px solid #059669;font-weight:700;" title="Export filtered records to Excel (.xlsx)">
+                    <i class="fa-solid fa-file-excel"></i> Export Excel
+                </a>
+                {% if search_query or category_filter or date_from or date_to %}
+                <a href="{% url 'operating_expenses' %}?month={{ today|date:'Y-m' }}" class="btn-header-action btn-outline" style="padding:0.6rem 0.85rem;">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- 4 MAIN EXECUTIVE KPI CARDS -->
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:1rem;margin-bottom:1.5rem;">
+        <!-- Card 1: Revenue Collected -->
         <div class="kpi-card kpi-emerald">
             <div class="kpi-header">
                 <span class="kpi-title">Revenue Collected — {{ range_label }}</span>
@@ -97,111 +140,37 @@
             <div class="kpi-meta"><span class="trend-positive"><i class="fa-solid fa-circle-check"></i> From client invoice payments</span></div>
         </div>
 
+        <!-- Card 2: Office Overheads (OPEX) -->
         <div class="kpi-card kpi-rose">
             <div class="kpi-header">
-                <span class="kpi-title">Operating Expenses — {{ range_label }}</span>
-                <div class="kpi-icon-wrap"><i class="fa-solid fa-arrow-up-right"></i></div>
+                <span class="kpi-title">Office Overheads (OPEX) — {{ range_label }}</span>
+                <div class="kpi-icon-wrap"><i class="fa-solid fa-building-columns"></i></div>
             </div>
             <div class="kpi-value">TSh {{ expense_total|floatformat:0|intcomma }}</div>
             <div class="kpi-meta"><span>Salaries, rent, internet &amp; running costs</span></div>
         </div>
 
-        <div class="kpi-card {% if net_total >= 0 %}kpi-blue{% else %}kpi-amber{% endif %}">
+        <!-- Card 3: Cargo Running Costs -->
+        <div class="kpi-card kpi-amber">
             <div class="kpi-header">
-                <span class="kpi-title">Net Position — {{ range_label }}</span>
-                <div class="kpi-icon-wrap"><i class="fa-solid fa-scale-balanced"></i></div>
+                <span class="kpi-title">Cargo Running Costs — {{ range_label }}</span>
+                <div class="kpi-icon-wrap"><i class="fa-solid fa-gas-pump"></i></div>
             </div>
-            <div class="kpi-value" style="color:{% if net_total >= 0 %}#1D4ED8{% else %}#B45309{% endif %};">
-                TSh {{ net_total|floatformat:0|intcomma }}
-            </div>
-            <div class="kpi-meta"><span>Revenue minus operating expenses</span></div>
+            <div class="kpi-value" style="color:#D97706;">TSh {{ job_running_total|floatformat:0|intcomma }}</div>
+            <div class="kpi-meta"><span>Fuel: {{ job_fuel_total|floatformat:0|intcomma }} · Transport: {{ job_transport_total|floatformat:0|intcomma }}</span></div>
         </div>
 
-        <div class="kpi-card {% if year_net >= 0 %}kpi-emerald{% else %}kpi-rose{% endif %}">
+        <!-- Card 4: Total Operational Outflow -->
+        <div class="kpi-card kpi-blue">
             <div class="kpi-header">
-                <span class="kpi-title">Year-To-Date Net — {{ selected_year }}</span>
-                <div class="kpi-icon-wrap"><i class="fa-solid fa-chart-line"></i></div>
+                <span class="kpi-title">Total Cash Outflow — {{ range_label }}</span>
+                <div class="kpi-icon-wrap"><i class="fa-solid fa-coins"></i></div>
             </div>
-            <div class="kpi-value" style="color:{% if year_net >= 0 %}#047857{% else %}#B91C1C{% endif %};">
-                TSh {{ year_net|floatformat:0|intcomma }}
+            <div class="kpi-value" style="color:#0284C7;">
+                TSh {{ total_combined_outflow|floatformat:0|intcomma }}
             </div>
-            <div class="kpi-meta">
-                <span>Rev TSh {{ year_revenue|floatformat:0|intcomma }} · Exp TSh {{ year_expenses|floatformat:0|intcomma }}</span>
-            </div>
+            <div class="kpi-meta"><span>Combined: Office OPEX + Cargo Running</span></div>
         </div>
-    </div>
-
-    <!-- COMBINED MONTHLY OUTFLOW SUMMARY BANNER -->
-    <div class="card-panel no-print" style="padding:1rem 1.25rem;margin-bottom:1.5rem;background:#F8FAFC;border:1px solid #E2E8F0;border-left:4px solid var(--brand-primary);border-radius:10px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-            <div>
-                <span style="font-size:0.75rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;">
-                    <i class="fa-solid fa-layer-group" style="color:var(--brand-primary);margin-right:0.3rem;"></i> Combined Operational Cash Outflows — {{ range_label }}
-                </span>
-                <div style="margin-top:0.35rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-                    <div>
-                        <span style="font-size:0.75rem;color:#64748B;">General Office OPEX:</span>
-                        <strong style="font-size:0.95rem;color:#B91C1C;margin-left:0.25rem;">TSh {{ expense_total|floatformat:0|intcomma }}</strong>
-                    </div>
-                    <div style="color:#CBD5E1;font-weight:bold;">+</div>
-                    <div>
-                        <span style="font-size:0.75rem;color:#64748B;">Cargo &amp; Vehicle Running (Fuel, Transport):</span>
-                        <strong style="font-size:0.95rem;color:#D97706;margin-left:0.25rem;">TSh {{ job_running_total|floatformat:0|intcomma }}</strong>
-                        <span style="font-size:0.72rem;color:#94A3B8;margin-left:0.25rem;">(Fuel: {{ job_fuel_total|floatformat:0|intcomma }} · Transport: {{ job_transport_total|floatformat:0|intcomma }})</span>
-                    </div>
-                    <div style="color:#CBD5E1;font-weight:bold;">=</div>
-                    <div style="background:#FFFFFF;padding:0.35rem 0.75rem;border-radius:8px;border:1px solid #CBD5E1;">
-                        <span style="font-size:0.75rem;font-weight:700;color:#0F172A;">Total Operational Outflow:</span>
-                        <strong style="font-size:1.05rem;font-weight:900;color:#0F172A;margin-left:0.35rem;">TSh {{ total_combined_outflow|floatformat:0|intcomma }}</strong>
-                    </div>
-                </div>
-            </div>
-            <div style="font-size:0.72rem;color:#64748B;max-width:320px;line-height:1.35;">
-                <i class="fa-solid fa-circle-info" style="color:#3B82F6;"></i> Vehicle running costs are tracked per shipment and deducted from the Agency Fee to preserve profit accuracy; this combined view gives you total cash paid out.
-            </div>
-        </div>
-    </div>
-
-    <!-- FILTER BAR -->
-    <div class="card-panel no-print" style="padding:1.1rem;margin-bottom:1.5rem;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;">
-        <form method="GET" action="{% url 'operating_expenses' %}" style="display:flex;align-items:flex-end;flex-wrap:wrap;gap:0.85rem;">
-            <div>
-                <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">From Date</label>
-                <input type="date" name="date_from" class="form-control" value="{{ date_from }}" style="min-width:140px;">
-            </div>
-            <div>
-                <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">To Date</label>
-                <input type="date" name="date_to" class="form-control" value="{{ date_to }}" style="min-width:140px;">
-            </div>
-            <div>
-                <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Or Month</label>
-                <input type="month" name="month" class="form-control" value="{{ selected_month|date:'Y-m' }}" style="min-width:145px;">
-            </div>
-            <div>
-                <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Category</label>
-                <select name="category" class="form-control" style="min-width:160px;">
-                    <option value="">All Categories</option>
-                    {% for c in categories %}
-                    <option value="{{ c.id }}" {% if category_filter == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}{% if not c.is_active %} (inactive){% endif %}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div style="flex:1;min-width:180px;">
-                <label style="display:block;font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Search</label>
-                <input type="text" name="q" class="form-control" placeholder="Search description, payee, ref..." value="{{ search_query }}">
-            </div>
-            <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
-                <button type="submit" class="btn-header-action btn-primary" style="padding:0.6rem 1rem;">
-                    <i class="fa-solid fa-magnifying-glass"></i> Filter
-                </button>
-                <a href="{% url 'operating_expenses_export_excel' %}?date_from={{ date_from }}&date_to={{ date_to }}&month={{ selected_month|date:'Y-m' }}&category={{ category_filter }}&q={{ search_query }}" class="btn-header-action" style="padding:0.6rem 0.95rem;background:#10B981;color:#FFFFFF;border:1px solid #059669;font-weight:700;" title="Export filtered records to Excel (.xlsx)">
-                    <i class="fa-solid fa-file-excel"></i> Export Excel
-                </a>
-                {% if search_query or category_filter or date_from or date_to %}
-                <a href="{% url 'operating_expenses' %}?month={{ today|date:'Y-m' }}" class="btn-header-action btn-outline" style="padding:0.6rem 0.85rem;">Reset</a>
-                {% endif %}
-            </div>
-        </form>
     </div>
 
     <!-- EXPENSE TYPE TABS NAVIGATION -->
@@ -222,59 +191,6 @@
 
     <!-- TAB 1: GENERAL COST SUMMARY BY CATEGORY -->
     <div id="tabSectionSummary">
-
-        <!-- HIGHLIGHT CARDS BY HEAD -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:0.85rem;margin-bottom:1.25rem;">
-            <!-- Transport -->
-            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #2563EB;border-radius:10px;padding:0.9rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
-                    <span>Transport &amp; Carrier</span>
-                    <i class="fa-solid fa-truck" style="color:#2563EB;font-size:1.1rem;"></i>
-                </div>
-                <div style="font-size:1.3rem;font-weight:900;color:#0F172A;margin-top:0.4rem;">
-                    TSh {{ job_transport_total|floatformat:0|intcomma }}
-                </div>
-                <div style="font-size:0.72rem;color:#64748B;margin-top:0.25rem;">Gharama za carrier &amp; transfer</div>
-            </div>
-
-            <!-- Total Fuel -->
-            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #D97706;border-radius:10px;padding:0.9rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
-                    <span>Fuel (Mafuta Yote)</span>
-                    <i class="fa-solid fa-gas-pump" style="color:#D97706;font-size:1.1rem;"></i>
-                </div>
-                <div style="font-size:1.3rem;font-weight:900;color:#0F172A;margin-top:0.4rem;">
-                    TSh {{ all_fuel_grand_total|floatformat:0|intcomma }}
-                </div>
-                <div style="font-size:0.72rem;color:#64748B;margin-top:0.25rem;">
-                    Kazi: {{ job_fuel_total|floatformat:0|intcomma }} · Ofisi: {{ office_fuel_total|default:0|floatformat:0|intcomma }}
-                </div>
-            </div>
-
-            <!-- Facilitation & Ferry -->
-            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-left:4px solid #0D9488;border-radius:10px;padding:0.9rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
-                    <span>Facilitation &amp; Ferry</span>
-                    <i class="fa-solid fa-ferry" style="color:#0D9488;font-size:1.1rem;"></i>
-                </div>
-                <div style="font-size:1.3rem;font-weight:900;color:#0F172A;margin-top:0.4rem;">
-                    TSh {{ job_ferry_facilitation_total|floatformat:0|intcomma }}
-                </div>
-                <div style="font-size:0.72rem;color:#64748B;margin-top:0.25rem;">Bandarini, yadi &amp; kivukoni</div>
-            </div>
-
-            <!-- Total Operational Outflows -->
-            <div style="background:#0F172A;color:#FFFFFF;border-radius:10px;padding:0.9rem 1.1rem;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);">
-                <div style="font-size:0.72rem;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
-                    <span>Total Outflow (Combined)</span>
-                    <i class="fa-solid fa-coins" style="color:#38BDF8;font-size:1.1rem;"></i>
-                </div>
-                <div style="font-size:1.3rem;font-weight:900;color:#38BDF8;margin-top:0.4rem;">
-                    TSh {{ total_combined_outflow|floatformat:0|intcomma }}
-                </div>
-                <div style="font-size:0.72rem;color:#94A3B8;margin-top:0.25rem;">OPEX + Cargo Running Costs</div>
-            </div>
-        </div>
 
         <!-- CATEGORY BREAKDOWN TABLE -->
         <div class="card-panel" style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);margin-bottom:1.5rem;">
@@ -517,59 +433,8 @@
         </div>
     </div>
 
-    <!-- TAB 2: CARGO & VEHICLE RUNNING COSTS (PULLED FROM JOB SHIPMENTS) -->
+    <!-- TAB 3: CARGO & VEHICLE RUNNING COSTS (PULLED FROM JOB SHIPMENTS) -->
     <div id="tabSectionRunning" style="display:none;">
-
-        <!-- RUNNING COSTS KPI MINI CARDS -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:0.85rem;margin-bottom:1.25rem;">
-            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:0.85rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
-                    <span>Fuel (Mafuta ya Kazi)</span>
-                    <i class="fa-solid fa-gas-pump" style="color:#D97706;"></i>
-                </div>
-                <div style="font-size:1.2rem;font-weight:900;color:#0F172A;margin-top:0.35rem;">
-                    TSh {{ job_fuel_total|floatformat:0|intcomma }}
-                </div>
-            </div>
-            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:0.85rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
-                    <span>Transport &amp; Delivery</span>
-                    <i class="fa-solid fa-truck" style="color:#2563EB;"></i>
-                </div>
-                <div style="font-size:1.2rem;font-weight:900;color:#0F172A;margin-top:0.35rem;">
-                    TSh {{ job_transport_total|floatformat:0|intcomma }}
-                </div>
-            </div>
-            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:0.85rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
-                    <span>Facilitation &amp; Ferry</span>
-                    <i class="fa-solid fa-ferry" style="color:#0D9488;"></i>
-                </div>
-                <div style="font-size:1.2rem;font-weight:900;color:#0F172A;margin-top:0.35rem;">
-                    TSh {{ job_ferry_facilitation_total|floatformat:0|intcomma }}
-                </div>
-            </div>
-            {% if job_running_other_total > 0 %}
-            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:0.85rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
-                    <span>Other Running Costs</span>
-                    <i class="fa-solid fa-screwdriver-wrench" style="color:#7C3AED;"></i>
-                </div>
-                <div style="font-size:1.2rem;font-weight:900;color:#0F172A;margin-top:0.35rem;">
-                    TSh {{ job_running_other_total|floatformat:0|intcomma }}
-                </div>
-            </div>
-            {% endif %}
-            <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:10px;padding:0.85rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                <div style="font-size:0.72rem;font-weight:800;color:#92400E;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
-                    <span>Total Running Costs</span>
-                    <i class="fa-solid fa-calculator" style="color:#B45309;"></i>
-                </div>
-                <div style="font-size:1.25rem;font-weight:900;color:#92400E;margin-top:0.35rem;">
-                    TSh {{ job_running_total|floatformat:0|intcomma }}
-                </div>
-            </div>
-        </div>
 
         <!-- RUNNING COSTS TABLE -->
         <div class="card-panel" style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
