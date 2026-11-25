@@ -123,12 +123,12 @@ def global_stats(request):
             stage_5_count = JobShipment.objects.filter(
                 current_stage_number=5,
                 status__in=['ACTIVE', 'DELAYED'],
-            ).filter(Q(driver=request.user) | Q(stage_instances__stage_number=5, stage_instances__responsible_officer=request.user)).distinct().count()
+            ).filter(Q(driver=request.user) | Q(stages__stage_number=5, stages__responsible_officer=request.user)).distinct().count()
 
             stage_6_count = JobShipment.objects.filter(
                 current_stage_number=6,
                 status__in=['ACTIVE', 'DELAYED'],
-            ).filter(Q(driver=request.user) | Q(stage_instances__stage_number=6, stage_instances__responsible_officer=request.user)).distinct().count()
+            ).filter(Q(driver=request.user) | Q(stages__stage_number=6, stages__responsible_officer=request.user)).distinct().count()
 
             field_today_jobs_count = JobShipment.objects.filter(
                 status__in=['ACTIVE', 'DELAYED']
