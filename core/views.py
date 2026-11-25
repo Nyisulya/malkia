@@ -8519,23 +8519,55 @@ def _operating_expenses_context(request):
         payment_date__gte=range_start, payment_date__lte=range_end
     ).aggregate(t=Sum('amount'))['t'] or Decimal('0.00')
 
-    # Calculate Cargo & Vehicle Direct Running Costs (Fuel, Transport, Ferry, Facilitation) in this same period
-    job_running = JobShipment.objects.filter(
+    # Pull Cargo & Vehicle Direct Running Costs (Fuel, Transport, Ferry, Facilitation, Other)
+    running_jobs_qs = JobShipment.objects.filter(
         created_at__date__gte=range_start, created_at__date__lte=range_end
-    ).aggregate(
+    ).filter(
+        Q(cost_fuel__gt=0) |
+        Q(cost_transport__gt=0) |
+        Q(cost_facilitation__gt=0) |
+        Q(cost_ferry_charges__gt=0) |
+        Q(cost_running_other__gt=0)
+    ).select_related('customer').order_by('-created_at')
+
+    if query:
+        running_jobs_qs = running_jobs_qs.filter(
+            Q(job_number__icontains=query) |
+            Q(bl_number__icontains=query) |
+            Q(chassis_number__icontains=query) |
+            Q(cargo_description__icontains=query) |
+            Q(vehicle_make__icontains=query) |
+            Q(vehicle_model__icontains=query) |
+            Q(customer__company_name__icontains=query) |
+            Q(cost_running_other_description__icontains=query)
+        )
+
+    running_aggregates = running_jobs_qs.aggregate(
         fuel=Sum('cost_fuel'),
         transport=Sum('cost_transport'),
         ferry=Sum('cost_ferry_charges'),
         facilitation=Sum('cost_facilitation'),
         running_other=Sum('cost_running_other')
     )
-    job_fuel_total = job_running['fuel'] or Decimal('0.00')
-    job_transport_total = job_running['transport'] or Decimal('0.00')
-    job_ferry_total = job_running['ferry'] or Decimal('0.00')
-    job_facilitation_total = job_running['facilitation'] or Decimal('0.00')
-    job_running_other_total = job_running['running_other'] or Decimal('0.00')
+    job_fuel_total = running_aggregates['fuel'] or Decimal('0.00')
+    job_transport_total = running_aggregates['transport'] or Decimal('0.00')
+    job_ferry_total = running_aggregates['ferry'] or Decimal('0.00')
+    job_facilitation_total = running_aggregates['facilitation'] or Decimal('0.00')
+    job_running_other_total = running_aggregates['running_other'] or Decimal('0.00')
     job_running_total = job_fuel_total + job_transport_total + job_ferry_total + job_facilitation_total + job_running_other_total
+    job_ferry_facilitation_total = job_ferry_total + job_facilitation_total
     total_combined_outflow = expense_total + job_running_total
+
+    running_jobs = []
+    for j in running_jobs_qs:
+        j.calculated_running_total = (
+            (j.cost_fuel or Decimal('0')) +
+            (j.cost_transport or Decimal('0')) +
+            (j.cost_facilitation or Decimal('0')) +
+            (j.cost_ferry_charges or Decimal('0')) +
+            (j.cost_running_other or Decimal('0'))
+        )
+        running_jobs.append(j)
 
     year = selected_month.year
     revenue_by_month = {
@@ -8596,8 +8628,10 @@ def _operating_expenses_context(request):
         'job_transport_total': job_transport_total,
         'job_ferry_total': job_ferry_total,
         'job_facilitation_total': job_facilitation_total,
+        'job_ferry_facilitation_total': job_ferry_facilitation_total,
         'job_running_other_total': job_running_other_total,
         'job_running_total': job_running_total,
+        'running_jobs': running_jobs,
         'total_combined_outflow': total_combined_outflow,
         'monthly_rows': monthly_rows,
         'year_revenue': year_revenue,
@@ -8918,7 +8952,162 @@ def operating_expenses_export_excel(request):
         col_letter = get_column_letter(col_idx)
         ws.column_dimensions[col_letter].width = width
 
-    log_audit(request, "OPERATING_EXPENSES_EXCEL_EXPORTED", f"Exported {expenses.count()} records for period {range_label}")
+    # -------------------------------------------------------------
+    # SHEET 2: CARGO & VEHICLE RUNNING COSTS (FUEL, TRANSPORT, ETC.)
+    # -------------------------------------------------------------
+    running_jobs_qs = JobShipment.objects.filter(
+        created_at__date__gte=range_start, created_at__date__lte=range_end
+    ).filter(
+        Q(cost_fuel__gt=0) |
+        Q(cost_transport__gt=0) |
+        Q(cost_facilitation__gt=0) |
+        Q(cost_ferry_charges__gt=0) |
+        Q(cost_running_other__gt=0)
+    ).select_related('customer').order_by('-created_at')
+
+    if query:
+        running_jobs_qs = running_jobs_qs.filter(
+            Q(job_number__icontains=query) |
+            Q(bl_number__icontains=query) |
+            Q(chassis_number__icontains=query) |
+            Q(cargo_description__icontains=query) |
+            Q(vehicle_make__icontains=query) |
+            Q(vehicle_model__icontains=query) |
+            Q(customer__company_name__icontains=query) |
+            Q(cost_running_other_description__icontains=query)
+        )
+
+    ws2 = wb.create_sheet(title="Cargo Running Costs")
+    ws2.views.sheetView[0].showGridLines = True
+
+    ws2.merge_cells("A1:L1")
+    t2_cell = ws2["A1"]
+    t2_cell.value = "MALKIA CARGO WAVES - CARGO & VEHICLE RUNNING COSTS"
+    t2_cell.font = title_font
+    t2_cell.fill = navy_fill
+    t2_cell.alignment = Alignment(horizontal="center", vertical="center")
+    ws2.row_dimensions[1].height = 28
+
+    ws2.merge_cells("A2:L2")
+    sub2_cell = ws2["A2"]
+    sub2_cell.value = f"Period: {range_label}  |  Exported on: {today.strftime('%d %b %Y')}  |  Jobs: {running_jobs_qs.count()}"
+    sub2_cell.font = subtitle_font
+    sub2_cell.fill = navy_fill
+    sub2_cell.alignment = Alignment(horizontal="center", vertical="center")
+    ws2.row_dimensions[2].height = 18
+    ws2.row_dimensions[3].height = 10
+
+    headers2 = [
+        ("S/N", 6, Alignment(horizontal="center", vertical="center")),
+        ("Date", 12, Alignment(horizontal="center", vertical="center")),
+        ("Job No", 16, Alignment(horizontal="center", vertical="center")),
+        ("BL / Chassis", 18, Alignment(horizontal="left", vertical="center")),
+        ("Vehicle / Cargo", 24, Alignment(horizontal="left", vertical="center")),
+        ("Client", 24, Alignment(horizontal="left", vertical="center")),
+        ("Fuel (TSh)", 15, Alignment(horizontal="right", vertical="center")),
+        ("Transport (TSh)", 16, Alignment(horizontal="right", vertical="center")),
+        ("Facilitation (TSh)", 16, Alignment(horizontal="right", vertical="center")),
+        ("Ferry / Toll (TSh)", 16, Alignment(horizontal="right", vertical="center")),
+        ("Other Running (TSh)", 18, Alignment(horizontal="right", vertical="center")),
+        ("Total Running (TSh)", 18, Alignment(horizontal="right", vertical="center")),
+    ]
+
+    header_row2 = 4
+    ws2.row_dimensions[header_row2].height = 24
+    amber_header_fill = PatternFill(start_color="B45309", end_color="B45309", fill_type="solid")
+    for col_idx, (col_name, width, align) in enumerate(headers2, start=1):
+        cell = ws2.cell(row=header_row2, column=col_idx, value=col_name)
+        cell.font = header_font
+        cell.fill = amber_header_fill
+        cell.alignment = align
+        cell.border = thin_border
+
+    current_row2 = 5
+    tot_fuel = Decimal('0.00')
+    tot_trans = Decimal('0.00')
+    tot_facil = Decimal('0.00')
+    tot_ferry = Decimal('0.00')
+    tot_other = Decimal('0.00')
+    tot_running = Decimal('0.00')
+
+    for idx, j in enumerate(running_jobs_qs, start=1):
+        ws2.row_dimensions[current_row2].height = 20
+        fuel = j.cost_fuel or Decimal('0.00')
+        trans = j.cost_transport or Decimal('0.00')
+        facil = j.cost_facilitation or Decimal('0.00')
+        ferry = j.cost_ferry_charges or Decimal('0.00')
+        other = j.cost_running_other or Decimal('0.00')
+        row_tot = fuel + trans + facil + ferry + other
+
+        tot_fuel += fuel
+        tot_trans += trans
+        tot_facil += facil
+        tot_ferry += ferry
+        tot_other += other
+        tot_running += row_tot
+
+        veh_desc = (f"{j.vehicle_make} {j.vehicle_model}".strip() or j.cargo_description or "Cargo")
+        bl_chassis = j.bl_number or j.chassis_number or "-"
+        client_name = j.customer.company_name if j.customer else "-"
+
+        row2_data = [
+            (idx, Alignment(horizontal="center", vertical="center"), regular_font, None),
+            (j.created_at.strftime("%d/%m/%Y") if j.created_at else "-", Alignment(horizontal="center", vertical="center"), regular_font, None),
+            (j.job_number, Alignment(horizontal="center", vertical="center"), bold_font, None),
+            (bl_chassis, Alignment(horizontal="left", vertical="center"), regular_font, None),
+            (veh_desc, Alignment(horizontal="left", vertical="center"), regular_font, None),
+            (client_name, Alignment(horizontal="left", vertical="center"), regular_font, None),
+            (float(fuel), Alignment(horizontal="right", vertical="center"), regular_font, "#,##0"),
+            (float(trans), Alignment(horizontal="right", vertical="center"), regular_font, "#,##0"),
+            (float(facil), Alignment(horizontal="right", vertical="center"), regular_font, "#,##0"),
+            (float(ferry), Alignment(horizontal="right", vertical="center"), regular_font, "#,##0"),
+            (float(other), Alignment(horizontal="right", vertical="center"), regular_font, "#,##0"),
+            (float(row_tot), Alignment(horizontal="right", vertical="center"), money_font, "#,##0"),
+        ]
+
+        for col_idx, (val, align, font, num_fmt) in enumerate(row2_data, start=1):
+            cell = ws2.cell(row=current_row2, column=col_idx, value=val)
+            cell.alignment = align
+            cell.font = font
+            cell.border = thin_border
+            if num_fmt:
+                cell.number_format = num_fmt
+
+        current_row2 += 1
+
+    # Total row ws2
+    ws2.row_dimensions[current_row2].height = 24
+    ws2.merge_cells(start_row=current_row2, start_column=1, end_row=current_row2, end_column=6)
+    t2_label = ws2.cell(row=current_row2, column=1, value="TOTAL CARGO RUNNING COSTS (TSH)")
+    t2_label.font = bold_font
+    t2_label.alignment = Alignment(horizontal="right", vertical="center")
+    t2_label.fill = total_fill
+
+    for c in range(1, 7):
+        ws2.cell(row=current_row2, column=c).border = double_bottom_border
+        ws2.cell(row=current_row2, column=c).fill = total_fill
+
+    subtotals2 = [
+        (7, float(tot_fuel)),
+        (8, float(tot_trans)),
+        (9, float(tot_facil)),
+        (10, float(tot_ferry)),
+        (11, float(tot_other)),
+        (12, float(tot_running)),
+    ]
+    for c_idx, val in subtotals2:
+        cell = ws2.cell(row=current_row2, column=c_idx, value=val)
+        cell.font = bold_font if c_idx != 12 else Font(name="Calibri", size=10, bold=True, color="B91C1C")
+        cell.alignment = Alignment(horizontal="right", vertical="center")
+        cell.number_format = "#,##0"
+        cell.border = double_bottom_border
+        cell.fill = total_fill
+
+    for col_idx, (_, width, _) in enumerate(headers2, start=1):
+        col_letter = get_column_letter(col_idx)
+        ws2.column_dimensions[col_letter].width = width
+
+    log_audit(request, "OPERATING_EXPENSES_EXCEL_EXPORTED", f"Exported {expenses.count()} expenses & {running_jobs_qs.count()} running jobs for period {range_label}")
 
     buffer = io.BytesIO()
     wb.save(buffer)

@@ -204,139 +204,351 @@
         </form>
     </div>
 
-    <div class="expense-grid">
+    <!-- EXPENSE TYPE TABS NAVIGATION -->
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;border-bottom:2px solid #E2E8F0;padding-bottom:0.75rem;" class="no-print">
+        <button type="button" onclick="switchExpenseTab('office')" id="tabBtnOffice" style="padding:0.65rem 1.25rem;font-size:0.86rem;font-weight:800;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;gap:0.5rem;background:#0F172A;color:#FFFFFF;box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:all 0.2s ease;">
+            <i class="fa-solid fa-building-columns"></i> Office Overheads (OPEX)
+            <span style="background:#334155;color:#F8FAFC;font-size:0.72rem;padding:0.15rem 0.55rem;border-radius:999px;">{{ expenses|length }}</span>
+        </button>
+        <button type="button" onclick="switchExpenseTab('running')" id="tabBtnRunning" style="padding:0.65rem 1.25rem;font-size:0.86rem;font-weight:800;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;gap:0.5rem;background:#F1F5F9;color:#475569;transition:all 0.2s ease;">
+            <i class="fa-solid fa-gas-pump" style="color:#D97706;"></i> Cargo Running Costs (Fuel, Transport &amp; Ferry)
+            <span style="background:#FEF3C7;color:#92400E;font-size:0.72rem;padding:0.15rem 0.55rem;border-radius:999px;">{{ running_jobs|length }} Jobs</span>
+        </button>
+    </div>
 
-        <!-- EXPENSE TABLE -->
-        <div class="card-panel" id="operatingExpensesContainer" data-async-container style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
-            <div style="padding:1rem 1.25rem;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+    <!-- TAB 1: OFFICE OPERATING EXPENSES -->
+    <div id="tabSectionOffice">
+        <div class="expense-grid">
+
+            <!-- EXPENSE TABLE -->
+            <div class="card-panel" id="operatingExpensesContainer" data-async-container style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
+                <div style="padding:1rem 1.25rem;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+                    <div>
+                        <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
+                            <i class="fa-solid fa-file-invoice-dollar" style="color:var(--brand-primary);"></i> Expenses Recorded — {{ range_label }}
+                        </h3>
+                        <p style="margin:0.25rem 0 0 0;font-size:0.8rem;color:var(--text-muted);">
+                            {{ range_start|date:"d M Y" }} &ndash; {{ range_end|date:"d M Y" }}
+                        </p>
+                    </div>
+                    <span style="font-size:0.75rem;font-weight:800;color:#0F766E;background:#CCFBF1;padding:0.25rem 0.65rem;border-radius:999px;">
+                        <i class="fa-solid fa-list"></i> {{ expenses|length }} Record{% if expenses|length != 1 %}s{% endif %}
+                    </span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="modern-table" data-page-size="10" style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category &amp; Description</th>
+                                <th>Payment Method</th>
+                                <th style="text-align:right;">Amount (TSh)</th>
+                                <th style="text-align:right;" class="no-print">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in expenses %}
+                            <tr style="border-bottom:1px solid #F1F5F9;">
+                                <td style="padding:0.65rem 0.9rem;vertical-align:top;white-space:nowrap;">
+                                    <strong style="color:#0F172A;">{{ e.date|date:"d M Y" }}</strong>
+                                </td>
+                                <td style="padding:0.65rem 0.9rem;vertical-align:top;">
+                                    <span class="badge-pill" style="background:#EEF2FF;color:#3730A3;font-weight:800;font-size:0.68rem;padding:0.12rem 0.45rem;text-transform:uppercase;">
+                                        {{ e.category.name }}
+                                    </span>
+                                    <div style="font-weight:800;color:#0F172A;margin-top:0.25rem;font-size:0.86rem;">
+                                        {% if e.description %}
+                                            {{ e.description }}
+                                        {% elif e.payee and e.payee != e.category.name %}
+                                            {{ e.payee }}
+                                        {% else %}
+                                            Payment for {{ e.category.name }}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td style="padding:0.65rem 0.9rem;vertical-align:top;">
+                                    <div style="font-size:0.74rem;color:#334155;font-weight:700;">{{ e.get_payment_method_display }}</div>
+                                    {% if e.payment_reference %}
+                                    <div style="font-family:monospace;font-size:0.73rem;color:#475569;margin-top:0.15rem;">{{ e.payment_reference }}</div>
+                                    {% endif %}
+                                </td>
+                                <td style="padding:0.65rem 0.9rem;vertical-align:top;text-align:right;" class="money-cell">
+                                    <strong style="color:#B91C1C;font-size:0.92rem;">TSh {{ e.amount|floatformat:0|intcomma }}</strong>
+                                </td>
+                                <td style="padding:0.65rem 0.9rem;vertical-align:top;text-align:right;white-space:nowrap;" class="no-print">
+                                    {% if e.receipt_file %}
+                                    <a href="{{ e.receipt_file.url }}" target="_blank" rel="noopener" class="btn-header-action btn-outline" style="padding:0.35rem 0.55rem;font-size:0.72rem;" title="Open attached receipt">
+                                        <i class="fa-solid fa-paperclip"></i> Receipt
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'operating_expenses' %}?month={{ selected_month|date:'Y-m' }}&edit={{ e.id }}" class="btn-header-action btn-outline" style="padding:0.35rem 0.55rem;font-size:0.72rem;" title="Edit this expense">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <form action="{% url 'operating_expense_delete' e.id %}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this expense record?\n\n{{ e.category.name|escapejs }} — TSh {{ e.amount|floatformat:0 }} ({{ e.payee|escapejs }})\n\nThis cannot be undone.');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="return_month" value="{{ selected_month|date:'Y-m' }}">
+                                        <button type="submit" class="btn-header-action btn-outline" style="padding:0.35rem 0.55rem;font-size:0.72rem;color:#B91C1C;border-color:#FECACA;" title="Delete">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="padding:2.5rem 1rem;text-align:center;color:#94A3B8;">
+                                    <i class="fa-solid fa-receipt" style="font-size:2rem;display:block;margin-bottom:0.6rem;color:#CBD5E1;"></i>
+                                    No expenses recorded for {{ range_label }}.
+                                    <div style="margin-top:0.5rem;">
+                                        <button type="button" class="btn-header-action btn-primary no-print" onclick="openModal('expenseModal')">
+                                            <i class="fa-solid fa-plus"></i> Record the first expense
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CATEGORIES PANEL -->
+            <div class="card-panel" style="padding:1.1rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.75rem;">
+                    <h3 style="margin:0;font-size:0.95rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
+                        <i class="fa-solid fa-tags" style="color:#7C3AED;"></i> Expense Categories
+                    </h3>
+                    <button type="button" class="btn-header-action btn-outline no-print" style="padding:0.35rem 0.6rem;font-size:0.72rem;" onclick="openModal('categoryModal')">
+                        <i class="fa-solid fa-plus"></i> Add
+                    </button>
+                </div>
+                <p style="font-size:0.76rem;color:#64748B;margin:0 0 0.85rem 0;">
+                    Categories you create here are yours — add salary, commission, rent, internet, fuel, utility bills and anything else the company pays for.
+                </p>
+
+                <div class="categories-grid">
+                {% for c in categories %}
+                <div class="category-chip-row" style="margin-bottom:0;">
+                    <div style="min-width:0;">
+                        <div style="font-weight:800;font-size:0.82rem;color:{% if c.is_active %}#0F172A{% else %}#94A3B8{% endif %};text-decoration:{% if c.is_active %}none{% else %}line-through{% endif %};">
+                            {{ c.name }}
+                        </div>
+                        {% if c.description %}
+                        <div style="font-size:0.72rem;color:#94A3B8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.description }}</div>
+                        {% endif %}
+                    </div>
+                    <form action="{% url 'operating_expense_category_toggle' c.id %}" method="POST" style="margin:0;" class="no-print">
+                        {% csrf_token %}
+                        <input type="hidden" name="return_month" value="{{ selected_month|date:'Y-m' }}">
+                        <button type="submit" class="badge-pill" style="border:none;cursor:pointer;font-weight:800;font-size:0.68rem;padding:0.22rem 0.55rem;{% if c.is_active %}background:#DCFCE7;color:#166534;{% else %}background:#F1F5F9;color:#64748B;{% endif %}" title="{% if c.is_active %}Deactivate{% else %}Activate{% endif %}">
+                            {% if c.is_active %}<i class="fa-solid fa-circle-check"></i> Active{% else %}<i class="fa-solid fa-circle-minus"></i> Inactive{% endif %}
+                        </button>
+                    </form>
+                </div>
+                {% empty %}
+                <div style="grid-column:1/-1;text-align:center;padding:1.5rem 0.5rem;color:#94A3B8;font-size:0.8rem;">
+                    <i class="fa-solid fa-tags" style="font-size:1.6rem;display:block;margin-bottom:0.5rem;color:#CBD5E1;"></i>
+                    No categories yet. Add your first one to start recording expenses.
+                </div>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: CARGO & VEHICLE RUNNING COSTS (PULLED FROM JOB SHIPMENTS) -->
+    <div id="tabSectionRunning" style="display:none;">
+
+        <!-- RUNNING COSTS KPI MINI CARDS -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:0.85rem;margin-bottom:1.25rem;">
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:0.85rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
+                    <span>Fuel (Mafuta ya Kazi)</span>
+                    <i class="fa-solid fa-gas-pump" style="color:#D97706;"></i>
+                </div>
+                <div style="font-size:1.2rem;font-weight:900;color:#0F172A;margin-top:0.35rem;">
+                    TSh {{ job_fuel_total|floatformat:0|intcomma }}
+                </div>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:0.85rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
+                    <span>Transport &amp; Delivery</span>
+                    <i class="fa-solid fa-truck" style="color:#2563EB;"></i>
+                </div>
+                <div style="font-size:1.2rem;font-weight:900;color:#0F172A;margin-top:0.35rem;">
+                    TSh {{ job_transport_total|floatformat:0|intcomma }}
+                </div>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:0.85rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
+                    <span>Facilitation &amp; Ferry</span>
+                    <i class="fa-solid fa-ferry" style="color:#0D9488;"></i>
+                </div>
+                <div style="font-size:1.2rem;font-weight:900;color:#0F172A;margin-top:0.35rem;">
+                    TSh {{ job_ferry_facilitation_total|floatformat:0|intcomma }}
+                </div>
+            </div>
+            {% if job_running_other_total > 0 %}
+            <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:0.85rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-size:0.72rem;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
+                    <span>Other Running Costs</span>
+                    <i class="fa-solid fa-screwdriver-wrench" style="color:#7C3AED;"></i>
+                </div>
+                <div style="font-size:1.2rem;font-weight:900;color:#0F172A;margin-top:0.35rem;">
+                    TSh {{ job_running_other_total|floatformat:0|intcomma }}
+                </div>
+            </div>
+            {% endif %}
+            <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:10px;padding:0.85rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-size:0.72rem;font-weight:800;color:#92400E;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;justify-content:space-between;">
+                    <span>Total Running Costs</span>
+                    <i class="fa-solid fa-calculator" style="color:#B45309;"></i>
+                </div>
+                <div style="font-size:1.25rem;font-weight:900;color:#92400E;margin-top:0.35rem;">
+                    TSh {{ job_running_total|floatformat:0|intcomma }}
+                </div>
+            </div>
+        </div>
+
+        <!-- RUNNING COSTS TABLE -->
+        <div class="card-panel" style="padding:0;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
+            <div style="padding:1rem 1.25rem;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;background:#F8FAFC;">
                 <div>
                     <h3 style="margin:0;font-size:1.05rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
-                        <i class="fa-solid fa-file-invoice-dollar" style="color:var(--brand-primary);"></i> Expenses Recorded — {{ range_label }}
+                        <i class="fa-solid fa-gas-pump" style="color:#D97706;"></i> Cargo &amp; Vehicle Running Costs — {{ range_label }}
                     </h3>
                     <p style="margin:0.25rem 0 0 0;font-size:0.8rem;color:var(--text-muted);">
-                        {{ range_start|date:"d M Y" }} &ndash; {{ range_end|date:"d M Y" }}
+                        Gharama zilizorekodiwa na mhasibu chini ya kila Job No (Mafuta, Usafiri, Facilitation &amp; Kivukoni) zimevutwa hapa kiotomatiki.
                     </p>
                 </div>
-                <span style="font-size:0.75rem;font-weight:800;color:#0F766E;background:#CCFBF1;padding:0.25rem 0.65rem;border-radius:999px;">
-                    <i class="fa-solid fa-list"></i> {{ expenses|length }} Record{% if expenses|length != 1 %}s{% endif %}
+                <span style="font-size:0.75rem;font-weight:800;color:#92400E;background:#FEF3C7;padding:0.25rem 0.65rem;border-radius:999px;">
+                    <i class="fa-solid fa-car-side"></i> {{ running_jobs|length }} Job{% if running_jobs|length != 1 %}s{% endif %} with Running Costs
                 </span>
             </div>
 
             <div class="table-responsive">
                 <table class="modern-table" data-page-size="10" style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
                     <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Category &amp; Description</th>
-                            <th>Payment Method</th>
-                            <th style="text-align:right;">Amount (TSh)</th>
-                            <th style="text-align:right;" class="no-print">Actions</th>
+                        <tr style="background:#F1F5F9;color:#475569;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;">
+                            <th style="padding:0.75rem 0.9rem;">Date</th>
+                            <th style="padding:0.75rem 0.9rem;">Job / BL No</th>
+                            <th style="padding:0.75rem 0.9rem;">Vehicle / Cargo</th>
+                            <th style="padding:0.75rem 0.9rem;">Client</th>
+                            <th style="padding:0.75rem 0.9rem;text-align:right;">Fuel (TSh)</th>
+                            <th style="padding:0.75rem 0.9rem;text-align:right;">Transport (TSh)</th>
+                            <th style="padding:0.75rem 0.9rem;text-align:right;">Facilitation (TSh)</th>
+                            <th style="padding:0.75rem 0.9rem;text-align:right;">Ferry (TSh)</th>
+                            <th style="padding:0.75rem 0.9rem;text-align:right;">Other (TSh)</th>
+                            <th style="padding:0.75rem 0.9rem;text-align:right;">Total Running (TSh)</th>
+                            <th style="padding:0.75rem 0.9rem;text-align:center;" class="no-print">Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for e in expenses %}
+                        {% for j in running_jobs %}
                         <tr style="border-bottom:1px solid #F1F5F9;">
                             <td style="padding:0.65rem 0.9rem;vertical-align:top;white-space:nowrap;">
-                                <strong style="color:#0F172A;">{{ e.date|date:"d M Y" }}</strong>
+                                <strong style="color:#0F172A;">{{ j.created_at|date:"d M Y" }}</strong>
                             </td>
                             <td style="padding:0.65rem 0.9rem;vertical-align:top;">
-                                <span class="badge-pill" style="background:#EEF2FF;color:#3730A3;font-weight:800;font-size:0.68rem;padding:0.12rem 0.45rem;text-transform:uppercase;">
-                                    {{ e.category.name }}
-                                </span>
-                                <div style="font-weight:800;color:#0F172A;margin-top:0.25rem;font-size:0.86rem;">
-                                    {% if e.description %}
-                                        {{ e.description }}
-                                    {% elif e.payee and e.payee != e.category.name %}
-                                        {{ e.payee }}
+                                <span style="font-weight:800;color:var(--brand-primary);font-family:monospace;font-size:0.82rem;">{{ j.job_number }}</span>
+                                <div style="font-size:0.74rem;color:#64748B;margin-top:0.15rem;font-family:monospace;">{{ j.bl_number|default:j.chassis_number }}</div>
+                            </td>
+                            <td style="padding:0.65rem 0.9rem;vertical-align:top;">
+                                <strong style="color:#0F172A;font-size:0.85rem;">
+                                    {% if j.vehicle_make or j.vehicle_model %}
+                                        {{ j.vehicle_make }} {{ j.vehicle_model }}
                                     {% else %}
-                                        Payment for {{ e.category.name }}
+                                        {{ j.cargo_description|default:"Cargo" }}
                                     {% endif %}
-                                </div>
+                                </strong>
                             </td>
-                            <td style="padding:0.65rem 0.9rem;vertical-align:top;">
-                                <div style="font-size:0.74rem;color:#334155;font-weight:700;">{{ e.get_payment_method_display }}</div>
-                                {% if e.payment_reference %}
-                                <div style="font-family:monospace;font-size:0.73rem;color:#475569;margin-top:0.15rem;">{{ e.payment_reference }}</div>
+                            <td style="padding:0.65rem 0.9rem;vertical-align:top;color:#334155;font-weight:600;">
+                                {{ j.customer.company_name|default:"-" }}
+                            </td>
+                            <td style="padding:0.65rem 0.9rem;vertical-align:top;text-align:right;font-variant-numeric:tabular-nums;">
+                                {% if j.cost_fuel and j.cost_fuel > 0 %}
+                                    <span style="color:#D97706;font-weight:800;">TSh {{ j.cost_fuel|floatformat:0|intcomma }}</span>
+                                {% else %}
+                                    <span style="color:#CBD5E1;">-</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding:0.65rem 0.9rem;vertical-align:top;text-align:right;font-variant-numeric:tabular-nums;">
+                                {% if j.cost_transport and j.cost_transport > 0 %}
+                                    <span style="color:#2563EB;font-weight:700;">TSh {{ j.cost_transport|floatformat:0|intcomma }}</span>
+                                {% else %}
+                                    <span style="color:#CBD5E1;">-</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding:0.65rem 0.9rem;vertical-align:top;text-align:right;font-variant-numeric:tabular-nums;">
+                                {% if j.cost_facilitation and j.cost_facilitation > 0 %}
+                                    <span style="color:#0D9488;font-weight:700;">TSh {{ j.cost_facilitation|floatformat:0|intcomma }}</span>
+                                {% else %}
+                                    <span style="color:#CBD5E1;">-</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding:0.65rem 0.9rem;vertical-align:top;text-align:right;font-variant-numeric:tabular-nums;">
+                                {% if j.cost_ferry_charges and j.cost_ferry_charges > 0 %}
+                                    <span style="color:#4F46E5;font-weight:700;">TSh {{ j.cost_ferry_charges|floatformat:0|intcomma }}</span>
+                                {% else %}
+                                    <span style="color:#CBD5E1;">-</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding:0.65rem 0.9rem;vertical-align:top;text-align:right;font-variant-numeric:tabular-nums;">
+                                {% if j.cost_running_other and j.cost_running_other > 0 %}
+                                    <span style="color:#7C3AED;font-weight:700;" title="{{ j.cost_running_other_description }}">
+                                        TSh {{ j.cost_running_other|floatformat:0|intcomma }}
+                                    </span>
+                                {% else %}
+                                    <span style="color:#CBD5E1;">-</span>
                                 {% endif %}
                             </td>
                             <td style="padding:0.65rem 0.9rem;vertical-align:top;text-align:right;" class="money-cell">
-                                <strong style="color:#B91C1C;font-size:0.92rem;">TSh {{ e.amount|floatformat:0|intcomma }}</strong>
+                                <strong style="color:#B45309;font-size:0.92rem;">TSh {{ j.calculated_running_total|floatformat:0|intcomma }}</strong>
                             </td>
-                            <td style="padding:0.65rem 0.9rem;vertical-align:top;text-align:right;white-space:nowrap;" class="no-print">
-                                {% if e.receipt_file %}
-                                <a href="{{ e.receipt_file.url }}" target="_blank" rel="noopener" class="btn-header-action btn-outline" style="padding:0.35rem 0.55rem;font-size:0.72rem;" title="Open attached receipt">
-                                    <i class="fa-solid fa-paperclip"></i> Receipt
+                            <td style="padding:0.65rem 0.9rem;vertical-align:top;text-align:center;" class="no-print">
+                                <a href="{% url 'finance_vehicles_out' %}?q={{ j.job_number }}" target="_blank" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.72rem;" title="View in Vehicles Out Ledger">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Ledger
                                 </a>
-                                {% endif %}
-                                <a href="{% url 'operating_expenses' %}?month={{ selected_month|date:'Y-m' }}&edit={{ e.id }}" class="btn-header-action btn-outline" style="padding:0.35rem 0.55rem;font-size:0.72rem;" title="Edit this expense">
-                                    <i class="fa-solid fa-pen"></i>
-                                </a>
-                                <form action="{% url 'operating_expense_delete' e.id %}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this expense record?\n\n{{ e.category.name|escapejs }} — TSh {{ e.amount|floatformat:0 }} ({{ e.payee|escapejs }})\n\nThis cannot be undone.');">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="return_month" value="{{ selected_month|date:'Y-m' }}">
-                                    <button type="submit" class="btn-header-action btn-outline" style="padding:0.35rem 0.55rem;font-size:0.72rem;color:#B91C1C;border-color:#FECACA;" title="Delete">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </form>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" style="padding:2.5rem 1rem;text-align:center;color:#94A3B8;">
-                                <i class="fa-solid fa-receipt" style="font-size:2rem;display:block;margin-bottom:0.6rem;color:#CBD5E1;"></i>
-                                No expenses recorded for {{ selected_month_label }}.
-                                <div style="margin-top:0.5rem;">
-                                    <button type="button" class="btn-header-action btn-primary no-print" onclick="openModal('expenseModal')">
-                                        <i class="fa-solid fa-plus"></i> Record the first expense
-                                    </button>
-                                </div>
+                            <td colspan="11" style="padding:2.5rem 1rem;text-align:center;color:#94A3B8;">
+                                <i class="fa-solid fa-gas-pump" style="font-size:2rem;display:block;margin-bottom:0.6rem;color:#CBD5E1;"></i>
+                                No cargo running costs (fuel, transport, facilitation) found for {{ range_label }}.
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- CATEGORIES PANEL -->
-        <div class="card-panel" style="padding:1.1rem;">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.75rem;">
-                <h3 style="margin:0;font-size:0.95rem;font-weight:800;color:var(--brand-navy-900);display:flex;align-items:center;gap:0.4rem;">
-                    <i class="fa-solid fa-tags" style="color:#7C3AED;"></i> Expense Categories
-                </h3>
-                <button type="button" class="btn-header-action btn-outline no-print" style="padding:0.35rem 0.6rem;font-size:0.72rem;" onclick="openModal('categoryModal')">
-                    <i class="fa-solid fa-plus"></i> Add
-                </button>
-            </div>
-            <p style="font-size:0.76rem;color:#64748B;margin:0 0 0.85rem 0;">
-                Categories you create here are yours — add salary, commission, rent, internet, fuel, utility bills and anything else the company pays for.
-            </p>
-
-            <div class="categories-grid">
-            {% for c in categories %}
-            <div class="category-chip-row" style="margin-bottom:0;">
-                <div style="min-width:0;">
-                    <div style="font-weight:800;font-size:0.82rem;color:{% if c.is_active %}#0F172A{% else %}#94A3B8{% endif %};text-decoration:{% if c.is_active %}none{% else %}line-through{% endif %};">
-                        {{ c.name }}
-                    </div>
-                    {% if c.description %}
-                    <div style="font-size:0.72rem;color:#94A3B8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ c.description }}</div>
+                    {% if running_jobs %}
+                    <tfoot>
+                        <tr style="background:#FFFBEB;border-top:2px solid #FCD34D;font-weight:900;">
+                            <td colspan="4" style="padding:0.75rem 0.9rem;text-align:right;color:#92400E;font-size:0.85rem;">
+                                TOTAL RUNNING COSTS (TSH):
+                            </td>
+                            <td style="padding:0.75rem 0.9rem;text-align:right;color:#D97706;" class="money-cell">
+                                TSh {{ job_fuel_total|floatformat:0|intcomma }}
+                            </td>
+                            <td style="padding:0.75rem 0.9rem;text-align:right;color:#2563EB;" class="money-cell">
+                                TSh {{ job_transport_total|floatformat:0|intcomma }}
+                            </td>
+                            <td style="padding:0.75rem 0.9rem;text-align:right;color:#0D9488;" class="money-cell">
+                                TSh {{ job_facilitation_total|floatformat:0|intcomma }}
+                            </td>
+                            <td style="padding:0.75rem 0.9rem;text-align:right;color:#4F46E5;" class="money-cell">
+                                TSh {{ job_ferry_total|floatformat:0|intcomma }}
+                            </td>
+                            <td style="padding:0.75rem 0.9rem;text-align:right;color:#7C3AED;" class="money-cell">
+                                TSh {{ job_running_other_total|floatformat:0|intcomma }}
+                            </td>
+                            <td style="padding:0.75rem 0.9rem;text-align:right;color:#B45309;font-size:0.95rem;" class="money-cell">
+                                TSh {{ job_running_total|floatformat:0|intcomma }}
+                            </td>
+                            <td class="no-print"></td>
+                        </tr>
+                    </tfoot>
                     {% endif %}
-                </div>
-                <form action="{% url 'operating_expense_category_toggle' c.id %}" method="POST" style="margin:0;" class="no-print">
-                    {% csrf_token %}
-                    <input type="hidden" name="return_month" value="{{ selected_month|date:'Y-m' }}">
-                    <button type="submit" class="badge-pill" style="border:none;cursor:pointer;font-weight:800;font-size:0.68rem;padding:0.22rem 0.55rem;{% if c.is_active %}background:#DCFCE7;color:#166534;{% else %}background:#F1F5F9;color:#64748B;{% endif %}" title="{% if c.is_active %}Deactivate{% else %}Activate{% endif %}">
-                        {% if c.is_active %}<i class="fa-solid fa-circle-check"></i> Active{% else %}<i class="fa-solid fa-circle-minus"></i> Inactive{% endif %}
-                    </button>
-                </form>
-            </div>
-            {% empty %}
-            <div style="grid-column:1/-1;text-align:center;padding:1.5rem 0.5rem;color:#94A3B8;font-size:0.8rem;">
-                <i class="fa-solid fa-tags" style="font-size:1.6rem;display:block;margin-bottom:0.5rem;color:#CBD5E1;"></i>
-                No categories yet. Add your first one to start recording expenses.
-            </div>
-            {% endfor %}
+                </table>
             </div>
         </div>
     </div>
@@ -501,5 +713,76 @@
         }
         {% endif %}
     })();
+
+    function switchExpenseTab(tab) {
+        const officeSec = document.getElementById('tabSectionOffice');
+        const runningSec = document.getElementById('tabSectionRunning');
+        const btnOffice = document.getElementById('tabBtnOffice');
+        const btnRunning = document.getElementById('tabBtnRunning');
+        if (!officeSec || !runningSec) return;
+
+        if (tab === 'running') {
+            officeSec.style.display = 'none';
+            runningSec.style.display = 'block';
+
+            btnOffice.style.background = '#F1F5F9';
+            btnOffice.style.color = '#475569';
+            btnOffice.style.boxShadow = 'none';
+            const officeBadge = btnOffice.querySelector('span');
+            if (officeBadge) {
+                officeBadge.style.background = '#E2E8F0';
+                officeBadge.style.color = '#64748B';
+            }
+
+            btnRunning.style.background = '#0F172A';
+            btnRunning.style.color = '#FFFFFF';
+            btnRunning.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            const runningBadge = btnRunning.querySelector('span');
+            if (runningBadge) {
+                runningBadge.style.background = '#D97706';
+                runningBadge.style.color = '#FFFFFF';
+            }
+
+            if (history.replaceState) {
+                const url = new URL(window.location);
+                url.searchParams.set('tab', 'running');
+                history.replaceState(null, '', url);
+            }
+        } else {
+            runningSec.style.display = 'none';
+            officeSec.style.display = 'block';
+
+            btnRunning.style.background = '#F1F5F9';
+            btnRunning.style.color = '#475569';
+            btnRunning.style.boxShadow = 'none';
+            const runningBadge = btnRunning.querySelector('span');
+            if (runningBadge) {
+                runningBadge.style.background = '#FEF3C7';
+                runningBadge.style.color = '#92400E';
+            }
+
+            btnOffice.style.background = '#0F172A';
+            btnOffice.style.color = '#FFFFFF';
+            btnOffice.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            const officeBadge = btnOffice.querySelector('span');
+            if (officeBadge) {
+                officeBadge.style.background = '#334155';
+                officeBadge.style.color = '#F8FAFC';
+            }
+
+            if (history.replaceState) {
+                const url = new URL(window.location);
+                url.searchParams.set('tab', 'office');
+                history.replaceState(null, '', url);
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('tab') === 'running') {
+            switchExpenseTab('running');
+        }
+    });
 </script>
 {% endblock %}
