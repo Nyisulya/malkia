@@ -36,3 +36,6 @@ desktop.ini
 # Scratch and debug files
 scratch/
 
+# Local database backups created by reset_transactional_data
+backups/
+
