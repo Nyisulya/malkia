@@ -57,11 +57,12 @@
             <table style="width:100%;border-collapse:collapse;font-size:0.83rem;text-align:left;">
                 <thead>
                     <tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;color:#64748B;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;">
-                        <th style="padding:0.75rem 1rem;font-weight:800;width:32%;">Client / Company Name</th>
-                        <th style="padding:0.75rem 1rem;font-weight:800;width:28%;">Phone &amp; Email</th>
-                        <th style="padding:0.75rem 1rem;font-weight:800;width:22%;">Tax &amp; Identity (TIN / ID)</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:30%;">Client / Company Name</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:26%;">Phone &amp; Email</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:20%;">Tax &amp; Identity (TIN / ID)</th>
                         <th style="padding:0.75rem 1rem;font-weight:800;width:10%;text-align:center;">Files</th>
                         <th style="padding:0.75rem 1rem;font-weight:800;width:8%;text-align:right;">Registered</th>
+                        <th style="padding:0.75rem 1rem;font-weight:800;width:6%;text-align:right;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -127,10 +128,21 @@
                             </span>
                         </td>
 
+                        <!-- 6. EDIT CLIENT (ALL STAFF, AUDITED) -->
+                        <td style="padding:0.8rem 1rem;vertical-align:middle;text-align:right;white-space:nowrap;">
+                            <button type="button"
+                                onclick="openEditCustomerModal('{% url 'customer_update' c.id %}', '{{ c.company_name|escapejs }}', '{{ c.contact_person|default:''|escapejs }}', '{{ c.phone|default:''|escapejs }}', '{{ c.email|default:''|escapejs }}', '{{ c.tin_number|default:''|escapejs }}', '{{ c.id_number|default:''|escapejs }}')"
+                                class="btn-header-action btn-outline"
+                                style="padding:0.35rem 0.65rem;font-size:0.76rem;font-weight:700;"
+                                title="Edit Client Details">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </button>
+                        </td>
+
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" style="padding:3rem 1.5rem;text-align:center;color:#94A3B8;">
+                        <td colspan="6" style="padding:3rem 1.5rem;text-align:center;color:#94A3B8;">
                             <i class="fa-solid fa-users-slash" style="font-size:2.2rem;color:#CBD5E1;margin-bottom:0.75rem;display:block;"></i>
                             <strong style="color:#64748B;font-size:0.95rem;">No clients found</strong>
                             <p style="font-size:0.82rem;margin:0.25rem 0 0 0;">
@@ -200,4 +212,74 @@
         </form>
     </div>
 </div>
+
+<!-- EDIT CUSTOMER MODAL -->
+<div id="editCustomerModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:520px;">
+        <form id="editCustomerForm" action="" method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title"><i class="fa-solid fa-user-pen" style="color:#0284C7;margin-right:0.35rem;"></i> Edit Client Details</h3>
+                    <p style="font-size:0.78rem;color:var(--text-muted);">All changes are recorded in the system Audit Trail.</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('editCustomerModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom:0.85rem;">
+                    <label style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;display:block;">Client / Company Name *</label>
+                    <input type="text" name="company_name" id="editCustCompany" class="form-control" required style="font-size:0.9rem;padding:0.55rem 0.75rem;">
+                </div>
+                <div class="form-group" style="margin-bottom:0.85rem;">
+                    <label style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;display:block;">Contact Person</label>
+                    <input type="text" name="contact_person" id="editCustContact" class="form-control" style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                </div>
+                <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.85rem;">
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;display:block;">Phone No</label>
+                        <input type="text" name="phone" id="editCustPhone" class="form-control" style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;display:block;">Email Address</label>
+                        <input type="email" name="email" id="editCustEmail" class="form-control" style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;display:block;">TIN Number</label>
+                        <input type="text" name="tin_number" id="editCustTin" class="form-control" style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:0.25rem;display:block;">ID (NIDA / Passport)</label>
+                        <input type="text" name="id_number" id="editCustId" class="form-control" style="font-size:0.85rem;padding:0.5rem 0.75rem;">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding:0.85rem 1.25rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;gap:0.5rem;justify-content:flex-end;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('editCustomerModal')" style="padding:0.5rem 1rem;">Cancel</button>
+                <button type="submit" class="btn-header-action btn-primary" style="padding:0.5rem 1.25rem;font-weight:800;">
+                    <i class="fa-solid fa-check"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+window.openEditCustomerModal = function(actionUrl, company, contact, phone, email, tin, idNum) {
+    const form = document.getElementById('editCustomerForm');
+    if (!form) return;
+    form.setAttribute('action', actionUrl);
+    document.getElementById('editCustCompany').value = company || '';
+    document.getElementById('editCustContact').value = contact || '';
+    document.getElementById('editCustPhone').value = phone || '';
+    document.getElementById('editCustEmail').value = email || '';
+    document.getElementById('editCustTin').value = tin || '';
+    document.getElementById('editCustId').value = idNum || '';
+    if (window.openModal) {
+        window.openModal('editCustomerModal');
+    } else {
+        const m = document.getElementById('editCustomerModal');
+        if (m) { m.classList.add('open'); m.style.display = 'flex'; }
+    }
+};
+</script>
 {% endblock %}

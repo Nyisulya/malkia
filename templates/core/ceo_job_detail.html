@@ -35,6 +35,12 @@
         </p>
     </div>
     <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+        <button type="button" onclick="openModal('editJobModal')" class="btn-header-action btn-outline" style="font-weight:700;" title="Edit B/L, Client, Chassis or Cargo Details">
+            <i class="fa-solid fa-pen-to-square" style="color:#0284C7;"></i> Edit File
+        </button>
+        <button type="button" onclick="openModal('deleteJobDetailModal')" class="btn-header-action btn-outline" style="font-weight:700;color:#B91C1C;border-color:#FECACA;" title="Permanently Delete Shipment">
+            <i class="fa-solid fa-trash"></i> Delete
+        </button>
         <a href="{% url 'client_shipment_detail' job.id %}" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;">
             <i class="fa-solid fa-route"></i> Track Milestones
         </a>
@@ -178,4 +184,7 @@
         </table>
     </div>
 </div>
+
+{% include 'includes/job_edit_delete_modals.html' %}
+
 {% endblock %}

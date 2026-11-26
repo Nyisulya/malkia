@@ -159,6 +159,13 @@
                             <a href="{% url 'job_detail' job.id %}" class="btn-header-action btn-outline" style="padding:0.35rem 0.65rem;font-size:0.78rem;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:0.25rem;">
                                 File <i class="fa-solid fa-chevron-right" style="font-size:0.7rem;"></i>
                             </a>
+                            <button type="button"
+                                onclick="openDeleteJobModal('{% url 'job_delete' job.id %}', '{{ job.job_number|escapejs }}', '{{ job.bl_number|default:''|escapejs }}', '{{ job.customer.company_name|default:''|escapejs }}')"
+                                class="btn-header-action btn-outline"
+                                style="padding:0.35rem 0.55rem;font-size:0.78rem;border-radius:6px;color:#B91C1C;border-color:#FECACA;"
+                                title="Permanently Delete Shipment">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -174,4 +181,52 @@
         </table>
     </div>
 </div>
+
+<!-- PERMANENT DELETE SHIPMENT PRECAUTION MODAL -->
+<div id="deleteJobModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:480px;">
+        <form id="deleteJobForm" action="" method="POST">
+            {% csrf_token %}
+            <div class="modal-header" style="background:#FEF2F2;border-bottom:1px solid #FECACA;">
+                <div>
+                    <h3 class="modal-title" style="color:#991B1B;margin:0;font-size:1.05rem;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color:#DC2626;margin-right:0.35rem;"></i> Permanently Delete Shipment?
+                    </h3>
+                    <p id="deleteJobMeta" style="font-size:0.8rem;color:#7F1D1D;font-weight:700;margin:0.25rem 0 0 0;"></p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('deleteJobModal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding:1.15rem 1.25rem;">
+                <div style="background:#FFF1F2;border:1px solid #FDA4AF;border-left:4px solid #DC2626;border-radius:8px;padding:0.85rem 1rem;color:#881337;font-size:0.84rem;line-height:1.5;">
+                    <strong style="display:block;margin-bottom:0.25rem;">WARNING: This action permanently deletes the entire job!</strong>
+                    Deleting this shipment will permanently erase the job file, all uploaded documents, workflow stage history, containers, expense vouchers, invoices, and payment records. Existing file numbers for other jobs will remain unchanged. <strong>This action cannot be undone.</strong>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding:0.85rem 1.25rem;background:#F8FAFC;border-top:1px solid #E2E8F0;display:flex;justify-content:flex-end;gap:0.5rem;">
+                <button type="button" class="btn-header-action btn-outline" onclick="closeModal('deleteJobModal')">Cancel</button>
+                <button type="submit" class="btn-header-action" style="background:#DC2626;color:#FFFFFF;border:none;font-weight:800;padding:0.55rem 1.15rem;border-radius:8px;cursor:pointer;">
+                    <i class="fa-solid fa-trash"></i> Yes, Permanently Delete Job
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+window.openDeleteJobModal = function(actionUrl, jobNumber, blNumber, clientName) {
+    const form = document.getElementById('deleteJobForm');
+    const meta = document.getElementById('deleteJobMeta');
+    if (!form) return;
+    form.setAttribute('action', actionUrl);
+    if (meta) {
+        meta.textContent = jobNumber + (blNumber ? ' • B/L: ' + blNumber : '') + (clientName ? ' (' + clientName + ')' : '');
+    }
+    if (window.openModal) {
+        window.openModal('deleteJobModal');
+    } else {
+        const m = document.getElementById('deleteJobModal');
+        if (m) { m.classList.add('open'); m.style.display = 'flex'; }
+    }
+};
+</script>
 {% endblock %}

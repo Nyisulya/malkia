@@ -112,6 +112,12 @@
 
         <!-- Executive Quick Actions -->
         <div style="display:flex;gap:0.45rem;align-items:center;flex-wrap:wrap;">
+            <button type="button" onclick="openModal('editJobModal')" class="btn-header-action btn-outline" style="font-weight:700;padding:0.5rem 0.9rem;border-radius:8px;display:inline-flex;align-items:center;gap:0.4rem;font-size:0.82rem;cursor:pointer;" title="Edit B/L, Client, Chassis or Cargo Details">
+                <i class="fa-solid fa-pen-to-square" style="color:#0284C7;"></i> Edit File
+            </button>
+            <button type="button" onclick="openModal('deleteJobDetailModal')" class="btn-header-action btn-outline" style="font-weight:700;padding:0.5rem 0.85rem;border-radius:8px;display:inline-flex;align-items:center;gap:0.4rem;font-size:0.82rem;cursor:pointer;color:#B91C1C;border-color:#FECACA;" title="Permanently Delete Shipment">
+                <i class="fa-solid fa-trash"></i> Delete
+            </button>
             {% if job.status != 'COMPLETED' %}
                 {% if job.current_stage_number == 5 %}
                 <button type="button" onclick="openJobFileLocationModal()" class="btn-header-action" style="background:#16A34A;color:#FFFFFF;border:none;font-weight:800;padding:0.55rem 1.25rem;border-radius:8px;display:inline-flex;align-items:center;gap:0.5rem;font-size:0.86rem;cursor:pointer;box-shadow:0 2px 6px rgba(22,163,74,0.35);">
@@ -2919,6 +2925,8 @@ window.openJobFileLocationModal = function() {
     }
 };
 </script>
+
+{% include 'includes/job_edit_delete_modals.html' %}
 
 {% endblock %}
 

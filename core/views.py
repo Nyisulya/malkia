@@ -2269,6 +2269,8 @@ def job_detail_view(request, job_id):
 
         'can_edit_documents': user_can_manage_docs(request.user, job),
 
+        'all_customers': Customer.objects.all().order_by('company_name'),
+
     }
 
 
@@ -2279,6 +2281,91 @@ def job_detail_view(request, job_id):
         return render(request, 'core/ceo_job_detail.html', context)
 
     return render(request, 'core/job_detail.html', context)
+
+
+@login_required
+def job_edit_action(request, job_id):
+    role = get_user_role(request.user)
+    if role == UserRole.FINANCE and not request.user.is_superuser:
+        messages.warning(request, "Access restricted: Finance users cannot edit operational shipment details.")
+        return redirect('finance_vehicles_out')
+
+    job = get_object_or_404(JobShipment.objects.select_related('customer'), id=job_id)
+    if request.method == 'POST':
+        changes = []
+        old_customer = job.customer.company_name if job.customer else ''
+        cust_id = (request.POST.get('customer_id') or '').strip()
+        if cust_id.isdigit():
+            new_cust = Customer.objects.filter(id=int(cust_id)).first()
+            if new_cust and new_cust.id != job.customer_id:
+                changes.append(f"Client: '{old_customer}' -> '{new_cust.company_name}'")
+                job.customer = new_cust
+
+        text_fields = [
+            ('bl_number', 'B/L No'),
+            ('chassis_number', 'Chassis No'),
+            ('vehicle_make', 'Vehicle Make'),
+            ('vehicle_model', 'Vehicle Model'),
+            ('registration_year', 'Year'),
+            ('vessel_name', 'Vessel'),
+            ('container_size_type', 'Container Type'),
+            ('container_numbers', 'Container Numbers'),
+            ('cargo_description', 'Cargo Description'),
+        ]
+        for field_name, label in text_fields:
+            if field_name in request.POST:
+                new_val = request.POST.get(field_name, '').strip()
+                old_val = getattr(job, field_name) or ''
+                if new_val != old_val:
+                    changes.append(f"{label}: '{old_val}' -> '{new_val}'")
+                    setattr(job, field_name, new_val)
+
+        if 'cif_usd' in request.POST:
+            raw_cif = (request.POST.get('cif_usd') or '0').replace(',', '').replace('$', '').strip()
+            try:
+                new_cif = Decimal(raw_cif or '0')
+            except Exception:
+                new_cif = job.cif_usd or Decimal('0')
+            if new_cif != (job.cif_usd or Decimal('0')):
+                changes.append(f"CIF ($): '{job.cif_usd}' -> '{new_cif}'")
+                job.cif_usd = new_cif
+
+        job.save()
+        actor = request.user.get_full_name() or request.user.username
+        summary = "; ".join(changes) if changes else "Saved with no field changes"
+        log_audit(request, "JOB_UPDATED", f"Shipment {job.job_number} edited by {actor}: {summary}", job=job)
+        messages.success(request, f"Shipment {job.job_number} details updated successfully.")
+    return redirect('job_detail', job_id=job.id)
+
+
+@login_required
+def job_delete_action(request, job_id):
+    role = get_user_role(request.user)
+    if role == UserRole.FINANCE and not request.user.is_superuser:
+        messages.warning(request, "Access restricted: Finance users cannot delete shipments.")
+        return redirect('finance_vehicles_out')
+
+    job = get_object_or_404(JobShipment.objects.select_related('customer'), id=job_id)
+    if request.method == 'POST':
+        job_number = job.job_number
+        bl_number = job.bl_number or 'N/A'
+        customer_name = job.customer.company_name if job.customer else 'N/A'
+        doc_count = job.documents.count()
+        inv_count = job.invoices.count()
+        actor = request.user.get_full_name() or request.user.username
+
+        with transaction.atomic():
+            OtherRevenue.objects.filter(job=job).delete()
+            job.delete()
+
+        log_audit(
+            request,
+            "JOB_DELETED",
+            f"Shipment {job_number} (B/L: {bl_number}, Client: {customer_name}) permanently deleted along with {doc_count} document(s) and {inv_count} invoice(s) by {actor}.",
+            job=None,
+        )
+        messages.success(request, f"Shipment {job_number} and all associated records have been permanently deleted.")
+    return redirect('jobs_list')
 
 
 
@@ -12045,6 +12132,40 @@ def customer_create_action(request):
 
 
 
+    return redirect('customers_list')
+
+
+@login_required
+def customer_update_action(request, customer_id):
+    cust = get_object_or_404(Customer, id=customer_id)
+    if request.method == 'POST':
+        name = request.POST.get('company_name', '').strip()
+        if not name:
+            messages.error(request, "Client / Company Name is required.")
+            return redirect('customers_list')
+
+        updates = {
+            'company_name': name,
+            'contact_person': request.POST.get('contact_person', '').strip() or name,
+            'phone': request.POST.get('phone', '').strip(),
+            'email': request.POST.get('email', '').strip(),
+            'tin_number': request.POST.get('tin_number', '').strip(),
+            'id_number': request.POST.get('id_number', '').strip(),
+            'physical_address': request.POST.get('physical_address', cust.physical_address or '').strip(),
+        }
+
+        changes = []
+        for field, new_val in updates.items():
+            old_val = getattr(cust, field) or ''
+            if new_val != old_val:
+                changes.append(f"{field}: '{old_val}' -> '{new_val}'")
+                setattr(cust, field, new_val)
+
+        cust.save()
+        actor = request.user.get_full_name() or request.user.username
+        summary = "; ".join(changes) if changes else "Saved with no field changes"
+        log_audit(request, "CUSTOMER_UPDATED", f"Client '{cust.company_name}' (ID #{cust.id}) edited by {actor}: {summary}")
+        messages.success(request, f"Client '{cust.company_name}' updated successfully!")
     return redirect('customers_list')
 
 
