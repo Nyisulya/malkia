@@ -419,6 +419,33 @@ async function fetchPageDocument(url, signal = null) {
     return doc;
 }
 
+function syncSidebarBadges(doc) {
+    if (!doc) return;
+    const newLinks = new Map();
+    doc.querySelectorAll('.app-sidebar .nav-item a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href) newLinks.set(href, link);
+    });
+    if (newLinks.size === 0) return;
+
+    document.querySelectorAll('.app-sidebar .nav-item a').forEach(curLink => {
+        const href = curLink.getAttribute('href');
+        if (!href || !newLinks.has(href)) return;
+        const newLink = newLinks.get(href);
+        const newBadge = newLink.querySelector('.nav-badge');
+        const curBadge = curLink.querySelector('.nav-badge');
+
+        if (newBadge && curBadge) {
+            curBadge.textContent = newBadge.textContent;
+            curBadge.style.cssText = newBadge.style.cssText;
+        } else if (newBadge && !curBadge) {
+            curLink.appendChild(newBadge.cloneNode(true));
+        } else if (!newBadge && curBadge) {
+            curBadge.remove();
+        }
+    });
+}
+
 function renderPageDocument(doc, url, options = {}) {
     const newContent = doc.querySelector('.page-content');
     const currentContent = document.querySelector('.page-content');
@@ -435,6 +462,7 @@ function renderPageDocument(doc, url, options = {}) {
     if (doc.title) document.title = doc.title;
     currentContent.style.opacity = '1';
     currentContent.style.transition = '';
+    syncSidebarBadges(doc);
     updateActiveSidebarNav(url);
     if (options.scrollTop !== false) window.scrollTo({ top: 0, behavior: 'instant' });
     return true;
@@ -719,24 +747,14 @@ function setupGlobalFormInterceptor() {
                     const newMessages = newContent.querySelector('.toast-messages-container');
                     if (newMessages) newMessages.remove();
                     renderPageDocument(doc, response.url || action, { scrollTop: false });
+                } else {
+                    syncSidebarBadges(doc);
                 }
 
                 // Update URL history without page reload
                 if (response.url && response.url !== window.location.href) {
                     window.history.pushState({ url: response.url }, doc.title || '', response.url);
                 }
-
-                // Update sidebar badges from response HTML
-                const newBadges = doc.querySelectorAll('.app-sidebar .nav-badge');
-                newBadges.forEach(badge => {
-                    const parentHref = badge.closest('a')?.getAttribute('href');
-                    if (parentHref) {
-                        const currentBadge = document.querySelector(`.app-sidebar a[href="${parentHref}"] .nav-badge`);
-                        if (currentBadge) {
-                            currentBadge.textContent = badge.textContent;
-                        }
-                    }
-                });
             }
         } catch (error) {
             console.error('AJAX Action Error:', error);
