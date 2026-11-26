@@ -73,6 +73,7 @@ urlpatterns = [
     path('finance/employees/create/', views.employee_create_action, name='employee_create'),
     path('finance/employees/<int:employee_id>/', views.employee_detail_view, name='employee_detail'),
     path('finance/employees/<int:employee_id>/update/', views.employee_update_action, name='employee_update'),
+    path('finance/employees/<int:employee_id>/delete/', views.employee_delete_action, name='employee_delete'),
     path('finance/payroll/', views.payroll_view, name='payroll'),
     path('finance/payroll/export-excel/', views.payroll_export_excel, name='payroll_export_excel'),
     path('finance/payroll/generate/', views.payroll_generate_action, name='payroll_generate'),

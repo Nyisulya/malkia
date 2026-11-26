@@ -9912,6 +9912,26 @@ def employee_update_action(request, employee_id):
 
 @login_required
 @role_required(OPERATING_EXPENSE_ROLES)
+def employee_delete_action(request, employee_id):
+    employee = get_object_or_404(Employee, id=employee_id)
+    if request.method == 'POST':
+        emp_name = employee.full_name
+        emp_no = employee.employee_number
+        linked_exp_ids = list(
+            employee.salary_payments.exclude(operating_expense__isnull=True)
+            .values_list('operating_expense_id', flat=True)
+        )
+        with transaction.atomic():
+            employee.delete()
+            if linked_exp_ids:
+                OperatingExpense.objects.filter(id__in=linked_exp_ids).delete()
+        log_audit(request, "EMPLOYEE_DELETED", f"Employee {emp_name} ({emp_no}) removed from Employee Registry & Payroll.")
+        messages.success(request, f"Employee {emp_name} ({emp_no}) removed from Employee Registry & Payroll.")
+    return redirect('employees')
+
+
+@login_required
+@role_required(OPERATING_EXPENSE_ROLES)
 def employee_detail_view(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
     payments = employee.salary_payments.all().order_by('-period')

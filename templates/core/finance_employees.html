@@ -159,6 +159,12 @@
                             <a href="{% url 'employees' %}?edit={{ emp.id }}" class="btn-header-action btn-outline" style="padding:0.35rem 0.55rem;font-size:0.72rem;" title="Edit employee">
                                 <i class="fa-solid fa-pen"></i>
                             </a>
+                            <form action="{% url 'employee_delete' emp.id %}" method="POST" style="display:inline;" onsubmit="return confirm('Remove {{ emp.full_name|escapejs }} ({{ emp.employee_number|escapejs }}) from Employee Registry &amp; Payroll?\n\nThis removes their HR/Payroll record only and keeps any portal login intact.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-header-action btn-outline" style="padding:0.35rem 0.55rem;font-size:0.72rem;color:#B91C1C;border-color:#FECACA;" title="Delete from Employee Registry &amp; Payroll">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}
