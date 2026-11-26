@@ -146,10 +146,10 @@
           "mainEntity": [
             {
               "@type": "Question",
-              "name": "Inachukua muda gani kutoa gari Bandari ya Dar es Salaam kupitia Malkia Cargo Wave Limited?",
+              "name": "Inachukua muda gani kutoa gari au mzigo Bandari ya Dar es Salaam kupitia Malkia Cargo Wave Limited?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Ukishatutumia nyaraka mapema kabla meli haijatia nanga, tunakamilisha mahesabu ya TRA na kutoa gari lako bandarini ndani ya siku 2 hadi 4 za kazi bila faini yoyote ya ucheleweshaji."
+                "text": "Muda wa kutoa gari au mzigo unategemea kukamilika kwa taratibu rasmi za kiserikali (TRA, TBS na Bandari) pamoja na nyaraka husika. Kazi yetu kubwa ni kuanza mchakato mapema na kufuatilia kwa karibu kila hatua ili mzigo wako utoke haraka pindi taratibu hizo zinapokamilika."
               }
             },
             {
@@ -1485,19 +1485,6 @@
                 <span class="stage-dot" onclick="goToCarSlide(3)"></span>
             </div>
         </div>
-
-        <!-- CENTER LIVE VEHICLE TRACKING SEARCH -->
-        <form class="center-track-bar" onsubmit="event.preventDefault(); handleCenterTrack();">
-            <i class="fa-solid fa-car"></i>
-            <input type="text" id="centerTrackInput" class="center-track-input" placeholder="Weka namba ya B/L au Chassis kufuatilia gari (mf. JILI-KEI, GDJ150...)" data-i18n-ph="track_ph" required>
-            <button type="submit" class="center-track-btn">
-                <i class="fa-solid fa-magnifying-glass"></i> <span data-i18n="track_btn_label">Fuatilia Gari</span>
-            </button>
-        </form>
-
-        <div id="trackResultBox">
-            <!-- Dynamic Result -->
-        </div>
     </section>
 
     <!-- ── 3. ABOUT MALKIA & ORIGIN STORY ── -->
@@ -1694,9 +1681,9 @@
                 <div class="why-us-icon-wrap" style="background:#F3E8FF;color:#7C3AED;">
                     <i class="fa-solid fa-bolt"></i>
                 </div>
-                <h4 data-i18n="why4_title">Utoaji wa Haraka (Ndani ya Siku 3–5)</h4>
+                <h4 data-i18n="why4_title">Utoaji wa Haraka &amp; Ufuatiliaji wa Karibu</h4>
                 <p data-i18n="why4_desc">
-                    Timu yetu yenye uzoefu inafanya kazi bandarini kila siku kushughulikia nyaraka, ukaguzi wa TBS, na kutoa gari kabla muda wa bure haujaisha.
+                    Timu yetu yenye uzoefu inafanya kazi bandarini kila siku kushughulikia nyaraka mapema na kufuatilia kwa karibu vibali vyote vya TRA na TBS ili gari litoke haraka.
                 </p>
             </div>
 
@@ -1716,9 +1703,9 @@
                 <div class="why-us-icon-wrap" style="background:#E0F2FE;color:#0284C7;">
                     <i class="fa-solid fa-robot"></i>
                 </div>
-                <h4 data-i18n="why6_title">Ufuatiliaji wa Moja kwa Moja &amp; AI</h4>
+                <h4 data-i18n="why6_title">Taarifa za Mara kwa Mara &amp; Msaidizi wa AI</h4>
                 <p data-i18n="why6_desc">
-                    Fuatilia gari lako kwa namba ya B/L au Chassis wakati wowote kwenye mfumo wetu, ukisaidiwa na msaidizi wa AI masaa 24 kujibu maswali yako yote.
+                    Tunakupa mrejesho wa kila hatua kupitia simu na WhatsApp kuanzia mwanzo hadi mwisho, ukisaidiwa na msaidizi wetu wa AI masaa 24 kujibu maswali yako yote.
                 </p>
             </div>
         </div>
@@ -1742,7 +1729,7 @@
             <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:14px;padding:1.75rem;">
                 <h4 style="font-size:1.1rem;font-weight:800;margin-bottom:1rem;color:#38BDF8;" data-i18n="yard_box_title">Kwa Nini Ushirikiane na Malkia:</h4>
                 <div style="display:flex;flex-direction:column;gap:0.75rem;font-size:0.88rem;">
-                    <div><i class="fa-solid fa-circle-check" style="color:#10B981;margin-right:0.4rem;"></i> <strong data-i18n="yard_b1_title">Utoaji Ndani ya Siku 3–5:</strong> <span data-i18n="yard_b1_desc">Kazi inafanywa kwa kasi kabla ya faini za bandari kuanza.</span></div>
+                    <div><i class="fa-solid fa-circle-check" style="color:#10B981;margin-right:0.4rem;"></i> <strong data-i18n="yard_b1_title">Ufuatiliaji wa Haraka:</strong> <span data-i18n="yard_b1_desc">Tunashughulikia nyaraka mapema na kufuatilia kila hatua ili mzigo utoke kwa wakati.</span></div>
                     <div><i class="fa-solid fa-circle-check" style="color:#10B981;margin-right:0.4rem;"></i> <strong data-i18n="yard_b2_title">Usalama wa Mzigo 100%:</strong> <span data-i18n="yard_b2_desc">Ukaguzi wa kina bandarini na ulinzi wa kila kifaa cha gari.</span></div>
                     <div><i class="fa-solid fa-circle-check" style="color:#10B981;margin-right:0.4rem;"></i> <strong data-i18n="yard_b3_title">Kodi ya Uwazi Kabisa:</strong> <span data-i18n="yard_b3_desc">Control number halisi ya GePG ya TRA bila malipo ya ziada.</span></div>
                     <div><i class="fa-solid fa-circle-check" style="color:#10B981;margin-right:0.4rem;"></i> <strong data-i18n="yard_b4_title">Kukabidhiwa Mkononi:</strong> <span data-i18n="yard_b4_desc">Gari linatoka na kukabidhiwa moja kwa moja au kusafirishwa mkoani.</span></div>
@@ -1764,22 +1751,22 @@
             <!-- Q1 -->
             <div class="faq-item active">
                 <div class="faq-question" onclick="toggleFaq(this)">
-                    <h4><i class="fa-solid fa-circle-question"></i> <span data-i18n="faq_q1">Inachukua muda gani kutoa gari Bandari ya Dar es Salaam?</span></h4>
+                    <h4><i class="fa-solid fa-circle-question"></i> <span data-i18n="faq_q1">Inachukua muda gani kutoa gari au mzigo Bandari ya Dar es Salaam?</span></h4>
                     <div class="faq-icon-toggle"><i class="fa-solid fa-chevron-down"></i></div>
                 </div>
                 <div class="faq-answer" data-i18n="faq_a1">
-                    Kawaida inachukua <strong>siku 3 hadi 5 za kazi</strong> kuanzia siku nyaraka zote zinapopokelewa na kodi ya TRA kulipwa. Lengo letu kuu ni kutoa gari kabla muda wa bure wa bandari haujaisha ili mteja asilipe faini yoyote ya uhifadhi (demurrage).
+                    Muda wa utoaji unategemea pindi <strong>taratibu rasmi za kiserikali (TRA, TBS na Bandari)</strong> zinapokamilika na kodi kulipwa. Kazi yetu kuu katika Malkia Cargo Waves Limited ni kuanza maandalizi ya nyaraka mapema na kufuatilia kwa karibu kila ofisi husika kuhakikisha gari au mzigo wako unatoka haraka iwezekanavyo bila kuchelewa.
                 </div>
             </div>
 
             <!-- Q2 -->
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)">
-                    <h4><i class="fa-solid fa-circle-question"></i> <span data-i18n="faq_q2">Malkia Cargo Waves inachukua muda gani kutoa gari au mzigo bandarini?</span></h4>
+                    <h4><i class="fa-solid fa-circle-question"></i> <span data-i18n="faq_q2">Nianze lini kutuma nyaraka zangu kwenu ili mchakato uende haraka?</span></h4>
                     <div class="faq-icon-toggle"><i class="fa-solid fa-chevron-down"></i></div>
                 </div>
                 <div class="faq-answer" data-i18n="faq_a2">
-                    Kwa kawaida, utoaji wa gari au mzigo huchukua siku 3 hadi 5 za kazi mara baada ya meli kutia nanga na nyaraka zote (B/L, Invoice, TBS) kukamilika. Timu yetu inafanya kazi bandarini kila siku kuhakikisha mzigo wako unatoka haraka kabla muda wa bure haujaisha.
+                    Tunashauri ututumie nakala ya nyaraka zako (Bill of Lading, Commercial Invoice, na Export Certificate) <strong>mapema kabla meli haijatia nanga</strong>. Hii hutuwezesha kukadiria kodi ya TRA na kuanza maandalizi ya kibali mapema ili mzigo wako upate kipaumbele mara tu meli inaposhusha.
                 </div>
             </div>
 
@@ -1964,7 +1951,7 @@
             <div class="malkia-ai-msg bot">
                 <div class="malkia-ai-msg-bubble" id="aiWelcomeBubble">
                     <strong>Habari! Karibu Malkia Cargo Wave Limited. 👋</strong><br><br>
-                    Mimi ni msaidizi wako wa AI. Unaweza kuniuliza kuhusu kodi ya gari ya TRA, taratibu za kutoa gari au mzigo bandarini, au kufuatilia gari lako kwa B/L au Chassis!
+                    Mimi ni msaidizi wako wa AI. Unaweza kuniuliza kuhusu kodi ya gari ya TRA, taratibu za kutoa gari au mzigo bandarini, au usafirishaji wa mizigo mikoani!
                 </div>
             </div>
         </div>
@@ -2132,8 +2119,6 @@
                 car3_origin: "Imetoka: Southampton, UK • TRA Assessed • Ready for Transit",
                 car4_badge: "Inasafirishwa Mikoani (Arusha / Mwanza Delivery)",
                 car4_origin: "Imetoka: Dubai, UAE • Car Carrier Transit • Doorstep Handover",
-                track_ph: "Weka namba ya B/L au Chassis kufuatilia gari (mf. JILI-KEI, GDJ150...)",
-                track_btn_label: "Fuatilia Gari",
                 about_tag: "Sisi Ni Nani",
                 about_title: "Imejengwa Kuwapa Waagizaji wa Magari Amani ya Moyo.",
                 about_p1: "Malkia Cargo Wave Limited ni kampuni iliyosajiliwa rasmi na kupewa leseni ya forodha ya TRA kwa ajili ya kutoa na kusafirisha mizigo na magari, ikiwa na makao makuu yake Bandari ya Dar es Salaam, Tanzania.",
@@ -2184,8 +2169,8 @@
                 yard_desc: "Kukaa na gari bandarini baada ya muda wa bure kunaambatana na tozo kubwa za ucheleweshaji (demurrage). Malkia Cargo Waves Limited inafuatilia nyaraka na michakato yote kwa weledi wa hali ya juu ili mzigo wako utoke haraka na kukabidhiwa salama mkononi mwako.",
                 yard_btn: "Wasiliana Nasi Sasa Kutoa Mzigo",
                 yard_box_title: "Kwa Nini Ushirikiane na Malkia:",
-                yard_b1_title: "Utoaji Ndani ya Siku 3–5:",
-                yard_b1_desc: "Kazi inafanywa kwa kasi kabla ya faini za bandari kuanza.",
+                yard_b1_title: "Ufuatiliaji wa Haraka:",
+                yard_b1_desc: "Tunashughulikia nyaraka mapema na kufuatilia kila hatua ili mzigo utoke kwa wakati.",
                 yard_b2_title: "Usalama wa Mzigo 100%:",
                 yard_b2_desc: "Ukaguzi wa kina bandarini na ulinzi wa kila kifaa cha gari.",
                 yard_b3_title: "Kodi ya Uwazi Kabisa:",
@@ -2224,19 +2209,19 @@
                 why2_desc: "Tunaijua Bandari ya Dar es Salaam vizuri. Tunashirikiana na TPA, TICTS na TRA kuhakikisha mzigo unatoka kwa weledi bila vikwazo vyovyote.",
                 why3_title: "Kodi Halisi na Gharama za Uwazi",
                 why3_desc: "Hesabu kamili ya kodi ya TRA na ada za bandari zinatolewa mapema na GePG Control Number kabla meli haijatua. Hakuna tozo zilizofichika.",
-                why4_title: "Utoaji wa Haraka (Ndani ya Siku 3–5)",
-                why4_desc: "Timu yetu yenye uzoefu inafanya kazi bandarini kila siku kushughulikia nyaraka, ukaguzi wa TBS, na kutoa gari kabla muda wa bure haujaisha.",
+                why4_title: "Utoaji wa Haraka & Ufuatiliaji wa Karibu",
+                why4_desc: "Timu yetu yenye uzoefu inafanya kazi bandarini kila siku kushughulikia nyaraka mapema na kufuatilia kwa karibu vibali vyote vya TRA na TBS ili gari litoke haraka.",
                 why5_title: "Usafirishaji Salama Mikoani & Nje",
                 why5_desc: "Magari yetu maalum (car carriers) na madereva wazoefu wanakabidhi gari mlangoni kwako Arusha, Mwanza, Dodoma au Rwanda, Burundi, DRC na Zambia.",
-                why6_title: "Ufuatiliaji wa Moja kwa Moja & AI",
-                why6_desc: "Fuatilia gari lako kwa namba ya B/L au Chassis wakati wowote kwenye mfumo wetu, ukisaidiwa na msaidizi wa AI masaa 24 kujibu maswali yako yote.",
+                why6_title: "Taarifa za Mara kwa Mara & Msaidizi wa AI",
+                why6_desc: "Tunakupa mrejesho wa kila hatua kupitia simu na WhatsApp kuanzia mwanzo hadi mwisho, ukisaidiwa na msaidizi wetu wa AI masaa 24 kujibu maswali yako yote.",
                 faq_tag: "Maswali Yanayoulizwa",
                 faq_title: "Maswali Yanayoulizwa Mara kwa Mara (FAQ)",
                 faq_desc: "Kila kitu unachopaswa kufahamu kabla na baada ya gari lako kufika Bandari ya Dar es Salaam.",
-                faq_q1: "Inachukua muda gani kutoa gari Bandari ya Dar es Salaam?",
-                faq_a1: "Kawaida inachukua <strong>siku 3 hadi 5 za kazi</strong> kuanzia siku nyaraka zote zinapopokelewa na kodi ya TRA kulipwa. Lengo letu kuu ni kutoa gari kabla muda wa bure wa bandari haujaisha ili mteja asilipe faini yoyote ya uhifadhi (demurrage).",
-                faq_q2: "Malkia Cargo Waves inachukua muda gani kutoa gari au mzigo bandarini?",
-                faq_a2: "Kwa kawaida, utoaji wa gari au mzigo huchukua siku 3 hadi 5 za kazi mara baada ya meli kutia nanga na nyaraka zote (B/L, Invoice, TBS) kukamilika. Timu yetu inafanya kazi bandarini kila siku kuhakikisha mzigo wako unatoka haraka kabla muda wa bure haujaisha.",
+                faq_q1: "Inachukua muda gani kutoa gari au mzigo Bandari ya Dar es Salaam?",
+                faq_a1: "Muda wa utoaji unategemea pindi <strong>taratibu rasmi za kiserikali (TRA, TBS na Bandari)</strong> zinapokamilika na kodi kulipwa. Kazi yetu kuu katika Malkia Cargo Waves Limited ni kuanza maandalizi ya nyaraka mapema na kufuatilia kwa karibu kila ofisi husika kuhakikisha gari au mzigo wako unatoka haraka iwezekanavyo bila kuchelewa.",
+                faq_q2: "Nianze lini kutuma nyaraka zangu kwenu ili mchakato uende haraka?",
+                faq_a2: "Tunashauri ututumie nakala ya nyaraka zako (Bill of Lading, Commercial Invoice, na Export Certificate) <strong>mapema kabla meli haijatia nanga</strong>. Hii hutuwezesha kukadiria kodi ya TRA na kuanza maandalizi ya kibali mapema ili mzigo wako upate kipaumbele mara tu meli inaposhusha.",
                 faq_q3: "Mnahakikisha vipi kwamba betri, redio na taili ya akiba havitaibiwa?",
                 faq_a3: "Maafisa wetu wapo getini wakati gari linashushwa kutoka kwenye meli ya RORO. Tunafanya <strong>Physical Verification</strong> mara moja na kuweka rekodi ya picha ya: Redio, Betri, Taili ya Akiba, Vioo vya pembeni na vifaa vya gari. Gari linafungwa muhuri na kulindwa 24/7 hadi mikononi mwako.",
                 faq_q4: "Ninahitaji nyaraka zipi ili kuanza mchakato wa kutoa gari langu?",
@@ -2263,8 +2248,6 @@
                 car3_origin: "Origin: Southampton, UK • TRA Assessed • Ready for Transit",
                 car4_badge: "Upcountry Transit (Arusha / Mwanza Delivery)",
                 car4_origin: "Origin: Dubai, UAE • Car Carrier Transit • Doorstep Handover",
-                track_ph: "Enter B/L or Chassis number to track vehicle (e.g. JILI-KEI, GDJ150...)",
-                track_btn_label: "Track Vehicle",
                 about_tag: "Who We Are",
                 about_title: "Built to Give Car Importers Peace of Mind.",
                 about_p1: "Malkia Cargo Wave Limited is a fully registered, TRA-licensed customs clearing and freight forwarding company headquartered at Dar es Salaam Port, Tanzania.",
@@ -2315,8 +2298,8 @@
                 yard_desc: "Leaving cargo at the port past the free days attracts steep demurrage fines. Malkia Cargo Waves Limited manages all documentation, customs duty assessments, and port release procedures promptly so your vehicle exits cleanly and is handed over safely.",
                 yard_btn: "Contact Us to Clear Your Shipment",
                 yard_box_title: "The Malkia Advantage:",
-                yard_b1_title: "Discharge in 3–5 Days:",
-                yard_b1_desc: "Expedited clearance before port storage fees accrue.",
+                yard_b1_title: "Proactive Follow-Up:",
+                yard_b1_desc: "Early document preparation and close follow-up at every port stage.",
                 yard_b2_title: "100% Cargo Safety:",
                 yard_b2_desc: "Thorough joint physical inspection and accessory checks.",
                 yard_b3_title: "Transparent TRA Duty:",
@@ -2355,19 +2338,19 @@
                 why2_desc: "We know Dar Port operations inside and out. We work closely with TPA, TICTS, and TRA to discharge and clear your shipment smoothly without bottlenecks.",
                 why3_title: "Exact Upfront Taxes & Transparent Pricing",
                 why3_desc: "Exact TRA duty calculations and GePG Control Numbers provided before your ship docks. No hidden broker fees or unexpected port surcharges.",
-                why4_title: "Fast-Track Clearance (Within 3–5 Days)",
-                why4_desc: "Our experienced on-site port officers handle document lodgements, TBS inspections, and release orders daily to beat port free-time deadlines.",
+                why4_title: "Fast-Track Clearance & Close Follow-Up",
+                why4_desc: "Our experienced on-site port officers prepare documents early and follow up closely with TRA and TBS daily so your vehicle or cargo clears as swiftly as possible.",
                 why5_title: "Nationwide & Cross-Border Delivery",
                 why5_desc: "Dedicated car carriers and seasoned drivers deliver vehicles directly to your doorstep in Arusha, Mwanza, Dodoma, or across borders to Rwanda, Burundi, DRC, and Zambia.",
-                why6_title: "Live Shipment Tracking & 24/7 AI Support",
-                why6_desc: "Track your shipment live anytime using your B/L or Chassis number on our system, supported by our intelligent AI assistant 24/7.",
+                why6_title: "Proactive Updates & 24/7 AI Support",
+                why6_desc: "We keep you informed at every stage via phone and WhatsApp from start to handover, supported by our 24/7 AI assistant for instant answers.",
                 faq_tag: "Frequently Asked Questions",
                 faq_title: "Frequently Asked Questions (FAQ)",
                 faq_desc: "Everything you need to know about clearing your vehicle at the Port of Dar es Salaam.",
-                faq_q1: "How long does it take to clear a vehicle at Dar es Salaam Port?",
-                faq_a1: "It typically takes <strong>3 to 5 working days</strong> from the date complete documents are received and TRA duty is paid. Our primary goal is to release your vehicle well before port free storage expires to avoid demurrage fines.",
-                faq_q2: "How long does it take Malkia Cargo Waves to clear a car or cargo from the port?",
-                faq_a2: "Standard clearance takes 3 to 5 working days once the vessel discharges and all key documents (Bill of Lading, Commercial Invoice, TBS certificate) are in place. Our operations team is on the ground daily to secure swift customs and gate release before free storage expires.",
+                faq_q1: "How long does it take to clear a vehicle or cargo at Dar es Salaam Port?",
+                faq_a1: "Clearance timing depends on the completion of <strong>official government procedures (TRA, TBS, and Port authorities)</strong> and tax payment. At Malkia Cargo Waves Limited, our core job is to start documentation early and follow up closely at every desk so your vehicle or cargo is released as swiftly as possible without unnecessary delays.",
+                faq_q2: "When should I send my documents so clearance goes quickly?",
+                faq_a2: "We recommend sending copies of your Bill of Lading, Commercial Invoice, and Export Certificate <strong>early before the vessel arrives</strong>. This allows us to prepare your TRA duty assessment and file formalities in advance so your shipment is prioritized as soon as the vessel discharges.",
                 faq_q3: "How do you guarantee vehicle accessories (battery, radio, spare tire) are safe?",
                 faq_a3: "Our officers attend discharge as soon as your car leaves the RORO vessel. We conduct <strong>Physical Verification</strong> immediately, photographing and documenting: Radio, Battery, Spare Wheel, Side Mirrors, and Tools. The vehicle is sealed and guarded 24/7.",
                 faq_q4: "Which documents are required to begin the vehicle clearance process?",
@@ -2497,7 +2480,7 @@
                 <div class="malkia-ai-msg bot">
                     <div class="malkia-ai-msg-bubble">
                         <strong>Mazungumzo yameanza upya! 👋</strong><br><br>
-                        Tafadhali uliza swali lolote kuhusu kodi ya TRA, utoaji wa magari na mizigo bandarini, au kufuatilia gari lako kwa namba ya B/L au Chassis.
+                        Tafadhali uliza swali lolote kuhusu kodi ya TRA, utoaji wa magari na mizigo bandarini, au usafirishaji wa mizigo mikoani.
                     </div>
                 </div>
             `;
